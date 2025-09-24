@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5;
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 250px;
+    background-color: black;
+    color: #fff;
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+   
+}
+
+.sidebar-header {
+    text-align: center;
+    padding: 0 20px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 20px;
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin-bottom: 5px;
+}
+
+.nav-item a {
+    display: flex;
+    align-items: center;
+    color: #b0c4de;
+    text-decoration: none;
+    padding: 12px 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.nav-item a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.nav-item.active a {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-left: 4px solid #4a90e2;
+    padding-left: 16px;
+}
+
+.nav-item a i {
+    font-size: 18px;
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content Styles */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-header {
+    padding: 20px 30px;
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.main-header h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+    font-weight: 500;
+}
+
+.content-body {
+    flex-grow: 1;
+    padding: 30px;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 10px 20px;
+    
+}
+
+.modal-backdrop.show {
+    display: flex;
+    
+}
+
+.modal {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 1400px;
+    transform: translateY(-100px);
+    transition: transform 0.3s ease-out;
+    height: 400px;
+    
+    
+}
+
+.modal-backdrop.show .modal {
+    transform: translateY(0);   
+}
+
+.modal-header {
+    color: #fff;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.permissions-header {
+    background-color: #0047b3;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.permissions-content {
+    padding: 0;
+}
+
+.permissions-title-bar {
+    background-color: #00224d;
+    color: #fff;
+    padding: 15px 20px;
+}
+
+.permissions-title-bar h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.permissions-sub-title {
+    background-color: #f0f0f0;
+    padding: 10px 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.permissions-sub-title h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.permissions-table-container {
+    padding: 0 20px 20px;
+}
+
+.permissions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.permissions-table th,
+.permissions-table td {
+    padding: 12px;
+    text-align: left;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.permissions-table th {
+    background-color: #f9f9f9;
+    color: #333;
+    font-weight: 500;
+}
+
+.permissions-table td i {
+    color: #888;
+    margin-right: 8px;
+}
+
+.permissions-actions {
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-primary {
+    background-color: #0047b3;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background-color: #003380;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #f44336;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+}
+
+/* ----- dando estilos ----*/
+
+#importante, button {
+    padding: 10px;
+    cursor: pointer;
+}
+
+#uno, #dos, #tres {
+    background-color: springgreen;
+    letter-spacing: 0.8px;
+    margin-right: 8px;
+    border: none;
+    color: white;
+    text-shadow: 3px 2px 5px rgba(0, 0, 0, 0.2);
+
+}
+#eliminar {
+    background-color: red;
+    color: white;
+    text-shadow: 3px 2px 5px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.8px;
+    border: none;
+}

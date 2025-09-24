@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlexaTech Dashboard</title>
+    <link rel="stylesheet" href="./css/pruebaDos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+
+        <!---------- BARRA LATERAL DE LOS MODULOS ---------->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AlexaTech</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="#">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-users"></i>
+                            <span>Clientes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Ventas</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-cube"></i>
+                            <span>Productos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-box-open"></i>
+                            <span>Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-receipt"></i>
+                            <span>Compras</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Facturación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-cogs"></i>
+                            <span>Configuración</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reportes</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+        <!-------------------------------------------------->
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Dashboard</h1>
+            </header>
+            <div class="content-body">
+            </div>
+        </main>
+
+    </div>
+
+    <!-------------------- PARTE DONDE ESTA LA CREACION DE NUEVO USUARIO --------->
+    <div id="createUserModal" class="modal-backdrop show">
+
+        <div class="modal">
+
+            <header class="modal-header">
+                <h2>Crear Nuevo Usuario</h2>
+                <button class="close-btn" id="boton">&times;</button>
+            </header>
+
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <input type="text" id="nombre-usuario" placeholder="Nombre Usuario">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="contrasena" placeholder="Contraseña">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="nombre-completo" placeholder="Nombre Completo">
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="telefono" placeholder="Teléfono">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="dni" placeholder="DNI (Documento Nacional de Identidad)">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="direccion" placeholder="Dirección">
+                    </div>
+                    <!-- #region 
+                     <div class="form-group">
+                        <select id="seleccionar">
+                            <option value="#">Permisos</option>
+                            <option value="cajero">Cajero</option>
+                            <option value="administrador">Administrador</option>
+                        </select>
+                    </div>-->
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                    </div>
+
+                   
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!---------------------------------------------------------------------------->
+
+    <script>
+        const boton = document.getElementById("boton").addEventListener("click", ()=> {
+            window.location.href = "pruebaCinco.html";
+        })
+    </script>
+
+</body>
+</html>

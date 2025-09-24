@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlexaTech Dashboard</title>
+    <link rel="stylesheet" href="./css/gestionDeCaja.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AlexaTech</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item" id="dashboard">
+                        <a href="#">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-users"></i>
+                            <span>Clientes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Ventas</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-cube"></i>
+                            <span>Productos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-box-open"></i>
+                            <span>Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-receipt"></i>
+                            <span>Compras</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="#">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Facturación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-cogs"></i>
+                            <span>Configuración</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reportes</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Gestión de Cajas</h1>
+            </header>
+            <div class="content-body">
+                <div class="data-table-container">
+                    <div class="table-header-options-full">
+                        <div class="search-box-date">
+                            <input type="date" id="search-date">
+                            <button class="btn search-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="aperturaCaja">
+                                <i class="fas fa-cash-register"></i>
+                                Aperturar Caja
+                            </button>
+                            <button class="btn btn-primary" id="vender">
+                                <i class="fas fa-shopping-cart"></i>
+                                Vender
+                            </button>
+                            <button class="btn btn-primary" id="movimientoCaja">
+                                <i class="fas fa-shopping-cart"></i>
+                                Movimiento caja
+                            </button>
+
+                            <button class="btn btn-primary" id="arqueoCaja">
+                                <i class="fas fa-shopping-cart"></i>
+                                Arqueo Caja
+                            </button>
+
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>N° Caja</th>
+                                    <th>Fecha</th>
+                                    <th>Hora Apertura</th>
+                                    <th>Hora Cierre</th>
+                                    <th>S. Inicial</th>
+                                    <th>S. Final</th>
+                                    <th>Status</th>
+                                    
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>04/09/2025</td>
+                                    <td>12:15:23</td>
+                                    <td>12:16:37</td>
+                                    <td>100.00</td>
+                                    <td>100.00</td>
+                                    <td><span class="status-badge closed">Caja Cerrada</span></td>
+                                    
+                                </tr>
+                                <tr>
+                                    <td>1</td>
+                                    <td>31/08/2025</td>
+                                    <td>20:51:10</td>
+                                    <td>21:03:52</td>
+                                    <td>100.00</td>
+                                    <td>100.00</td>
+                                    <td><span class="status-badge closed">Caja Cerrada</span></td>
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <script>
+        // CODIFO JAVASCRIPT PARA MEJORAR EL PROYECTO
+        const aperturaCaja = document.getElementById("aperturaCaja"), movimientoCaja = document.getElementById("movimientoCaja"),
+        arqueoCaja = document.getElementById("arqueoCaja"), vender = document.getElementById("vender");
+
+
+        // EVENTOS DE LOS CLICKS
+        aperturaCaja.addEventListener("click", ()=> {
+            window.location.href = "aperturaCaja.html";
+        })
+
+        movimientoCaja.addEventListener("click", ()=> {
+            window.location.href = "movimientoCaja.html";
+        })
+
+        arqueoCaja.addEventListener("click", ()=> {
+            window.location.href = 'arqueoCaja.html';
+        })
+
+        document.getElementById("dashboard").addEventListener("click", ()=> {
+            window.location.href = "pruebaOcho.html";
+        })
+    </script>
+</body>
+</html>

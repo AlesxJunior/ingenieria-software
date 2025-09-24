@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlexaTech Dashboard</title>
+    <link rel="stylesheet" href="./css/pruebaCinco.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AlexaTech</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active">
+                        <a href="#" id="dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-users"></i>
+                            <span>Clientes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-chart-pie"></i>
+                            <span>Ventas</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-cube"></i>
+                            <span>Productos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-box-open"></i>
+                            <span>Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-receipt"></i>
+                            <span>Compras</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>Facturación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-cogs"></i>
+                            <span>Configuración</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reportes</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Dashboard</h1>
+            </header>
+            <div class="content-body">
+                <div class="card users-card"> 
+                    
+                    
+                    <!--- esto agregre es un nuevo boton-->
+
+                    <div class="principal" id="principal">
+                        <button> + Nuevo</button>
+                    </div>
+
+                    <div class="card-header">
+                        <h3 class="card-title">Lista de Usuarios Registrados</h3>
+                        <div class="search-box">
+                            <input type="text" placeholder="Buscar Usuarios">
+                            <button><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <table class="elegant-table">
+                            <thead>
+                                <tr>
+                                    <th>DNI</th>
+                                    <th>Nombre Usuario</th>
+                                    <th>Nombres Completos</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Telefono</th>
+                                    <th>Fecha de Registro</th>
+    
+                                    <th>Direccion</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>70859789</td>
+                                    <td>Jhoe_Daniel</td>
+                                    <td>Jhoe Daniel Rengifo Rodriguez</td>
+                                    
+                                    <td>jhosedaniel@gmail.com</td>
+                                    <td>988 789 788</td>
+                                    <td>2025 - 09 - 09</td>
+                                    
+                                    <td>Banda de Shilcayo</td>
+                                    <td id="presion"><button id="editarUno">Editar</button> <button id="eliminar">Eliminar</button></td>
+                                </tr>
+                                <tr>
+                                    <td>00012546</td>
+                                    <td>Nestor_Rene</td>
+                                    <td>Nestor Rene Hernandez Diaz</td>
+                                    <td>nestorrene@gmail.com</td>
+                                    <td>977 256 879</td>
+                                    <td>2025 - 09 - 10</td>
+                                   
+                                    <td>Morales</td>
+                                    <td id="presion"><button id="editarDos">Editar</button> <button id="eliminar">Eliminar</button></td>
+                                </tr>
+                                <tr>
+                                    <td>73395028</td>
+                                    <td>Alex_Junior</td>
+                                    <td>Alex Junior Claudio Chota</td>
+                                    <td>alexjunior@gmail.com</td>
+                                    <td>917 724 606</td>
+                                    <td>2025 - 09 - 11</td>
+                                    
+                                    <td>Morales</td>
+                                    <td id="presion"><button id="editarTres">Editar</button> <button id="eliminar">Eliminar</button></td>
+                                </tr>
+
+                                <tr>
+                                    <td>75895518</td>
+                                    <td>Gesler_15@</td>
+                                    <td>Gesler Garcia Diaz</td>
+                                    <td>Gesler15@gmail.com</td>
+                                    <td>977 256 879</td>
+                                    <td>2025 - 09 - 10</td>
+                                   
+                                    <td>Morales</td>
+                                    <td id="presion"><button id="editarDos">Editar</button> <button id="eliminar">Eliminar</button></td>
+                                </tr>
+                                <tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <script>
+        const dashboard = document.getElementById("dashboard");
+        dashboard.addEventListener("click", ()=> {
+            window.location.href = "pruebaOcho.html";
+        })
+
+
+        const principal = document.getElementById("principal").addEventListener("click", ()=> {
+            window.location.href = "pruebaDos.html";
+        })
+
+        const editarUno = document.getElementById("editarUno"),editarDos = document.getElementById("editarDos"),
+            editarTres = document.getElementById("editarTres");
+
+        // Jugamos con los editotes de  las tablas
+            editarUno.addEventListener("click", ()=> {
+                window.location.href = "actualizarContrasenea.html";
+            })
+            editarDos.addEventListener("click", ()=> {
+            
+            })
+            editarTres.addEventListener("click", ()=> {
+            
+            })
+    </script>
+
+</body>
+</html>
