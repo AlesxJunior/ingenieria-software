@@ -1,0 +1,452 @@
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import Layout from '../components/Layout';
+import { useApp } from '../hooks/useApp';
+
+const FormContainer = styled.div`
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  max-width: 800px;
+  margin: 0 auto;
+`;
+
+const FormTitle = styled.h2`
+  color: #00224d;
+  margin-bottom: 30px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+  margin-bottom: 5px;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.3s;
+
+  &:focus {
+    border-color: #0047b3;
+  }
+
+  &::placeholder {
+    color: #a0a0a0;
+  }
+`;
+
+const Select = styled.select`
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.3s;
+  background-color: white;
+
+  &:focus {
+    border-color: #0047b3;
+  }
+`;
+
+const FormActions = styled.div`
+  text-align: center;
+  margin-top: 25px;
+`;
+
+const SubmitButton = styled.button`
+  padding: 12px 30px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  background-color: #0047b3;
+  color: #fff;
+
+  &:hover {
+    background-color: #003380;
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const ErrorMessage = styled.span`
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+`;
+
+const SuccessMessage = styled.div`
+  background-color: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border: 1px solid #c3e6cb;
+`;
+
+interface ProductFormData {
+  productCode: string;
+  productName: string;
+  category: string;
+  price: string;
+  initialStock: string;
+  status: string;
+  warranty: string;
+  unit: string;
+}
+
+interface FormErrors {
+  [key: string]: string | undefined;
+  productCode?: string;
+  productName?: string;
+  category?: string;
+  price?: string;
+  initialStock?: string;
+  unit?: string;
+  warranty?: string;
+}
+
+const RegistroProducto: React.FC = () => {
+  const { addProduct, showSuccess, showError } = useApp();
+  
+  const [formData, setFormData] = useState<ProductFormData>({
+    productCode: '',
+    productName: '',
+    category: '',
+    price: '',
+    initialStock: '',
+    status: 'disponible',
+    warranty: '',
+    unit: ''
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
+
+    // Validación en tiempo real para campos específicos
+    if (name === 'price' && value) {
+      const price = Number(value);
+      if (isNaN(price) || price <= 0) {
+        setErrors(prev => ({
+          ...prev,
+          price: 'El precio debe ser un número mayor a 0'
+        }));
+      }
+    }
+
+    if (name === 'initialStock' && value) {
+      const stock = Number(value);
+      if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+        setErrors(prev => ({
+          ...prev,
+          initialStock: 'El stock debe ser un número entero mayor o igual a 0'
+        }));
+      }
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Validación del código del producto
+    if (!formData.productCode.trim()) {
+      newErrors.productCode = 'El código del producto es requerido';
+    } else if (formData.productCode.length < 3) {
+      newErrors.productCode = 'El código debe tener al menos 3 caracteres';
+    }
+
+    // Validación del nombre del producto
+    if (!formData.productName.trim()) {
+      newErrors.productName = 'El nombre del producto es requerido';
+    } else if (formData.productName.length < 2) {
+      newErrors.productName = 'El nombre debe tener al menos 2 caracteres';
+    }
+
+    // Validación de la categoría
+    if (!formData.category.trim()) {
+      newErrors.category = 'La categoría es requerida';
+    }
+
+    // Validación del precio
+    if (!formData.price.trim()) {
+      newErrors.price = 'El precio es requerido';
+    } else {
+      const price = Number(formData.price);
+      if (isNaN(price)) {
+        newErrors.price = 'El precio debe ser un número válido';
+      } else if (price <= 0) {
+        newErrors.price = 'El precio debe ser mayor a 0';
+      } else if (price > 999999.99) {
+        newErrors.price = 'El precio no puede exceder 999,999.99';
+      }
+    }
+
+    // Validación del stock inicial
+    if (!formData.initialStock.trim()) {
+      newErrors.initialStock = 'El stock inicial es requerido';
+    } else {
+      const stock = Number(formData.initialStock);
+      if (isNaN(stock)) {
+        newErrors.initialStock = 'El stock debe ser un número válido';
+      } else if (stock < 0) {
+        newErrors.initialStock = 'El stock no puede ser negativo';
+      } else if (!Number.isInteger(stock)) {
+        newErrors.initialStock = 'El stock debe ser un número entero';
+      }
+    }
+
+    // Validación de la unidad de medida
+    if (!formData.unit.trim()) {
+      newErrors.unit = 'La unidad de medida es requerida';
+    }
+
+    // Validación de la garantía (opcional pero si se proporciona debe ser válida)
+    if (formData.warranty && formData.warranty.trim()) {
+      if (formData.warranty.length < 2) {
+        newErrors.warranty = 'La garantía debe tener al menos 2 caracteres';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Simular llamada a API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Usar el contexto para agregar el producto
+      addProduct({
+        productCode: formData.productCode,
+        productName: formData.productName,
+        category: formData.category,
+        price: parseFloat(formData.price),
+        initialStock: parseInt(formData.initialStock),
+        currentStock: parseInt(formData.initialStock),
+        status: formData.status as 'disponible' | 'agotado' | 'proximamente',
+        warranty: formData.warranty || undefined,
+        unit: formData.unit
+      });
+      
+      // Mostrar notificación de éxito
+      showSuccess('Producto registrado exitosamente');
+      setShowSuccessMessage(true);
+      
+      // Ocultar mensaje después de 3 segundos
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+      
+      // Limpiar formulario
+      setFormData({
+        productCode: '',
+        productName: '',
+        category: '',
+        price: '',
+        initialStock: '',
+        status: 'disponible',
+        warranty: '',
+        unit: ''
+      });
+
+    } catch (error) {
+      console.error('Error al registrar producto:', error);
+      showError('Error al registrar el producto. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Layout title="Registrar Producto">
+      <FormContainer>
+        <FormTitle>Registrar Producto Nuevo</FormTitle>
+        
+        {showSuccessMessage && (
+          <SuccessMessage>
+            ¡Producto registrado exitosamente!
+          </SuccessMessage>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <FormGrid>
+            <FormGroup>
+              <Label htmlFor="productCode">Código de Producto *</Label>
+              <Input
+                type="text"
+                id="productCode"
+                name="productCode"
+                value={formData.productCode}
+                onChange={handleInputChange}
+                placeholder="Ej. CAM-IP-001"
+              />
+              {errors.productCode && <ErrorMessage>{errors.productCode}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="productName">Nombre *</Label>
+              <Input
+                type="text"
+                id="productName"
+                name="productName"
+                value={formData.productName}
+                onChange={handleInputChange}
+                placeholder="Ej. Cámara de Seguridad Wi-Fi"
+              />
+              {errors.productName && <ErrorMessage>{errors.productName}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="category">Categoría *</Label>
+              <Input
+                type="text"
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                placeholder="Ej. Cámaras, Alarmas"
+              />
+              {errors.category && <ErrorMessage>{errors.category}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="price">Precio de Venta *</Label>
+              <Input
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                placeholder="Ej. 150.00"
+                step="0.01"
+                min="0"
+              />
+              {errors.price && <ErrorMessage>{errors.price}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="initialStock">Stock Inicial *</Label>
+              <Input
+                type="number"
+                id="initialStock"
+                name="initialStock"
+                value={formData.initialStock}
+                onChange={handleInputChange}
+                placeholder="Ej. 50"
+                min="0"
+              />
+              {errors.initialStock && <ErrorMessage>{errors.initialStock}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="status">Estado</Label>
+              <Select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+              >
+                <option value="disponible">Disponible</option>
+                <option value="agotado">Agotado</option>
+                <option value="proximamente">Próximamente</option>
+              </Select>
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="warranty">Garantía</Label>
+              <Input
+                type="text"
+                id="warranty"
+                name="warranty"
+                value={formData.warranty}
+                onChange={handleInputChange}
+                placeholder="Ej. 12 meses"
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="unit">Unidad de Medida *</Label>
+              <Input
+                type="text"
+                id="unit"
+                name="unit"
+                value={formData.unit}
+                onChange={handleInputChange}
+                placeholder="Ej. Unidad, Caja"
+              />
+              {errors.unit && <ErrorMessage>{errors.unit}</ErrorMessage>}
+            </FormGroup>
+          </FormGrid>
+
+          <FormActions>
+            <SubmitButton type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Registrando...' : 'Registrar Producto'}
+            </SubmitButton>
+          </FormActions>
+        </form>
+      </FormContainer>
+    </Layout>
+  );
+};
+
+export default RegistroProducto;
