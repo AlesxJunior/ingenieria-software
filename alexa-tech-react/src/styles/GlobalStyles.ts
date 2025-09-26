@@ -49,11 +49,15 @@ export const MainHeader = styled.header`
   padding: 20px 30px;
   border-bottom: 1px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   h1 {
     font-size: 28px;
     font-weight: 700;
     color: #333;
+    margin: 0;
   }
 `;
 

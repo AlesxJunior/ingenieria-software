@@ -3,6 +3,9 @@ import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import NuevoUsuarioModal from '../components/NuevoUsuarioModal';
+import EditarUsuarioModal from '../components/EditarUsuarioModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 // Interfaces extendidas para usuarios y permisos
 interface Permission {
@@ -287,7 +290,7 @@ const UserEmail = styled.div`
   color: #7f8c8d;
 `;
 
-const ActionButton = styled.button<{ variant?: 'edit' | 'permissions' | 'delete' }>`
+const ActionButton = styled.button<{ variant?: 'edit' | 'delete' }>`
   padding: 0.25rem 0.5rem;
   border: none;
   border-radius: 4px;
@@ -304,14 +307,6 @@ const ActionButton = styled.button<{ variant?: 'edit' | 'permissions' | 'delete'
           color: white;
           &:hover {
             background: #2980b9;
-          }
-        `;
-      case 'permissions':
-        return `
-          background: #f39c12;
-          color: white;
-          &:hover {
-            background: #e67e22;
           }
         `;
       case 'delete':
@@ -363,11 +358,15 @@ const PermissionTag = styled.span`
 
 const ListaUsuarios: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { showError, showWarning, showInfo } = useNotification();
+  const { showError, showInfo } = useNotification();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [isNuevoUsuarioModalOpen, setIsNuevoUsuarioModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
 
   // Datos de ejemplo - en una aplicación real vendrían de una API
   const [users] = useState<ExtendedUser[]>([
@@ -503,13 +502,11 @@ const ListaUsuarios: React.FC = () => {
   };
 
   const handleEditUser = (userId: string) => {
-    showInfo(`Editando usuario: ${userId}`);
-    // Aquí se implementaría la navegación al formulario de edición
-  };
-
-  const handleManagePermissions = (userId: string) => {
-    showInfo(`Gestionando permisos para usuario: ${userId}`);
-    // Aquí se implementaría un modal para gestionar permisos
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsEditModalOpen(true);
+    }
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -518,13 +515,37 @@ const ListaUsuarios: React.FC = () => {
       return;
     }
     
-    showWarning(`¿Estás seguro de que deseas eliminar este usuario?`);
-    // Aquí se implementaría la confirmación y eliminación
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const handleSaveUser = (userData: Partial<ExtendedUser>) => {
+    // Aquí se implementaría la lógica para guardar los cambios del usuario
+    // TODO: Usar userData para actualizar el usuario
+    console.log('Datos del usuario a guardar:', userData);
+    showInfo('Usuario actualizado exitosamente');
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedUser) {
+      // Aquí se implementaría la lógica para eliminar el usuario
+      showInfo(`Usuario ${selectedUser.username} eliminado exitosamente`);
+      setIsDeleteModalOpen(false);
+      setSelectedUser(null);
+    }
   };
 
   const handleCreateUser = () => {
-    showInfo('Redirigiendo al formulario de creación de usuario');
-    // Aquí se implementaría la navegación al formulario de creación
+    setIsNuevoUsuarioModalOpen(true);
+  };
+
+  const handleCloseNuevoUsuarioModal = () => {
+    setIsNuevoUsuarioModalOpen(false);
   };
 
   const clearFilters = () => {
@@ -667,12 +688,6 @@ const ListaUsuarios: React.FC = () => {
                       >
                         Editar
                       </ActionButton>
-                      <ActionButton 
-                        variant="permissions"
-                        onClick={() => handleManagePermissions(user.id)}
-                      >
-                        Permisos
-                      </ActionButton>
                       {user.id !== currentUser?.id && (
                         <ActionButton 
                           variant="delete"
@@ -689,6 +704,33 @@ const ListaUsuarios: React.FC = () => {
           )}
         </TableContainer>
       </Container>
+      
+      <NuevoUsuarioModal
+        isOpen={isNuevoUsuarioModalOpen}
+        onClose={handleCloseNuevoUsuarioModal}
+      />
+      
+      <EditarUsuarioModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+        onSave={handleSaveUser}
+      />
+      
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedUser(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Usuario"
+        message="¿Estás seguro de que deseas eliminar este usuario?"
+        itemName={selectedUser?.username}
+      />
     </Layout>
   );
 };

@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           id: '1',
           username: 'admin',
           email: 'admin@alexatech.com',
-          role: 'administrator'
+          role: 'admin'
         };
         
         setUser(userData);
@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           id: '2',
           username: 'vendedor',
           email: 'vendedor@alexatech.com',
-          role: 'seller'
+          role: 'vendedor'
         };
         
         setUser(userData);

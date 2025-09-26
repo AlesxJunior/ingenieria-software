@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useApp } from '../hooks/useApp';
+import NuevoClienteModal from '../components/NuevoClienteModal';
+import EditarClienteModal from '../components/EditarClienteModal';
 
 const TableContainer = styled.div`
   background-color: #fff;
@@ -233,12 +234,14 @@ const ModalButton = styled.button<{ color: string }>`
 
 
 const ListaClientes: React.FC = () => {
-  const navigate = useNavigate();
   const { clients, deleteClient, showSuccess, showError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [isNuevoClienteModalOpen, setIsNuevoClienteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
 
   // Filtrar clientes basado en el término de búsqueda
   const filteredClients = clients.filter(client =>
@@ -248,11 +251,19 @@ const ListaClientes: React.FC = () => {
   );
 
   const handleNuevoCliente = () => {
-    navigate('/registrar-cliente');
+    setIsNuevoClienteModalOpen(true);
+  };
+
+  const handleCloseNuevoClienteModal = () => {
+    setIsNuevoClienteModalOpen(false);
   };
 
   const handleEdit = (clientId: string) => {
-    navigate(`/editar-cliente/${clientId}`);
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      setSelectedClient(client);
+      setIsEditModalOpen(true);
+    }
   };
 
   const handleDelete = (clientId: string) => {
@@ -272,6 +283,19 @@ const ListaClientes: React.FC = () => {
         setShowDeleteModal(false);
         setClientToDelete(null);
       }
+    }
+  };
+
+  const handleSaveClient = (clientData: any) => {
+    try {
+      // Aquí se implementaría la lógica para guardar los cambios del cliente
+      // TODO: Usar clientData para actualizar el cliente
+      console.log('Datos del cliente a guardar:', clientData);
+      showSuccess('Cliente actualizado exitosamente');
+      setIsEditModalOpen(false);
+      setSelectedClient(null);
+    } catch {
+      showError('Error al actualizar el cliente. Por favor, inténtalo de nuevo.');
     }
   };
 
@@ -390,6 +414,21 @@ const ListaClientes: React.FC = () => {
           </ModalContent>
         </ModalOverlay>
       )}
+      
+      <NuevoClienteModal
+        isOpen={isNuevoClienteModalOpen}
+        onClose={handleCloseNuevoClienteModal}
+      />
+      
+      <EditarClienteModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
+        onSave={handleSaveClient}
+      />
     </Layout>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import Sidebar from './Sidebar';
+import UserInfo from './UserInfo';
 import { DashboardContainer, MainContent, MainHeader, ContentBody } from '../styles/GlobalStyles';
 
 interface LayoutProps {
@@ -15,6 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title, className }) => {
       <MainContent>
         <MainHeader>
           <h1>{title}</h1>
+          <UserInfo />
         </MainHeader>
         <ContentBody>
           {children}

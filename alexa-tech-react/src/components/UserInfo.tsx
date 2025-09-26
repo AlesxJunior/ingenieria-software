@@ -1,0 +1,94 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import styled from 'styled-components';
+import { useAuth } from '../context/AuthContext';
+
+const UserInfoContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+`;
+
+const UserAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+`;
+
+const UserDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+`;
+
+const UserName = styled.div`
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 2px;
+`;
+
+const UserRole = styled.div`
+  font-size: 12px;
+  color: #666;
+  text-transform: capitalize;
+`;
+
+const UserInfoLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const UserInfo: React.FC = () => {
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  const getUserInitials = (username: string) => {
+    return username.substring(0, 2).toUpperCase();
+  };
+
+  const getRoleText = (role: string) => {
+    switch (role) {
+      case 'admin': return 'Administrador';
+      case 'vendedor': return 'Vendedor';
+      case 'cajero': return 'Cajero';
+      case 'supervisor': return 'Supervisor';
+      default: return role;
+    }
+  };
+
+  return (
+    <UserInfoContainer>
+      <UserInfoLink to="/perfil">
+        <UserDetails>
+          <UserName>@{user.username}</UserName>
+          <UserRole>{getRoleText(user.role)}</UserRole>
+        </UserDetails>
+        <UserAvatar>
+          {getUserInitials(user.username)}
+        </UserAvatar>
+      </UserInfoLink>
+    </UserInfoContainer>
+  );
+};
+
+export default UserInfo;
