@@ -166,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
   // Función para determinar qué módulo debe estar abierto según la ruta actual
   const getActiveModule = (pathname: string) => {
-    if (pathname.includes('/usuarios') || pathname.includes('/roles') || pathname.includes('/auditoria')) {
+    if (pathname.includes('/usuarios') || pathname.includes('/auditoria')) {
       return 'usuarios';
     }
     if (pathname.includes('/lista-clientes') || pathname.includes('/registrar-cliente')) {
@@ -236,7 +236,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             </Link>
           </NavItem>
 
-          <NavItem $isActive={isActive('/usuarios') || isActive('/usuarios/crear') || isActive('/roles') || isActive('/auditoria')}>
+          <NavItem $isActive={isActive('/usuarios') || isActive('/usuarios/crear') || isActive('/auditoria')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('usuarios'); }}>
               <i className="fas fa-user-friends"></i>
               <span>Usuarios</span>
@@ -248,11 +248,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 </Link>
               </SubMenuItem>
 
-              <SubMenuItem $isActive={isActive('/roles')}>
-                <Link to="/roles">
-                  <h3>Gestión de Roles</h3>
-                </Link>
-              </SubMenuItem>
               <SubMenuItem $isActive={isActive('/auditoria')}>
                 <Link to="/auditoria">
                   <h3>Auditoría y Logs</h3>

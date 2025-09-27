@@ -23,7 +23,6 @@ import ListaUsuarios from './pages/ListaUsuarios';
 import CrearUsuario from './pages/CrearUsuario';
 import EditarUsuario from './pages/EditarUsuario';
 import PerfilUsuario from './pages/PerfilUsuario';
-import GestionRoles from './pages/GestionRoles';
 import AuditoriaLogs from './pages/AuditoriaLogs';
 
 // Componente interno para manejar el modal
@@ -141,13 +140,8 @@ function App() {
                 <PerfilUsuario />
               </ProtectedRoute>
             } />
-            <Route path="/roles" element={
-              <ProtectedRoute requiredRole="admin">
-                <GestionRoles />
-              </ProtectedRoute>
-            } />
             <Route path="/auditoria" element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requiredPermissions={['Auditoría y Logs']}>
                 <AuditoriaLogs />
               </ProtectedRoute>
             } />

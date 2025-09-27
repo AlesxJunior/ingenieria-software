@@ -68,11 +68,11 @@ const UserInfo: React.FC = () => {
 
   const getRoleText = (role: string) => {
     switch (role) {
-      case 'admin': return 'Administrador';
-      case 'vendedor': return 'Vendedor';
-      case 'cajero': return 'Cajero';
-      case 'supervisor': return 'Supervisor';
-      default: return role;
+      case 'ADMIN': return 'Administrador';
+      case 'SUPERVISOR': return 'Supervisor';
+      case 'CAJERO': return 'Cajero';
+      case 'VENDEDOR': return 'Vendedor';
+      default: return 'Usuario';
     }
   };
 

@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
+import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
+import PasswordRequirements from './PasswordRequirements';
+import PermissionSelector from './PermissionSelector';
 
 interface UserFormData {
   username: string;
   email: string;
-  fullName: string;
-  role: string;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
   password: string;
   confirmPassword: string;
-  status: 'activo' | 'inactivo';
+  isActive: boolean;
   permissions: string[];
 }
 
@@ -20,6 +24,7 @@ interface FormErrors {
 interface NuevoUsuarioModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave: (userData: Partial<UserFormData>) => Promise<void>;
 }
 
 const ModalOverlay = styled.div`
@@ -135,42 +140,7 @@ const ErrorMessage = styled.span`
   margin-top: 0.25rem;
 `;
 
-const PermissionsContainer = styled.div`
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  padding: 1rem;
-`;
 
-const PermissionsTitle = styled.h3`
-  margin: 0 0 1rem 0;
-  color: #2c3e50;
-  font-size: 1.1rem;
-`;
-
-const PermissionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-`;
-
-const PermissionItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const Checkbox = styled.input`
-  width: 1rem;
-  height: 1rem;
-`;
 
 const ButtonGroup = styled.div`
   display: flex;
@@ -209,75 +179,74 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   }
 `;
 
-const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }) => {
+const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, onSave }) => {
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
     email: '',
-    fullName: '',
-    role: '',
+    firstName: '',
+    lastName: '',
+    role: 'VENDEDOR',
     password: '',
     confirmPassword: '',
-    status: 'activo',
+    isActive: true,
     permissions: []
   });
 
-  const availablePermissions = [
-    'crear_usuarios', 'editar_usuarios', 'eliminar_usuarios', 'ver_usuarios',
-    'crear_productos', 'editar_productos', 'eliminar_productos', 'ver_productos',
-    'crear_clientes', 'editar_clientes', 'eliminar_clientes', 'ver_clientes',
-    'realizar_ventas', 'ver_ventas', 'cancelar_ventas',
-    'gestionar_caja', 'ver_reportes', 'configurar_sistema'
-  ];
+
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'El nombre de usuario es requerido';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
+    // Validar username
+    const usernameValidation = validateUsername(formData.username);
+    if (!usernameValidation.isValid) {
+      newErrors.username = usernameValidation.errors[0]?.message || 'Error en nombre de usuario';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'El email es requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'El formato del email no es válido';
+    // Validar email
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.errors[0]?.message || 'Error en email';
     }
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'El nombre completo es requerido';
+    // Validar nombre
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'El nombre es requerido';
     }
 
-    if (!formData.role) {
-      newErrors.role = 'El rol es requerido';
+    // Validar apellido
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'El apellido es requerido';
     }
 
-    if (!formData.password) {
-      newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    // Validar contraseña con requisitos robustos
+    const passwordValidation = validatePasswordWithConfirmation(formData.password, formData.confirmPassword);
+    if (!passwordValidation.isValid) {
+      const passwordErrors = passwordValidation.errors.filter(e => e.field === 'Contraseña');
+      const confirmErrors = passwordValidation.errors.filter(e => e.field === 'confirmPassword');
+      
+      if (passwordErrors.length > 0) {
+        newErrors.password = passwordErrors[0].message;
+      }
+      if (confirmErrors.length > 0) {
+        newErrors.confirmPassword = confirmErrors[0].message;
+      }
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
-    }
 
-    if (formData.permissions.length === 0) {
-      newErrors.permissions = 'Debe seleccionar al menos un permiso';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
     
     if (errors[name]) {
@@ -288,20 +257,11 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }
     }
   };
 
-  const handlePermissionChange = (permission: string) => {
+  const handlePermissionsChange = (permissions: string[]) => {
     setFormData(prev => ({
       ...prev,
-      permissions: prev.permissions.includes(permission)
-        ? prev.permissions.filter(p => p !== permission)
-        : [...prev.permissions, permission]
+      permissions
     }));
-    
-    if (errors.permissions) {
-      setErrors(prev => ({
-        ...prev,
-        permissions: ''
-      }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -314,23 +274,23 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }
     setIsLoading(true);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      showNotification('success', 'Éxito', 'Usuario creado exitosamente');
-      onClose();
+      await onSave(formData);
       
       // Resetear formulario
       setFormData({
         username: '',
         email: '',
-        fullName: '',
-        role: '',
+        firstName: '',
+        lastName: '',
+        role: 'VENDEDOR',
         password: '',
         confirmPassword: '',
-        status: 'activo',
+        isActive: true,
         permissions: []
       });
+      
+      setErrors({});
+      onClose();
     } catch (error) {
       console.error('Error al crear el usuario:', error);
       showNotification('error', 'Error', 'Error al crear el usuario');
@@ -382,18 +342,35 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }
 
           <FormRow>
             <FormGroup>
-              <Label htmlFor="fullName">Nombre Completo *</Label>
+              <Label htmlFor="firstName">Nombre *</Label>
               <Input
                 type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleInputChange}
-                $hasError={!!errors.fullName}
-                placeholder="Ingrese el nombre completo"
+                $hasError={!!errors.firstName}
+                placeholder="Ingrese el nombre"
               />
-              {errors.fullName && <ErrorMessage>{errors.fullName}</ErrorMessage>}
+              {errors.firstName && <ErrorMessage>{errors.firstName}</ErrorMessage>}
             </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="lastName">Apellido *</Label>
+              <Input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                $hasError={!!errors.lastName}
+                placeholder="Ingrese el apellido"
+              />
+              {errors.lastName && <ErrorMessage>{errors.lastName}</ErrorMessage>}
+            </FormGroup>
+          </FormRow>
+
+          <FormRow>
 
             <FormGroup>
               <Label htmlFor="role">Rol *</Label>
@@ -404,11 +381,10 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }
                 onChange={handleInputChange}
                 $hasError={!!errors.role}
               >
-                <option value="">Seleccione un rol</option>
-                <option value="admin">Administrador</option>
-                <option value="vendedor">Vendedor</option>
-                <option value="cajero">Cajero</option>
-                <option value="supervisor">Supervisor</option>
+                <option value="VENDEDOR">Vendedor</option>
+              <option value="CAJERO">Cajero</option>
+              <option value="SUPERVISOR">Supervisor</option>
+              <option value="ADMIN">Administrador</option>
               </Select>
               {errors.role && <ErrorMessage>{errors.role}</ErrorMessage>}
             </FormGroup>
@@ -424,9 +400,10 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }
                 value={formData.password}
                 onChange={handleInputChange}
                 $hasError={!!errors.password}
-                placeholder="Ingrese la contraseña"
+                placeholder="Mínimo 8 caracteres"
               />
               {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
+              <PasswordRequirements password={formData.password} />
             </FormGroup>
 
             <FormGroup>
@@ -444,35 +421,26 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose }
             </FormGroup>
           </FormRow>
 
+          <PermissionSelector
+            selectedPermissions={formData.permissions}
+            onPermissionsChange={handlePermissionsChange}
+          />
+
           <FormGroup>
-            <Label htmlFor="status">Estado</Label>
-            <Select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-            >
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </Select>
+            <Label htmlFor="isActive">
+              <Input
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={handleInputChange}
+                style={{ width: 'auto', marginRight: '8px' }}
+              />
+              Usuario Activo
+            </Label>
           </FormGroup>
 
-          <PermissionsContainer>
-            <PermissionsTitle>Permisos *</PermissionsTitle>
-            <PermissionsGrid>
-              {availablePermissions.map(permission => (
-                <PermissionItem key={permission}>
-                  <Checkbox
-                    type="checkbox"
-                    checked={formData.permissions.includes(permission)}
-                    onChange={() => handlePermissionChange(permission)}
-                  />
-                  <span>{permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                </PermissionItem>
-              ))}
-            </PermissionsGrid>
-            {errors.permissions && <ErrorMessage>{errors.permissions}</ErrorMessage>}
-          </PermissionsContainer>
+
 
           <ButtonGroup>
             <Button type="button" $variant="secondary" onClick={onClose}>

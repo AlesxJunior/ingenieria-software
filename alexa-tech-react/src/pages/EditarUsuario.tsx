@@ -245,7 +245,7 @@ const EditarUsuario: React.FC = () => {
     username: '',
     email: '',
     fullName: '',
-    role: 'vendedor',
+    role: 'VENDEDOR',
     status: 'activo',
     permissions: []
   });
@@ -269,10 +269,10 @@ const EditarUsuario: React.FC = () => {
   ];
 
   const rolePermissions = {
-    admin: ['dashboard', 'usuarios', 'clientes', 'ventas', 'productos', 'inventario', 'caja', 'reportes'],
-    vendedor: ['dashboard', 'clientes', 'ventas', 'productos'],
-    cajero: ['dashboard', 'ventas', 'caja'],
-    supervisor: ['dashboard', 'clientes', 'ventas', 'productos', 'inventario', 'reportes']
+    ADMIN: ['dashboard', 'usuarios', 'clientes', 'ventas', 'productos', 'inventario', 'caja', 'reportes'],
+    VENDEDOR: ['dashboard', 'clientes', 'ventas', 'productos'],
+    CAJERO: ['dashboard', 'ventas', 'caja'],
+    SUPERVISOR: ['dashboard', 'clientes', 'ventas', 'productos', 'inventario', 'reportes']
   };
 
   // Datos de ejemplo - en una aplicación real vendrían de una API
@@ -282,7 +282,7 @@ const EditarUsuario: React.FC = () => {
       username: 'admin',
       email: 'admin@alexatech.com',
       fullName: 'Administrador Principal',
-      role: 'admin',
+      role: 'ADMIN',
       status: 'activo' as const,
       permissions: ['dashboard', 'usuarios', 'clientes', 'ventas', 'productos', 'inventario', 'caja', 'reportes']
     },
@@ -291,7 +291,7 @@ const EditarUsuario: React.FC = () => {
       username: 'jhose_daniel',
       email: 'jhosedaniel@gmail.com',
       fullName: 'Jhose Daniel',
-      role: 'vendedor',
+      role: 'VENDEDOR',
       status: 'activo' as const,
       permissions: ['dashboard', 'clientes', 'ventas', 'productos']
     },
@@ -300,7 +300,7 @@ const EditarUsuario: React.FC = () => {
       username: 'nestor_rene',
       email: 'nestorRene@gmail.com',
       fullName: 'Nestor René',
-      role: 'cajero',
+      role: 'CAJERO',
       status: 'activo' as const,
       permissions: ['dashboard', 'ventas', 'caja']
     },
@@ -309,7 +309,7 @@ const EditarUsuario: React.FC = () => {
       username: 'alex_junior',
       email: 'alexjunior@gmail.com',
       fullName: 'Alex Junior',
-      role: 'vendedor',
+      role: 'VENDEDOR',
       status: 'inactivo' as const,
       permissions: ['dashboard', 'clientes', 'ventas']
     }
@@ -526,10 +526,10 @@ const EditarUsuario: React.FC = () => {
                   value={formData.role}
                   onChange={handleRoleChange}
                 >
-                  <option value="vendedor">Vendedor</option>
-                  <option value="cajero">Cajero</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="admin">Administrador</option>
+                  <option value="VENDEDOR">Vendedor</option>
+                  <option value="CAJERO">Cajero</option>
+                  <option value="SUPERVISOR">Supervisor</option>
+                  <option value="ADMIN">Administrador</option>
                 </Select>
               </FormGroup>
 

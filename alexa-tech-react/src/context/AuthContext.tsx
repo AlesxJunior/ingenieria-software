@@ -1,19 +1,23 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { apiService, tokenUtils } from '../utils/api';
 
 interface User {
   id: string;
   username: string;
   email: string;
-  role: string;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
+  isActive: boolean;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
 }
 
@@ -27,50 +31,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar si hay un usuario guardado en localStorage al cargar la aplicación
+  // Verificar si hay un token válido al cargar la aplicación
   useEffect(() => {
-    const savedUser = localStorage.getItem('alexatech_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing saved user data:', error);
+    const initializeAuth = async () => {
+      const token = tokenUtils.getAccessToken();
+      
+      if (token && !tokenUtils.isTokenExpired(token)) {
+        try {
+          // Verificar el token con el backend
+          const response = await apiService.getCurrentUser();
+          if (response.success && response.data) {
+            setUser(response.data as User);
+          } else {
+            // Token inválido, limpiar
+            tokenUtils.clearTokens();
+            localStorage.removeItem('alexatech_user');
+          }
+        } catch (error) {
+          console.error('Error validating token:', error);
+          tokenUtils.clearTokens();
+          localStorage.removeItem('alexatech_user');
+        }
+      } else {
+        // Token expirado o no existe
+        tokenUtils.clearTokens();
         localStorage.removeItem('alexatech_user');
       }
-    }
-    setIsLoading(false);
+      
+      setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
-      // Simular llamada a API de autenticación
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Llamada real a la API de autenticación
+      const response = await apiService.login({ email, password });
       
-      // Validación simple para demo (en producción esto sería una llamada real a la API)
-      if (username === 'admin' && password === 'admin123') {
-        const userData: User = {
-          id: '1',
-          username: 'admin',
-          email: 'admin@alexatech.com',
-          role: 'admin'
-        };
+      if (response.success && response.data) {
+        const { user: userData, accessToken, refreshToken } = response.data;
         
-        setUser(userData);
-        localStorage.setItem('alexatech_user', JSON.stringify(userData));
-        return true;
-      } else if (username === 'vendedor' && password === 'vendedor123') {
-        const userData: User = {
-          id: '2',
-          username: 'vendedor',
-          email: 'vendedor@alexatech.com',
-          role: 'vendedor'
-        };
+        // Guardar tokens
+        tokenUtils.setTokens(accessToken, refreshToken);
         
-        setUser(userData);
+        // Guardar usuario
+        setUser(userData as User);
         localStorage.setItem('alexatech_user', JSON.stringify(userData));
+        
         return true;
       }
       
@@ -83,9 +93,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('alexatech_user');
+  const logout = async () => {
+    try {
+      // Notificar al backend del logout
+      await apiService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Limpiar estado local independientemente del resultado
+      setUser(null);
+      tokenUtils.clearTokens();
+      localStorage.removeItem('alexatech_user');
+    }
   };
 
   const updateUser = (userData: Partial<User>) => {

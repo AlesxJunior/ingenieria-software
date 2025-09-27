@@ -1,31 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-
-interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  module: string;
-}
+import PermissionSelector from './PermissionSelector';
+import { useNotification } from '../context/NotificationContext';
 
 interface ExtendedUser {
   id: string;
   username: string;
   email: string;
-  role: string;
-  fullName: string;
-  status: 'activo' | 'inactivo' | 'suspendido';
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+  permissions?: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
+}
+
+interface UserFormData {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
+  isActive: boolean;
   permissions: string[];
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 interface EditarUsuarioModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: ExtendedUser | null;
-  onSave: (userData: Partial<ExtendedUser>) => void;
+  onSave: (userData: UserFormData) => Promise<void>;
 }
 
 const ModalOverlay = styled.div`
@@ -79,61 +89,7 @@ const FormGroup = styled.div`
   margin-bottom: 16px;
 `;
 
-const PermissionsContainer = styled.div`
-  margin-bottom: 20px;
-`;
 
-const PermissionsTitle = styled.h3`
-  margin: 0 0 12px 0;
-  color: #333;
-  font-size: 16px;
-`;
-
-const PermissionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 12px;
-  background-color: #f9f9f9;
-`;
-
-const PermissionItem = styled.label`
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  background-color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: #f0f0f0;
-  }
-`;
-
-const PermissionCheckbox = styled.input`
-  margin-right: 8px;
-`;
-
-const PermissionInfo = styled.div`
-  flex: 1;
-`;
-
-const PermissionName = styled.div`
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
-`;
-
-const PermissionDescription = styled.div`
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
-`;
 
 const Label = styled.label`
   display: block;
@@ -197,6 +153,12 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
       background-color: #545b62;
     }
   `}
+
+  &:disabled {
+    background-color: #6c757d;
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
@@ -205,23 +167,17 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
   user,
   onSave
 }) => {
-  const availablePermissions: Permission[] = [
-    { id: 'dashboard', name: 'Dashboard', description: 'Acceso al panel principal', module: 'General' },
-    { id: 'usuarios', name: 'Usuarios', description: 'Gestión de usuarios', module: 'Administración' },
-    { id: 'clientes', name: 'Clientes', description: 'Gestión de clientes', module: 'Ventas' },
-    { id: 'ventas', name: 'Ventas', description: 'Gestión de ventas', module: 'Ventas' },
-    { id: 'productos', name: 'Productos', description: 'Gestión de productos', module: 'Inventario' },
-    { id: 'inventario', name: 'Inventario', description: 'Control de inventario', module: 'Inventario' },
-    { id: 'caja', name: 'Caja', description: 'Gestión de caja', module: 'Finanzas' },
-    { id: 'reportes', name: 'Reportes', description: 'Generación de reportes', module: 'Análisis' }
-  ];
+  const { showNotification } = useNotification();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UserFormData>({
     username: '',
     email: '',
-    role: '',
-    status: 'activo' as 'activo' | 'inactivo' | 'suspendido',
-    permissions: [] as string[]
+    firstName: '',
+    lastName: '',
+    role: 'VENDEDOR',
+    isActive: true,
+    permissions: []
   });
 
   useEffect(() => {
@@ -229,35 +185,48 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
       setFormData({
         username: user.username,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
-        status: user.status,
-        permissions: user.permissions || []
+        isActive: user.isActive,
+        permissions: user.permissions ? user.permissions.map(p => p.id) : []
       });
     }
   }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    
+    setIsLoading(true);
+    
+    try {
+      await onSave(formData);
+      onClose();
+    } catch (error) {
+       console.error('Error al actualizar el usuario:', error);
+       showNotification('error', 'Error', 'Error al actualizar el usuario');
+     } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'status' ? value as 'activo' | 'inactivo' | 'suspendido' : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+              name === 'role' ? value as 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO' : value
     }));
   };
 
-  const handlePermissionChange = (permissionId: string) => {
+  const handlePermissionsChange = (permissions: string[]) => {
     setFormData(prev => ({
       ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter(p => p !== permissionId)
-        : [...prev.permissions, permissionId]
+      permissions
     }));
   };
+
+
 
   if (!isOpen) return null;
 
@@ -293,6 +262,30 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
               required
             />
           </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="firstName">Nombre</Label>
+            <Input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="lastName">Apellido</Label>
+            <Input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+            />
+          </FormGroup>
           
           <FormGroup>
             <Label htmlFor="role">Rol</Label>
@@ -303,55 +296,40 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
               onChange={handleChange}
               required
             >
-              <option value="">Seleccionar rol</option>
-              <option value="admin">Administrador</option>
-              <option value="vendedor">Vendedor</option>
-              <option value="cajero">Cajero</option>
-              <option value="supervisor">Supervisor</option>
+              <option value="VENDEDOR">Vendedor</option>
+              <option value="CAJERO">Cajero</option>
+              <option value="SUPERVISOR">Supervisor</option>
+              <option value="ADMIN">Administrador</option>
             </Select>
           </FormGroup>
           
+          <PermissionSelector
+            selectedPermissions={formData.permissions}
+            onPermissionsChange={handlePermissionsChange}
+          />
+          
           <FormGroup>
-            <Label htmlFor="status">Estado</Label>
-            <Select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccionar estado</option>
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </Select>
+            <Label htmlFor="isActive">
+              <Input
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={handleChange}
+                style={{ width: 'auto', marginRight: '8px' }}
+              />
+              Usuario Activo
+            </Label>
           </FormGroup>
 
-          <PermissionsContainer>
-            <PermissionsTitle>Permisos</PermissionsTitle>
-            <PermissionsGrid>
-              {availablePermissions.map((permission) => (
-                <PermissionItem key={permission.id}>
-                  <PermissionCheckbox
-                    type="checkbox"
-                    id={permission.id}
-                    checked={formData.permissions.includes(permission.id)}
-                    onChange={() => handlePermissionChange(permission.id)}
-                  />
-                  <PermissionInfo>
-                    <PermissionName>{permission.name}</PermissionName>
-                    <PermissionDescription>{permission.description}</PermissionDescription>
-                  </PermissionInfo>
-                </PermissionItem>
-              ))}
-            </PermissionsGrid>
-          </PermissionsContainer>
+
           
           <ButtonGroup>
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary">
-              Guardar Cambios
+            <Button type="submit" variant="primary" disabled={isLoading}>
+              {isLoading ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
           </ButtonGroup>
         </form>

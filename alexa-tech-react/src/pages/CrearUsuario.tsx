@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useNotification } from '../context/NotificationContext';
+import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
+import PasswordRequirements from '../components/PasswordRequirements';
 
 interface UserFormData {
   username: string;
@@ -200,7 +202,7 @@ const CrearUsuario: React.FC = () => {
     username: '',
     email: '',
     fullName: '',
-    role: 'vendedor',
+    role: 'VENDEDOR',
     password: '',
     confirmPassword: '',
     status: 'activo',
@@ -231,32 +233,38 @@ const CrearUsuario: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'El nombre de usuario es requerido';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'El nombre de usuario debe tener al menos 3 caracteres';
+    // Validar username
+    const usernameValidation = validateUsername(formData.username);
+    if (!usernameValidation.isValid) {
+      newErrors.username = usernameValidation.errors[0]?.message || 'Error en nombre de usuario';
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'El email es requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'El email no es válido';
+    // Validar email
+    const emailValidation = validateEmail(formData.email);
+    if (!emailValidation.isValid) {
+      newErrors.email = emailValidation.errors[0]?.message || 'Error en email';
     }
 
+    // Validar nombre completo
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'El nombre completo es requerido';
     }
 
-    if (!formData.password) {
-      newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
+    // Validar contraseña con requisitos robustos
+    const passwordValidation = validatePasswordWithConfirmation(formData.password, formData.confirmPassword);
+    if (!passwordValidation.isValid) {
+      const passwordErrors = passwordValidation.errors.filter(e => e.field === 'Contraseña');
+      const confirmErrors = passwordValidation.errors.filter(e => e.field === 'confirmPassword');
+      
+      if (passwordErrors.length > 0) {
+        newErrors.password = passwordErrors[0].message;
+      }
+      if (confirmErrors.length > 0) {
+        newErrors.confirmPassword = confirmErrors[0].message;
+      }
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
-    }
-
+    // Validar permisos
     if (formData.permissions.length === 0) {
       newErrors.permissions = 'Debe seleccionar al menos un permiso';
     }
@@ -394,10 +402,10 @@ const CrearUsuario: React.FC = () => {
                   value={formData.role}
                   onChange={handleRoleChange}
                 >
-                  <option value="vendedor">Vendedor</option>
-                  <option value="cajero">Cajero</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="admin">Administrador</option>
+                  <option value="VENDEDOR">Vendedor</option>
+                  <option value="CAJERO">Cajero</option>
+                  <option value="SUPERVISOR">Supervisor</option>
+                  <option value="ADMIN">Administrador</option>
                 </Select>
               </FormGroup>
 
@@ -425,9 +433,10 @@ const CrearUsuario: React.FC = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   $hasError={!!errors.password}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                 />
                 {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
+                <PasswordRequirements password={formData.password} />
               </FormGroup>
 
               <FormGroup>

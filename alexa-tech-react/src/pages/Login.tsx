@@ -93,7 +93,7 @@ const ForgotPasswordLink = styled.div`
 `;
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,7 +116,7 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const success = await login(username, password);
+      const success = await login(email, password);
       
       if (success) {
         const from = location.state?.from?.pathname || '/dashboard';
@@ -136,13 +136,13 @@ const Login: React.FC = () => {
       <LoginBox>
         <LoginForm onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Nombre de Usuario</label>
+            <label htmlFor="email">Correo Electrónico</label>
             <input
-              type="text"
-              id="username"
-              placeholder="Ingresa tu nombre de usuario"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              id="email"
+              placeholder="Ingresa tu correo electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -187,8 +187,10 @@ const Login: React.FC = () => {
             borderRadius: '4px'
           }}>
             <strong>Usuarios de prueba:</strong><br />
-            Admin: admin / admin123<br />
-            Vendedor: vendedor / vendedor123
+            Administrador: admin / admin123<br />
+            Supervisor: supervisor / supervisor123<br />
+            Vendedor: vendedor / vendedor123<br />
+            Cajero: cajero / cajero123
           </div>
         </LoginForm>
       </LoginBox>

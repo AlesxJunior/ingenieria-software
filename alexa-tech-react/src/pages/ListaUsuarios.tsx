@@ -1,31 +1,36 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import { apiService } from '../utils/api';
 import NuevoUsuarioModal from '../components/NuevoUsuarioModal';
 import EditarUsuarioModal from '../components/EditarUsuarioModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
-// Interfaces extendidas para usuarios y permisos
-interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  module: string;
-}
+// Interfaces extendidas para usuarios
 
 interface ExtendedUser {
   id: string;
   username: string;
   email: string;
-  role: string;
-  fullName: string;
-  status: 'activo' | 'inactivo' | 'suspendido';
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserFormData {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
+  isActive: boolean;
   permissions: string[];
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 const Container = styled.div`
@@ -233,20 +238,25 @@ const RoleBadge = styled.span<{ role: string }>`
   
   ${props => {
     switch (props.role) {
-      case 'admin':
+      case 'ADMIN':
         return `
           background: #d1ecf1;
           color: #0c5460;
         `;
-      case 'vendedor':
+      case 'VENDEDOR':
         return `
           background: #d4edda;
           color: #155724;
         `;
-      case 'cajero':
+      case 'CAJERO':
         return `
           background: #fff3cd;
           color: #856404;
+        `;
+      case 'SUPERVISOR':
+        return `
+          background: #f8d7da;
+          color: #721c24;
         `;
       default:
         return `
@@ -273,11 +283,6 @@ const UserAvatar = styled.div`
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-`;
-
-const UserDetails = styled.div`
-  display: flex;
-  flex-direction: column;
 `;
 
 const UserName = styled.div`
@@ -340,21 +345,7 @@ const EmptyIcon = styled.div`
   margin-bottom: 1rem;
 `;
 
-const PermissionsList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  max-width: 200px;
-`;
 
-const PermissionTag = styled.span`
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.125rem 0.375rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 500;
-`;
 
 const ListaUsuarios: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -367,105 +358,64 @@ const ListaUsuarios: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
+  
+  // Estados para datos del backend
+  const [users, setUsers] = useState<ExtendedUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [currentPage] = useState(1);
+  const [pageSize] = useState(10);
 
-  // Datos de ejemplo - en una aplicación real vendrían de una API
-  const [users] = useState<ExtendedUser[]>([
-    {
-      id: '1',
-      username: 'admin',
-      email: 'admin@alexatech.com',
-      fullName: 'Administrador Principal',
-      role: 'admin',
-      status: 'activo',
-      permissions: ['dashboard', 'usuarios', 'clientes', 'ventas', 'productos', 'inventario', 'reportes'],
-      lastLogin: new Date(),
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      username: 'jhose_daniel',
-      email: 'jhosedaniel@gmail.com',
-      fullName: 'Jhose Daniel',
-      role: 'vendedor',
-      status: 'activo',
-      permissions: ['dashboard', 'clientes', 'ventas', 'productos'],
-      lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 horas atrás
-      createdAt: new Date('2024-02-15'),
-      updatedAt: new Date()
-    },
-    {
-      id: '3',
-      username: 'nestor_rene',
-      email: 'nestorRene@gmail.com',
-      fullName: 'Nestor René',
-      role: 'cajero',
-      status: 'activo',
-      permissions: ['dashboard', 'ventas', 'caja'],
-      lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 día atrás
-      createdAt: new Date('2024-03-01'),
-      updatedAt: new Date()
-    },
-    {
-      id: '4',
-      username: 'alex_junior',
-      email: 'alexjunior@gmail.com',
-      fullName: 'Alex Junior',
-      role: 'vendedor',
-      status: 'inactivo',
-      permissions: ['dashboard', 'clientes', 'ventas'],
-      lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 1 semana atrás
-      createdAt: new Date('2024-04-10'),
-      updatedAt: new Date()
-    }
-  ]);
-
-  const availablePermissions: Permission[] = [
-    { id: 'dashboard', name: 'Dashboard', description: 'Acceso al panel principal', module: 'General' },
-    { id: 'usuarios', name: 'Usuarios', description: 'Gestión de usuarios', module: 'Administración' },
-    { id: 'clientes', name: 'Clientes', description: 'Gestión de clientes', module: 'Ventas' },
-    { id: 'ventas', name: 'Ventas', description: 'Gestión de ventas', module: 'Ventas' },
-    { id: 'productos', name: 'Productos', description: 'Gestión de productos', module: 'Inventario' },
-    { id: 'inventario', name: 'Inventario', description: 'Control de inventario', module: 'Inventario' },
-    { id: 'caja', name: 'Caja', description: 'Gestión de caja', module: 'Finanzas' },
-    { id: 'reportes', name: 'Reportes', description: 'Generación de reportes', module: 'Análisis' }
-  ];
-
-  const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      const matchesSearch = 
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.fullName.toLowerCase().includes(searchTerm.toLowerCase());
+  // Cargar usuarios del backend
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getUsers({
+        page: currentPage,
+        limit: pageSize,
+        search: searchTerm || undefined,
+        role: roleFilter || undefined,
+        status: statusFilter || undefined
+      });
       
-      const matchesStatus = !statusFilter || user.status === statusFilter;
-      const matchesRole = !roleFilter || user.role === roleFilter;
+      setUsers(response.data?.users || []);
+      setTotalUsers(response.data?.pagination?.totalUsers || 0);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      showError('Error al cargar los usuarios');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      return matchesSearch && matchesStatus && matchesRole;
-    });
-  }, [users, searchTerm, statusFilter, roleFilter]);
+  useEffect(() => {
+    loadUsers();
+  }, [currentPage, searchTerm, statusFilter, roleFilter]);
+
+
+
+  const filteredUsers = users; // Los filtros se aplican en el backend
 
   const stats = useMemo(() => {
-    const totalUsers = users.length;
-    const activeUsers = users.filter(user => user.status === 'activo').length;
-    const inactiveUsers = users.filter(user => user.status === 'inactivo').length;
-    const suspendedUsers = users.filter(user => user.status === 'suspendido').length;
+    const activeUsers = users.filter(user => user.isActive).length;
+    const inactiveUsers = users.filter(user => !user.isActive).length;
 
     return {
       totalUsers,
       activeUsers,
       inactiveUsers,
-      suspendedUsers
+      adminUsers: users.filter(user => user.role === 'ADMIN').length
     };
-  }, [users]);
+  }, [users, totalUsers]);
 
-  const getInitials = (fullName: string) => {
-    return fullName.split(' ').map(name => name[0]).join('').toUpperCase();
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
   };
 
-  const formatLastLogin = (date?: Date) => {
-    if (!date) return 'Nunca';
+  const formatLastLogin = (dateString?: string) => {
+    if (!dateString) return 'Nunca';
     
+    const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -473,33 +423,26 @@ const ListaUsuarios: React.FC = () => {
 
     if (diffHours < 1) return 'Hace menos de 1 hora';
     if (diffHours < 24) return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
-    if (diffDays < 7) return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+    if (diffDays < 7) return `Hace ${diffDays} dias`;
     
     return date.toLocaleDateString('es-PE');
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'activo': return 'Activo';
-      case 'inactivo': return 'Inactivo';
-      case 'suspendido': return 'Suspendido';
-      default: return status;
-    }
+  const getStatusText = (isActive: boolean) => {
+    return isActive ? 'Activo' : 'Inactivo';
   };
 
   const getRoleText = (role: string) => {
     switch (role) {
-      case 'admin': return 'Administrador';
-      case 'vendedor': return 'Vendedor';
-      case 'cajero': return 'Cajero';
+      case 'ADMIN': return 'Administrador';
+      case 'SUPERVISOR': return 'Supervisor';
+      case 'CAJERO': return 'Cajero';
+      case 'VENDEDOR': return 'Vendedor';
       default: return role;
     }
   };
 
-  const getPermissionName = (permissionId: string) => {
-    const permission = availablePermissions.find(p => p.id === permissionId);
-    return permission ? permission.name : permissionId;
-  };
+
 
   const handleEditUser = (userId: string) => {
     const user = users.find(u => u.id === userId);
@@ -522,25 +465,79 @@ const ListaUsuarios: React.FC = () => {
     }
   };
 
-  const handleSaveUser = (userData: Partial<ExtendedUser>) => {
-    // Aquí se implementaría la lógica para guardar los cambios del usuario
-    // TODO: Usar userData para actualizar el usuario
-    console.log('Datos del usuario a guardar:', userData);
-    showInfo('Usuario actualizado exitosamente');
-    setIsEditModalOpen(false);
-    setSelectedUser(null);
+  // Función para mapear roles del frontend al backend
+  const mapRoleToBackend = (role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO'): 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO' => {
+    return role; // Ya están en el formato correcto
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedUser) {
-      // Aquí se implementaría la lógica para eliminar el usuario
-      showInfo(`Usuario ${selectedUser.username} eliminado exitosamente`);
+  const handleSaveUser = async (userData: UserFormData) => {
+    try {
+      if (selectedUser) {
+        // Filtrar solo las propiedades que acepta la API y mapear el rol
+        const backendUserData: any = {};
+        
+        if (userData.username) backendUserData.username = userData.username;
+        if (userData.email) backendUserData.email = userData.email;
+        if (userData.firstName) backendUserData.firstName = userData.firstName;
+        if (userData.lastName) backendUserData.lastName = userData.lastName;
+        if (userData.role) backendUserData.role = mapRoleToBackend(userData.role);
+        if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
+        if (userData.permissions) backendUserData.permissions = userData.permissions;
+        
+        await apiService.updateUser(selectedUser.id, backendUserData);
+        showInfo('Usuario actualizado exitosamente');
+        loadUsers(); // Recargar la lista
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      showError('Error al actualizar el usuario');
+    } finally {
+      setIsEditModalOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      if (selectedUser) {
+        await apiService.deleteUser(selectedUser.id);
+        showInfo(`Usuario ${selectedUser.username} eliminado exitosamente`);
+        loadUsers(); // Recargar la lista
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showError('Error al eliminar el usuario');
+    } finally {
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
     }
   };
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async (userData: any) => {
+    try {
+      // Filtrar solo las propiedades que acepta la API y mapear el rol
+      const backendUserData: any = {};
+      
+      if (userData.username) backendUserData.username = userData.username;
+      if (userData.email) backendUserData.email = userData.email;
+      if (userData.password) backendUserData.password = userData.password;
+      if (userData.firstName) backendUserData.firstName = userData.firstName;
+      if (userData.lastName) backendUserData.lastName = userData.lastName;
+      if (userData.role) backendUserData.role = mapRoleToBackend(userData.role);
+      if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
+      if (userData.permissions) backendUserData.permissions = userData.permissions;
+      
+      await apiService.createUser(backendUserData);
+      showInfo('Usuario creado exitosamente');
+      loadUsers(); // Recargar la lista
+      setIsNuevoUsuarioModalOpen(false);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      showError('Error al crear el usuario');
+    }
+  };
+
+  const handleOpenCreateModal = () => {
     setIsNuevoUsuarioModalOpen(true);
   };
 
@@ -573,46 +570,54 @@ const ListaUsuarios: React.FC = () => {
               <option value="">Todos los estados</option>
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
-              <option value="suspendido">Suspendido</option>
             </FilterSelect>
             <FilterSelect
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="">Todos los roles</option>
-              <option value="admin">Administrador</option>
-              <option value="vendedor">Vendedor</option>
-              <option value="cajero">Cajero</option>
+              <option value="ADMIN">Administrador</option>
+                <option value="SUPERVISOR">Supervisor</option>
+                <option value="CAJERO">Cajero</option>
+                <option value="VENDEDOR">Vendedor</option>
             </FilterSelect>
             {(searchTerm || statusFilter || roleFilter) && (
               <Button variant="secondary" onClick={clearFilters}>
                 Limpiar Filtros
               </Button>
             )}
-            <Button variant="primary" onClick={handleCreateUser}>
+            <Button variant="primary" onClick={handleOpenCreateModal}>
               Nuevo Usuario
             </Button>
           </SearchContainer>
         </Header>
 
-        <StatsContainer>
-          <StatCard>
-            <StatValue>{stats.totalUsers}</StatValue>
-            <StatLabel>Total de Usuarios</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.activeUsers}</StatValue>
-            <StatLabel>Usuarios Activos</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.inactiveUsers}</StatValue>
-            <StatLabel>Usuarios Inactivos</StatLabel>
-          </StatCard>
-          <StatCard>
-            <StatValue>{stats.suspendedUsers}</StatValue>
-            <StatLabel>Usuarios Suspendidos</StatLabel>
-          </StatCard>
-        </StatsContainer>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            Cargando usuarios...
+          </div>
+        ) : (
+          <>
+            <StatsContainer>
+              <StatCard>
+                <StatValue>{stats.totalUsers}</StatValue>
+                <StatLabel>Total de Usuarios</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.activeUsers}</StatValue>
+                <StatLabel>Usuarios Activos</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.inactiveUsers}</StatValue>
+                <StatLabel>Usuarios Inactivos</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatValue>{stats.adminUsers}</StatValue>
+                <StatLabel>Administradores</StatLabel>
+              </StatCard>
+            </StatsContainer>
+          </>
+        )}
 
         <TableContainer>
           {filteredUsers.length === 0 ? (
@@ -633,7 +638,6 @@ const ListaUsuarios: React.FC = () => {
                   <TableHeaderCell>Usuario</TableHeaderCell>
                   <TableHeaderCell>Rol</TableHeaderCell>
                   <TableHeaderCell>Estado</TableHeaderCell>
-                  <TableHeaderCell>Permisos</TableHeaderCell>
                   <TableHeaderCell>Último Acceso</TableHeaderCell>
                   <TableHeaderCell>Acciones</TableHeaderCell>
                 </tr>
@@ -644,12 +648,13 @@ const ListaUsuarios: React.FC = () => {
                     <TableCell>
                       <UserInfo>
                         <UserAvatar>
-                          {getInitials(user.fullName)}
+                          {getInitials(user.firstName, user.lastName)}
                         </UserAvatar>
-                        <UserDetails>
-                          <UserName>{user.fullName}</UserName>
-                          <UserEmail>@{user.username} • {user.email}</UserEmail>
-                        </UserDetails>
+                        <div>
+                          <UserName>{user.firstName} {user.lastName}</UserName>
+                          <UserEmail>{user.email}</UserEmail>
+                          <UserName>@{user.username}</UserName>
+                        </div>
                       </UserInfo>
                     </TableCell>
                     <TableCell>
@@ -658,23 +663,9 @@ const ListaUsuarios: React.FC = () => {
                       </RoleBadge>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={user.status}>
-                        {getStatusText(user.status)}
+                      <StatusBadge status={user.isActive ? 'activo' : 'inactivo'}>
+                        {getStatusText(user.isActive)}
                       </StatusBadge>
-                    </TableCell>
-                    <TableCell>
-                      <PermissionsList>
-                        {user.permissions.slice(0, 3).map(permission => (
-                          <PermissionTag key={permission}>
-                            {getPermissionName(permission)}
-                          </PermissionTag>
-                        ))}
-                        {user.permissions.length > 3 && (
-                          <PermissionTag>
-                            +{user.permissions.length - 3} más
-                          </PermissionTag>
-                        )}
-                      </PermissionsList>
                     </TableCell>
                     <TableCell>
                       <div style={{ fontSize: '0.9rem' }}>
@@ -708,6 +699,7 @@ const ListaUsuarios: React.FC = () => {
       <NuevoUsuarioModal
         isOpen={isNuevoUsuarioModalOpen}
         onClose={handleCloseNuevoUsuarioModal}
+        onSave={handleCreateUser}
       />
       
       <EditarUsuarioModal

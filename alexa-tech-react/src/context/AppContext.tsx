@@ -17,6 +17,17 @@ export interface Product {
   updatedAt: Date;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  fullName: string;
+  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Client {
   id: string;
   name: string;

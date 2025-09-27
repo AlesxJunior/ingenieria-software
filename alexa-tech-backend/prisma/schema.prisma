@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String        @id @default(cuid())
+  email       String        @unique
+  username    String        @unique
+  password    String
+  firstName   String
+  lastName    String
+  role        UserRole      @default(VENDEDOR)
+  isActive    Boolean       @default(true)
+  permissions UserPermission[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("users")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  module      String           // dashboard, usuarios, clientes, ventas, productos, inventario, caja, reportes
+  submodule   String?          // crear, editar, eliminar, ver, exportar, etc.
+  name        String           // Nombre descriptivo del permiso
+  description String?          // Descripción del permiso
+  users       UserPermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([module, submodule])
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String
+  permissionId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+enum UserRole {
+  ADMIN
+  CAJERO
+  VENDEDOR
+  SUPERVISOR
+}

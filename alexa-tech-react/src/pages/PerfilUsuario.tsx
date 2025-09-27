@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import { validatePasswordWithConfirmation } from '../utils/validation';
+import PasswordRequirements from '../components/PasswordRequirements';
 
 interface ProfileFormData {
   fullName: string;
@@ -159,14 +161,14 @@ const Badge = styled.span<{ variant: string }>`
   
   ${props => {
     switch (props.variant) {
-      case 'admin':
+      case 'ADMIN':
         return `background: #d1ecf1; color: #0c5460;`;
-      case 'vendedor':
+      case 'VENDEDOR':
         return `background: #d4edda; color: #155724;`;
-      case 'cajero':
+      case 'CAJERO':
         return `background: #fff3cd; color: #856404;`;
-      case 'supervisor':
-        return `background: #e2e3e5; color: #383d41;`;
+      case 'SUPERVISOR':
+        return `background: #f8d7da; color: #721c24;`;
       default:
         return `background: #f8f9fa; color: #6c757d;`;
     }
@@ -262,11 +264,11 @@ const PerfilUsuario: React.FC = () => {
 
   const getRoleText = (role: string) => {
     switch (role) {
-      case 'admin': return 'Administrador';
-      case 'vendedor': return 'Vendedor';
-      case 'cajero': return 'Cajero';
-      case 'supervisor': return 'Supervisor';
-      default: return role;
+      case 'ADMIN': return 'Administrador';
+      case 'SUPERVISOR': return 'Supervisor';
+      case 'CAJERO': return 'Cajero';
+      case 'VENDEDOR': return 'Vendedor';
+      default: return 'Usuario';
     }
   };
 
@@ -294,14 +296,18 @@ const PerfilUsuario: React.FC = () => {
       newErrors.currentPassword = 'La contraseña actual es requerida';
     }
 
-    if (!formData.newPassword) {
-      newErrors.newPassword = 'La nueva contraseña es requerida';
-    } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'La contraseña debe tener al menos 6 caracteres';
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    // Validar nueva contraseña con requisitos robustos
+    const passwordValidation = validatePasswordWithConfirmation(formData.newPassword, formData.confirmPassword);
+    if (!passwordValidation.isValid) {
+      const passwordErrors = passwordValidation.errors.filter(e => e.field === 'Contraseña');
+      const confirmErrors = passwordValidation.errors.filter(e => e.field === 'confirmPassword');
+      
+      if (passwordErrors.length > 0) {
+        newErrors.newPassword = passwordErrors[0].message;
+      }
+      if (confirmErrors.length > 0) {
+        newErrors.confirmPassword = confirmErrors[0].message;
+      }
     }
 
     setErrors(newErrors);
@@ -510,9 +516,10 @@ const PerfilUsuario: React.FC = () => {
                     value={formData.newPassword}
                     onChange={handleInputChange}
                     $hasError={!!errors.newPassword}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                   />
                   {errors.newPassword && <ErrorMessage>{errors.newPassword}</ErrorMessage>}
+                  <PasswordRequirements password={formData.newPassword} />
                 </FormGroup>
 
                 <FormGroup>
