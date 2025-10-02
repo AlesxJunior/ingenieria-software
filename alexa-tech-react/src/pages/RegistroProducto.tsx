@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useApp } from '../hooks/useApp';
+import { media } from '../styles/breakpoints';
 
 const FormContainer = styled.div`
   background: white;
@@ -10,6 +11,17 @@ const FormContainer = styled.div`
   padding: 30px;
   max-width: 800px;
   margin: 0 auto;
+  
+  ${media.tablet} {
+    padding: 20px;
+    margin: 0 1rem;
+  }
+  
+  ${media.mobile} {
+    padding: 15px;
+    margin: 0 0.5rem;
+    border-radius: 6px;
+  }
 `;
 
 const FormTitle = styled.h2`
@@ -18,6 +30,16 @@ const FormTitle = styled.h2`
   text-align: center;
   font-size: 24px;
   font-weight: 600;
+  
+  ${media.tablet} {
+    font-size: 22px;
+    margin-bottom: 25px;
+  }
+  
+  ${media.mobile} {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
 `;
 
 const FormGrid = styled.div`
@@ -26,8 +48,15 @@ const FormGrid = styled.div`
   gap: 20px;
   margin-bottom: 30px;
 
-  @media (max-width: 768px) {
+  ${media.tablet} {
     grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  
+  ${media.mobile} {
+    gap: 12px;
+    margin-bottom: 20px;
   }
 `;
 
@@ -60,6 +89,12 @@ const Input = styled.input`
   &::placeholder {
     color: #a0a0a0;
   }
+  
+  ${media.mobile} {
+    padding: 14px 15px;
+    font-size: 16px; /* Evita zoom en iOS */
+    min-height: 44px; /* Tamaño mínimo de toque */
+  }
 `;
 
 const Select = styled.select`
@@ -75,6 +110,12 @@ const Select = styled.select`
 
   &:focus {
     border-color: #0047b3;
+  }
+  
+  ${media.mobile} {
+    padding: 14px 15px;
+    font-size: 16px; /* Evita zoom en iOS */
+    min-height: 44px; /* Tamaño mínimo de toque */
   }
 `;
 
@@ -103,6 +144,13 @@ const SubmitButton = styled.button`
     background-color: #ccc;
     cursor: not-allowed;
     transform: none;
+  }
+  
+  ${media.mobile} {
+    padding: 14px 30px;
+    font-size: 16px;
+    min-height: 48px; /* Tamaño mínimo de toque */
+    width: 100%;
   }
 `;
 

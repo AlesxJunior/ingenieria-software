@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../hooks/useAuth';
+import { media } from '../styles/breakpoints';
 
 const LoginContainer = styled.div`
   font-family: 'Roboto', sans-serif;
@@ -12,6 +13,12 @@ const LoginContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
+  
+  ${media.mobile} {
+    padding: 20px;
+    align-items: flex-start;
+    padding-top: 60px;
+  }
 `;
 
 const LoginBox = styled.div`
@@ -22,12 +29,22 @@ const LoginBox = styled.div`
   max-width: 400px;
   padding: 40px 30px;
   text-align: center;
+  
+  ${media.mobile} {
+    padding: 30px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+  }
 `;
 
 const LoginForm = styled.form`
   .form-group {
     margin-bottom: 20px;
     text-align: left;
+    
+    ${media.mobile} {
+      margin-bottom: 18px;
+    }
   }
 
   label {
@@ -35,6 +52,11 @@ const LoginForm = styled.form`
     margin-bottom: 8px;
     color: #555;
     font-weight: 500;
+    
+    ${media.mobile} {
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
   }
 
   input {
@@ -53,6 +75,12 @@ const LoginForm = styled.form`
 
     &::placeholder {
       color: #999;
+    }
+    
+    ${media.mobile} {
+      padding: 14px 12px;
+      font-size: 16px; /* Evita zoom en iOS */
+      min-height: 44px; /* Tamaño mínimo de toque */
     }
   }
 `;
@@ -75,6 +103,13 @@ const Button = styled.button`
 
   &:active {
     background-color: #004085;
+  }
+  
+  ${media.mobile} {
+    padding: 14px 12px;
+    font-size: 16px;
+    min-height: 48px; /* Tamaño mínimo de toque */
+    border-radius: 8px;
   }
 `;
 

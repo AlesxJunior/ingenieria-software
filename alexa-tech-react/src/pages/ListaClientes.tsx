@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { useApp } from '../hooks/useApp';
 import NuevoClienteModal from '../components/NuevoClienteModal';
 import EditarClienteModal from '../components/EditarClienteModal';
+import { media } from '../styles/breakpoints';
 
 const TableContainer = styled.div`
   background-color: #fff;
@@ -20,7 +21,7 @@ const TableHeader = styled.div`
   flex-wrap: wrap;
   gap: 15px;
 
-  @media (max-width: 768px) {
+  ${media.tablet} {
     flex-direction: column;
     align-items: stretch;
   }
@@ -43,8 +44,13 @@ const SearchBox = styled.div`
       border-color: #007bff;
     }
 
-    @media (max-width: 768px) {
+    ${media.tablet} {
       width: 100%;
+    }
+    
+    ${media.mobile} {
+      font-size: 16px; /* Evita zoom en iOS */
+      padding: 12px 40px 12px 15px;
     }
   }
 
@@ -154,6 +160,77 @@ const Table = styled.table`
   tbody tr:hover {
     background-color: #f8f9fa;
   }
+  
+  ${media.mobile} {
+    display: none;
+  }
+`;
+
+const MobileCardContainer = styled.div`
+  display: none;
+  
+  ${media.mobile} {
+    display: block;
+    padding: 12px;
+    margin-top: 20px;
+  }
+`;
+
+const MobileCard = styled.div`
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const MobileCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+`;
+
+const MobileCardTitle = styled.h3`
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+`;
+
+
+
+const MobileCardBody = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+const MobileCardField = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const MobileCardLabel = styled.span`
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 2px;
+`;
+
+const MobileCardValue = styled.span`
+  font-size: 14px;
+  color: #333;
+`;
+
+const MobileCardActions = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  border-top: 1px solid #dee2e6;
+  padding-top: 12px;
 `;
 
 const ResponsiveTable = styled.div`
@@ -412,6 +489,58 @@ const ListaClientes: React.FC = () => {
             </tbody>
           </Table>
         </ResponsiveTable>
+
+        <MobileCardContainer>
+          {clients.length > 0 ? (
+            clients.map((client: any) => (
+              <MobileCard key={client.id}>
+                <MobileCardHeader>
+                  <MobileCardTitle>
+                    {client.tipoDocumento === 'RUC' 
+                      ? client.razonSocial || ''
+                      : `${client.nombres || ''} ${client.apellidos || ''}`.trim()
+                    }
+                  </MobileCardTitle>
+                </MobileCardHeader>
+                
+                <MobileCardBody>
+                  <MobileCardField>
+                    <MobileCardLabel>Email</MobileCardLabel>
+                    <MobileCardValue>{client.email}</MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Teléfono</MobileCardLabel>
+                    <MobileCardValue>{client.telefono}</MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Documento</MobileCardLabel>
+                    <MobileCardValue>{client.tipoDocumento} {client.numeroDocumento}</MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Dirección</MobileCardLabel>
+                    <MobileCardValue>{client.direccion}, {client.ciudad}</MobileCardValue>
+                  </MobileCardField>
+                </MobileCardBody>
+                
+                <MobileCardActions>
+                  <ActionButton 
+                    onClick={() => handleEdit(client.id)}
+                    $color="#007bff"
+                  >
+                    Editar
+                  </ActionButton>
+                </MobileCardActions>
+              </MobileCard>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+              No se encontraron clientes que coincidan con la búsqueda
+            </div>
+          )}
+        </MobileCardContainer>
       </TableContainer>
 
 

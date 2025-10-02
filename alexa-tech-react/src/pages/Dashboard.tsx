@@ -1,12 +1,24 @@
 import React from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
+import { media } from '../styles/breakpoints';
 
 const DashboardGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
+  
+  ${media.tablet} {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+  }
+  
+  ${media.mobile} {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
 `;
 
 const Card = styled.div`
@@ -20,6 +32,11 @@ const Card = styled.div`
     transform: translateY(-2px);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   }
+  
+  ${media.mobile} {
+    padding: 16px;
+    border-radius: 8px;
+  }
 `;
 
 const SummaryCard = styled(Card)`
@@ -27,6 +44,10 @@ const SummaryCard = styled(Card)`
     display: flex;
     align-items: center;
     gap: 15px;
+    
+    ${media.mobile} {
+      gap: 12px;
+    }
   }
 
   .summary-icon {
@@ -55,6 +76,12 @@ const SummaryCard = styled(Card)`
     &.orders-icon {
       background-color: #dc3545;
     }
+    
+    ${media.mobile} {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+    }
   }
 
   .summary-text {
@@ -63,6 +90,10 @@ const SummaryCard = styled(Card)`
       font-size: 16px;
       color: #666;
       font-weight: 500;
+      
+      ${media.mobile} {
+        font-size: 14px;
+      }
     }
 
     p {
@@ -70,6 +101,10 @@ const SummaryCard = styled(Card)`
       font-size: 24px;
       font-weight: 700;
       color: #333;
+      
+      ${media.mobile} {
+        font-size: 20px;
+      }
     }
   }
 `;

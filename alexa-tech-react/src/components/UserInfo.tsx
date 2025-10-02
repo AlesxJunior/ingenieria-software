@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
+import { media } from '../styles/breakpoints';
 
 const UserInfoContainer = styled.div`
   display: flex;
@@ -10,9 +11,15 @@ const UserInfoContainer = styled.div`
   padding: 8px 16px;
   border-radius: 8px;
   transition: all 0.3s ease;
+  margin-left: auto; /* Fuerza la alineación a la derecha */
   
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  ${media.mobile} {
+    align-self: flex-end; /* En móvil, se alinea a la derecha */
+    margin-left: auto;
   }
 `;
 

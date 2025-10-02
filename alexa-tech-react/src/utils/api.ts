@@ -1,5 +1,24 @@
-// Configuración de la API
-const API_BASE_URL = 'http://localhost:3001/api';
+// Configuración dinámica de la API
+const getApiBaseUrl = (): string => {
+  // Si estamos en desarrollo y hay una variable de entorno específica, usarla
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Detectar automáticamente la IP del servidor basándose en la URL actual
+  const currentHost = window.location.hostname;
+  const apiPort = 3001;
+  
+  // Si estamos en localhost, mantener localhost
+  if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+    return `http://localhost:${apiPort}/api`;
+  }
+  
+  // Si estamos en una IP específica, usar esa misma IP para la API
+  return `http://${currentHost}:${apiPort}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Tipos para las respuestas de la API
 export interface ApiResponse<T = any> {

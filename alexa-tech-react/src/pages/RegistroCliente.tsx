@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useApp } from '../context/AppContext';
 import { useNotification } from '../context/NotificationContext';
+import { media } from '../styles/breakpoints';
 
 const FormContainer = styled.div`
   max-width: 800px;
@@ -12,6 +13,17 @@ const FormContainer = styled.div`
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 2rem;
+  
+  ${media.tablet} {
+    padding: 1.5rem;
+    margin: 0 1rem;
+  }
+  
+  ${media.mobile} {
+    padding: 1rem;
+    margin: 0 0.5rem;
+    border-radius: 8px;
+  }
 `;
 
 const Title = styled.h1`
@@ -20,6 +32,16 @@ const Title = styled.h1`
   text-align: center;
   font-size: 2rem;
   font-weight: 600;
+  
+  ${media.tablet} {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  ${media.mobile} {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const Form = styled.form`
@@ -32,8 +54,13 @@ const FormRow = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 
-  @media (max-width: 768px) {
+  ${media.tablet} {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  ${media.mobile} {
+    gap: 0.5rem;
   }
 `;
 
@@ -65,6 +92,12 @@ const Input = styled.input`
   &:invalid {
     border-color: #e74c3c;
   }
+  
+  ${media.mobile} {
+    padding: 0.875rem;
+    font-size: 16px; /* Evita zoom en iOS */
+    min-height: 44px; /* Tamaño mínimo de toque */
+  }
 `;
 
 const Select = styled.select`
@@ -80,6 +113,12 @@ const Select = styled.select`
     border-color: #3498db;
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
   }
+  
+  ${media.mobile} {
+    padding: 0.875rem;
+    font-size: 16px; /* Evita zoom en iOS */
+    min-height: 44px; /* Tamaño mínimo de toque */
+  }
 `;
 
 const ButtonContainer = styled.div`
@@ -88,8 +127,15 @@ const ButtonContainer = styled.div`
   justify-content: center;
   margin-top: 2rem;
 
-  @media (max-width: 768px) {
+  ${media.tablet} {
     flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  
+  ${media.mobile} {
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
 `;
 
@@ -124,6 +170,13 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+  }
+  
+  ${media.mobile} {
+    padding: 0.875rem 1.5rem;
+    font-size: 16px;
+    min-height: 48px; /* Tamaño mínimo de toque */
+    min-width: 100%;
   }
 `;
 

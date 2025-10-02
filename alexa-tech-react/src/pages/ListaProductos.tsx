@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useApp } from '../hooks/useApp';
+import { media } from '../styles/breakpoints';
 
 const TableContainer = styled.div`
   background: white;
@@ -18,18 +19,48 @@ const TableHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+  ${media.tablet} {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+    padding: 15px;
+  }
+  
+  ${media.mobile} {
+    padding: 12px;
+    gap: 12px;
+  }
 `;
 
 const Title = styled.h2`
   margin: 0;
   color: #333;
   font-size: 24px;
+  
+  ${media.tablet} {
+    text-align: center;
+    font-size: 22px;
+  }
+  
+  ${media.mobile} {
+    font-size: 20px;
+  }
 `;
 
 const SearchContainer = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
+  
+  ${media.tablet} {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  ${media.mobile} {
+    gap: 8px;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -42,6 +73,16 @@ const SearchInput = styled.input`
   &:focus {
     outline: none;
     border-color: #007bff;
+  }
+  
+  ${media.tablet} {
+    width: 200px;
+  }
+  
+  ${media.mobile} {
+    width: 150px;
+    font-size: 16px; /* Evita zoom en iOS */
+    padding: 10px 12px;
   }
 `;
 
@@ -149,6 +190,82 @@ const Table = styled.table`
   tr:hover {
     background-color: #f8f9fa;
   }
+  
+  ${media.mobile} {
+    display: none;
+  }
+`;
+
+const MobileCardContainer = styled.div`
+  display: none;
+  
+  ${media.mobile} {
+    display: block;
+    padding: 12px;
+  }
+`;
+
+const MobileCard = styled.div`
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const MobileCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+`;
+
+const MobileCardTitle = styled.h3`
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+`;
+
+const MobileCardCode = styled.span`
+  font-size: 12px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+`;
+
+const MobileCardBody = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+const MobileCardField = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const MobileCardLabel = styled.span`
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 2px;
+`;
+
+const MobileCardValue = styled.span`
+  font-size: 14px;
+  color: #333;
+`;
+
+const MobileCardActions = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  border-top: 1px solid #dee2e6;
+  padding-top: 12px;
 `;
 
 const StatusBadge = styled.span<{ $status: string }>`
@@ -450,6 +567,72 @@ const ListaProductos: React.FC = () => {
             )}
           </tbody>
         </Table>
+
+        <MobileCardContainer>
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <MobileCard key={product.productCode}>
+                <MobileCardHeader>
+                  <MobileCardTitle>{product.productName}</MobileCardTitle>
+                  <MobileCardCode>{product.productCode}</MobileCardCode>
+                </MobileCardHeader>
+                
+                <MobileCardBody>
+                  <MobileCardField>
+                    <MobileCardLabel>Categoría</MobileCardLabel>
+                    <MobileCardValue>{product.category}</MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Precio</MobileCardLabel>
+                    <MobileCardValue>{formatPrice(product.price)}</MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Stock</MobileCardLabel>
+                    <MobileCardValue>{product.initialStock}</MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Estado</MobileCardLabel>
+                    <MobileCardValue>
+                      <StatusBadge $status={product.status}>
+                        {getStatusText(product.status)}
+                      </StatusBadge>
+                    </MobileCardValue>
+                  </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Unidad</MobileCardLabel>
+                    <MobileCardValue>{product.unit}</MobileCardValue>
+                  </MobileCardField>
+                </MobileCardBody>
+                
+                <MobileCardActions>
+                  <ActionButton 
+                    onClick={() => handleEdit(product.productCode)}
+                    $color="#007bff"
+                  >
+                    Editar
+                  </ActionButton>
+                  <ActionButton 
+                    onClick={() => handleDelete(product.productCode)}
+                    $color="#dc3545"
+                  >
+                    Eliminar
+                  </ActionButton>
+                </MobileCardActions>
+              </MobileCard>
+            ))
+          ) : (
+            <EmptyState>
+              {searchTerm ? 
+                'No se encontraron productos que coincidan con la búsqueda.' : 
+                'No hay productos registrados.'
+              }
+            </EmptyState>
+          )}
+        </MobileCardContainer>
       </TableContainer>
 
       {showDeleteModal && (
