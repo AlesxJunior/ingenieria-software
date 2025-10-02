@@ -20,7 +20,6 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role?: 'VENDEDOR' | 'ADMIN' | 'SUPERVISOR' | 'CAJERO';
 }
 
 export interface AuthResponse {
@@ -30,8 +29,8 @@ export interface AuthResponse {
     email: string;
     firstName: string;
     lastName: string;
-    role: string;
     isActive: boolean;
+    permissions?: string[];
   };
   accessToken: string;
   refreshToken: string;
@@ -75,13 +74,21 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        return {
+          success: false,
+          message: data.message || `HTTP error! status: ${response.status}`,
+          error: data.error || `HTTP ${response.status}`
+        };
       }
 
       return data;
     } catch (error) {
       console.error('API request failed:', error);
-      throw error;
+      return {
+        success: false,
+        message: 'Error de conexión con el servidor',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
@@ -134,7 +141,6 @@ class ApiService {
   async getUsers(params?: {
     page?: number;
     limit?: number;
-    role?: string;
     status?: string;
     search?: string;
   }): Promise<ApiResponse<{
@@ -150,7 +156,6 @@ class ApiService {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.role) queryParams.append('role', params.role);
     if (params?.status) queryParams.append('status', params.status);
     if (params?.search) queryParams.append('search', params.search);
 
@@ -170,8 +175,6 @@ class ApiService {
     password: string;
     firstName?: string;
     lastName?: string;
-    role?: 'VENDEDOR' | 'ADMIN' | 'SUPERVISOR' | 'CAJERO';
-    permissions?: string[];
   }): Promise<ApiResponse<any>> {
     return this.request('/users', {
       method: 'POST',
@@ -185,8 +188,6 @@ class ApiService {
     password?: string;
     firstName?: string;
     lastName?: string;
-    role?: 'VENDEDOR' | 'ADMIN' | 'SUPERVISOR' | 'CAJERO';
-    permissions?: string[];
   }): Promise<ApiResponse<any>> {
     return this.request(`/users/${id}`, {
       method: 'PUT',
@@ -200,8 +201,6 @@ class ApiService {
     password?: string;
     firstName?: string;
     lastName?: string;
-    role?: 'VENDEDOR' | 'ADMIN' | 'SUPERVISOR' | 'CAJERO';
-    permissions?: string[];
   }): Promise<ApiResponse<any>> {
     return this.request(`/users/${id}`, {
       method: 'PATCH',
@@ -222,18 +221,102 @@ class ApiService {
     });
   }
 
-  // Método para obtener todos los permisos disponibles
-  async getAllPermissions(): Promise<ApiResponse<{
-    permissions: {
-      [module: string]: Array<{
-        id: string;
-        name: string;
-        description: string;
-      }>;
+  async changePassword(id: string, currentPassword: string, newPassword: string): Promise<ApiResponse<any>> {
+    return this.request(`/users/${id}/change-password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  // Obtener actividad del usuario actual
+  async getUserActivity(limit: number = 10): Promise<ApiResponse<any>> {
+    return this.request(`/audit/my-activity?limit=${limit}`, {
+      method: 'GET',
+    });
+  }
+
+  // Métodos de gestión de clientes
+  async getClients(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    tipoDocumento?: string;
+    ciudad?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }): Promise<ApiResponse<{
+    clients: any[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalClients: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
     };
-    total: number;
   }>> {
-    return this.request('/users/permissions');
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.tipoDocumento) queryParams.append('tipoDocumento', params.tipoDocumento);
+    if (params?.ciudad) queryParams.append('ciudad', params.ciudad);
+    if (params?.fechaDesde) queryParams.append('fechaDesde', params.fechaDesde);
+    if (params?.fechaHasta) queryParams.append('fechaHasta', params.fechaHasta);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/clients?${queryString}` : '/clients';
+    
+    return this.request(endpoint);
+  }
+
+  async getClientById(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/clients/${id}`);
+  }
+
+  async createClient(clientData: {
+    tipoDocumento: 'DNI' | 'CE' | 'RUC';
+    numeroDocumento: string;
+    nombres?: string;
+    apellidos?: string;
+    razonSocial?: string;
+    email: string;
+    telefono: string;
+    direccion: string;
+    ciudad: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request('/clients', {
+      method: 'POST',
+      body: JSON.stringify(clientData),
+    });
+  }
+
+  async updateClient(id: string, clientData: {
+    tipoDocumento?: 'DNI' | 'CE' | 'RUC';
+    numeroDocumento?: string;
+    nombres?: string;
+    apellidos?: string;
+    razonSocial?: string;
+    email?: string;
+    telefono?: string;
+    direccion?: string;
+    ciudad?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request(`/clients/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(clientData),
+    });
+  }
+
+  async deleteClient(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/clients/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async reactivateClient(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/clients/${id}/reactivate`, {
+      method: 'PATCH',
+    });
   }
 
   // Método para verificar la salud de la API

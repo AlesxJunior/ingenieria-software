@@ -1,4 +1,4 @@
-import { User, UserRole } from '../generated/prisma';
+import { User } from '../generated/prisma';
 import { prisma } from '../config/database';
 import { UserCreateInput, UserUpdateInput } from '../types';
 import * as bcrypt from 'bcrypt';
@@ -38,15 +38,11 @@ export class UserService {
           password: hashedPassword,
           firstName: userData.firstName,
           lastName: userData.lastName,
-          role: userData.role || UserRole.VENDEDOR,
+          permissions: userData.permissions || [],
         }
       });
 
-      // Asignar permisos por defecto según el rol
-      const defaultPermissions = await this.getPermissionsByRole(user.role);
-      if (defaultPermissions.length > 0) {
-        await this.assignPermissions(user.id, defaultPermissions);
-      }
+
 
       logger.info(`Usuario creado: ${user.email}`);
       return user;
@@ -92,17 +88,7 @@ export class UserService {
     }
   }
 
-  // Obtener todos los usuarios
-  async findAll(): Promise<User[]> {
-    try {
-      return await prisma.user.findMany({
-        orderBy: { createdAt: 'desc' }
-      });
-    } catch (error) {
-      logger.error('Error obteniendo usuarios:', error);
-      throw error;
-    }
-  }
+
 
   // Actualizar usuario
   async update(id: string, userData: UserUpdateInput): Promise<User | null> {
@@ -292,43 +278,21 @@ export class UserService {
     }
   }
 
-  // Obtener usuario por ID con permisos
-  async findByIdWithPermissions(id: string): Promise<any | null> {
-    try {
-      return await prisma.user.findUnique({
-        where: { id },
-        include: {
-          permissions: {
-            include: {
-              permission: true
-            }
-          }
-        }
-      });
-    } catch (error) {
-      logger.error('Error obteniendo usuario con permisos por ID:', error);
-      throw error;
-    }
-  }
 
-  // Obtener todos los usuarios con permisos
-  async findAllWithPermissions(options: {
+
+  // Obtener todos los usuarios
+  async findAll(options: {
     page?: number;
     limit?: number;
     search?: string;
-    role?: UserRole;
     isActive?: boolean;
-  }): Promise<{ users: any[], total: number }> {
+  }): Promise<{ users: User[], total: number }> {
     try {
-      const { page = 1, limit = 10, search, role, isActive } = options;
+      const { page = 1, limit = 10, search, isActive } = options;
       const offset = (page - 1) * limit;
 
       // Construir condiciones WHERE
       const whereConditions: any = {};
-
-      if (role) {
-        whereConditions.role = role;
-      }
 
       if (isActive !== undefined) {
         whereConditions.isActive = isActive;
@@ -347,13 +311,6 @@ export class UserService {
       const [users, total] = await Promise.all([
         prisma.user.findMany({
           where: whereConditions,
-          include: {
-            permissions: {
-              include: {
-                permission: true
-              }
-            }
-          },
           orderBy: { createdAt: 'desc' },
           take: limit,
           skip: offset
@@ -365,108 +322,26 @@ export class UserService {
 
       return { users, total };
     } catch (error) {
-      logger.error('Error obteniendo usuarios con permisos:', error);
+      logger.error('Error obteniendo usuarios:', error);
       throw error;
     }
   }
 
-  // Asignar permisos a un usuario
-  async assignPermissions(userId: string, permissionIds: string[]): Promise<void> {
+  // Actualizar última hora de acceso
+  async updateLastAccess(userId: string): Promise<void> {
     try {
-      // Eliminar permisos existentes
-      await prisma.userPermission.deleteMany({
-        where: { userId }
+      await prisma.user.update({
+        where: { id: userId },
+        data: { lastAccess: new Date() }
       });
-
-      // Asignar nuevos permisos
-      if (permissionIds.length > 0) {
-        await prisma.userPermission.createMany({
-          data: permissionIds.map(permissionId => ({
-            userId,
-            permissionId
-          }))
-        });
-      }
-
-      logger.info(`Permisos asignados al usuario ${userId}:`, permissionIds);
+      logger.info('Last access updated', { userId });
     } catch (error) {
-      logger.error('Error asignando permisos:', error);
-      throw error;
+      logger.error('Error actualizando última hora de acceso:', error);
+      // No lanzamos error para no interrumpir el login
     }
   }
 
-  // Actualizar permisos de un usuario
-  async updatePermissions(userId: string, permissionIds: string[]): Promise<void> {
-    try {
-      await this.assignPermissions(userId, permissionIds);
-      logger.info(`Permisos actualizados para el usuario ${userId}`);
-    } catch (error) {
-      logger.error('Error actualizando permisos:', error);
-      throw error;
-    }
-  }
 
-  // Obtener todos los permisos disponibles
-  async getAllPermissions(): Promise<any[]> {
-    try {
-      return await prisma.permission.findMany({
-        orderBy: [
-          { module: 'asc' },
-          { submodule: 'asc' },
-          { name: 'asc' }
-        ]
-      });
-    } catch (error) {
-      logger.error('Error obteniendo permisos:', error);
-      throw error;
-    }
-  }
-
-  // Obtener permisos por rol (para asignación automática)
-  async getPermissionsByRole(role: UserRole): Promise<string[]> {
-    try {
-      if (role === UserRole.ADMIN) {
-        // Admin tiene todos los permisos
-        const allPermissions = await this.getAllPermissions();
-        return allPermissions.map(p => p.id);
-      }
-
-      // Definir permisos por rol
-      const rolePermissions: Record<string, string[]> = {
-        [UserRole.VENDEDOR]: [
-          'dashboard_view', 'clients_view', 'clients_create', 'clients_edit',
-          'sales_view', 'sales_create', 'products_view'
-        ],
-        [UserRole.CAJERO]: [
-          'dashboard_view', 'sales_view', 'sales_create', 'cash_view',
-          'cash_open', 'cash_close', 'products_view'
-        ],
-        [UserRole.SUPERVISOR]: [
-          'dashboard_view', 'users_view', 'clients_view', 'clients_create',
-          'clients_edit', 'sales_view', 'sales_create', 'sales_edit',
-          'products_view', 'products_create', 'products_edit',
-          'inventory_view', 'cash_view', 'reports_view'
-        ],
-
-      };
-
-      const permissionNames = rolePermissions[role] || [];
-      
-      // Obtener IDs de permisos por nombres
-      const permissions = await prisma.permission.findMany({
-        where: {
-          name: {
-            in: permissionNames
-          }
-        }
-      });
-
-      return permissions.map(p => p.id);
-    } catch (error) {
-      logger.error('Error obteniendo permisos por rol:', error);
-      throw error;
-    }
-  }
 }
 
 // Instancia singleton

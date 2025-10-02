@@ -10,4 +10,9 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    port: 5173, // Puerto fijo para desarrollo
+    host: true, // Permite conexiones externas
+    strictPort: true, // Falla si el puerto está ocupado en lugar de buscar otro
+  },
 })

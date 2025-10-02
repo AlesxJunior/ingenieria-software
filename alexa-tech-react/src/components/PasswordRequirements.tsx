@@ -7,7 +7,7 @@ interface PasswordRequirementsProps {
   show?: boolean;
 }
 
-const RequirementsContainer = styled.div<{ show: boolean }>`
+const RequirementsContainer = styled.div<{ $show: boolean }>`
   margin-top: 8px;
   padding: 12px;
   background-color: #f8f9fa;
@@ -15,31 +15,31 @@ const RequirementsContainer = styled.div<{ show: boolean }>`
   border-radius: 4px;
   font-size: 12px;
   transition: all 0.3s ease;
-  opacity: ${props => props.show ? 1 : 0};
-  max-height: ${props => props.show ? '200px' : '0'};
+  opacity: ${props => props.$show ? 1 : 0};
+  max-height: ${props => props.$show ? '200px' : '0'};
   overflow: hidden;
 `;
 
-const RequirementItem = styled.div<{ met: boolean }>`
+const RequirementItem = styled.div<{ $met: boolean }>`
   display: flex;
   align-items: center;
   margin-bottom: 4px;
-  color: ${props => props.met ? '#28a745' : '#6c757d'};
+  color: ${props => props.$met ? '#28a745' : '#6c757d'};
   
   &:last-child {
     margin-bottom: 0;
   }
 `;
 
-const RequirementIcon = styled.span<{ met: boolean }>`
+const RequirementIcon = styled.span<{ $met: boolean }>`
   margin-right: 8px;
   font-weight: bold;
-  color: ${props => props.met ? '#28a745' : '#dc3545'};
+  color: ${props => props.$met ? '#28a745' : '#dc3545'};
 `;
 
-const RequirementText = styled.span<{ met: boolean }>`
-  text-decoration: ${props => props.met ? 'line-through' : 'none'};
-  opacity: ${props => props.met ? 0.7 : 1};
+const RequirementText = styled.span<{ $met: boolean }>`
+  text-decoration: ${props => props.$met ? 'line-through' : 'none'};
+  opacity: ${props => props.$met ? 0.7 : 1};
 `;
 
 const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({ 
@@ -57,16 +57,16 @@ const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({
   ];
 
   return (
-    <RequirementsContainer show={show}>
+    <RequirementsContainer $show={Boolean(show)}>
       <div style={{ marginBottom: '8px', fontWeight: 'bold', color: '#495057' }}>
         Requisitos de contraseña:
       </div>
       {requirementChecks.map((requirement) => (
-        <RequirementItem key={requirement.key} met={requirement.met}>
-          <RequirementIcon met={requirement.met}>
+        <RequirementItem key={requirement.key} $met={Boolean(requirement.met)}>
+          <RequirementIcon $met={Boolean(requirement.met)}>
             {requirement.met ? '✓' : '✗'}
           </RequirementIcon>
-          <RequirementText met={requirement.met}>
+          <RequirementText $met={Boolean(requirement.met)}>
             {requirement.text}
           </RequirementText>
         </RequirementItem>

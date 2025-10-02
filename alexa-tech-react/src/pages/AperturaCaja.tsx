@@ -112,7 +112,7 @@ const ButtonContainer = styled.div`
   }
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 0.75rem 2rem;
   border: none;
   border-radius: 8px;
@@ -123,7 +123,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   min-width: 120px;
 
   ${props => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'primary':
         return `
           background: #27ae60;
@@ -336,7 +336,7 @@ const AperturaCaja: React.FC = () => {
             <ButtonContainer>
               <Button 
                 type="button" 
-                variant="danger" 
+                $variant="danger" 
                 onClick={handleCloseCash}
                 disabled={isSubmitting}
               >
@@ -344,7 +344,7 @@ const AperturaCaja: React.FC = () => {
               </Button>
               <Button 
                 type="button" 
-                variant="secondary" 
+                $variant="secondary" 
                 onClick={() => navigate('/gestion-caja')}
               >
                 Ir a Gestión de Caja
@@ -390,14 +390,14 @@ const AperturaCaja: React.FC = () => {
               <ButtonContainer>
                 <Button 
                   type="submit" 
-                  variant="primary" 
+                  $variant="primary" 
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Abriendo...' : 'Abrir Caja'}
                 </Button>
                 <Button 
                   type="button" 
-                  variant="secondary" 
+                  $variant="secondary" 
                   onClick={() => navigate('/dashboard')}
                 >
                   Cancelar

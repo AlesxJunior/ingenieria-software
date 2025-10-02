@@ -33,6 +33,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 if (config.isDevelopment) {
   app.use(morgan('dev'));
 }
+
+// Middleware de logging de requests
 app.use(requestLogger);
 
 // Middleware para errores de parsing JSON

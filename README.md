@@ -41,14 +41,14 @@ AlexaTech es un sistema completo de gestión empresarial desarrollado con tecnol
 
 ### 👥 Gestión de Usuarios
 - ✅ CRUD completo de usuarios
-- ✅ Roles: ADMIN, SUPERVISOR, VENDEDOR, CAJERO
-- ✅ Sistema de permisos granulares por módulos
+- ✅ Sistema de permisos granulares basado en CRUD (module.action)
+- ✅ Permisos por módulos: users, sales, products, inventory, reports
 - ✅ Validaciones de unicidad (email/username)
 - ✅ Perfiles de usuario personalizables
 - ✅ Estados activo/inactivo (soft delete)
 - ✅ Filtros y búsqueda avanzada
 - ✅ Paginación de resultados
-- ✅ Asignación automática de permisos por rol
+- ✅ Asignación granular de permisos individuales
 
 ### 🛍️ Gestión de Ventas
 - ✅ Interfaz de punto de venta (POS)
@@ -250,7 +250,7 @@ ingenieria-software/
 #### Backend (100% Funcional)
 - **Autenticación y Autorización**: Sistema completo con JWT, refresh tokens, middleware de autenticación
 - **Gestión de Usuarios**: CRUD completo con permisos granulares, soft delete, validaciones
-- **Sistema de Permisos**: Modelo flexible con asignación por roles y usuarios específicos
+- **Sistema de Permisos**: Modelo granular basado en CRUD (module.action) con asignación individual
 - **Middleware de Seguridad**: Rate limiting, logging de requests, manejo de errores
 - **Base de Datos**: Esquema Prisma con migraciones y seeding automático
 - **Servicios**: AuthService y UserService completamente implementados
@@ -267,9 +267,9 @@ ingenieria-software/
 - **UI/UX**: Interfaz moderna con styled-components y responsive design
 
 #### Base de Datos (100% Implementada)
-- **Modelos**: User, Permission, UserPermission con relaciones
-- **Migraciones**: Sistema de versionado de esquema
-- **Seeding**: Datos iniciales con usuarios y permisos predefinidos
+- **Modelos**: User con sistema de permisos integrado (permissions array)
+- **Migraciones**: Sistema de versionado de esquema con limpieza de modelos obsoletos
+- **Seeding**: Datos iniciales con usuarios y permisos CRUD predefinidos
 - **Validaciones**: Constraints y validaciones a nivel de base de datos
 
 ### 🔄 En Desarrollo/Pendiente
@@ -321,12 +321,15 @@ JWT_REFRESH_SECRET="your-super-secret-refresh-key"
 JWT_EXPIRES_IN="15m"
 JWT_REFRESH_EXPIRES_IN="7d"
 
-# Servidor
+# Servidor - Puerto fijo configurado
 PORT=3001
 NODE_ENV=development
 
-# CORS
-FRONTEND_URL="http://localhost:5173"
+# CORS - Puerto fijo del frontend
+CORS_ORIGIN="http://localhost:5173"
+
+# Configuración de encriptación
+BCRYPT_ROUNDS=12
 ```
 
 #### Configurar Base de Datos
@@ -400,6 +403,44 @@ npm run preview
 
 # Linting
 npm run lint
+```
+
+### 5. Configuración de Puertos Fijos
+
+Para evitar conflictos de puertos y garantizar consistencia en el desarrollo, el proyecto está configurado con puertos fijos:
+
+#### Puertos Definidos
+- **Backend API**: `3001` (configurado en `.env`)
+- **Frontend React**: `5173` (configurado en `vite.config.ts`)
+- **Prisma Studio**: `5555` (especificado en comandos)
+- **PostgreSQL**: `5432` (puerto estándar)
+
+#### Configuración Backend
+El archivo `.env` del backend incluye:
+```env
+PORT=3001
+CORS_ORIGIN="http://localhost:5173"
+```
+
+#### Configuración Frontend
+El archivo `vite.config.ts` incluye:
+```typescript
+server: {
+  port: 5173, // Puerto fijo para desarrollo
+  host: true, // Permite conexiones externas
+  strictPort: true, // Falla si el puerto está ocupado
+}
+```
+
+#### Verificación de Puertos
+```bash
+# Verificar puertos en uso (Windows)
+netstat -an | findstr :3001
+netstat -an | findstr :5173
+
+# Verificar puertos en uso (Linux/Mac)
+lsof -i :3001
+lsof -i :5173
 ```
 
 ## 👤 Usuarios de Prueba

@@ -1,5 +1,4 @@
 import { LoginRequest, RegisterRequest, AuthResponse, UserResponse } from '../types';
-import { UserRole } from '../generated/prisma';
 import { userService } from './userService';
 import { jwtService } from '../utils/jwt';
 import { logger } from '../utils/logger';
@@ -40,12 +39,14 @@ export class AuthService {
       throw createUnauthorizedError('Credenciales inválidas');
     }
 
+    // Actualizar última hora de acceso
+    await userService.updateLastAccess(user.id);
+
     // Generar tokens
     const tokenVersion = this.getOrCreateTokenVersion(user.id);
     const { accessToken, refreshToken } = jwtService.generateTokenPair(
       user.id,
       user.email,
-      user.role,
       tokenVersion
     );
 
@@ -61,8 +62,8 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
         isActive: user.isActive,
+        permissions: user.permissions || [],
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       },
@@ -97,7 +98,6 @@ export class AuthService {
       const { accessToken, refreshToken } = jwtService.generateTokenPair(
         newUser.id,
         newUser.email,
-        newUser.role,
         tokenVersion
       );
 
@@ -113,8 +113,8 @@ export class AuthService {
           email: newUser.email,
           firstName: newUser.firstName,
           lastName: newUser.lastName,
-          role: newUser.role,
           isActive: newUser.isActive,
+          permissions: newUser.permissions || [],
           createdAt: newUser.createdAt,
           updatedAt: newUser.updatedAt
         },
@@ -174,7 +174,6 @@ export class AuthService {
       const { accessToken: newAccessToken, refreshToken: newRefreshToken } = jwtService.generateTokenPair(
         user.id,
         user.email,
-        user.role,
         newTokenVersion
       );
 
@@ -279,8 +278,8 @@ export class AuthService {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
       isActive: user.isActive,
+      permissions: user.permissions || [],
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };

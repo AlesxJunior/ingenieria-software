@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useApp } from '../hooks/useApp';
@@ -74,11 +74,11 @@ const NewClientButton = styled.button`
   }
 `;
 
-const AdvancedSearchContainer = styled.div<{ show: boolean }>`
+const AdvancedSearchContainer = styled.div<{ $show: boolean }>`
   background: #f8f9fa;
   padding: 20px;
   border-bottom: 1px solid #dee2e6;
-  display: ${props => props.show ? 'block' : 'none'};
+  display: ${props => props.$show ? 'block' : 'none'};
 `;
 
 const FilterRow = styled.div`
@@ -162,8 +162,8 @@ const ResponsiveTable = styled.div`
 
 
 
-const ActionButton = styled.button<{ color: string }>`
-  background-color: ${props => props.color};
+const ActionButton = styled.button<{ $color: string }>`
+  background-color: ${props => props.$color};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -177,78 +177,47 @@ const ActionButton = styled.button<{ color: string }>`
   }
 `;
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
 
-const ModalContent = styled.div`
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-
-  h3 {
-    margin: 0 0 16px 0;
-    color: #333;
-  }
-
-  p {
-    margin: 0 0 24px 0;
-    color: #666;
-  }
-`;
-
-const ModalButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-`;
-
-const ModalButton = styled.button<{ color: string }>`
-  background-color: ${props => props.color};
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover {
-    opacity: 0.8;
-  }
-`;
 
 
 
 
 
 const ListaClientes: React.FC = () => {
-  const { clients, deleteClient, showSuccess, showError } = useApp();
+  const { clients, loadClients, updateClient, isLoading } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   const [isNuevoClienteModalOpen, setIsNuevoClienteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
+  
+  // Estados para filtros avanzados
+  const [tipoDocumentoFilter, setTipoDocumentoFilter] = useState('');
+  const [ciudadFilter, setCiudadFilter] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
 
-  // Filtrar clientes basado en el término de búsqueda
-  const filteredClients = clients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm)
-  );
+  // Función para aplicar filtros
+  const applyFilters = () => {
+    const params: any = {};
+    
+    if (searchTerm) params.search = searchTerm;
+    if (tipoDocumentoFilter) params.tipoDocumento = tipoDocumentoFilter;
+    if (ciudadFilter) params.ciudad = ciudadFilter;
+    if (fechaDesde) params.fechaDesde = fechaDesde;
+    if (fechaHasta) params.fechaHasta = fechaHasta;
+    
+    loadClients(params);
+  };
+
+  // Aplicar filtros cuando cambien los valores
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      applyFilters();
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, tipoDocumentoFilter, ciudadFilter, fechaDesde, fechaHasta]);
 
   const handleNuevoCliente = () => {
     setIsNuevoClienteModalOpen(true);
@@ -266,43 +235,28 @@ const ListaClientes: React.FC = () => {
     }
   };
 
-  const handleDelete = (clientId: string) => {
-    setClientToDelete(clientId);
-    setShowDeleteModal(true);
-  };
 
-  const confirmDelete = () => {
-    if (clientToDelete) {
+
+  const handleSaveClient = async (clientData: any) => {
+    if (selectedClient) {
       try {
-        deleteClient(clientToDelete);
-        showSuccess('Cliente eliminado exitosamente');
-        setShowDeleteModal(false);
-        setClientToDelete(null);
-      } catch {
-        showError('Error al eliminar el cliente. Por favor, inténtalo de nuevo.');
-        setShowDeleteModal(false);
-        setClientToDelete(null);
+        await updateClient(selectedClient.id, clientData);
+        setIsEditModalOpen(false);
+        setSelectedClient(null);
+      } catch (error) {
+        console.error('Error updating client:', error);
       }
     }
   };
 
-  const handleSaveClient = (clientData: any) => {
-    try {
-      // Aquí se implementaría la lógica para guardar los cambios del cliente
-      // TODO: Usar clientData para actualizar el cliente
-      console.log('Datos del cliente a guardar:', clientData);
-      showSuccess('Cliente actualizado exitosamente');
-      setIsEditModalOpen(false);
-      setSelectedClient(null);
-    } catch {
-      showError('Error al actualizar el cliente. Por favor, inténtalo de nuevo.');
-    }
-  };
-
-
-
   const clearFilters = () => {
     setSearchTerm('');
+    setTipoDocumentoFilter('');
+    setCiudadFilter('');
+    setFechaDesde('');
+    setFechaHasta('');
+    // Cargar todos los clientes sin filtros
+    loadClients();
   };
 
   return (
@@ -328,18 +282,81 @@ const ListaClientes: React.FC = () => {
           </NewClientButton>
         </TableHeader>
 
-        <AdvancedSearchContainer show={showAdvancedSearch}>
+        <AdvancedSearchContainer $show={showAdvancedSearch}>
           <FilterRow>
             <FilterGroup>
-              <FilterLabel>Búsqueda Avanzada</FilterLabel>
-              <p style={{fontSize: '14px', color: '#666', margin: '5px 0'}}>
-                La búsqueda actual incluye nombre, email y teléfono
-              </p>
+              <FilterLabel>Tipo de Documento</FilterLabel>
+              <select 
+                value={tipoDocumentoFilter} 
+                onChange={(e) => setTipoDocumentoFilter(e.target.value)}
+                style={{
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="">Todos</option>
+                <option value="DNI">DNI</option>
+                <option value="RUC">RUC</option>
+                <option value="CE">CE</option>
+              </select>
             </FilterGroup>
 
-            <FilterButton onClick={clearFilters}>
-              Limpiar Filtros
-            </FilterButton>
+            <FilterGroup>
+              <FilterLabel>Ciudad</FilterLabel>
+              <input
+                type="text"
+                value={ciudadFilter}
+                onChange={(e) => setCiudadFilter(e.target.value)}
+                placeholder="Filtrar por ciudad"
+                style={{
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  width: '150px'
+                }}
+              />
+            </FilterGroup>
+          </FilterRow>
+
+          <FilterRow>
+            <FilterGroup>
+              <FilterLabel>Fecha Desde</FilterLabel>
+              <input
+                type="date"
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+                style={{
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            </FilterGroup>
+
+            <FilterGroup>
+              <FilterLabel>Fecha Hasta</FilterLabel>
+              <input
+                type="date"
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+                style={{
+                  padding: '8px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+              />
+            </FilterGroup>
+
+            <FilterGroup>
+              <FilterButton onClick={clearFilters}>
+                Limpiar Filtros
+              </FilterButton>
+            </FilterGroup>
           </FilterRow>
         </AdvancedSearchContainer>
 
@@ -347,35 +364,40 @@ const ListaClientes: React.FC = () => {
           <Table>
             <thead>
               <tr>
-                <th>Nombre</th>
+                <th>Nombre Completo</th>
                 <th>Email</th>
                 <th>Teléfono</th>
+                <th>Documento</th>
                 <th>Dirección</th>
-                <th>Fecha de Registro</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredClients.length > 0 ? (
-                filteredClients.map((client) => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                    Cargando clientes...
+                  </td>
+                </tr>
+              ) : clients.length > 0 ? (
+                clients.map((client) => (
                   <tr key={client.id}>
-                    <td>{client.name}</td>
+                    <td>
+                      {client.tipoDocumento === 'RUC' 
+                        ? client.razonSocial || ''
+                        : `${client.nombres || ''} ${client.apellidos || ''}`.trim()
+                      }
+                    </td>
                     <td>{client.email}</td>
-                    <td>{client.phone}</td>
-                    <td>{client.address}</td>
-                    <td>{new Date(client.createdAt).toLocaleDateString()}</td>
+                    <td>{client.telefono}</td>
+                    <td>{client.tipoDocumento} {client.numeroDocumento}</td>
+                    <td>{client.direccion}, {client.ciudad}</td>
                     <td>
                       <ActionButton 
                         onClick={() => handleEdit(client.id)}
-                        color="#007bff"
+                        $color="#007bff"
                       >
                         Editar
-                      </ActionButton>
-                      <ActionButton 
-                        onClick={() => handleDelete(client.id)}
-                        color="#dc3545"
-                      >
-                        Eliminar
                       </ActionButton>
                     </td>
                   </tr>
@@ -392,28 +414,7 @@ const ListaClientes: React.FC = () => {
         </ResponsiveTable>
       </TableContainer>
 
-      {showDeleteModal && (
-        <ModalOverlay>
-          <ModalContent>
-            <h3>Confirmar Eliminación</h3>
-            <p>¿Estás seguro de que deseas eliminar este cliente?</p>
-            <ModalButtons>
-              <ModalButton 
-                onClick={() => setShowDeleteModal(false)}
-                color="#6c757d"
-              >
-                Cancelar
-              </ModalButton>
-              <ModalButton 
-                onClick={confirmDelete}
-                color="#dc3545"
-              >
-                Eliminar
-              </ModalButton>
-            </ModalButtons>
-          </ModalContent>
-        </ModalOverlay>
-      )}
+
       
       <NuevoClienteModal
         isOpen={isNuevoClienteModalOpen}

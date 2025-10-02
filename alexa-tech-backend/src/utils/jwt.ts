@@ -112,11 +112,10 @@ export class JWTService {
   }
 
   // Generar par de tokens (access + refresh)
-  generateTokenPair(userId: string, email: string, role: string, tokenVersion: number = 1) {
+  generateTokenPair(userId: string, email: string, tokenVersion: number = 1) {
     const accessTokenPayload: Omit<TokenPayload, 'iat' | 'exp'> = {
       userId,
-      email,
-      role: role as any
+      email
     };
 
     const refreshTokenPayload: Omit<RefreshTokenPayload, 'iat' | 'exp'> = {

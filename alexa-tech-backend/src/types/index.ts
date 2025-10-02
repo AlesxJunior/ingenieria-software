@@ -1,7 +1,5 @@
 import { Request } from 'express';
 
-import { UserRole } from '../generated/prisma';
-
 // Interfaces de usuario
 export interface User {
   id: string;
@@ -9,8 +7,8 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
   isActive: boolean;
+  permissions: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,7 +19,7 @@ export interface UserCreateInput {
   password: string;
   firstName: string;
   lastName: string;
-  role?: UserRole;
+  permissions?: string[];
 }
 
 export interface UserUpdateInput {
@@ -30,8 +28,8 @@ export interface UserUpdateInput {
   password?: string;
   firstName?: string;
   lastName?: string;
-  role?: UserRole;
   isActive?: boolean;
+  permissions?: string[];
 }
 
 export interface UserResponse {
@@ -40,14 +38,13 @@ export interface UserResponse {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
   isActive: boolean;
+  permissions: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Roles de usuario
-// UserRole is now imported from @prisma/client
+
 
 // Tipos de autenticación
 export interface LoginRequest {
@@ -71,7 +68,7 @@ export interface AuthResponse {
 export interface TokenPayload {
   userId: string;
   email: string;
-  role: UserRole;
+  permissions?: string[];
   iat?: number;
   exp?: number;
 }

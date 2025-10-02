@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useNotification } from '../context/NotificationContext';
 
 interface Client {
   id: string;
-  name: string;
+  nombres?: string;
+  apellidos?: string;
+  razonSocial?: string;
   email: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-  status: string;
+  telefono: string;
+  direccion: string;
+  ciudad: string;
+  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  numeroDocumento: string;
+  isActive: boolean;
 }
 
 interface EditarClienteModalProps {
@@ -135,14 +139,14 @@ const ButtonGroup = styled.div`
   margin-top: 24px;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: 8px 16px;
   border: none;
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
   
-  ${props => props.variant === 'primary' ? `
+  ${props => props.$variant === 'primary' ? `
     background-color: #007bff;
     color: white;
     
@@ -165,42 +169,83 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
   client,
   onSave
 }) => {
+  const { showNotification } = useNotification();
   const [formData, setFormData] = useState({
-    name: '',
+    nombres: '',
+    apellidos: '',
+    razonSocial: '',
     email: '',
-    phone: '',
-    address: '',
-    city: '',
-    country: '',
-    status: ''
+    telefono: '',
+    direccion: '',
+    ciudad: '',
+    tipoDocumento: 'DNI' as 'DNI' | 'CE' | 'RUC',
+    numeroDocumento: ''
   });
 
   useEffect(() => {
     if (client) {
       setFormData({
-        name: client.name,
+        nombres: client.nombres || '',
+        apellidos: client.apellidos || '',
+        razonSocial: client.razonSocial || '',
         email: client.email,
-        phone: client.phone,
-        address: client.address,
-        city: client.city,
-        country: client.country,
-        status: client.status
+        telefono: client.telefono,
+        direccion: client.direccion,
+        ciudad: client.ciudad,
+        tipoDocumento: client.tipoDocumento,
+        numeroDocumento: client.numeroDocumento
       });
     }
   }, [client]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    try {
+      // Construir datos del cliente según tipo de documento
+      const clientData: any = {
+        tipoDocumento: formData.tipoDocumento,
+        numeroDocumento: formData.numeroDocumento,
+        email: formData.email,
+        telefono: formData.telefono,
+        direccion: formData.direccion,
+        ciudad: formData.ciudad
+      };
+
+      // Agregar campos específicos según tipo de documento
+      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+        clientData.nombres = formData.nombres;
+        clientData.apellidos = formData.apellidos;
+      } else if (formData.tipoDocumento === 'RUC') {
+        clientData.razonSocial = formData.razonSocial;
+      }
+
+      await onSave(clientData);
+      showNotification('success', 'Cliente Actualizado', 'El cliente ha sido actualizado exitosamente.');
+      onClose();
+    } catch (error) {
+      showNotification('error', 'Error', 'Error al actualizar el cliente');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Si cambia el tipo de documento, limpiar campos específicos
+    if (name === 'tipoDocumento') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value as 'DNI' | 'CE' | 'RUC',
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
+        numeroDocumento: ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   if (!isOpen) return null;
@@ -214,17 +259,88 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
         </ModalHeader>
         
         <form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="name">Nombre Completo</Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
+          <FormRow>
+            <FormGroup>
+              <Label htmlFor="tipoDocumento">Tipo de Documento</Label>
+              <Select
+                id="tipoDocumento"
+                name="tipoDocumento"
+                value={formData.tipoDocumento}
+                onChange={handleChange}
+                required
+              >
+                <option value="DNI">DNI</option>
+                <option value="CE">Carnet de Extranjería</option>
+                <option value="RUC">RUC</option>
+              </Select>
+            </FormGroup>
+            
+            <FormGroup>
+              <Label htmlFor="numeroDocumento">
+                Número de {formData.tipoDocumento === 'DNI' ? 'DNI' : 
+                          formData.tipoDocumento === 'CE' ? 'Carnet de Extranjería' : 
+                          formData.tipoDocumento === 'RUC' ? 'RUC' : 'Documento'}
+              </Label>
+              <Input
+                type="text"
+                id="numeroDocumento"
+                name="numeroDocumento"
+                value={formData.numeroDocumento}
+                onChange={handleChange}
+                placeholder={
+                  formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
+                  formData.tipoDocumento === 'CE' ? 'Ingrese al menos 6 caracteres' :
+                  formData.tipoDocumento === 'RUC' ? 'Ingrese 11 dígitos' :
+                  'Ingrese el número de documento'
+                }
+                required
+              />
+            </FormGroup>
+          </FormRow>
+
+          {/* Campos para DNI y CE */}
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') && (
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="nombres">Nombres</Label>
+                <Input
+                  type="text"
+                  id="nombres"
+                  name="nombres"
+                  value={formData.nombres}
+                  onChange={handleChange}
+                  required
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <Label htmlFor="apellidos">Apellidos</Label>
+                <Input
+                  type="text"
+                  id="apellidos"
+                  name="apellidos"
+                  value={formData.apellidos}
+                  onChange={handleChange}
+                  required
+                />
+              </FormGroup>
+            </FormRow>
+          )}
+
+          {/* Campo para RUC */}
+          {formData.tipoDocumento === 'RUC' && (
+            <FormGroup>
+              <Label htmlFor="razonSocial">Razón Social</Label>
+              <Input
+                type="text"
+                id="razonSocial"
+                name="razonSocial"
+                value={formData.razonSocial}
+                onChange={handleChange}
+                required
+              />
+            </FormGroup>
+          )}
           
           <FormRow>
             <FormGroup>
@@ -240,75 +356,47 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
             </FormGroup>
             
             <FormGroup>
-              <Label htmlFor="phone">Teléfono</Label>
+              <Label htmlFor="telefono">Teléfono</Label>
               <Input
                 type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
+                id="telefono"
+                name="telefono"
+                value={formData.telefono}
                 onChange={handleChange}
+                placeholder="Ingrese 9 dígitos"
                 required
               />
             </FormGroup>
           </FormRow>
           
           <FormGroup>
-            <Label htmlFor="address">Dirección</Label>
+            <Label htmlFor="direccion">Dirección</Label>
             <TextArea
-              id="address"
-              name="address"
-              value={formData.address}
+              id="direccion"
+              name="direccion"
+              value={formData.direccion}
               onChange={handleChange}
               required
             />
           </FormGroup>
           
-          <FormRow>
-            <FormGroup>
-              <Label htmlFor="city">Ciudad</Label>
-              <Input
-                type="text"
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                required
-              />
-            </FormGroup>
-            
-            <FormGroup>
-              <Label htmlFor="country">País</Label>
-              <Input
-                type="text"
-                id="country"
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                required
-              />
-            </FormGroup>
-          </FormRow>
-          
           <FormGroup>
-            <Label htmlFor="status">Estado</Label>
-            <Select
-              id="status"
-              name="status"
-              value={formData.status}
+            <Label htmlFor="ciudad">Ciudad</Label>
+            <Input
+              type="text"
+              id="ciudad"
+              name="ciudad"
+              value={formData.ciudad}
               onChange={handleChange}
               required
-            >
-              <option value="">Seleccionar estado</option>
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </Select>
+            />
           </FormGroup>
           
           <ButtonGroup>
-            <Button type="button" variant="secondary" onClick={onClose}>
+            <Button type="button" $variant="secondary" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary">
+            <Button type="submit" $variant="primary">
               Guardar Cambios
             </Button>
           </ButtonGroup>

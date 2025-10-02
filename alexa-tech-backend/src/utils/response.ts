@@ -149,7 +149,7 @@ export class ResponseHelper {
     data: any,
     message: string = 'Autenticación exitosa'
   ): Response {
-    logger.auth('Login successful', data.user?.id, data.user?.email);
+    // Log removido para evitar duplicación (ya se loggea en authService)
     return this.success(res, data, message);
   }
 

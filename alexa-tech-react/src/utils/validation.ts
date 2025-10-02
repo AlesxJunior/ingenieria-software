@@ -1,5 +1,3 @@
-export type UserRole = 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
-
 export interface ValidationError {
   field: string;
   message: string;

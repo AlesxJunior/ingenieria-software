@@ -3,14 +3,20 @@ import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
 import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
 import PasswordRequirements from './PasswordRequirements';
-import PermissionSelector from './PermissionSelector';
+
+interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  module: string;
+  submodule?: string;
+}
 
 interface UserFormData {
   username: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
   password: string;
   confirmPassword: string;
   isActive: boolean;
@@ -26,6 +32,223 @@ interface NuevoUsuarioModalProps {
   onClose: () => void;
   onSave: (userData: Partial<UserFormData>) => Promise<void>;
 }
+
+// Definición de permisos disponibles basados en el sistema del backend
+const AVAILABLE_PERMISSIONS: Permission[] = [
+  // MÓDULO: DASHBOARD
+  {
+    id: 'dashboard.read',
+    name: 'Ver Dashboard',
+    description: 'Acceder al panel principal y métricas del sistema',
+    module: 'DASHBOARD'
+  },
+  
+  // MÓDULO: USUARIOS
+  {
+    id: 'users.create',
+    name: 'Crear Usuarios',
+    description: 'Crear nuevos usuarios en el sistema',
+    module: 'USUARIOS'
+  },
+  {
+    id: 'users.read',
+    name: 'Ver Usuarios',
+    description: 'Ver la lista de usuarios del sistema',
+    module: 'USUARIOS'
+  },
+  {
+    id: 'users.update',
+    name: 'Actualizar Usuarios',
+    description: 'Modificar información de usuarios existentes',
+    module: 'USUARIOS'
+  },
+  {
+    id: 'users.delete',
+    name: 'Eliminar Usuarios',
+    description: 'Eliminar usuarios del sistema',
+    module: 'USUARIOS'
+  },
+  
+  // MÓDULO: CLIENTES
+  {
+    id: 'clients.create',
+    name: 'Crear Clientes',
+    description: 'Registrar nuevos clientes en el sistema',
+    module: 'CLIENTES'
+  },
+  {
+    id: 'clients.read',
+    name: 'Ver Clientes',
+    description: 'Ver la lista de clientes del sistema',
+    module: 'CLIENTES'
+  },
+  {
+    id: 'clients.update',
+    name: 'Actualizar Clientes',
+    description: 'Modificar información de clientes existentes',
+    module: 'CLIENTES'
+  },
+  
+  // MÓDULO: VENTAS
+  {
+    id: 'sales.create',
+    name: 'Crear Ventas',
+    description: 'Registrar nuevas ventas',
+    module: 'VENTAS'
+  },
+  {
+    id: 'sales.read',
+    name: 'Ver Ventas',
+    description: 'Ver el historial de ventas',
+    module: 'VENTAS'
+  },
+  {
+    id: 'sales.update',
+    name: 'Actualizar Ventas',
+    description: 'Modificar ventas existentes',
+    module: 'VENTAS'
+  },
+  {
+    id: 'sales.delete',
+    name: 'Eliminar Ventas',
+    description: 'Eliminar registros de ventas',
+    module: 'VENTAS'
+  },
+  
+  // MÓDULO: PRODUCTOS
+  {
+    id: 'products.create',
+    name: 'Crear Productos',
+    description: 'Agregar nuevos productos al catálogo',
+    module: 'PRODUCTOS'
+  },
+  {
+    id: 'products.read',
+    name: 'Ver Productos',
+    description: 'Ver el catálogo de productos',
+    module: 'PRODUCTOS'
+  },
+  {
+    id: 'products.update',
+    name: 'Actualizar Productos',
+    description: 'Modificar información de productos existentes',
+    module: 'PRODUCTOS'
+  },
+  {
+    id: 'products.delete',
+    name: 'Eliminar Productos',
+    description: 'Eliminar productos del catálogo',
+    module: 'PRODUCTOS'
+  },
+  
+  // MÓDULO: INVENTARIO
+  {
+    id: 'inventory.read',
+    name: 'Ver Inventario',
+    description: 'Ver el estado del inventario',
+    module: 'INVENTARIO'
+  },
+  {
+    id: 'inventory.update',
+    name: 'Actualizar Inventario',
+    description: 'Modificar cantidades y estado del inventario',
+    module: 'INVENTARIO'
+  },
+  
+  // MÓDULO: COMPRAS
+  {
+    id: 'purchases.create',
+    name: 'Crear Compras',
+    description: 'Registrar nuevas compras a proveedores',
+    module: 'COMPRAS'
+  },
+  {
+    id: 'purchases.read',
+    name: 'Ver Compras',
+    description: 'Ver el historial de compras',
+    module: 'COMPRAS'
+  },
+  {
+    id: 'purchases.update',
+    name: 'Actualizar Compras',
+    description: 'Modificar compras existentes',
+    module: 'COMPRAS'
+  },
+  {
+    id: 'purchases.delete',
+    name: 'Eliminar Compras',
+    description: 'Eliminar registros de compras',
+    module: 'COMPRAS'
+  },
+  
+  // MÓDULO: FACTURACIÓN
+  {
+    id: 'invoicing.create',
+    name: 'Crear Facturas',
+    description: 'Generar nuevas facturas',
+    module: 'FACTURACIÓN'
+  },
+  {
+    id: 'invoicing.read',
+    name: 'Ver Facturas',
+    description: 'Ver el historial de facturas',
+    module: 'FACTURACIÓN'
+  },
+  {
+    id: 'invoicing.update',
+    name: 'Actualizar Facturas',
+    description: 'Modificar facturas existentes',
+    module: 'FACTURACIÓN'
+  },
+  {
+    id: 'invoicing.delete',
+    name: 'Eliminar Facturas',
+    description: 'Eliminar facturas del sistema',
+    module: 'FACTURACIÓN'
+  },
+  
+  // MÓDULO: CONFIGURACIÓN
+  {
+    id: 'configuration.read',
+    name: 'Ver Configuración',
+    description: 'Acceder a la configuración del sistema',
+    module: 'CONFIGURACIÓN'
+  },
+  {
+    id: 'configuration.update',
+    name: 'Actualizar Configuración',
+    description: 'Modificar configuraciones del sistema',
+    module: 'CONFIGURACIÓN'
+  },
+  
+  // MÓDULO: REPORTES
+  {
+    id: 'reports.sales',
+    name: 'Reportes de Ventas',
+    description: 'Ver reportes y estadísticas de ventas',
+    module: 'REPORTES'
+  },
+  {
+    id: 'reports.users',
+    name: 'Auditoría de Usuarios',
+    description: 'Ver registros de actividad y auditoría de usuarios',
+    module: 'REPORTES'
+  },
+  {
+    id: 'reports.inventory',
+    name: 'Reportes de Inventario',
+    description: 'Ver reportes de inventario y stock',
+    module: 'REPORTES'
+  },
+  {
+    id: 'reports.financial',
+    name: 'Reportes Financieros',
+    description: 'Ver reportes financieros y contables',
+    module: 'REPORTES'
+  }
+];
+
+
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -120,19 +343,7 @@ const Input = styled.input<{ $hasError?: boolean }>`
   }
 `;
 
-const Select = styled.select<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
 
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-`;
 
 const ErrorMessage = styled.span`
   color: #e74c3c;
@@ -179,6 +390,87 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   }
 `;
 
+const PermissionsSection = styled.div`
+  margin-top: 20px;
+`;
+
+const PermissionsTitle = styled.h3`
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+`;
+
+const ModuleGroup = styled.div`
+  margin-bottom: 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+const ModuleHeader = styled.div`
+  background: #f8f9fa;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const ModuleName = styled.h4`
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+`;
+
+const SelectAllButton = styled.button`
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  
+  &:hover {
+    color: #764ba2;
+  }
+`;
+
+const PermissionsList = styled.div`
+  padding: 16px;
+`;
+
+const PermissionItem = styled.div`
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const PermissionCheckbox = styled.input`
+  margin-right: 12px;
+  margin-top: 2px;
+`;
+
+const PermissionInfo = styled.div`
+  flex: 1;
+`;
+
+const PermissionName = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 2px;
+`;
+
+const PermissionDescription = styled.div`
+  font-size: 12px;
+  color: #6c757d;
+`;
 const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, onSave }) => {
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
@@ -188,7 +480,6 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
     email: '',
     firstName: '',
     lastName: '',
-    role: 'VENDEDOR',
     password: '',
     confirmPassword: '',
     isActive: true,
@@ -244,11 +535,14 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? checked : value
     }));
-    
+
+    // Limpiar errores cuando el usuario empiece a escribir
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -257,10 +551,27 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
     }
   };
 
-  const handlePermissionsChange = (permissions: string[]) => {
+
+
+  const handlePermissionChange = (permissionId: string, checked: boolean) => {
     setFormData(prev => ({
       ...prev,
-      permissions
+      permissions: checked 
+        ? [...prev.permissions, permissionId]
+        : prev.permissions.filter(id => id !== permissionId)
+    }));
+  };
+
+  const handleSelectAllPermissions = (module: string, select: boolean) => {
+    const modulePermissions = AVAILABLE_PERMISSIONS
+      .filter(p => p.module === module)
+      .map(p => p.id);
+    
+    setFormData(prev => ({
+      ...prev,
+      permissions: select
+        ? [...new Set([...prev.permissions, ...modulePermissions])]
+        : prev.permissions.filter(id => !modulePermissions.includes(id))
     }));
   };
 
@@ -276,13 +587,15 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
     try {
       await onSave(formData);
       
+      // Mostrar notificación de éxito
+      showNotification('success', 'Usuario Creado', 'El usuario ha sido creado exitosamente.');
+      
       // Resetear formulario
       setFormData({
         username: '',
         email: '',
         firstName: '',
         lastName: '',
-        role: 'VENDEDOR',
         password: '',
         confirmPassword: '',
         isActive: true,
@@ -290,6 +603,8 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
       });
       
       setErrors({});
+      
+      // Cerrar modal
       onClose();
     } catch (error) {
       console.error('Error al crear el usuario:', error);
@@ -370,25 +685,7 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
             </FormGroup>
           </FormRow>
 
-          <FormRow>
 
-            <FormGroup>
-              <Label htmlFor="role">Rol *</Label>
-              <Select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                $hasError={!!errors.role}
-              >
-                <option value="VENDEDOR">Vendedor</option>
-              <option value="CAJERO">Cajero</option>
-              <option value="SUPERVISOR">Supervisor</option>
-              <option value="ADMIN">Administrador</option>
-              </Select>
-              {errors.role && <ErrorMessage>{errors.role}</ErrorMessage>}
-            </FormGroup>
-          </FormRow>
 
           <FormRow>
             <FormGroup>
@@ -421,11 +718,6 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
             </FormGroup>
           </FormRow>
 
-          <PermissionSelector
-            selectedPermissions={formData.permissions}
-            onPermissionsChange={handlePermissionsChange}
-          />
-
           <FormGroup>
             <Label htmlFor="isActive">
               <Input
@@ -439,6 +731,52 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
               Usuario Activo
             </Label>
           </FormGroup>
+
+          <PermissionsSection>
+            <PermissionsTitle>Permisos del Usuario</PermissionsTitle>
+            {Object.entries(
+              AVAILABLE_PERMISSIONS.reduce((acc, permission) => {
+                if (!acc[permission.module]) {
+                  acc[permission.module] = [];
+                }
+                acc[permission.module].push(permission);
+                return acc;
+              }, {} as Record<string, Permission[]>)
+            ).map(([module, permissions]) => {
+              const modulePermissionIds = permissions.map(p => p.id);
+              const allSelected = modulePermissionIds.every(id => formData.permissions.includes(id));
+              
+              return (
+                <ModuleGroup key={module}>
+                  <ModuleHeader>
+                    <ModuleName>{module}</ModuleName>
+                    <SelectAllButton
+                      type="button"
+                      onClick={() => handleSelectAllPermissions(module, !allSelected)}
+                    >
+                      {allSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
+                    </SelectAllButton>
+                  </ModuleHeader>
+                  <PermissionsList>
+                    {permissions.map(permission => (
+                      <PermissionItem key={permission.id}>
+                        <PermissionCheckbox
+                          type="checkbox"
+                          id={permission.id}
+                          checked={formData.permissions.includes(permission.id)}
+                          onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
+                        />
+                        <PermissionInfo>
+                          <PermissionName>{permission.name}</PermissionName>
+                          <PermissionDescription>{permission.description}</PermissionDescription>
+                        </PermissionInfo>
+                      </PermissionItem>
+                    ))}
+                  </PermissionsList>
+                </ModuleGroup>
+              );
+            })}
+          </PermissionsSection>
 
 
 

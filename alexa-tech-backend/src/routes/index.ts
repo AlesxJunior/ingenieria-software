@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes';
 import userRoutes from './userRoutes';
+import clientRoutes from './clientRoutes';
 import auditRoutes from './auditRoutes';
 
 const router = Router();
@@ -10,6 +11,9 @@ router.use('/auth', authRoutes);
 
 // Rutas de usuarios
 router.use('/users', userRoutes);
+
+// Rutas de clientes
+router.use('/clients', clientRoutes);
 
 // Rutas de auditoría
 router.use('/audit', auditRoutes);
@@ -40,6 +44,7 @@ router.get('/', (req, res) => {
       endpoints: {
         auth: '/api/auth',
         users: '/api/users',
+        clients: '/api/clients',
         audit: '/api/audit',
         health: '/api/health'
       },

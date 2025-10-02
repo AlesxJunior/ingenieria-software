@@ -8,7 +8,6 @@ const router = Router();
 router.post('/login', AuthController.login);
 router.post('/register', AuthController.register);
 router.post('/refresh', AuthController.refreshToken);
-router.post('/logout', AuthController.logout);
 router.post('/validate-token', AuthController.validateToken);
 router.get('/check-email/:email', AuthController.checkEmail);
 router.get('/health', AuthController.healthCheck);
@@ -17,6 +16,7 @@ router.get('/health', AuthController.healthCheck);
 router.use(authenticate); // Middleware de autenticación para todas las rutas siguientes
 
 router.get('/me', AuthController.getCurrentUser);
+router.post('/logout', AuthController.logout);
 router.post('/logout-all', AuthController.logoutAll);
 
 // Rutas de administrador

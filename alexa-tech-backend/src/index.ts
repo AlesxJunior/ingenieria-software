@@ -2,6 +2,7 @@ import app from './app';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { connectDatabase } from './config/database';
+import AuditService from './services/auditService';
 
 // Función para iniciar el servidor
 const startServer = async (): Promise<void> => {
@@ -20,7 +21,7 @@ const startServer = async (): Promise<void> => {
     }
 
     // Iniciar servidor
-    const server = app.listen(config.port, () => {
+    const server = app.listen(config.port, async () => {
       logger.info(`🚀 Servidor iniciado exitosamente`);
       logger.info(`📍 Puerto: ${config.port}`);
       logger.info(`🌍 Entorno: ${config.nodeEnv}`);
@@ -32,6 +33,21 @@ const startServer = async (): Promise<void> => {
       if (config.isDevelopment) {
         logger.info(`🔧 Modo desarrollo activado`);
         logger.info(`🌐 CORS origen: ${config.corsOrigin}`);
+      }
+
+      // Registrar evento del sistema
+      try {
+        await AuditService.createSystemEvent({
+          type: 'SERVER_START',
+          details: 'Servidor iniciado exitosamente',
+          metadata: { 
+            port: config.port, 
+            environment: config.nodeEnv,
+            version: process.env.npm_package_version || '1.0.0'
+          }
+        });
+      } catch (error) {
+        logger.error('Error al registrar evento del sistema:', error);
       }
     });
 

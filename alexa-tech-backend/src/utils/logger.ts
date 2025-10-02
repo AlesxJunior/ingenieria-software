@@ -15,10 +15,21 @@ class Logger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    if (config.isProduction) {
-      return level === LogLevel.ERROR || level === LogLevel.WARN;
-    }
-    return true; // En desarrollo, mostrar todos los logs
+    const configLevel = config.logLevel.toLowerCase();
+    
+    // Jerarquía de niveles: error > warn > info > debug
+    const levelHierarchy = {
+      'error': 0,
+      'warn': 1,
+      'info': 2,
+      'debug': 3
+    };
+    
+    const currentLevelValue = levelHierarchy[level.toLowerCase() as keyof typeof levelHierarchy];
+    const configLevelValue = levelHierarchy[configLevel as keyof typeof levelHierarchy];
+    
+    // Solo mostrar logs del nivel configurado o superior
+    return currentLevelValue <= configLevelValue;
   }
 
   error(message: string, meta?: any): void {
@@ -53,9 +64,18 @@ class Logger {
   }
 
   database(operation: string, table?: string, duration?: number): void {
-    const message = `DB ${operation}`;
-    const meta = { table, duration: duration ? `${duration}ms` : undefined };
-    this.debug(message, meta);
+    // Solo loggear operaciones de base de datos lentas (>100ms) o errores
+    if (duration && duration > 100) {
+      const message = `DB ${operation} (SLOW)`;
+      const meta = { table, duration: `${duration}ms` };
+      this.warn(message, meta);
+    } else if (duration === undefined) {
+      // Loggear errores de DB sin duración
+      const message = `DB ${operation}`;
+      const meta = { table };
+      this.error(message, meta);
+    }
+    // No loggear operaciones rápidas para reducir verbosidad
   }
 
   auth(action: string, userId?: string, email?: string): void {

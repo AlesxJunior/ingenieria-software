@@ -177,21 +177,6 @@ const Login: React.FC = () => {
           <ForgotPasswordLink>
             <a href="#">¿Olvidaste tu contraseña?</a>
           </ForgotPasswordLink>
-          <div style={{ 
-            marginTop: '20px', 
-            fontSize: '12px', 
-            color: '#666',
-            textAlign: 'center',
-            padding: '10px',
-            backgroundColor: '#e9ecef',
-            borderRadius: '4px'
-          }}>
-            <strong>Usuarios de prueba:</strong><br />
-            Administrador: admin / admin123<br />
-            Supervisor: supervisor / supervisor123<br />
-            Vendedor: vendedor / vendedor123<br />
-            Cajero: cajero / cajero123
-          </div>
         </LoginForm>
       </LoginBox>
     </LoginContainer>

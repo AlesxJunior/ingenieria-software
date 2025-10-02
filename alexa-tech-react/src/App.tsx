@@ -59,7 +59,7 @@ function App() {
             <Route 
               path="/dashboard" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="dashboard.read">
                   <Dashboard />
                 </ProtectedRoute>
               } 
@@ -67,7 +67,7 @@ function App() {
             <Route 
               path="/gestion-caja" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="configuration.read">
                   <GestionCaja />
                 </ProtectedRoute>
               } 
@@ -75,63 +75,63 @@ function App() {
             <Route 
               path="/lista-clientes" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="clients.read">
                   <ListaClientes />
                 </ProtectedRoute>
               } 
             />
             <Route path="/registrar-producto" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="products.create">
                 <RegistroProducto />
               </ProtectedRoute>
             } />
             <Route path="/lista-productos" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="products.read">
                 <ListaProductos />
               </ProtectedRoute>
             } />
             <Route path="/editar-producto/:id" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="products.update">
                 <EditarProducto />
               </ProtectedRoute>
             } />
             <Route path="/editar-cliente/:id" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="clients.update">
                 <EditarCliente />
               </ProtectedRoute>
             } />
             <Route path="/registrar-cliente" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="clients.create">
                 <RegistroCliente />
               </ProtectedRoute>
             } />
             <Route path="/ventas/apertura-caja" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="sales.create">
                 <AperturaCaja />
               </ProtectedRoute>
             } />
             <Route path="/ventas/realizar" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="sales.create">
                   <RealizarVenta />
                 </ProtectedRoute>
               } />
               <Route path="/ventas/lista" element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="sales.read">
                   <ListaVentas />
                 </ProtectedRoute>
               } />
               <Route path="/usuarios" element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="users.read">
                     <ListaUsuarios />
                   </ProtectedRoute>
                 } />
                 <Route path="/usuarios/crear" element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requiredPermission="users.create">
                 <CrearUsuario />
               </ProtectedRoute>
             } />
             <Route path="/usuarios/editar/:id" element={
-              <ProtectedRoute requiredRole="admin">
+              <ProtectedRoute requiredPermission="users.update">
                 <EditarUsuario />
               </ProtectedRoute>
             } />
@@ -141,7 +141,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/auditoria" element={
-              <ProtectedRoute requiredPermissions={['Auditoría y Logs']}>
+              <ProtectedRoute requiredPermission="reports.users">
                 <AuditoriaLogs />
               </ProtectedRoute>
             } />

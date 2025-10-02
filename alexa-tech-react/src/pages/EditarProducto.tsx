@@ -67,7 +67,7 @@ const ButtonGroup = styled.div`
   margin-top: 30px;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: 12px 24px;
   border: none;
   border-radius: 5px;
@@ -76,7 +76,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   cursor: pointer;
   transition: background-color 0.3s;
 
-  ${props => props.variant === 'primary' ? `
+  ${props => props.$variant === 'primary' ? `
     background-color: #007bff;
     color: white;
     
@@ -433,10 +433,10 @@ const EditarProducto: React.FC = () => {
           </FormGrid>
 
           <ButtonGroup>
-            <Button type="button" variant="secondary" onClick={handleCancel}>
+            <Button type="button" $variant="secondary" onClick={handleCancel}>
               Cancelar
             </Button>
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
+            <Button type="submit" $variant="primary" disabled={isSubmitting}>
               {isSubmitting ? 'Actualizando...' : 'Actualizar Producto'}
             </Button>
           </ButtonGroup>

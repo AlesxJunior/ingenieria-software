@@ -6,7 +6,6 @@ import { useNotification } from '../context/NotificationContext';
 import { apiService } from '../utils/api';
 import NuevoUsuarioModal from '../components/NuevoUsuarioModal';
 import EditarUsuarioModal from '../components/EditarUsuarioModal';
-import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 // Interfaces extendidas para usuarios
 
@@ -14,13 +13,13 @@ interface ExtendedUser {
   id: string;
   username: string;
   email: string;
-  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
   firstName: string;
   lastName: string;
   isActive: boolean;
-  lastLogin?: string;
+  lastAccess?: string;
   createdAt: string;
   updatedAt: string;
+  permissions?: string[];
 }
 
 interface UserFormData {
@@ -28,9 +27,8 @@ interface UserFormData {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
   isActive: boolean;
-  permissions: string[];
+  permissions?: string[];
 }
 
 const Container = styled.div`
@@ -89,7 +87,7 @@ const FilterSelect = styled.select`
   }
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -99,7 +97,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   font-weight: 500;
 
   ${props => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'primary':
         return `
           background: #3498db;
@@ -230,43 +228,6 @@ const StatusBadge = styled.span<{ status: string }>`
   }}
 `;
 
-const RoleBadge = styled.span<{ role: string }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  
-  ${props => {
-    switch (props.role) {
-      case 'ADMIN':
-        return `
-          background: #d1ecf1;
-          color: #0c5460;
-        `;
-      case 'VENDEDOR':
-        return `
-          background: #d4edda;
-          color: #155724;
-        `;
-      case 'CAJERO':
-        return `
-          background: #fff3cd;
-          color: #856404;
-        `;
-      case 'SUPERVISOR':
-        return `
-          background: #f8d7da;
-          color: #721c24;
-        `;
-      default:
-        return `
-          background: #e2e3e5;
-          color: #383d41;
-        `;
-    }
-  }}
-`;
-
 const UserAvatar = styled.div`
   width: 40px;
   height: 40px;
@@ -295,7 +256,7 @@ const UserEmail = styled.div`
   color: #7f8c8d;
 `;
 
-const ActionButton = styled.button<{ variant?: 'edit' | 'delete' }>`
+const ActionButton = styled.button<{ variant?: 'edit' | 'delete' | 'activate' | 'deactivate' }>`
   padding: 0.25rem 0.5rem;
   border: none;
   border-radius: 4px;
@@ -310,6 +271,7 @@ const ActionButton = styled.button<{ variant?: 'edit' | 'delete' }>`
         return `
           background: #3498db;
           color: white;
+          
           &:hover {
             background: #2980b9;
           }
@@ -318,14 +280,34 @@ const ActionButton = styled.button<{ variant?: 'edit' | 'delete' }>`
         return `
           background: #e74c3c;
           color: white;
+          
           &:hover {
             background: #c0392b;
+          }
+        `;
+      case 'activate':
+        return `
+          background: #27ae60;
+          color: white;
+          
+          &:hover {
+            background: #229954;
+          }
+        `;
+      case 'deactivate':
+        return `
+          background: #f39c12;
+          color: white;
+          
+          &:hover {
+            background: #e67e22;
           }
         `;
       default:
         return `
           background: #95a5a6;
           color: white;
+          
           &:hover {
             background: #7f8c8d;
           }
@@ -353,10 +335,8 @@ const ListaUsuarios: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
   const [isNuevoUsuarioModalOpen, setIsNuevoUsuarioModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
   
   // Estados para datos del backend
@@ -374,7 +354,6 @@ const ListaUsuarios: React.FC = () => {
         page: currentPage,
         limit: pageSize,
         search: searchTerm || undefined,
-        role: roleFilter || undefined,
         status: statusFilter || undefined
       });
       
@@ -390,7 +369,7 @@ const ListaUsuarios: React.FC = () => {
 
   useEffect(() => {
     loadUsers();
-  }, [currentPage, searchTerm, statusFilter, roleFilter]);
+  }, [currentPage, searchTerm, statusFilter]);
 
 
 
@@ -403,8 +382,7 @@ const ListaUsuarios: React.FC = () => {
     return {
       totalUsers,
       activeUsers,
-      inactiveUsers,
-      adminUsers: users.filter(user => user.role === 'ADMIN').length
+      inactiveUsers
     };
   }, [users, totalUsers]);
 
@@ -412,7 +390,7 @@ const ListaUsuarios: React.FC = () => {
     return `${firstName[0] || ''}${lastName[0] || ''}`.toUpperCase();
   };
 
-  const formatLastLogin = (dateString?: string) => {
+  const formatLastAccess = (dateString?: string) => {
     if (!dateString) return 'Nunca';
     
     const date = new Date(dateString);
@@ -432,18 +410,6 @@ const ListaUsuarios: React.FC = () => {
     return isActive ? 'Activo' : 'Inactivo';
   };
 
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'Administrador';
-      case 'SUPERVISOR': return 'Supervisor';
-      case 'CAJERO': return 'Cajero';
-      case 'VENDEDOR': return 'Vendedor';
-      default: return role;
-    }
-  };
-
-
-
   const handleEditUser = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (user) {
@@ -452,37 +418,19 @@ const ListaUsuarios: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (userId === currentUser?.id) {
-      showError('No puedes eliminar tu propio usuario');
-      return;
-    }
-    
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
-      setIsDeleteModalOpen(true);
-    }
-  };
-
-  // Función para mapear roles del frontend al backend
-  const mapRoleToBackend = (role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO'): 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO' => {
-    return role; // Ya están en el formato correcto
-  };
-
   const handleSaveUser = async (userData: UserFormData) => {
     try {
       if (selectedUser) {
-        // Filtrar solo las propiedades que acepta la API y mapear el rol
+        // Filtrar solo las propiedades que acepta la API
         const backendUserData: any = {};
         
         if (userData.username) backendUserData.username = userData.username;
         if (userData.email) backendUserData.email = userData.email;
         if (userData.firstName) backendUserData.firstName = userData.firstName;
         if (userData.lastName) backendUserData.lastName = userData.lastName;
-        if (userData.role) backendUserData.role = mapRoleToBackend(userData.role);
         if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
         if (userData.permissions) backendUserData.permissions = userData.permissions;
+
         
         await apiService.updateUser(selectedUser.id, backendUserData);
         showInfo('Usuario actualizado exitosamente');
@@ -497,25 +445,23 @@ const ListaUsuarios: React.FC = () => {
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      if (selectedUser) {
-        await apiService.deleteUser(selectedUser.id);
-        showInfo(`Usuario ${selectedUser.username} eliminado exitosamente`);
-        loadUsers(); // Recargar la lista
-      }
+      const newStatus = !currentStatus;
+      await apiService.updateUserStatus(userId, newStatus);
+      
+      const action = newStatus ? 'activado' : 'desactivado';
+      showInfo(`Usuario ${action} exitosamente`);
+      loadUsers(); // Recargar la lista
     } catch (error) {
-      console.error('Error deleting user:', error);
-      showError('Error al eliminar el usuario');
-    } finally {
-      setIsDeleteModalOpen(false);
-      setSelectedUser(null);
+      console.error('Error updating user status:', error);
+      showError('Error al cambiar el estado del usuario');
     }
   };
 
   const handleCreateUser = async (userData: any) => {
     try {
-      // Filtrar solo las propiedades que acepta la API y mapear el rol
+      // Filtrar solo las propiedades que acepta la API
       const backendUserData: any = {};
       
       if (userData.username) backendUserData.username = userData.username;
@@ -523,9 +469,9 @@ const ListaUsuarios: React.FC = () => {
       if (userData.password) backendUserData.password = userData.password;
       if (userData.firstName) backendUserData.firstName = userData.firstName;
       if (userData.lastName) backendUserData.lastName = userData.lastName;
-      if (userData.role) backendUserData.role = mapRoleToBackend(userData.role);
       if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
       if (userData.permissions) backendUserData.permissions = userData.permissions;
+
       
       await apiService.createUser(backendUserData);
       showInfo('Usuario creado exitosamente');
@@ -548,7 +494,6 @@ const ListaUsuarios: React.FC = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('');
-    setRoleFilter('');
   };
 
   return (
@@ -571,22 +516,12 @@ const ListaUsuarios: React.FC = () => {
               <option value="activo">Activo</option>
               <option value="inactivo">Inactivo</option>
             </FilterSelect>
-            <FilterSelect
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-            >
-              <option value="">Todos los roles</option>
-              <option value="ADMIN">Administrador</option>
-                <option value="SUPERVISOR">Supervisor</option>
-                <option value="CAJERO">Cajero</option>
-                <option value="VENDEDOR">Vendedor</option>
-            </FilterSelect>
-            {(searchTerm || statusFilter || roleFilter) && (
-              <Button variant="secondary" onClick={clearFilters}>
+            {(searchTerm || statusFilter) && (
+              <Button $variant="secondary" onClick={clearFilters}>
                 Limpiar Filtros
               </Button>
             )}
-            <Button variant="primary" onClick={handleOpenCreateModal}>
+            <Button $variant="primary" onClick={handleOpenCreateModal}>
               Nuevo Usuario
             </Button>
           </SearchContainer>
@@ -611,10 +546,6 @@ const ListaUsuarios: React.FC = () => {
                 <StatValue>{stats.inactiveUsers}</StatValue>
                 <StatLabel>Usuarios Inactivos</StatLabel>
               </StatCard>
-              <StatCard>
-                <StatValue>{stats.adminUsers}</StatValue>
-                <StatLabel>Administradores</StatLabel>
-              </StatCard>
             </StatsContainer>
           </>
         )}
@@ -636,7 +567,6 @@ const ListaUsuarios: React.FC = () => {
               <TableHeader>
                 <tr>
                   <TableHeaderCell>Usuario</TableHeaderCell>
-                  <TableHeaderCell>Rol</TableHeaderCell>
                   <TableHeaderCell>Estado</TableHeaderCell>
                   <TableHeaderCell>Último Acceso</TableHeaderCell>
                   <TableHeaderCell>Acciones</TableHeaderCell>
@@ -658,18 +588,13 @@ const ListaUsuarios: React.FC = () => {
                       </UserInfo>
                     </TableCell>
                     <TableCell>
-                      <RoleBadge role={user.role}>
-                        {getRoleText(user.role)}
-                      </RoleBadge>
-                    </TableCell>
-                    <TableCell>
                       <StatusBadge status={user.isActive ? 'activo' : 'inactivo'}>
                         {getStatusText(user.isActive)}
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
                       <div style={{ fontSize: '0.9rem' }}>
-                        {formatLastLogin(user.lastLogin)}
+                        {formatLastAccess(user.lastAccess)}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -681,10 +606,10 @@ const ListaUsuarios: React.FC = () => {
                       </ActionButton>
                       {user.id !== currentUser?.id && (
                         <ActionButton 
-                          variant="delete"
-                          onClick={() => handleDeleteUser(user.id)}
+                          variant={user.isActive ? "deactivate" : "activate"}
+                          onClick={() => handleToggleUserStatus(user.id, user.isActive)}
                         >
-                          Eliminar
+                          {user.isActive ? "Desactivar" : "Activar"}
                         </ActionButton>
                       )}
                     </TableCell>
@@ -710,18 +635,6 @@ const ListaUsuarios: React.FC = () => {
         }}
         user={selectedUser}
         onSave={handleSaveUser}
-      />
-      
-      <ConfirmDeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setSelectedUser(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        title="Eliminar Usuario"
-        message="¿Estás seguro de que deseas eliminar este usuario?"
-        itemName={selectedUser?.username}
       />
     </Layout>
   );

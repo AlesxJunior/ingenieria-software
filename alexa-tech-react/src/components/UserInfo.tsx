@@ -43,12 +43,6 @@ const UserName = styled.div`
   margin-bottom: 2px;
 `;
 
-const UserRole = styled.div`
-  font-size: 12px;
-  color: #666;
-  text-transform: capitalize;
-`;
-
 const UserInfoLink = styled(Link)`
   text-decoration: none;
   color: inherit;
@@ -66,22 +60,11 @@ const UserInfo: React.FC = () => {
     return username.substring(0, 2).toUpperCase();
   };
 
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'Administrador';
-      case 'SUPERVISOR': return 'Supervisor';
-      case 'CAJERO': return 'Cajero';
-      case 'VENDEDOR': return 'Vendedor';
-      default: return 'Usuario';
-    }
-  };
-
   return (
     <UserInfoContainer>
       <UserInfoLink to="/perfil">
         <UserDetails>
           <UserName>@{user.username}</UserName>
-          <UserRole>{getRoleText(user.role)}</UserRole>
         </UserDetails>
         <UserAvatar>
           {getUserInitials(user.username)}

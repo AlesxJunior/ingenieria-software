@@ -225,7 +225,7 @@ const Select = styled.select`
   }
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   width: 100%;
   padding: 0.75rem;
   border: none;
@@ -237,7 +237,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   margin-bottom: 0.5rem;
 
   ${props => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'primary':
         return `
           background: #27ae60;
@@ -463,7 +463,7 @@ const RealizarVenta: React.FC = () => {
           <h3>⚠️ Caja Cerrada</h3>
           <p>No puedes realizar ventas sin tener una caja abierta.</p>
           <Button 
-            variant="primary" 
+            $variant="primary" 
             onClick={() => navigate('/ventas/apertura-caja')}
             style={{ marginTop: '1rem', width: 'auto', padding: '0.5rem 1rem' }}
           >
@@ -526,7 +526,10 @@ const RealizarVenta: React.FC = () => {
               <option value="">Cliente General</option>
               {clients.map((client: Client) => (
                 <option key={client.id} value={client.id}>
-                  {client.name} - {client.documentNumber}
+                  {client.tipoDocumento === 'RUC' 
+                    ? client.razonSocial || ''
+                    : `${client.nombres || ''} ${client.apellidos || ''}`.trim()
+                  } - {client.numeroDocumento}
                 </option>
               ))}
             </Select>
@@ -609,7 +612,7 @@ const RealizarVenta: React.FC = () => {
                 </Select>
 
                 <Button 
-                  variant="primary" 
+                  $variant="primary" 
                   onClick={processSale}
                   disabled={isProcessing}
                 >
@@ -617,7 +620,7 @@ const RealizarVenta: React.FC = () => {
                 </Button>
 
                 <Button 
-                  variant="danger" 
+                  $variant="danger" 
                   onClick={clearCart}
                 >
                   Limpiar Carrito

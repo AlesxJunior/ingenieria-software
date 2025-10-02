@@ -1,20 +1,21 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
+import { useApp } from '../context/AppContext';
 
 interface ClienteFormData {
-  nombre: string;
-  apellido: string;
+  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  numeroDocumento: string;
+  // Campos para DNI y CE
+  nombres?: string;
+  apellidos?: string;
+  // Campo para RUC
+  razonSocial?: string;
+  // Campos comunes
   email: string;
   telefono: string;
   direccion: string;
   ciudad: string;
-  codigoPostal: string;
-  tipoDocumento: string;
-  numeroDocumento: string;
-  fechaNacimiento: string;
-  genero: string;
-  estado: 'activo' | 'inactivo';
 }
 
 interface FormErrors {
@@ -87,16 +88,6 @@ const Form = styled.form`
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const FormRowThree = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem;
 
   @media (max-width: 768px) {
@@ -212,32 +203,55 @@ const SectionTitle = styled.h3`
 
 const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }) => {
   const { showNotification } = useNotification();
+  const { addClient } = useApp();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<ClienteFormData>({
-    nombre: '',
-    apellido: '',
+    tipoDocumento: 'DNI',
+    numeroDocumento: '',
+    nombres: '',
+    apellidos: '',
+    razonSocial: '',
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: '',
-    codigoPostal: '',
-    tipoDocumento: '',
-    numeroDocumento: '',
-    fechaNacimiento: '',
-    genero: '',
-    estado: 'activo'
+    ciudad: ''
   });
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
+    // Validar campos según tipo de documento
+    if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+      if (!formData.nombres?.trim()) {
+        newErrors.nombres = 'Los nombres son requeridos';
+      }
+      if (!formData.apellidos?.trim()) {
+        newErrors.apellidos = 'Los apellidos son requeridos';
+      }
+    } else if (formData.tipoDocumento === 'RUC') {
+      if (!formData.razonSocial?.trim()) {
+        newErrors.razonSocial = 'La razón social es requerida';
+      }
     }
 
-    if (!formData.apellido.trim()) {
-      newErrors.apellido = 'El apellido es requerido';
+    // Validar número de documento
+    if (!formData.numeroDocumento.trim()) {
+      newErrors.numeroDocumento = 'El número de documento es requerido';
+    } else {
+      if (formData.tipoDocumento === 'DNI') {
+        if (!/^\d{8}$/.test(formData.numeroDocumento)) {
+          newErrors.numeroDocumento = 'El DNI debe tener 8 dígitos';
+        }
+      } else if (formData.tipoDocumento === 'CE') {
+        if (formData.numeroDocumento.length < 6) {
+          newErrors.numeroDocumento = 'El CE debe tener al menos 6 caracteres';
+        }
+      } else if (formData.tipoDocumento === 'RUC') {
+        if (!/^\d{11}$/.test(formData.numeroDocumento)) {
+          newErrors.numeroDocumento = 'El RUC debe tener 11 dígitos';
+        }
+      }
     }
 
     if (!formData.email.trim()) {
@@ -248,16 +262,8 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
 
     if (!formData.telefono.trim()) {
       newErrors.telefono = 'El teléfono es requerido';
-    } else if (!/^\d{10}$/.test(formData.telefono.replace(/\D/g, ''))) {
-      newErrors.telefono = 'El teléfono debe tener 10 dígitos';
-    }
-
-    if (!formData.tipoDocumento) {
-      newErrors.tipoDocumento = 'El tipo de documento es requerido';
-    }
-
-    if (!formData.numeroDocumento.trim()) {
-      newErrors.numeroDocumento = 'El número de documento es requerido';
+    } else if (!/^\d{9}$/.test(formData.telefono)) {
+      newErrors.telefono = 'El teléfono debe tener 9 dígitos';
     }
 
     if (!formData.direccion.trim()) {
@@ -268,30 +274,44 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
       newErrors.ciudad = 'La ciudad es requerida';
     }
 
-    if (!formData.fechaNacimiento) {
-      newErrors.fechaNacimiento = 'La fecha de nacimiento es requerida';
-    }
-
-    if (!formData.genero) {
-      newErrors.genero = 'El género es requerido';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
     
-    if (errors[name]) {
+    // Si cambia el tipo de documento, limpiar campos específicos
+    if (name === 'tipoDocumento') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value as 'DNI' | 'CE' | 'RUC',
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
+        numeroDocumento: ''
+      }));
+      
+      // Limpiar errores relacionados
       setErrors(prev => ({
         ...prev,
-        [name]: ''
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
+        numeroDocumento: ''
       }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+      
+      if (errors[name]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }));
+      }
     }
   };
 
@@ -305,26 +325,41 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
     setIsLoading(true);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Construir datos del cliente según tipo de documento
+      const clientData: any = {
+        tipoDocumento: formData.tipoDocumento,
+        numeroDocumento: formData.numeroDocumento,
+        email: formData.email,
+        telefono: formData.telefono,
+        direccion: formData.direccion,
+        ciudad: formData.ciudad
+      };
+
+      // Agregar campos específicos según tipo de documento
+      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+        clientData.nombres = formData.nombres;
+        clientData.apellidos = formData.apellidos;
+      } else if (formData.tipoDocumento === 'RUC') {
+        clientData.razonSocial = formData.razonSocial;
+      }
+
+      // Llamar al servicio real de creación de clientes
+      await addClient(clientData);
       
-      showNotification('success', 'Éxito', 'Cliente registrado exitosamente');
+      // Cerrar modal
       onClose();
       
       // Resetear formulario
       setFormData({
-        nombre: '',
-        apellido: '',
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
         email: '',
         telefono: '',
         direccion: '',
         ciudad: '',
-        codigoPostal: '',
-        tipoDocumento: '',
-        numeroDocumento: '',
-        fechaNacimiento: '',
-        genero: '',
-        estado: 'activo'
+        tipoDocumento: 'DNI',
+        numeroDocumento: ''
       });
     } catch (error) {
       console.error('Error al registrar el cliente:', error);
@@ -345,37 +380,100 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
         </Header>
 
         <Form onSubmit={handleSubmit}>
-          <SectionTitle>Información Personal</SectionTitle>
+          <SectionTitle>Documentación</SectionTitle>
           
           <FormRow>
             <FormGroup>
-              <Label htmlFor="nombre">Nombre *</Label>
-              <Input
-                type="text"
-                id="nombre"
-                name="nombre"
-                value={formData.nombre}
+              <Label htmlFor="tipoDocumento">Tipo de Documento *</Label>
+              <Select
+                id="tipoDocumento"
+                name="tipoDocumento"
+                value={formData.tipoDocumento}
                 onChange={handleInputChange}
-                $hasError={!!errors.nombre}
-                placeholder="Ingrese el nombre"
-              />
-              {errors.nombre && <ErrorMessage>{errors.nombre}</ErrorMessage>}
+                $hasError={!!errors.tipoDocumento}
+              >
+                <option value="DNI">DNI</option>
+                <option value="CE">Carnet de Extranjería</option>
+                <option value="RUC">RUC</option>
+              </Select>
+              {errors.tipoDocumento && <ErrorMessage>{errors.tipoDocumento}</ErrorMessage>}
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="apellido">Apellido *</Label>
+              <Label htmlFor="numeroDocumento">
+                Número de {formData.tipoDocumento === 'DNI' ? 'DNI' : 
+                          formData.tipoDocumento === 'CE' ? 'Carnet de Extranjería' : 
+                          formData.tipoDocumento === 'RUC' ? 'RUC' : 'Documento'} *
+              </Label>
               <Input
                 type="text"
-                id="apellido"
-                name="apellido"
-                value={formData.apellido}
+                id="numeroDocumento"
+                name="numeroDocumento"
+                value={formData.numeroDocumento}
                 onChange={handleInputChange}
-                $hasError={!!errors.apellido}
-                placeholder="Ingrese el apellido"
+                $hasError={!!errors.numeroDocumento}
+                placeholder={
+                  formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
+                  formData.tipoDocumento === 'CE' ? 'Ingrese al menos 6 caracteres' :
+                  formData.tipoDocumento === 'RUC' ? 'Ingrese 11 dígitos' :
+                  'Ingrese el número de documento'
+                }
               />
-              {errors.apellido && <ErrorMessage>{errors.apellido}</ErrorMessage>}
+              {errors.numeroDocumento && <ErrorMessage>{errors.numeroDocumento}</ErrorMessage>}
             </FormGroup>
           </FormRow>
+
+          <SectionTitle>Información Personal</SectionTitle>
+          
+          {/* Campos para DNI y CE */}
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') && (
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="nombres">Nombres *</Label>
+                <Input
+                  type="text"
+                  id="nombres"
+                  name="nombres"
+                  value={formData.nombres || ''}
+                  onChange={handleInputChange}
+                  $hasError={!!errors.nombres}
+                  placeholder="Ingrese los nombres"
+                />
+                {errors.nombres && <ErrorMessage>{errors.nombres}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="apellidos">Apellidos *</Label>
+                <Input
+                  type="text"
+                  id="apellidos"
+                  name="apellidos"
+                  value={formData.apellidos || ''}
+                  onChange={handleInputChange}
+                  $hasError={!!errors.apellidos}
+                  placeholder="Ingrese los apellidos"
+                />
+                {errors.apellidos && <ErrorMessage>{errors.apellidos}</ErrorMessage>}
+              </FormGroup>
+            </FormRow>
+          )}
+
+          {/* Campo para RUC */}
+          {formData.tipoDocumento === 'RUC' && (
+            <FormGroup>
+              <Label htmlFor="razonSocial">Razón Social *</Label>
+              <Input
+                type="text"
+                id="razonSocial"
+                name="razonSocial"
+                value={formData.razonSocial || ''}
+                onChange={handleInputChange}
+                $hasError={!!errors.razonSocial}
+                placeholder="Ingrese la razón social"
+              />
+              {errors.razonSocial && <ErrorMessage>{errors.razonSocial}</ErrorMessage>}
+            </FormGroup>
+          )}
 
           <FormRow>
             <FormGroup>
@@ -401,90 +499,9 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
                 value={formData.telefono}
                 onChange={handleInputChange}
                 $hasError={!!errors.telefono}
-                placeholder="Ingrese el teléfono"
+                placeholder="Ingrese el teléfono (9 dígitos)"
               />
               {errors.telefono && <ErrorMessage>{errors.telefono}</ErrorMessage>}
-            </FormGroup>
-          </FormRow>
-
-          <FormRowThree>
-            <FormGroup>
-              <Label htmlFor="fechaNacimiento">Fecha de Nacimiento *</Label>
-              <Input
-                type="date"
-                id="fechaNacimiento"
-                name="fechaNacimiento"
-                value={formData.fechaNacimiento}
-                onChange={handleInputChange}
-                $hasError={!!errors.fechaNacimiento}
-              />
-              {errors.fechaNacimiento && <ErrorMessage>{errors.fechaNacimiento}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="genero">Género *</Label>
-              <Select
-                id="genero"
-                name="genero"
-                value={formData.genero}
-                onChange={handleInputChange}
-                $hasError={!!errors.genero}
-              >
-                <option value="">Seleccione género</option>
-                <option value="masculino">Masculino</option>
-                <option value="femenino">Femenino</option>
-                <option value="otro">Otro</option>
-              </Select>
-              {errors.genero && <ErrorMessage>{errors.genero}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="estado">Estado</Label>
-              <Select
-                id="estado"
-                name="estado"
-                value={formData.estado}
-                onChange={handleInputChange}
-              >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </Select>
-            </FormGroup>
-          </FormRowThree>
-
-          <SectionTitle>Documentación</SectionTitle>
-
-          <FormRow>
-            <FormGroup>
-              <Label htmlFor="tipoDocumento">Tipo de Documento *</Label>
-              <Select
-                id="tipoDocumento"
-                name="tipoDocumento"
-                value={formData.tipoDocumento}
-                onChange={handleInputChange}
-                $hasError={!!errors.tipoDocumento}
-              >
-                <option value="">Seleccione tipo</option>
-                <option value="cedula">Cédula de Ciudadanía</option>
-                <option value="cedula_extranjeria">Cédula de Extranjería</option>
-                <option value="pasaporte">Pasaporte</option>
-                <option value="tarjeta_identidad">Tarjeta de Identidad</option>
-              </Select>
-              {errors.tipoDocumento && <ErrorMessage>{errors.tipoDocumento}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="numeroDocumento">Número de Documento *</Label>
-              <Input
-                type="text"
-                id="numeroDocumento"
-                name="numeroDocumento"
-                value={formData.numeroDocumento}
-                onChange={handleInputChange}
-                $hasError={!!errors.numeroDocumento}
-                placeholder="Ingrese el número de documento"
-              />
-              {errors.numeroDocumento && <ErrorMessage>{errors.numeroDocumento}</ErrorMessage>}
             </FormGroup>
           </FormRow>
 
@@ -503,33 +520,19 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
             {errors.direccion && <ErrorMessage>{errors.direccion}</ErrorMessage>}
           </FormGroup>
 
-          <FormRow>
-            <FormGroup>
-              <Label htmlFor="ciudad">Ciudad *</Label>
-              <Input
-                type="text"
-                id="ciudad"
-                name="ciudad"
-                value={formData.ciudad}
-                onChange={handleInputChange}
-                $hasError={!!errors.ciudad}
-                placeholder="Ingrese la ciudad"
-              />
-              {errors.ciudad && <ErrorMessage>{errors.ciudad}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="codigoPostal">Código Postal</Label>
-              <Input
-                type="text"
-                id="codigoPostal"
-                name="codigoPostal"
-                value={formData.codigoPostal}
-                onChange={handleInputChange}
-                placeholder="Ingrese el código postal"
-              />
-            </FormGroup>
-          </FormRow>
+          <FormGroup>
+            <Label htmlFor="ciudad">Ciudad *</Label>
+            <Input
+              type="text"
+              id="ciudad"
+              name="ciudad"
+              value={formData.ciudad}
+              onChange={handleInputChange}
+              $hasError={!!errors.ciudad}
+              placeholder="Ingrese la ciudad"
+            />
+            {errors.ciudad && <ErrorMessage>{errors.ciudad}</ErrorMessage>}
+          </FormGroup>
 
           <ButtonGroup>
             <Button type="button" $variant="secondary" onClick={onClose}>

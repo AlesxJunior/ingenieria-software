@@ -127,7 +127,7 @@ const FilterActions = styled.div`
   justify-content: flex-end;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
@@ -135,7 +135,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   cursor: pointer;
   transition: background-color 0.2s;
 
-  ${props => props.variant === 'primary' ? `
+  ${props => props.$variant === 'primary' ? `
     background: #3498db;
     color: white;
     &:hover {
@@ -582,10 +582,10 @@ const AuditoriaLogs: React.FC = () => {
           </FilterGrid>
 
           <FilterActions>
-            <Button variant="secondary" onClick={clearFilters}>
+            <Button $variant="secondary" onClick={clearFilters}>
               Limpiar Filtros
             </Button>
-            <Button variant="primary" onClick={applyFilters}>
+            <Button $variant="primary" onClick={applyFilters}>
               Aplicar Filtros
             </Button>
           </FilterActions>

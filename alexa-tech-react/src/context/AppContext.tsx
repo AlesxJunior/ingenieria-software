@@ -1,5 +1,6 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { apiService } from '../utils/api';
 
 // Interfaces para los datos de la aplicación
 export interface Product {
@@ -22,7 +23,6 @@ export interface User {
   username: string;
   email: string;
   fullName: string;
-  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -30,12 +30,16 @@ export interface User {
 
 export interface Client {
   id: string;
-  name: string;
-  documentNumber: string;
-  documentType: 'DNI' | 'RUC';
-  address: string;
-  phone: string;
+  nombres?: string;
+  apellidos?: string;
+  razonSocial?: string;
   email: string;
+  telefono: string;
+  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  numeroDocumento: string;
+  direccion: string;
+  ciudad: string;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,9 +89,26 @@ interface AppContextType {
 
   // Clients
   clients: Client[];
-  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateClient: (id: string, client: Partial<Client>) => void;
-  deleteClient: (id: string) => void;
+  clientsPagination: {
+    currentPage: number;
+    totalPages: number;
+    totalClients: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  loadClients: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    tipoDocumento?: string;
+    ciudad?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }) => Promise<void>;
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateClient: (id: string, client: Partial<Client>) => Promise<void>;
+  deleteClient: (id: string) => Promise<void>;
+  reactivateClient: (id: string) => Promise<void>;
   getClientById: (id: string) => Client | undefined;
 
   // Cash Registers
@@ -130,41 +151,14 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Estados para los datos de la aplicación
   const [products, setProducts] = useState<Product[]>([]);
-  const [clients, setClients] = useState<Client[]>([
-    {
-      id: '1',
-      name: 'Juan Pérez',
-      documentNumber: '12345678',
-      documentType: 'DNI',
-      address: 'Av. Principal 123',
-      phone: '987654321',
-      email: 'juan.perez@email.com',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      name: 'María García',
-      documentNumber: '87654321',
-      documentType: 'DNI',
-      address: 'Jr. Secundario 456',
-      phone: '123456789',
-      email: 'maria.garcia@email.com',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '3',
-      name: 'Empresa ABC S.A.C.',
-      documentNumber: '20123456789',
-      documentType: 'RUC',
-      address: 'Av. Comercial 789',
-      phone: '555-0123',
-      email: 'contacto@empresaabc.com',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientsPagination, setClientsPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalClients: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
   const [cashRegisters, setCashRegisters] = useState<CashRegister[]>([
     {
       id: '1',
@@ -214,37 +208,120 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   // Funciones para clientes
-  const addClient = (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newClient: Client = {
-      ...clientData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    setClients(prev => [...prev, newClient]);
-    addNotification({
-      type: 'success',
-      title: 'Cliente registrado',
-      message: `El cliente ${clientData.name} ha sido registrado exitosamente.`
-    });
+  const loadClients = async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    tipoDocumento?: string;
+    ciudad?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.getClients(params);
+      
+      if (response.success && response.data) {
+        setClients(response.data.clients.map((client: any) => ({
+          ...client,
+          createdAt: new Date(client.createdAt),
+          updatedAt: new Date(client.updatedAt)
+        })));
+        setClientsPagination(response.data.pagination);
+      } else {
+        showError('Error al cargar los clientes');
+      }
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      showError('Error al cargar los clientes');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateClient = (id: string, clientData: Partial<Client>) => {
-    setClients(prev => prev.map(client => 
-      client.id === id 
-        ? { ...client, ...clientData, updatedAt: new Date() }
-        : client
-    ));
+  const addClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.createClient(clientData);
+      
+      if (response.success) {
+        showSuccess(`Cliente ${clientData.tipoDocumento === 'RUC' 
+          ? clientData.razonSocial || ''
+          : `${clientData.nombres || ''} ${clientData.apellidos || ''}`.trim()} registrado exitosamente`);
+        // Recargar la lista de clientes
+        await loadClients();
+      } else {
+        showError(response.message || 'Error al registrar el cliente');
+      }
+    } catch (error) {
+      console.error('Error creating client:', error);
+      showError('Error al registrar el cliente');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const deleteClient = (id: string) => {
-    setClients(prev => prev.filter(client => client.id !== id));
-    addNotification({
-      type: 'success',
-      title: 'Cliente eliminado',
-      message: 'El cliente ha sido eliminado exitosamente.'
-    });
+  const updateClient = async (id: string, clientData: Partial<Client>) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.updateClient(id, clientData);
+      
+      if (response.success) {
+        showSuccess('Cliente actualizado exitosamente');
+        // Recargar la lista de clientes
+        await loadClients();
+      } else {
+        showError(response.message || 'Error al actualizar el cliente');
+      }
+    } catch (error) {
+      console.error('Error updating client:', error);
+      showError('Error al actualizar el cliente');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const deleteClient = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.deleteClient(id);
+      
+      if (response.success) {
+        showSuccess('Cliente eliminado exitosamente');
+        // Recargar la lista de clientes
+        await loadClients();
+      } else {
+        showError(response.message || 'Error al eliminar el cliente');
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      showError('Error al eliminar el cliente');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const reactivateClient = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.reactivateClient(id);
+      
+      if (response.success) {
+        showSuccess('Cliente reactivado exitosamente');
+        // Recargar la lista de clientes
+        await loadClients();
+      } else {
+        showError(response.message || 'Error al reactivar el cliente');
+      }
+    } catch (error) {
+      console.error('Error reactivating client:', error);
+      showError('Error al reactivar el cliente');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   const getClientById = (id: string) => {
     return clients.find(client => client.id === id);
@@ -321,6 +398,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     addNotification({ type: 'info', title: 'Información', message });
   };
 
+  // Cargar clientes al montar el componente
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      loadClients();
+    }
+  }, []);
+
   const value: AppContextType = {
     // Products
     products,
@@ -331,9 +416,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     // Clients
     clients,
+    clientsPagination,
+    loadClients,
     addClient,
     updateClient,
     deleteClient,
+    reactivateClient,
     getClientById,
 
     // Cash Registers

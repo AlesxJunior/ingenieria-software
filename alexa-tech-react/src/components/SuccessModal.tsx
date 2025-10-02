@@ -1,13 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
 
-interface ConfirmDeleteModalProps {
+interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
   title: string;
   message: string;
-  itemName?: string;
+  buttonText?: string;
 }
 
 const ModalOverlay = styled.div`
@@ -29,6 +28,7 @@ const ModalContent = styled.div`
   padding: 24px;
   width: 90%;
   max-width: 400px;
+  text-align: center;
 `;
 
 const ModalHeader = styled.div`
@@ -40,8 +40,9 @@ const ModalHeader = styled.div`
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #dc3545;
+  color: #28a745;
   font-size: 18px;
+  flex: 1;
 `;
 
 const CloseButton = styled.button`
@@ -60,60 +61,46 @@ const ModalBody = styled.div`
   margin-bottom: 24px;
 `;
 
-const Message = styled.p`
-  margin: 0 0 12px 0;
-  color: #333;
-  line-height: 1.5;
+const SuccessIcon = styled.div`
+  font-size: 48px;
+  color: #28a745;
+  margin-bottom: 16px;
 `;
 
-const ItemName = styled.strong`
-  color: #dc3545;
+const Message = styled.p`
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+  font-size: 16px;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+  justify-content: center;
 `;
 
-const Button = styled.button<{ variant?: 'danger' | 'secondary' }>`
-  padding: 8px 16px;
+const Button = styled.button`
+  padding: 12px 24px;
   border: none;
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
+  background-color: #28a745;
+  color: white;
   
-  ${props => props.variant === 'danger' ? `
-    background-color: #dc3545;
-    color: white;
-    
-    &:hover {
-      background-color: #c82333;
-    }
-  ` : `
-    background-color: #6c757d;
-    color: white;
-    
-    &:hover {
-      background-color: #545b62;
-    }
-  `}
+  &:hover {
+    background-color: #218838;
+  }
 `;
 
-const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
+const SuccessModal: React.FC<SuccessModalProps> = ({
   isOpen,
   onClose,
-  onConfirm,
   title,
   message,
-  itemName
+  buttonText = 'Aceptar'
 }) => {
   if (!isOpen) return null;
-
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
-  };
 
   return (
     <ModalOverlay onClick={onClose}>
@@ -124,23 +111,13 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
         </ModalHeader>
         
         <ModalBody>
+          <SuccessIcon>✓</SuccessIcon>
           <Message>{message}</Message>
-          {itemName && (
-            <Message>
-              Elemento: <ItemName>{itemName}</ItemName>
-            </Message>
-          )}
-          <Message>
-            <strong>Esta acción no se puede deshacer.</strong>
-          </Message>
         </ModalBody>
         
         <ButtonGroup>
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="button" variant="danger" onClick={handleConfirm}>
-            Eliminar
+          <Button type="button" onClick={onClose}>
+            {buttonText}
           </Button>
         </ButtonGroup>
       </ModalContent>
@@ -148,4 +125,4 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
   );
 };
 
-export default ConfirmDeleteModal;
+export default SuccessModal;

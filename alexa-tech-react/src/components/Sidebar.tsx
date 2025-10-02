@@ -166,8 +166,11 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
   // Función para determinar qué módulo debe estar abierto según la ruta actual
   const getActiveModule = (pathname: string) => {
-    if (pathname.includes('/usuarios') || pathname.includes('/auditoria')) {
+    if (pathname.includes('/usuarios')) {
       return 'usuarios';
+    }
+    if (pathname.includes('/auditoria')) {
+      return 'auditoria';
     }
     if (pathname.includes('/lista-clientes') || pathname.includes('/registrar-cliente')) {
       return 'clientes';
@@ -236,7 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             </Link>
           </NavItem>
 
-          <NavItem $isActive={isActive('/usuarios') || isActive('/usuarios/crear') || isActive('/auditoria')}>
+          <NavItem $isActive={isActive('/usuarios') || isActive('/usuarios/crear')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('usuarios'); }}>
               <i className="fas fa-user-friends"></i>
               <span>Usuarios</span>
@@ -245,12 +248,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               <SubMenuItem $isActive={isActive('/usuarios')}>
                 <Link to="/usuarios">
                   <h3>Lista de Usuarios</h3>
-                </Link>
-              </SubMenuItem>
-
-              <SubMenuItem $isActive={isActive('/auditoria')}>
-                <Link to="/auditoria">
-                  <h3>Auditoría y Logs</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>
@@ -357,6 +354,20 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
               <i className="fas fa-chart-bar"></i>
               <span>Reportes</span>
             </Link>
+          </NavItem>
+
+          <NavItem $isActive={isActive('/auditoria')}>
+            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('auditoria'); }}>
+              <i className="fas fa-search"></i>
+              <span>Auditoría y Logs</span>
+            </a>
+            <SubMenu $isOpen={openMenus.auditoria}>
+              <SubMenuItem $isActive={isActive('/auditoria')}>
+                <Link to="/auditoria">
+                  <h3>Logs del Sistema</h3>
+                </Link>
+              </SubMenuItem>
+            </SubMenu>
           </NavItem>
         </ul>
       </SidebarNav>

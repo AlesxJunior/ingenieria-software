@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -15,50 +9,87 @@ datasource db {
 }
 
 model User {
-  id          String        @id @default(cuid())
-  email       String        @unique
-  username    String        @unique
+  id          String    @id @default(cuid())
+  email       String    @unique
+  username    String    @unique
   password    String
   firstName   String
   lastName    String
-  role        UserRole      @default(VENDEDOR)
-  isActive    Boolean       @default(true)
-  permissions UserPermission[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastAccess  DateTime?
+  permissions String[]  @default([])
+
+  // Relaciones
+  auditLogs   AuditLog[]
+  userActivities UserActivity[]
 
   @@map("users")
 }
 
-model Permission {
-  id          String           @id @default(cuid())
-  module      String           // dashboard, usuarios, clientes, ventas, productos, inventario, caja, reportes
-  submodule   String?          // crear, editar, eliminar, ver, exportar, etc.
-  name        String           // Nombre descriptivo del permiso
-  description String?          // Descripción del permiso
-  users       UserPermission[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // LOGIN, CREATE_USER, UPDATE_USER, DELETE_USER, etc.
+  userId    String?  // Usuario que realizó la acción
+  targetId  String?  // ID del recurso afectado
+  details   String?  // Detalles adicionales de la acción
+  ipAddress String?  // Dirección IP del usuario
+  userAgent String?  // User agent del navegador
+  createdAt DateTime @default(now())
 
-  @@unique([module, submodule])
-  @@map("permissions")
+  // Relación con usuario
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
 }
 
-model UserPermission {
-  id           String     @id @default(cuid())
-  userId       String
-  permissionId String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
+model UserActivity {
+  id        String   @id @default(cuid())
+  userId    String   // Usuario que realizó la actividad
+  action    String   // Tipo de actividad
+  details   String?  // Detalles de la actividad
+  ipAddress String?  // Dirección IP
+  userAgent String?  // User agent del navegador
+  createdAt DateTime @default(now())
 
-  @@unique([userId, permissionId])
-  @@map("user_permissions")
+  // Relación con usuario
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activities")
 }
 
-enum UserRole {
-  ADMIN
-  CAJERO
-  VENDEDOR
-  SUPERVISOR
+model SystemEvent {
+  id        String   @id @default(cuid())
+  type      String   // SYSTEM_START, DATABASE_BACKUP, ERROR, etc.
+  details   String?  // Detalles del evento
+  metadata  Json?    // Metadatos adicionales en formato JSON
+  createdAt DateTime @default(now())
+
+  @@map("system_events")
+}
+
+model Client {
+  id               String   @id @default(cuid())
+  tipoDocumento    String   // DNI, RUC, CE
+  numeroDocumento  String   @unique // Número de documento único
+  
+  // Campos para DNI y CE (Personas Naturales)
+  nombres          String?  // Nombres (solo para DNI/CE)
+  apellidos        String?  // Apellidos (solo para DNI/CE)
+  
+  // Campos para RUC (Personas Jurídicas)
+  razonSocial      String?  // Razón Social (solo para RUC)
+  
+  // Campos comunes
+  email            String   @unique // Email único del cliente
+  telefono         String   // Teléfono de contacto
+  direccion        String   // Dirección completa
+  ciudad           String   // Ciudad de residencia
+  
+  isActive         Boolean  @default(true) // Soft delete
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("clients")
 }

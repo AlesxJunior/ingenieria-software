@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { AuthService } from '../services/authService';
+import AuditService from '../services/auditService';
 import { 
   validateLoginRequest, 
   validateRegisterRequest 
@@ -28,6 +29,17 @@ export class AuthController {
 
     // Procesar login
     const authResponse = await AuthService.login({ email, password });
+    
+    // Registrar login en auditoría
+    const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+    const userAgent = req.get('User-Agent') || 'unknown';
+    
+    try {
+      await AuditService.logUserLogin(authResponse.user.id, ipAddress, userAgent);
+    } catch (auditError) {
+      logger.error('Error al registrar login en auditoría:', auditError);
+      // No fallar el login por error de auditoría
+    }
     
     sendAuthSuccess(res, authResponse, 'Login exitoso');
   });
@@ -78,11 +90,24 @@ export class AuthController {
   });
 
   // POST /auth/logout
-  static logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  static logout = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const { refreshToken } = req.body;
 
     if (refreshToken) {
       await AuthService.logout(refreshToken);
+    }
+    
+    // Registrar logout en auditoría si hay usuario autenticado
+    if (req.user) {
+      const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+      const userAgent = req.get('User-Agent') || 'unknown';
+      
+      try {
+        await AuditService.logUserLogout(req.user.userId, ipAddress, userAgent);
+      } catch (auditError) {
+        logger.error('Error al registrar logout en auditoría:', auditError);
+        // No fallar el logout por error de auditoría
+      }
     }
     
     sendLogoutSuccess(res, 'Logout exitoso');
@@ -167,7 +192,6 @@ export class AuthController {
         decoded: {
           userId: decoded.userId,
           email: decoded.email,
-          role: decoded.role,
           exp: decoded.exp
         }
       }, 'Token válido');

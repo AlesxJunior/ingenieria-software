@@ -23,6 +23,9 @@ export const config = {
   // Bcrypt
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '12'),
   
+  // Logging
+  logLevel: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'warn' : 'info'),
+  
   // Validaciones
   get isDevelopment() {
     return this.nodeEnv === 'development';

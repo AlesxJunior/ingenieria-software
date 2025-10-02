@@ -188,9 +188,7 @@ export const validateUserUpdate = (data: any): ValidationResult => {
     validator.maxLength(data.lastName, 50, 'lastName');
   }
 
-  if (data.role !== undefined) {
-    validator.oneOf(data.role, ['USER', 'ADMIN', 'MODERATOR'], 'role');
-  }
+
   
   return validator.getResult();
 };
@@ -212,9 +210,7 @@ export const validateUserCreate = (data: any): ValidationResult => {
     validator.maxLength(data.lastName, 50, 'lastName');
   }
 
-  if (data.role !== undefined) {
-    validator.oneOf(data.role, ['USER', 'ADMIN', 'MODERATOR'], 'role');
-  }
+
   
   return validator.getResult();
 };

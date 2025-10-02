@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { apiService } from '../utils/api';
 import styled from 'styled-components';
 
 const LoadingContainer = styled.div`
@@ -34,78 +33,25 @@ const LoadingText = styled.p`
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: string;
+  requiredPermission?: string;
   requiredPermissions?: string[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  requiredRole,
+  requiredPermission,
   requiredPermissions 
 }) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, hasPermission } = useAuth();
   const location = useLocation();
-  const [permissionLoading, setPermissionLoading] = useState(false);
-  const [hasPermission, setHasPermission] = useState(true);
 
-  // Verificar permisos específicos cuando se requieren
-  useEffect(() => {
-    const checkPermissions = async () => {
-      if (!requiredPermissions || !user || user.role === 'ADMIN') {
-    // Si no se requieren permisos específicos, o el usuario es admin, permitir acceso
-        setHasPermission(true);
-        return;
-      }
-
-      setPermissionLoading(true);
-      try {
-        // Verificar cada permiso requerido haciendo peticiones específicas
-        let hasAllPermissions = true;
-        
-        for (const permission of requiredPermissions) {
-          let endpoint = '';
-          
-          // Mapear permisos a endpoints específicos
-          if (permission === 'Auditoría y Logs') {
-            endpoint = '/audit/logs';
-          } else {
-            // Para otros permisos, usar el endpoint genérico
-            endpoint = '/users/permissions';
-          }
-          
-          try {
-            await apiService.get(endpoint);
-          } catch (error: any) {
-            if (error.response?.status === 403) {
-              hasAllPermissions = false;
-              break;
-            }
-          }
-        }
-        
-        setHasPermission(hasAllPermissions);
-      } catch (error: any) {
-        // Para errores generales, asumir que no tiene permisos
-        setHasPermission(false);
-      } finally {
-        setPermissionLoading(false);
-      }
-    };
-
-    if (isAuthenticated && !isLoading) {
-      checkPermissions();
-    }
-  }, [requiredPermissions, user, isAuthenticated, isLoading]);
-
-  // Mostrar loading mientras se verifica la autenticación o permisos
-  if (isLoading || permissionLoading) {
+  // Mostrar loading mientras se verifica la autenticación
+  if (isLoading) {
     return (
       <LoadingContainer>
         <div style={{ textAlign: 'center' }}>
           <LoadingSpinner />
-          <LoadingText>
-            {isLoading ? 'Verificando autenticación...' : 'Verificando permisos...'}
-          </LoadingText>
+          <LoadingText>Verificando autenticación...</LoadingText>
         </div>
       </LoadingContainer>
     );
@@ -116,8 +62,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Verificar rol si es requerido
-  if (requiredRole && user?.role !== requiredRole) {
+  // Verificar permiso específico si es requerido
+  if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
       <LoadingContainer>
         <div style={{ textAlign: 'center' }}>
@@ -129,17 +75,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Verificar permisos específicos si son requeridos
-  if (requiredPermissions && !hasPermission && user?.role !== 'ADMIN') {
-    return (
-      <LoadingContainer>
-        <div style={{ textAlign: 'center' }}>
-          <LoadingText style={{ color: '#dc3545' }}>
-            No tienes los permisos necesarios para acceder a esta página.
-          </LoadingText>
-        </div>
-      </LoadingContainer>
-    );
+  // Verificar permisos múltiples si se especifican (requiere TODOS los permisos)
+  if (requiredPermissions && requiredPermissions.length > 0) {
+    const hasAllPermissions = requiredPermissions.every(permission => hasPermission(permission));
+    if (!hasAllPermissions) {
+      return (
+        <LoadingContainer>
+          <div style={{ textAlign: 'center' }}>
+            <LoadingText style={{ color: '#dc3545' }}>
+              No tienes permisos para acceder a esta página.
+            </LoadingText>
+          </div>
+        </LoadingContainer>
+      );
+    }
   }
 
   return <>{children}</>;

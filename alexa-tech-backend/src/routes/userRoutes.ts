@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/userController';
-import { authenticate, requireAdmin, requireSupervisor, requirePermissions } from '../middleware/auth';
+import { authenticate, requireAdmin, requireSupervisor } from '../middleware/auth';
 import { rateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
@@ -8,20 +8,13 @@ const router = Router();
 // Aplicar autenticación a todas las rutas de usuarios
 router.use(authenticate);
 
-// GET /users/permissions - Obtener todos los permisos disponibles
-// Solo admins y moderadores pueden ver los permisos
-router.get(
-  '/permissions',
-  requireSupervisor,
-  rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 requests per 15 minutes
-  UserController.getAllPermissions
-);
+
 
 // GET /users - Obtener todos los usuarios (con filtros y paginación)
 // Requiere permiso específico para ver usuarios
 router.get(
   '/',
-  requirePermissions('Ver Usuarios'),
+  requireSupervisor,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }), // 100 requests per 15 minutes
   UserController.getAllUsers
 );
@@ -30,6 +23,7 @@ router.get(
 // Los usuarios pueden ver su propio perfil, admins y moderadores pueden ver cualquiera
 router.get(
   '/:id',
+  requireSupervisor,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 200 }), // 200 requests per 15 minutes
   UserController.getUserById
 );
@@ -38,7 +32,7 @@ router.get(
 // Requiere permiso específico para crear usuarios
 router.post(
   '/',
-  requirePermissions('Crear Usuarios'),
+  requireAdmin,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 10 }), // 10 creations per 15 minutes
   UserController.createUser
 );
@@ -47,7 +41,7 @@ router.post(
 // Requiere permiso específico para editar usuarios
 router.put(
   '/:id',
-  requirePermissions('Editar Usuarios'),
+  requireAdmin,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 updates per 15 minutes
   UserController.updateUser
 );
@@ -56,25 +50,33 @@ router.put(
 // Requiere permiso específico para editar usuarios
 router.patch(
   '/:id',
-  requirePermissions('Editar Usuarios'),
+  requireAdmin,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 updates per 15 minutes
   UserController.patchUser
 );
 
 // PATCH /users/:id/status - Cambiar estado del usuario
-// Requiere permiso específico para editar usuarios
+// Requiere permiso específico para editar usuarios (Admin o Supervisor)
 router.patch(
   '/:id/status',
-  requirePermissions('Editar Usuarios'),
+  requireSupervisor,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 20 }), // 20 status changes per 15 minutes
   UserController.updateUserStatus
+);
+
+// PATCH /users/:id/change-password - Cambiar contraseña del usuario
+// Los usuarios pueden cambiar su propia contraseña, admins pueden cambiar cualquiera
+router.patch(
+  '/:id/change-password',
+  rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }),
+  UserController.changePassword
 );
 
 // DELETE /users/:id - Eliminar usuario (soft delete)
 // Requiere permiso específico para eliminar usuarios
 router.delete(
   '/:id',
-  requirePermissions('Eliminar Usuarios'),
+  requireAdmin,
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 5 }), // 5 deletions per 15 minutes
   UserController.deleteUser
 );

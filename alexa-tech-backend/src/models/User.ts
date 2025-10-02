@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 import { User, UserCreateInput, UserUpdateInput, UserResponse } from '../types';
-import { UserRole } from '../generated/prisma';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
@@ -18,32 +17,32 @@ let users: UserWithPassword[] = [
     firstName: 'Admin',
     lastName: 'User',
     password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // admin123
-    role: UserRole.ADMIN,
     isActive: true,
+    permissions: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')
   },
   {
     id: '2',
-    username: 'moderator',
-    email: 'moderator@alexatech.com',
-    firstName: 'Moderator',
+    username: 'supervisor',
+    email: 'supervisor@alexatech.com',
+    firstName: 'Supervisor',
     lastName: 'User',
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // moderator123
-    role: UserRole.MODERATOR,
+    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // supervisor123
     isActive: true,
+    permissions: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')
   },
   {
     id: '3',
-    username: 'user',
-    email: 'user@alexatech.com',
-    firstName: 'Regular',
+    username: 'vendedor',
+    email: 'vendedor@alexatech.com',
+    firstName: 'Vendedor',
     lastName: 'User',
-    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // user123
-    role: UserRole.USER,
+    password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // vendedor123
     isActive: true,
+    permissions: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')
   }
@@ -112,8 +111,9 @@ export class UserModel {
       firstName: userData.firstName,
       lastName: userData.lastName,
       password: hashedPassword,
-      role: userData.role || UserRole.USER,
+
       isActive: true,
+      permissions: userData.permissions || [],
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -168,8 +168,9 @@ export class UserModel {
       firstName: updateData.firstName || user.firstName,
       lastName: updateData.lastName || user.lastName,
       password: hashedPassword,
-      role: updateData.role || user.role,
+
       isActive: updateData.isActive !== undefined ? updateData.isActive : user.isActive,
+      permissions: updateData.permissions !== undefined ? updateData.permissions : user.permissions,
       updatedAt: new Date()
     };
 
@@ -233,8 +234,8 @@ export class UserModel {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
       isActive: user.isActive,
+      permissions: user.permissions || [],
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     };
@@ -246,11 +247,7 @@ export class UserModel {
     return users.filter(u => u.isActive).map(user => this.toResponse(user));
   }
 
-  // Obtener usuarios por rol
-  static async findByRole(role: UserRole): Promise<User[]> {
-    logger.database('SELECT BY ROLE', 'users');
-    return users.filter(u => u.role === role && u.isActive).map(user => this.toResponse(user));
-  }
+
 
   // Contar usuarios
   static async count(): Promise<number> {

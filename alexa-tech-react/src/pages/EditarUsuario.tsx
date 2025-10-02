@@ -8,9 +8,7 @@ interface UserFormData {
   username: string;
   email: string;
   fullName: string;
-  role: string;
-  status: 'activo' | 'inactivo' | 'suspendido';
-  permissions: string[];
+  status: boolean;
 }
 
 interface FormErrors {
@@ -104,19 +102,7 @@ const Input = styled.input<{ $hasError?: boolean }>`
   }
 `;
 
-const Select = styled.select<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
 
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-`;
 
 const ErrorMessage = styled.span`
   color: #e74c3c;
@@ -124,41 +110,7 @@ const ErrorMessage = styled.span`
   margin-top: 0.25rem;
 `;
 
-const PermissionsContainer = styled.div`
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  padding: 1rem;
-`;
 
-const PermissionsTitle = styled.h3`
-  margin: 0 0 1rem 0;
-  color: #2c3e50;
-  font-size: 1.1rem;
-`;
-
-const PermissionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-`;
-
-const PermissionItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const Checkbox = styled.input`
-  margin: 0;
-`;
 
 const ButtonContainer = styled.div`
   display: flex;
@@ -167,7 +119,7 @@ const ButtonContainer = styled.div`
   margin-top: 2rem;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   padding: 0.75rem 2rem;
   border: none;
   border-radius: 8px;
@@ -176,7 +128,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   transition: background-color 0.2s;
 
   ${props => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'primary':
         return `
           background: #3498db;
@@ -236,6 +188,19 @@ const SectionTitle = styled.h3`
   font-size: 1.2rem;
 `;
 
+const PermissionItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+`;
+
+const Checkbox = styled.input`
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+`;
+
 const EditarUsuario: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -245,9 +210,7 @@ const EditarUsuario: React.FC = () => {
     username: '',
     email: '',
     fullName: '',
-    role: 'VENDEDOR',
-    status: 'activo',
-    permissions: []
+    status: true
   });
 
   const [changePassword, setChangePassword] = useState(false);
@@ -257,23 +220,7 @@ const EditarUsuario: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const availablePermissions = [
-    { id: 'dashboard', name: 'Dashboard', description: 'Acceso al panel principal' },
-    { id: 'usuarios', name: 'Usuarios', description: 'Gestión de usuarios' },
-    { id: 'clientes', name: 'Clientes', description: 'Gestión de clientes' },
-    { id: 'ventas', name: 'Ventas', description: 'Gestión de ventas' },
-    { id: 'productos', name: 'Productos', description: 'Gestión de productos' },
-    { id: 'inventario', name: 'Inventario', description: 'Control de inventario' },
-    { id: 'caja', name: 'Caja', description: 'Gestión de caja' },
-    { id: 'reportes', name: 'Reportes', description: 'Generación de reportes' }
-  ];
 
-  const rolePermissions = {
-    ADMIN: ['dashboard', 'usuarios', 'clientes', 'ventas', 'productos', 'inventario', 'caja', 'reportes'],
-    VENDEDOR: ['dashboard', 'clientes', 'ventas', 'productos'],
-    CAJERO: ['dashboard', 'ventas', 'caja'],
-    SUPERVISOR: ['dashboard', 'clientes', 'ventas', 'productos', 'inventario', 'reportes']
-  };
 
   // Datos de ejemplo - en una aplicación real vendrían de una API
   const mockUsers = [
@@ -282,36 +229,28 @@ const EditarUsuario: React.FC = () => {
       username: 'admin',
       email: 'admin@alexatech.com',
       fullName: 'Administrador Principal',
-      role: 'ADMIN',
-      status: 'activo' as const,
-      permissions: ['dashboard', 'usuarios', 'clientes', 'ventas', 'productos', 'inventario', 'caja', 'reportes']
+      status: true
     },
     {
       id: '2',
       username: 'jhose_daniel',
       email: 'jhosedaniel@gmail.com',
       fullName: 'Jhose Daniel',
-      role: 'VENDEDOR',
-      status: 'activo' as const,
-      permissions: ['dashboard', 'clientes', 'ventas', 'productos']
+      status: true
     },
     {
       id: '3',
       username: 'nestor_rene',
       email: 'nestorRene@gmail.com',
       fullName: 'Nestor René',
-      role: 'CAJERO',
-      status: 'activo' as const,
-      permissions: ['dashboard', 'ventas', 'caja']
+      status: true
     },
     {
       id: '4',
       username: 'alex_junior',
       email: 'alexjunior@gmail.com',
       fullName: 'Alex Junior',
-      role: 'VENDEDOR',
-      status: 'inactivo' as const,
-      permissions: ['dashboard', 'clientes', 'ventas']
+      status: false
     }
   ];
 
@@ -327,9 +266,7 @@ const EditarUsuario: React.FC = () => {
             username: user.username,
             email: user.email,
             fullName: user.fullName,
-            role: user.role,
-            status: user.status,
-            permissions: user.permissions
+            status: user.status
           });
         } else {
           showError('Usuario no encontrado');
@@ -372,9 +309,7 @@ const EditarUsuario: React.FC = () => {
       }
     }
 
-    if (formData.permissions.length === 0) {
-      newErrors.permissions = 'Debe seleccionar al menos un permiso';
-    }
+
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -395,30 +330,7 @@ const EditarUsuario: React.FC = () => {
     }
   };
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const role = e.target.value as keyof typeof rolePermissions;
-    setFormData(prev => ({
-      ...prev,
-      role,
-      permissions: rolePermissions[role] || []
-    }));
-  };
 
-  const handlePermissionChange = (permissionId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter(p => p !== permissionId)
-        : [...prev.permissions, permissionId]
-    }));
-
-    if (errors.permissions) {
-      setErrors(prev => ({
-        ...prev,
-        permissions: ''
-      }));
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -517,53 +429,20 @@ const EditarUsuario: React.FC = () => {
               {errors.fullName && <ErrorMessage>{errors.fullName}</ErrorMessage>}
             </FormGroup>
 
-            <FormRow>
-              <FormGroup>
-                <Label htmlFor="role">Rol *</Label>
-                <Select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleRoleChange}
-                >
-                  <option value="VENDEDOR">Vendedor</option>
-                  <option value="CAJERO">Cajero</option>
-                  <option value="SUPERVISOR">Supervisor</option>
-                  <option value="ADMIN">Administrador</option>
-                </Select>
-              </FormGroup>
-
-              <FormGroup>
-                <Label htmlFor="status">Estado</Label>
-                <Select
+            <FormGroup>
+              <PermissionItem>
+                <Checkbox
+                  type="checkbox"
                   id="status"
                   name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                  <option value="suspendido">Suspendido</option>
-                </Select>
-              </FormGroup>
-            </FormRow>
+                  checked={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.checked }))}
+                />
+                <Label htmlFor="status">Usuario Activo</Label>
+              </PermissionItem>
+            </FormGroup>
 
-            <PermissionsContainer>
-              <PermissionsTitle>Permisos del Usuario</PermissionsTitle>
-              <PermissionsGrid>
-                {availablePermissions.map(permission => (
-                  <PermissionItem key={permission.id}>
-                    <Checkbox
-                      type="checkbox"
-                      checked={formData.permissions.includes(permission.id)}
-                      onChange={() => handlePermissionChange(permission.id)}
-                    />
-                    <span>{permission.name}</span>
-                  </PermissionItem>
-                ))}
-              </PermissionsGrid>
-              {errors.permissions && <ErrorMessage>{errors.permissions}</ErrorMessage>}
-            </PermissionsContainer>
+
 
             <PasswordSection>
               <SectionTitle>Gestión de Contraseña</SectionTitle>
@@ -618,7 +497,7 @@ const EditarUsuario: React.FC = () => {
               <Button type="button" onClick={() => navigate('/usuarios')}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary" disabled={isSubmitting}>
+              <Button type="submit" $variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </ButtonContainer>

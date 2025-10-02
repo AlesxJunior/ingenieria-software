@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { userService } from '../services/userService';
-import { UserRole } from '../generated/prisma';
 import { 
   validateUserCreate, 
   validateUserUpdate,
@@ -15,15 +14,17 @@ import {
 } from '../utils/response';
 import { asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import * as bcrypt from 'bcrypt';
 
 export class UserController {
   // GET /users - Obtener todos los usuarios (con filtros y paginación)
   static getAllUsers = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const { page = 1, limit = 10, role, status, search } = req.query;
+    const { page = 1, limit = 10, status, search } = req.query;
     const currentUser = req.user;
 
-    // Solo admins y supervisores pueden ver todos los usuarios
-    if (currentUser?.role === UserRole.VENDEDOR || currentUser?.role === UserRole.CAJERO) {
+    // Verificar permisos para ver usuarios
+    const fullUser = await userService.findById(currentUser?.userId || '');
+    if (!fullUser || !fullUser.permissions.includes('users.read')) {
       sendForbidden(res, 'No tienes permisos para ver la lista de usuarios');
       return;
     }
@@ -36,20 +37,17 @@ export class UserController {
       // Construir filtros
       const filters: any = {};
       
-      if (role && role !== 'all') {
-        filters.role = role as UserRole;
-      }
-      
+      // Filtrar por estado solo si se especifica
       if (status && status !== 'all') {
-        filters.isActive = status === 'active';
+        filters.isActive = status === 'activo';
       }
+      // No filtrar por defecto - mostrar todos los usuarios (activos e inactivos)
 
       // Buscar usuarios
-      const { users, total: totalUsers } = await userService.findAllWithPermissions({
+      const { users, total: totalUsers } = await userService.findAll({
         page: pageNum,
         limit: limitNum,
         search: search as string,
-        role: filters.role,
         isActive: filters.isActive
       });
       const totalPages = Math.ceil(totalUsers / limitNum);
@@ -68,15 +66,9 @@ export class UserController {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role,
           isActive: user.isActive,
-          permissions: user.permissions.map((up: any) => ({
-          id: up.permission.id,
-          module: up.permission.module,
-          submodule: up.permission.submodule,
-          name: up.permission.name,
-          description: up.permission.description
-        })),
+          lastAccess: user.lastAccess,
+          permissions: user.permissions || [],
           createdAt: user.createdAt,
           updatedAt: user.updatedAt
         })),
@@ -104,13 +96,14 @@ export class UserController {
       return;
     }
 
-    // Los vendedores y cajeros solo pueden ver su propio perfil, admins y supervisores pueden ver cualquiera
-    if ((currentUser?.role === UserRole.VENDEDOR || currentUser?.role === UserRole.CAJERO) && currentUser.userId !== id) {
+    // Verificar permisos: pueden ver su propio perfil o tener permiso users.read
+    const fullUser = await userService.findById(currentUser?.userId || '');
+    if (currentUser?.userId !== id && (!fullUser || !fullUser.permissions.includes('users.read'))) {
       sendForbidden(res, 'No tienes permisos para ver este usuario');
       return;
     }
 
-    const user = await userService.findByIdWithPermissions(id);
+    const user = await userService.findById(id);
     if (!user) {
       sendNotFound(res, 'Usuario no encontrado');
       return;
@@ -124,27 +117,21 @@ export class UserController {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
-      role: user.role,
       isActive: user.isActive,
-      permissions: user.permissions.map((up: any) => ({
-        id: up.permission.id,
-        module: up.permission.module,
-        submodule: up.permission.submodule,
-        name: up.permission.name,
-        description: up.permission.description
-      })),
+      permissions: user.permissions,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt
     }, 'Usuario obtenido exitosamente');
   });
 
-  // POST /users - Crear nuevo usuario (solo admins)
+  // POST /users - Crear nuevo usuario
   static createUser = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     const currentUser = req.user;
 
-    // Solo admins pueden crear usuarios
-    if (currentUser?.role !== UserRole.ADMIN) {
-      sendForbidden(res, 'Solo los administradores pueden crear usuarios');
+    // Verificar permisos para crear usuarios
+    const fullUser = await userService.findById(currentUser?.userId || '');
+    if (!fullUser || !fullUser.permissions.includes('users.create')) {
+      sendForbidden(res, 'No tienes permisos para crear usuarios');
       return;
     }
 
@@ -162,40 +149,24 @@ export class UserController {
         password: req.body.password,
         firstName: req.body.firstName || '',
         lastName: req.body.lastName || '',
-        role: req.body.role || UserRole.VENDEDOR
+        permissions: req.body.permissions || []
       });
 
-      // Asignar permisos si se proporcionan
-      if (req.body.permissions && Array.isArray(req.body.permissions)) {
-        await userService.assignPermissions(newUser.id, req.body.permissions);
-      }
-
-      // Obtener el usuario con permisos
-      const userWithPermissions = await userService.findByIdWithPermissions(newUser.id);
-
-      logger.info(`User created by ${currentUser.email}`, {
+      logger.info(`User created by ${fullUser.email}`, {
         newUserId: newUser.id,
-        newUserEmail: newUser.email,
-        permissions: req.body.permissions
+        newUserEmail: newUser.email
       });
 
       sendSuccess(res, {
-        id: userWithPermissions!.id,
-        username: userWithPermissions!.username,
-        email: userWithPermissions!.email,
-        firstName: userWithPermissions!.firstName,
-        lastName: userWithPermissions!.lastName,
-        role: userWithPermissions!.role,
-        isActive: userWithPermissions!.isActive,
-        permissions: userWithPermissions!.permissions.map((up: any) => ({
-          id: up.permission.id,
-          module: up.permission.module,
-          submodule: up.permission.submodule,
-          name: up.permission.name,
-          description: up.permission.description
-        })),
-        createdAt: userWithPermissions!.createdAt,
-        updatedAt: userWithPermissions!.updatedAt
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        isActive: newUser.isActive,
+        permissions: newUser.permissions,
+        createdAt: newUser.createdAt,
+        updatedAt: newUser.updatedAt
       }, 'Usuario creado exitosamente', 201);
     } catch (error) {
       logger.error('Error creating user:', error);
@@ -233,8 +204,8 @@ export class UserController {
         email: req.body.email,
         firstName: req.body.firstName,
         lastName: req.body.lastName,
-        role: req.body.role,
-        password: req.body.password // Solo si se proporciona
+        password: req.body.password, // Solo si se proporciona
+        permissions: req.body.permissions
       });
 
       if (!updatedUser) {
@@ -242,35 +213,18 @@ export class UserController {
         return;
       }
 
-      // Actualizar permisos si se proporcionan
-      if (req.body.permissions && Array.isArray(req.body.permissions)) {
-        await userService.updatePermissions(id, req.body.permissions);
-      }
-
-      // Obtener el usuario con permisos actualizados
-      const userWithPermissions = await userService.findByIdWithPermissions(id);
-
-      logger.info(`User ${id} updated by ${currentUser?.email}`, {
-        permissions: req.body.permissions
-      });
+      logger.info(`User ${id} updated by ${currentUser?.email}`);
 
       sendSuccess(res, {
-        id: userWithPermissions!.id,
-        username: userWithPermissions!.username,
-        email: userWithPermissions!.email,
-        firstName: userWithPermissions!.firstName,
-        lastName: userWithPermissions!.lastName,
-        role: userWithPermissions!.role,
-        isActive: userWithPermissions!.isActive,
-        permissions: userWithPermissions!.permissions.map((up: any) => ({
-          id: up.permission.id,
-          module: up.permission.module,
-          submodule: up.permission.submodule,
-          name: up.permission.name,
-          description: up.permission.description
-        })),
-        createdAt: userWithPermissions!.createdAt,
-        updatedAt: userWithPermissions!.updatedAt
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        isActive: updatedUser.isActive,
+        permissions: updatedUser.permissions || [],
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt
       }, 'Usuario actualizado exitosamente');
     } catch (error) {
       logger.error('Error updating user:', error);
@@ -297,7 +251,7 @@ export class UserController {
 
     // Validar solo los campos proporcionados
     const updateData: any = {};
-    const allowedFields = ['username', 'email', 'firstName', 'lastName', 'role', 'password'];
+    const allowedFields = ['username', 'email', 'firstName', 'lastName', 'password', 'permissions'];
     
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
@@ -333,8 +287,8 @@ export class UserController {
         email: updatedUser.email,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
-        role: updatedUser.role,
         isActive: updatedUser.isActive,
+        permissions: updatedUser.permissions || [],
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
       }, 'Usuario actualizado exitosamente');
@@ -354,8 +308,9 @@ export class UserController {
       return;
     }
 
-    // Solo admins y supervisores pueden cambiar estados
-    if (currentUser?.role === UserRole.VENDEDOR || currentUser?.role === UserRole.CAJERO) {
+    // Verificar permisos para cambiar estados de usuarios
+    const fullUser = await userService.findById(currentUser?.userId || '');
+    if (!fullUser || !fullUser.permissions.includes('users.update')) {
       sendForbidden(res, 'No tienes permisos para cambiar el estado de usuarios');
       return;
     }
@@ -405,14 +360,15 @@ export class UserController {
       return;
     }
 
-    // Solo admins pueden eliminar usuarios
-    if (currentUser?.role !== UserRole.ADMIN) {
-      sendForbidden(res, 'Solo los administradores pueden eliminar usuarios');
+    // Verificar permisos para eliminar usuarios
+    const fullUser = await userService.findById(currentUser?.userId || '');
+    if (!fullUser || !fullUser.permissions.includes('users.delete')) {
+      sendForbidden(res, 'No tienes permisos para eliminar usuarios');
       return;
     }
 
     // No se puede eliminar a sí mismo
-    if (currentUser.userId === id) {
+    if (currentUser?.userId === id) {
       sendForbidden(res, 'No puedes eliminar tu propia cuenta');
       return;
     }
@@ -425,7 +381,7 @@ export class UserController {
         return;
       }
 
-      logger.info(`User ${id} deleted by ${currentUser.email}`);
+      logger.info(`User ${id} deleted by ${fullUser.email}`);
 
       sendSuccess(res, {
         id: deletedUser.id,
@@ -437,46 +393,7 @@ export class UserController {
     }
   });
 
-  // GET /permissions - Obtener todos los permisos disponibles
-  static getAllPermissions = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const currentUser = req.user;
 
-    // Solo admins y supervisores pueden ver todos los permisos
-    if (currentUser?.role === UserRole.VENDEDOR || currentUser?.role === UserRole.CAJERO) {
-      sendForbidden(res, 'No tienes permisos para ver los permisos disponibles');
-      return;
-    }
-
-    try {
-      const permissions = await userService.getAllPermissions();
-
-      // Agrupar permisos por módulo y submódulo
-      const groupedPermissions = permissions.reduce((acc: any, permission: any) => {
-        if (!acc[permission.module]) {
-          acc[permission.module] = {};
-        }
-        if (!acc[permission.module][permission.submodule]) {
-          acc[permission.module][permission.submodule] = [];
-        }
-        acc[permission.module][permission.submodule].push({
-          id: permission.id,
-          name: permission.name,
-          description: permission.description
-        });
-        return acc;
-      }, {});
-
-      logger.info(`Permissions retrieved by ${currentUser?.email}`);
-
-      sendSuccess(res, {
-        permissions: groupedPermissions,
-        total: permissions.length
-      }, 'Permisos obtenidos exitosamente');
-    } catch (error) {
-      logger.error('Error getting permissions:', error);
-      throw error;
-    }
-  });
 
   // Método auxiliar para verificar permisos de edición
   private static async canEditUser(currentUser: any, targetUserId: string): Promise<{ allowed: boolean; reason?: string }> {
@@ -484,32 +401,75 @@ export class UserController {
       return { allowed: false, reason: 'Usuario no autenticado' };
     }
 
-    // Los admins pueden editar a cualquiera
-    if (currentUser.role === UserRole.ADMIN) {
+    // Si es el mismo usuario, puede editarse a sí mismo
+    if (currentUser?.userId === targetUserId) {
       return { allowed: true };
     }
 
-    // Los supervisores pueden editar vendedores y cajeros, pero no otros supervisores o admins
-    if (currentUser.role === UserRole.SUPERVISOR) {
-      const targetUser = await userService.findById(targetUserId);
-      if (!targetUser) {
-        return { allowed: false, reason: 'Usuario no encontrado' };
-      }
-
-      if (targetUser.role === UserRole.VENDEDOR || targetUser.role === UserRole.CAJERO || currentUser.userId === targetUserId) {
-        return { allowed: true };
-      }
-
-      return { allowed: false, reason: 'No puedes editar usuarios con rol de supervisor o administrador' };
+    // Obtener permisos del usuario actual
+    const fullUser = await userService.findById(currentUser?.userId || '');
+    if (!fullUser) {
+      return { allowed: false, reason: 'Usuario no encontrado' };
     }
 
-    // Los vendedores y cajeros solo pueden editarse a sí mismos
-    if ((currentUser.role === UserRole.VENDEDOR || currentUser.role === UserRole.CAJERO) && currentUser.userId === targetUserId) {
+    // Verificar si tiene permisos para editar usuarios
+    if (fullUser.permissions.includes('users.update')) {
       return { allowed: true };
     }
 
     return { allowed: false, reason: 'No tienes permisos para editar este usuario' };
   }
+
+  static changePassword = asyncHandler(async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+    const currentUser = req.user;
+
+    if (!id) {
+      sendValidationError(res, [{ field: 'id', message: 'ID de usuario requerido' }]);
+      return;
+    }
+
+    if (!currentPassword || !newPassword) {
+      sendValidationError(res, [{ field: 'password', message: 'Se requiere la contraseña actual y la nueva contraseña' }]);
+      return;
+    }
+
+    // Verificar permisos para cambiar contraseña
+    const permissionCheck = await UserController.canEditUser(currentUser, id);
+    if (!permissionCheck.allowed) {
+      sendForbidden(res, permissionCheck.reason || 'No tienes permisos para cambiar la contraseña de este usuario');
+      return;
+    }
+
+    // Obtener el usuario objetivo
+    const targetUser = await userService.findById(id);
+    if (!targetUser) {
+      sendNotFound(res, 'Usuario no encontrado');
+      return;
+    }
+
+    // Verificar la contraseña actual solo si el usuario está cambiando su propia contraseña
+    if (currentUser?.userId === id) {
+      const isCurrentPasswordValid = await userService.verifyPassword(targetUser, currentPassword);
+      if (!isCurrentPasswordValid) {
+        sendValidationError(res, [{ field: 'currentPassword', message: 'La contraseña actual es incorrecta' }]);
+        return;
+      }
+    }
+
+    try {
+      // Cambiar la contraseña (el userService.update ya se encarga del hashing)
+      await userService.update(id, { password: newPassword });
+
+      logger.info(`Password changed for user ${id} by ${currentUser?.email}`);
+
+      sendSuccess(res, null, 'Contraseña actualizada exitosamente');
+    } catch (error) {
+      logger.error('Error changing password:', error);
+      throw error;
+    }
+  });
 }
 
 export default UserController;

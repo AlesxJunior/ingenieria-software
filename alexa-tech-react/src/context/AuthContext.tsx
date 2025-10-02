@@ -8,8 +8,8 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'SUPERVISOR' | 'VENDEDOR' | 'CAJERO';
   isActive: boolean;
+  permissions?: string[];
 }
 
 export interface AuthContextType {
@@ -19,6 +19,7 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -115,13 +116,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const hasPermission = (permission: string): boolean => {
+    if (!user || !user.permissions) {
+      return false;
+    }
+    return user.permissions.includes(permission);
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
     isLoading,
     login,
     logout,
-    updateUser
+    updateUser,
+    hasPermission
   };
 
   return (

@@ -45,11 +45,11 @@ const SearchInput = styled.input`
   }
 `;
 
-const AdvancedSearchContainer = styled.div<{ show: boolean }>`
+const AdvancedSearchContainer = styled.div<{ $show: boolean }>`
   background: #f8f9fa;
   padding: 20px;
   border-bottom: 1px solid #dee2e6;
-  display: ${props => props.show ? 'block' : 'none'};
+  display: ${props => props.$show ? 'block' : 'none'};
 `;
 
 const FilterRow = styled.div`
@@ -151,14 +151,14 @@ const Table = styled.table`
   }
 `;
 
-const StatusBadge = styled.span<{ status: string }>`
+const StatusBadge = styled.span<{ $status: string }>`
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
   
   ${props => {
-    switch (props.status) {
+    switch (props.$status) {
       case 'disponible':
         return 'background-color: #d4edda; color: #155724;';
       case 'agotado':
@@ -171,8 +171,8 @@ const StatusBadge = styled.span<{ status: string }>`
   }}
 `;
 
-const ActionButton = styled.button<{ color: string }>`
-  background-color: ${props => props.color};
+const ActionButton = styled.button<{ $color: string }>`
+  background-color: ${props => props.$color};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -230,8 +230,8 @@ const ModalButtons = styled.div`
   justify-content: center;
 `;
 
-const ModalButton = styled.button<{ color: string }>`
-  background-color: ${props => props.color};
+const ModalButton = styled.button<{ $color: string }>`
+  background-color: ${props => props.$color};
   color: white;
   border: none;
   padding: 10px 20px;
@@ -347,7 +347,7 @@ const ListaProductos: React.FC = () => {
           </SearchContainer>
         </TableHeader>
 
-        <AdvancedSearchContainer show={showAdvancedSearch}>
+        <AdvancedSearchContainer $show={showAdvancedSearch}>
           <FilterRow>
             <FilterGroup>
               <FilterLabel>Categoría</FilterLabel>
@@ -415,7 +415,7 @@ const ListaProductos: React.FC = () => {
                   <td>{formatPrice(product.price)}</td>
                   <td>{product.initialStock}</td>
                   <td>
-                    <StatusBadge status={product.status}>
+                    <StatusBadge $status={product.status}>
                       {getStatusText(product.status)}
                     </StatusBadge>
                   </td>
@@ -423,13 +423,13 @@ const ListaProductos: React.FC = () => {
                   <td>
                     <ActionButton 
                       onClick={() => handleEdit(product.productCode)}
-                      color="#007bff"
+                      $color="#007bff"
                     >
                       Editar
                     </ActionButton>
                     <ActionButton 
                       onClick={() => handleDelete(product.productCode)}
-                      color="#dc3545"
+                      $color="#dc3545"
                     >
                       Eliminar
                     </ActionButton>
@@ -460,13 +460,13 @@ const ListaProductos: React.FC = () => {
             <ModalButtons>
               <ModalButton 
                 onClick={cancelDelete}
-                color="#6c757d"
+                $color="#6c757d"
               >
                 Cancelar
               </ModalButton>
               <ModalButton 
                 onClick={confirmDelete}
-                color="#dc3545"
+                $color="#dc3545"
               >
                 Eliminar
               </ModalButton>

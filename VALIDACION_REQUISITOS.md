@@ -181,21 +181,25 @@ user @domain.com   # Contiene espacio
 
 ### Usuarios Predefinidos
 ```javascript
-// Admin
+// Usuario con permisos completos
 email: "admin@alexatech.com"
 password: "admin123" // ❌ Necesita mayúscula
+permissions: ["users.create", "users.read", "users.update", "users.delete", "sales.create", "sales.read", "sales.update", "sales.delete", "products.create", "products.read", "products.update", "products.delete", "inventory.read", "inventory.update", "reports.sales", "reports.users"]
 
-// Moderador
-email: "moderator@alexatech.com"  
-password: "moderator123" // ❌ Necesita mayúscula
+// Usuario con permisos de supervisión
+email: "supervisor@alexatech.com"  
+password: "supervisor123" // ❌ Necesita mayúscula
+permissions: ["users.read", "sales.create", "sales.read", "sales.update", "products.create", "products.read", "products.update", "inventory.read", "inventory.update", "reports.sales"]
 
-// Usuario Regular
+// Usuario con permisos básicos
 email: "user@alexatech.com"
 password: "user123" // ❌ Necesita mayúscula
+permissions: ["sales.create", "sales.read", "products.read", "inventory.read"]
 
 // Usuario de Prueba (Válido)
 email: "testuser3@example.com"
 password: "Password123" // ✅ Cumple todos los requisitos
+permissions: ["sales.read", "products.read"]
 ```
 
 ## 🔧 Configuración

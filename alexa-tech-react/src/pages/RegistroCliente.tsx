@@ -93,7 +93,7 @@ const ButtonContainer = styled.div`
   }
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: 0.75rem 2rem;
   border: none;
   border-radius: 8px;
@@ -103,7 +103,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   transition: all 0.3s ease;
   min-width: 120px;
 
-  ${props => props.variant === 'primary' ? `
+  ${props => props.$variant === 'primary' ? `
     background: #3498db;
     color: white;
 
@@ -134,19 +134,28 @@ const ErrorMessage = styled.span`
 `;
 
 interface FormData {
-  name: string;
-  documentType: 'DNI' | 'RUC';
-  documentNumber: string;
-  address: string;
-  phone: string;
+  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  numeroDocumento: string;
+  // Campos para DNI y CE
+  nombres?: string;
+  apellidos?: string;
+  // Campo para RUC
+  razonSocial?: string;
+  // Campos comunes
   email: string;
+  telefono: string;
+  direccion: string;
+  ciudad: string;
 }
 
 interface FormErrors {
-  name?: string;
-  documentNumber?: string;
-  address?: string;
-  phone?: string;
+  nombres?: string;
+  apellidos?: string;
+  razonSocial?: string;
+  numeroDocumento?: string;
+  direccion?: string;
+  ciudad?: string;
+  telefono?: string;
   email?: string;
 }
 
@@ -156,12 +165,15 @@ const RegistroCliente: React.FC = () => {
   const { addNotification } = useNotification();
   
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    documentType: 'DNI',
-    documentNumber: '',
-    address: '',
-    phone: '',
-    email: ''
+    tipoDocumento: 'DNI',
+    numeroDocumento: '',
+    nombres: '',
+    apellidos: '',
+    razonSocial: '',
+    email: '',
+    telefono: '',
+    direccion: '',
+    ciudad: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -170,38 +182,47 @@ const RegistroCliente: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Validar nombre
-    if (!formData.name.trim()) {
-      newErrors.name = 'El nombre es requerido';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
-    }
+    // Validar campos según tipo de documento
+    if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+      // Validar nombres
+      if (!formData.nombres?.trim()) {
+        newErrors.nombres = 'Los nombres son requeridos';
+      } else if (formData.nombres.trim().length < 2) {
+        newErrors.nombres = 'Los nombres deben tener al menos 2 caracteres';
+      }
 
-    // Validar número de documento
-    if (!formData.documentNumber.trim()) {
-      newErrors.documentNumber = 'El número de documento es requerido';
-    } else {
-      if (formData.documentType === 'DNI') {
-        if (!/^\d{8}$/.test(formData.documentNumber)) {
-          newErrors.documentNumber = 'El DNI debe tener 8 dígitos';
-        }
-      } else if (formData.documentType === 'RUC') {
-        if (!/^\d{11}$/.test(formData.documentNumber)) {
-          newErrors.documentNumber = 'El RUC debe tener 11 dígitos';
-        }
+      // Validar apellidos
+      if (!formData.apellidos?.trim()) {
+        newErrors.apellidos = 'Los apellidos son requeridos';
+      } else if (formData.apellidos.trim().length < 2) {
+        newErrors.apellidos = 'Los apellidos deben tener al menos 2 caracteres';
+      }
+    } else if (formData.tipoDocumento === 'RUC') {
+      // Validar razón social
+      if (!formData.razonSocial?.trim()) {
+        newErrors.razonSocial = 'La razón social es requerida';
+      } else if (formData.razonSocial.trim().length < 2) {
+        newErrors.razonSocial = 'La razón social debe tener al menos 2 caracteres';
       }
     }
 
-    // Validar dirección
-    if (!formData.address.trim()) {
-      newErrors.address = 'La dirección es requerida';
-    }
-
-    // Validar teléfono
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'El teléfono es requerido';
-    } else if (!/^\d{9}$/.test(formData.phone)) {
-      newErrors.phone = 'El teléfono debe tener 9 dígitos';
+    // Validar número de documento
+    if (!formData.numeroDocumento.trim()) {
+      newErrors.numeroDocumento = 'El número de documento es requerido';
+    } else {
+      if (formData.tipoDocumento === 'DNI') {
+        if (!/^\d{8}$/.test(formData.numeroDocumento)) {
+          newErrors.numeroDocumento = 'El DNI debe tener 8 dígitos';
+        }
+      } else if (formData.tipoDocumento === 'CE') {
+        if (formData.numeroDocumento.length < 6) {
+          newErrors.numeroDocumento = 'El CE debe tener al menos 6 caracteres';
+        }
+      } else if (formData.tipoDocumento === 'RUC') {
+        if (!/^\d{11}$/.test(formData.numeroDocumento)) {
+          newErrors.numeroDocumento = 'El RUC debe tener 11 dígitos';
+        }
+      }
     }
 
     // Validar email
@@ -211,23 +232,62 @@ const RegistroCliente: React.FC = () => {
       newErrors.email = 'El email no tiene un formato válido';
     }
 
+    // Validar teléfono
+    if (!formData.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es requerido';
+    } else if (!/^\d{9}$/.test(formData.telefono)) {
+      newErrors.telefono = 'El teléfono debe tener 9 dígitos';
+    }
+
+    // Validar dirección
+    if (!formData.direccion.trim()) {
+      newErrors.direccion = 'La dirección es requerida';
+    }
+
+    // Validar ciudad
+    if (!formData.ciudad.trim()) {
+      newErrors.ciudad = 'La ciudad es requerida';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Limpiar error del campo cuando el usuario empiece a escribir
-    if (errors[name as keyof FormErrors]) {
+    
+    // Si cambia el tipo de documento, limpiar campos específicos
+    if (name === 'tipoDocumento') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value as 'DNI' | 'CE' | 'RUC',
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
+        numeroDocumento: ''
+      }));
+      
+      // Limpiar errores relacionados
       setErrors(prev => ({
         ...prev,
-        [name]: undefined
+        nombres: undefined,
+        apellidos: undefined,
+        razonSocial: undefined,
+        numeroDocumento: undefined
       }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+
+      // Limpiar error del campo cuando el usuario empiece a escribir
+      if (errors[name as keyof FormErrors]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: undefined
+        }));
+      }
     }
   };
 
@@ -243,12 +303,20 @@ const RegistroCliente: React.FC = () => {
     try {
       const newClient = {
         id: Date.now().toString(),
-        name: formData.name.trim(),
-        documentType: formData.documentType,
-        documentNumber: formData.documentNumber.trim(),
-        address: formData.address.trim(),
-        phone: formData.phone.trim(),
+        tipoDocumento: formData.tipoDocumento,
+        numeroDocumento: formData.numeroDocumento.trim(),
+        ...(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' ? {
+          nombres: formData.nombres?.trim(),
+          apellidos: formData.apellidos?.trim()
+        } : {}),
+        ...(formData.tipoDocumento === 'RUC' ? {
+          razonSocial: formData.razonSocial?.trim()
+        } : {}),
         email: formData.email.trim(),
+        telefono: formData.telefono.trim(),
+        direccion: formData.direccion.trim(),
+        ciudad: formData.ciudad.trim(),
+        isActive: true,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -259,12 +327,15 @@ const RegistroCliente: React.FC = () => {
 
       // Resetear formulario
       setFormData({
-        name: '',
-        documentType: 'DNI',
-        documentNumber: '',
-        address: '',
-        phone: '',
-        email: ''
+        tipoDocumento: 'DNI',
+        numeroDocumento: '',
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
+        email: '',
+        telefono: '',
+        direccion: '',
+        ciudad: ''
       });
 
       // Navegar a la lista de clientes después de un breve delay
@@ -291,99 +362,154 @@ const RegistroCliente: React.FC = () => {
         <Form onSubmit={handleSubmit}>
           <FormRow>
             <FormGroup>
-              <Label htmlFor="name">Nombre Completo *</Label>
-              <Input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="Ingrese el nombre completo"
-                required
-              />
-              {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="documentType">Tipo de Documento *</Label>
+              <Label htmlFor="tipoDocumento">Tipo de Documento *</Label>
               <Select
-                id="documentType"
-                name="documentType"
-                value={formData.documentType}
+                id="tipoDocumento"
+                name="tipoDocumento"
+                value={formData.tipoDocumento}
                 onChange={handleInputChange}
                 required
               >
                 <option value="DNI">DNI</option>
+                <option value="CE">CE (Carnet de Extranjería)</option>
                 <option value="RUC">RUC</option>
               </Select>
             </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="numeroDocumento">Número de Documento *</Label>
+              <Input
+                type="text"
+                id="numeroDocumento"
+                name="numeroDocumento"
+                value={formData.numeroDocumento}
+                onChange={handleInputChange}
+                placeholder={
+                  formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
+                  formData.tipoDocumento === 'CE' ? 'Ingrese número de CE' :
+                  'Ingrese 11 dígitos'
+                }
+                required
+              />
+              {errors.numeroDocumento && <ErrorMessage>{errors.numeroDocumento}</ErrorMessage>}
+            </FormGroup>
           </FormRow>
+
+          {/* Campos dinámicos según tipo de documento */}
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') && (
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="nombres">Nombres *</Label>
+                <Input
+                  type="text"
+                  id="nombres"
+                  name="nombres"
+                  value={formData.nombres || ''}
+                  onChange={handleInputChange}
+                  placeholder="Ingrese los nombres"
+                  required
+                />
+                {errors.nombres && <ErrorMessage>{errors.nombres}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="apellidos">Apellidos *</Label>
+                <Input
+                  type="text"
+                  id="apellidos"
+                  name="apellidos"
+                  value={formData.apellidos || ''}
+                  onChange={handleInputChange}
+                  placeholder="Ingrese los apellidos"
+                  required
+                />
+                {errors.apellidos && <ErrorMessage>{errors.apellidos}</ErrorMessage>}
+              </FormGroup>
+            </FormRow>
+          )}
+
+          {formData.tipoDocumento === 'RUC' && (
+            <FormGroup>
+              <Label htmlFor="razonSocial">Razón Social *</Label>
+              <Input
+                type="text"
+                id="razonSocial"
+                name="razonSocial"
+                value={formData.razonSocial || ''}
+                onChange={handleInputChange}
+                placeholder="Ingrese la razón social"
+                required
+              />
+              {errors.razonSocial && <ErrorMessage>{errors.razonSocial}</ErrorMessage>}
+            </FormGroup>
+          )}
 
           <FormRow>
             <FormGroup>
-              <Label htmlFor="documentNumber">Número de Documento *</Label>
-              <Input
-                type="text"
-                id="documentNumber"
-                name="documentNumber"
-                value={formData.documentNumber}
-                onChange={handleInputChange}
-                placeholder={formData.documentType === 'DNI' ? '12345678' : '12345678901'}
-                maxLength={formData.documentType === 'DNI' ? 8 : 11}
-                required
-              />
-              {errors.documentNumber && <ErrorMessage>{errors.documentNumber}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="phone">Teléfono *</Label>
+              <Label htmlFor="telefono">Teléfono *</Label>
               <Input
                 type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
+                id="telefono"
+                name="telefono"
+                value={formData.telefono}
                 onChange={handleInputChange}
                 placeholder="987654321"
                 maxLength={9}
                 required
               />
-              {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+              {errors.telefono && <ErrorMessage>{errors.telefono}</ErrorMessage>}
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="email">Correo Electrónico *</Label>
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="cliente@ejemplo.com"
+                required
+              />
+              {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
             </FormGroup>
           </FormRow>
 
-          <FormGroup>
-            <Label htmlFor="email">Correo Electrónico *</Label>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="cliente@ejemplo.com"
-              required
-            />
-            {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
-          </FormGroup>
+          <FormRow>
+            <FormGroup>
+              <Label htmlFor="direccion">Dirección *</Label>
+              <Input
+                type="text"
+                id="direccion"
+                name="direccion"
+                value={formData.direccion}
+                onChange={handleInputChange}
+                placeholder="Ingrese la dirección completa"
+                required
+              />
+              {errors.direccion && <ErrorMessage>{errors.direccion}</ErrorMessage>}
+            </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="address">Dirección *</Label>
-            <Input
-              type="text"
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              placeholder="Ingrese la dirección completa"
-              required
-            />
-            {errors.address && <ErrorMessage>{errors.address}</ErrorMessage>}
-          </FormGroup>
+            <FormGroup>
+              <Label htmlFor="ciudad">Ciudad *</Label>
+              <Input
+                type="text"
+                id="ciudad"
+                name="ciudad"
+                value={formData.ciudad}
+                onChange={handleInputChange}
+                placeholder="Ingrese la ciudad"
+                required
+              />
+              {errors.ciudad && <ErrorMessage>{errors.ciudad}</ErrorMessage>}
+            </FormGroup>
+          </FormRow>
 
           <ButtonContainer>
-            <Button type="submit" variant="primary" disabled={isSubmitting}>
+            <Button type="submit" $variant="primary" disabled={isSubmitting}>
               {isSubmitting ? 'Registrando...' : 'Registrar Cliente'}
             </Button>
-            <Button type="button" variant="secondary" onClick={handleCancel}>
+            <Button type="button" $variant="secondary" onClick={handleCancel}>
               Cancelar
             </Button>
           </ButtonContainer>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { validatePasswordWithConfirmation } from '../utils/validation';
 import PasswordRequirements from '../components/PasswordRequirements';
+import { apiService } from '../utils/api';
 
 interface ProfileFormData {
   fullName: string;
@@ -161,13 +162,9 @@ const Badge = styled.span<{ variant: string }>`
   
   ${props => {
     switch (props.variant) {
-      case 'ADMIN':
-        return `background: #d1ecf1; color: #0c5460;`;
-      case 'VENDEDOR':
+      case 'activo':
         return `background: #d4edda; color: #155724;`;
-      case 'CAJERO':
-        return `background: #fff3cd; color: #856404;`;
-      case 'SUPERVISOR':
+      case 'inactivo':
         return `background: #f8d7da; color: #721c24;`;
       default:
         return `background: #f8f9fa; color: #6c757d;`;
@@ -182,7 +179,7 @@ const ButtonContainer = styled.div`
   margin-top: 2rem;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: 0.75rem 2rem;
   border: none;
   border-radius: 8px;
@@ -190,7 +187,7 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
   cursor: pointer;
   transition: background-color 0.2s;
 
-  ${props => props.variant === 'primary' ? `
+  ${props => props.$variant === 'primary' ? `
     background: #3498db;
     color: white;
     &:hover {
@@ -252,7 +249,7 @@ const PerfilUsuario: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'info' | 'password' | 'activity'>('info');
   const [formData, setFormData] = useState<ProfileFormData>({
-    fullName: user?.username || '',
+    fullName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
@@ -261,16 +258,10 @@ const PerfilUsuario: React.FC = () => {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userActivity, setUserActivity] = useState<any[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
 
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'ADMIN': return 'Administrador';
-      case 'SUPERVISOR': return 'Supervisor';
-      case 'CAJERO': return 'Cajero';
-      case 'VENDEDOR': return 'Vendedor';
-      default: return 'Usuario';
-    }
-  };
+
 
   const validateInfoForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -337,19 +328,39 @@ const PerfilUsuario: React.FC = () => {
       return;
     }
 
+    if (!user?.id) {
+      showError('Error: Usuario no identificado');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Separar el nombre completo en firstName y lastName
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-      updateUser({
-        email: formData.email
+      const response = await apiService.patchUser(user.id, {
+        email: formData.email,
+        firstName,
+        lastName
       });
 
-      showSuccess('Información actualizada exitosamente');
-    } catch (error) {
-      showError('Error al actualizar la información');
+      if (response.success) {
+        updateUser({
+          email: formData.email,
+          firstName,
+          lastName
+        });
+
+        showSuccess('Información actualizada exitosamente');
+      } else {
+        showError(response.message || 'Error al actualizar la información');
+      }
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      showError(error.message || 'Error al actualizar la información');
     } finally {
       setIsSubmitting(false);
     }
@@ -363,48 +374,95 @@ const PerfilUsuario: React.FC = () => {
       return;
     }
 
+    if (!user?.id) {
+      showError('Error: Usuario no identificado');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await apiService.changePassword(
+        user.id,
+        formData.currentPassword,
+        formData.newPassword
+      );
 
-      showSuccess('Contraseña actualizada exitosamente');
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
-    } catch (error) {
-      showError('Error al actualizar la contraseña');
+      if (response.success) {
+        showSuccess('Contraseña actualizada exitosamente');
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      } else {
+        showError(response.message || 'Error al actualizar la contraseña');
+      }
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      showError(error.message || 'Error al actualizar la contraseña');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const mockActivity = [
-    {
-      title: 'Inicio de sesión',
-      description: 'Acceso desde navegador web',
-      time: 'Hace 2 horas'
-    },
-    {
-      title: 'Venta registrada',
-      description: 'Venta #VT-2024-001 por $150.00',
-      time: 'Hace 4 horas'
-    },
-    {
-      title: 'Cliente registrado',
-      description: 'Nuevo cliente: María García',
-      time: 'Ayer'
-    },
-    {
-      title: 'Producto actualizado',
-      description: 'Precio de Laptop HP actualizado',
-      time: 'Hace 2 días'
+  const loadUserActivity = async () => {
+    setLoadingActivity(true);
+    try {
+      const response = await apiService.getUserActivity(5);
+      if (response.success && response.data?.activities) {
+        const formattedActivity = response.data.activities.map((activity: any) => ({
+          title: activity.action,
+          description: activity.details,
+          time: formatActivityTime(activity.timestamp)
+        }));
+        setUserActivity(formattedActivity);
+      }
+    } catch (error) {
+      console.error('Error loading user activity:', error);
+      // En caso de error, usar datos mock como fallback
+      setUserActivity([
+        {
+          title: 'Inicio de sesión',
+          description: 'Acceso desde navegador web',
+          time: 'Hace 2 horas'
+        },
+        {
+          title: 'Actualización de perfil',
+          description: 'Información personal actualizada',
+          time: 'Hace 4 horas'
+        }
+      ]);
+    } finally {
+      setLoadingActivity(false);
     }
-  ];
+  };
+
+  const formatActivityTime = (timestamp: string): string => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now.getTime() - activityTime.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 60) {
+      return `Hace ${diffInMinutes} minutos`;
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+    } else {
+      const days = Math.floor(diffInMinutes / 1440);
+      return `Hace ${days} día${days > 1 ? 's' : ''}`;
+    }
+  };
+
+  // Cargar actividad cuando se selecciona la pestaña
+  React.useEffect(() => {
+    if (activeTab === 'activity' && userActivity.length === 0) {
+      loadUserActivity();
+    }
+  }, [activeTab]);
+
+
 
   return (
     <Layout title="Mi Perfil">
@@ -442,12 +500,7 @@ const PerfilUsuario: React.FC = () => {
                 <InfoLabel>Usuario:</InfoLabel>
                 <InfoValue>@{user?.username}</InfoValue>
               </InfoRow>
-              <InfoRow>
-                <InfoLabel>Rol:</InfoLabel>
-                <Badge variant={user?.role || 'default'}>
-                  {getRoleText(user?.role || '')}
-                </Badge>
-              </InfoRow>
+
               <InfoRow>
                 <InfoLabel>Estado:</InfoLabel>
                 <Badge variant="activo">Activo</Badge>
@@ -482,7 +535,7 @@ const PerfilUsuario: React.FC = () => {
               </FormGroup>
 
               <ButtonContainer>
-                <Button type="submit" variant="primary" disabled={isSubmitting}>
+                <Button type="submit" $variant="primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
                 </Button>
               </ButtonContainer>
@@ -538,7 +591,7 @@ const PerfilUsuario: React.FC = () => {
               </FormRow>
 
               <ButtonContainer>
-                <Button type="submit" variant="primary" disabled={isSubmitting}>
+                <Button type="submit" $variant="primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Actualizando...' : 'Cambiar Contraseña'}
                 </Button>
               </ButtonContainer>
@@ -548,17 +601,29 @@ const PerfilUsuario: React.FC = () => {
 
         {activeTab === 'activity' && (
           <FormContainer>
-            <ActivityList>
-              {mockActivity.map((activity, index) => (
-                <ActivityItem key={index}>
-                  <ActivityInfo>
-                    <ActivityTitle>{activity.title}</ActivityTitle>
-                    <ActivityDescription>{activity.description}</ActivityDescription>
-                  </ActivityInfo>
-                  <ActivityTime>{activity.time}</ActivityTime>
-                </ActivityItem>
-              ))}
-            </ActivityList>
+            {loadingActivity ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                Cargando actividad reciente...
+              </div>
+            ) : (
+              <ActivityList>
+                {userActivity.length > 0 ? (
+                  userActivity.map((activity, index) => (
+                    <ActivityItem key={index}>
+                      <ActivityInfo>
+                        <ActivityTitle>{activity.title}</ActivityTitle>
+                        <ActivityDescription>{activity.description}</ActivityDescription>
+                      </ActivityInfo>
+                      <ActivityTime>{activity.time}</ActivityTime>
+                    </ActivityItem>
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#6c757d' }}>
+                    No hay actividad reciente disponible
+                  </div>
+                )}
+              </ActivityList>
+            )}
           </FormContainer>
         )}
       </Container>

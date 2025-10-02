@@ -265,7 +265,11 @@ const ListaVentas: React.FC = () => {
   const filteredSales = useMemo(() => {
     return sales.filter(sale => {
       const client = getClientById(sale.clientId);
-      const clientName = client ? client.name : 'Cliente General';
+      const clientName = client 
+        ? (client.tipoDocumento === 'RUC' 
+            ? client.razonSocial || ''
+            : `${client.nombres || ''} ${client.apellidos || ''}`.trim())
+        : 'Cliente General';
       
       const matchesSearch = 
         sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -449,10 +453,15 @@ const ListaVentas: React.FC = () => {
                         <strong>{sale.saleNumber}</strong>
                       </TableCell>
                       <TableCell>
-                        {client ? client.name : 'Cliente General'}
+                        {client 
+                          ? (client.tipoDocumento === 'RUC' 
+                              ? client.razonSocial || ''
+                              : `${client.nombres || ''} ${client.apellidos || ''}`.trim())
+                          : 'Cliente General'
+                        }
                         {client && (
                           <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
-                            {client.documentNumber}
+                            {client.numeroDocumento}
                           </div>
                         )}
                       </TableCell>
