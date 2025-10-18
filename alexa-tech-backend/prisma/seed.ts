@@ -70,6 +70,8 @@ const VENDEDOR_PERMISSIONS = [
 const CAJERO_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
+  // Usuarios (solo lectura)
+  'users.read',
   // Entidades Comerciales (solo lectura)
   'commercial_entities.read',
   // Ventas

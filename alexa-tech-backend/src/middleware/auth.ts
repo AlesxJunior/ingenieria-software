@@ -69,6 +69,15 @@ export const requirePermission = (...requiredPermissions: string[]) => {
         requiredPermissions,
       );
 
+      // --- GEMINI DEBUG LOG ---
+      console.log('[DEBUG] requirePermission Check:', {
+        userId: user.id,
+        userPermissions: user.permissions,
+        requiredPermissions: requiredPermissions,
+        hasPermission: hasPermission
+      });
+      // --- END GEMINI DEBUG LOG ---
+
       if (!hasPermission) {
         logger.warn('Permission authorization failed', {
           userId: req.user.userId,

@@ -557,8 +557,10 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
       showNotification('success', 'Usuario Actualizado', 'El usuario ha sido actualizado exitosamente.');
       onClose();
     } catch (error) {
+       const errorMessage = (error as Error).message || 'No se pudo actualizar el usuario. Es posible que no tengas los permisos necesarios.';
        console.error('Error al actualizar el usuario:', error);
-       showNotification('error', 'Error', 'Error al actualizar el usuario');
+       showNotification('error', 'Error de Actualización', errorMessage);
+       return;
      } finally {
       setIsLoading(false);
     }

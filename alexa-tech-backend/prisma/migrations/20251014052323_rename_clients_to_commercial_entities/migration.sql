@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "public"."TipoEntidad" AS ENUM ('Cliente', 'Proveedor', 'Ambos');
+
 /*
   Warnings:
 
@@ -5,10 +8,10 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "public"."clients" DROP CONSTRAINT "clients_usuarioActualizacion_fkey";
+ALTER TABLE "public"."clients" DROP CONSTRAINT IF EXISTS "clients_usuarioActualizacion_fkey";
 
 -- DropForeignKey
-ALTER TABLE "public"."clients" DROP CONSTRAINT "clients_usuarioCreacion_fkey";
+ALTER TABLE "public"."clients" DROP CONSTRAINT IF EXISTS "clients_usuarioCreacion_fkey";
 
 -- DropTable
 DROP TABLE "public"."clients";

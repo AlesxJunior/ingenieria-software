@@ -1,0 +1,722 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - text: 
+  - generic [ref=e3]:
+    - button "" [ref=e4] [cursor=pointer]:
+      - generic [ref=e5]: 
+    - generic [ref=e6]:
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link " Dashboard" [ref=e10] [cursor=pointer]:
+              - /url: /dashboard
+              - generic [ref=e11]: 
+              - generic [ref=e12]: Dashboard
+          - listitem [ref=e13]:
+            - link " Usuarios" [ref=e14] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e15]: 
+              - generic [ref=e16]: Usuarios
+            - link "Lista de Usuarios" [ref=e18] [cursor=pointer]:
+              - /url: /usuarios
+              - heading "Lista de Usuarios" [level=3] [ref=e19]
+          - listitem [ref=e20]:
+            - link " Entidades Comerciales" [ref=e21] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e22]: 
+              - generic [ref=e23]: Entidades Comerciales
+            - link "Lista de Entidades" [ref=e25] [cursor=pointer]:
+              - /url: /lista-entidades
+              - heading "Lista de Entidades" [level=3] [ref=e26]
+          - listitem [ref=e27]:
+            - link " Ventas" [ref=e28] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e29]: 
+              - generic [ref=e30]: Ventas
+            - generic:
+              - link "Apertura de caja" [ref=e32] [cursor=pointer]:
+                - /url: /ventas/apertura-caja
+                - heading "Apertura de caja" [level=3] [ref=e33]
+              - link "Gestión Caja" [ref=e35] [cursor=pointer]:
+                - /url: /ventas/gestion-caja
+                - heading "Gestión Caja" [level=3] [ref=e36]
+              - link "Realizar Venta" [ref=e38] [cursor=pointer]:
+                - /url: /ventas/realizar
+                - heading "Realizar Venta" [level=3] [ref=e39]
+              - link "Lista de Ventas" [ref=e41] [cursor=pointer]:
+                - /url: /ventas/lista
+                - heading "Lista de Ventas" [level=3] [ref=e42]
+              - link "Gestión de Caja" [ref=e44] [cursor=pointer]:
+                - /url: /gestion-caja
+                - heading "Gestión de Caja" [level=3] [ref=e45]
+          - listitem [ref=e46]:
+            - link " Productos" [ref=e47] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e48]: 
+              - generic [ref=e49]: Productos
+            - link "Lista de Productos" [ref=e52] [cursor=pointer]:
+              - /url: /lista-productos
+              - heading "Lista de Productos" [level=3] [ref=e53]
+          - listitem [ref=e54]:
+            - link " Inventario" [ref=e55] [cursor=pointer]:
+              - /url: /inventario
+              - generic [ref=e56]: 
+              - generic [ref=e57]: Inventario
+          - listitem [ref=e58]:
+            - link " Compras" [ref=e59] [cursor=pointer]:
+              - /url: /compras
+              - generic [ref=e60]: 
+              - generic [ref=e61]: Compras
+          - listitem [ref=e62]:
+            - link " Facturación" [ref=e63] [cursor=pointer]:
+              - /url: /facturacion
+              - generic [ref=e64]: 
+              - generic [ref=e65]: Facturación
+          - listitem [ref=e66]:
+            - link " Configuración" [ref=e67] [cursor=pointer]:
+              - /url: /configuracion
+              - generic [ref=e68]: 
+              - generic [ref=e69]: Configuración
+          - listitem [ref=e70]:
+            - link " Reportes" [ref=e71] [cursor=pointer]:
+              - /url: /reportes
+              - generic [ref=e72]: 
+              - generic [ref=e73]: Reportes
+          - listitem [ref=e74]:
+            - link " Auditoría y Logs" [ref=e75] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e76]: 
+              - generic [ref=e77]: Auditoría y Logs
+            - link "Logs del Sistema" [ref=e79] [cursor=pointer]:
+              - /url: /auditoria
+              - heading "Logs del Sistema" [level=3] [ref=e80]
+      - button " Cerrar Sesión" [ref=e82] [cursor=pointer]:
+        - generic [ref=e83]: 
+        - generic [ref=e84]: Cerrar Sesión
+  - generic [ref=e85]:
+    - complementary [ref=e86]:
+      - link "AlexaTech" [ref=e88] [cursor=pointer]:
+        - /url: /dashboard
+        - heading "AlexaTech" [level=2] [ref=e89]
+      - navigation [ref=e90]:
+        - list [ref=e91]:
+          - listitem [ref=e92]:
+            - link " Dashboard" [ref=e93] [cursor=pointer]:
+              - /url: /dashboard
+              - generic [ref=e94]: 
+              - generic [ref=e95]: Dashboard
+          - listitem [ref=e96]:
+            - link " Usuarios" [ref=e97] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e98]: 
+              - generic [ref=e99]: Usuarios
+            - link "Lista de Usuarios" [ref=e101] [cursor=pointer]:
+              - /url: /usuarios
+              - heading "Lista de Usuarios" [level=3] [ref=e102]
+          - listitem [ref=e103]:
+            - link " Entidades Comerciales" [ref=e104] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e105]: 
+              - generic [ref=e106]: Entidades Comerciales
+            - link "Lista de Entidades" [ref=e108] [cursor=pointer]:
+              - /url: /lista-entidades
+              - heading "Lista de Entidades" [level=3] [ref=e109]
+          - listitem [ref=e110]:
+            - link " Ventas" [ref=e111] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e112]: 
+              - generic [ref=e113]: Ventas
+            - generic:
+              - link "Apertura de caja" [ref=e115] [cursor=pointer]:
+                - /url: /ventas/apertura-caja
+                - heading "Apertura de caja" [level=3] [ref=e116]
+              - link "Gestión Caja" [ref=e118] [cursor=pointer]:
+                - /url: /ventas/gestion-caja
+                - heading "Gestión Caja" [level=3] [ref=e119]
+              - link "Realizar Venta" [ref=e121] [cursor=pointer]:
+                - /url: /ventas/realizar
+                - heading "Realizar Venta" [level=3] [ref=e122]
+              - link "Lista de Ventas" [ref=e124] [cursor=pointer]:
+                - /url: /ventas/lista
+                - heading "Lista de Ventas" [level=3] [ref=e125]
+              - link "Gestión de Caja" [ref=e127] [cursor=pointer]:
+                - /url: /gestion-caja
+                - heading "Gestión de Caja" [level=3] [ref=e128]
+          - listitem [ref=e129]:
+            - link " Productos" [ref=e130] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e131]: 
+              - generic [ref=e132]: Productos
+            - link "Lista de Productos" [ref=e135] [cursor=pointer]:
+              - /url: /lista-productos
+              - heading "Lista de Productos" [level=3] [ref=e136]
+          - listitem [ref=e137]:
+            - link " Inventario" [ref=e138] [cursor=pointer]:
+              - /url: /inventario
+              - generic [ref=e139]: 
+              - generic [ref=e140]: Inventario
+          - listitem [ref=e141]:
+            - link " Compras" [ref=e142] [cursor=pointer]:
+              - /url: /compras
+              - generic [ref=e143]: 
+              - generic [ref=e144]: Compras
+          - listitem [ref=e145]:
+            - link " Facturación" [ref=e146] [cursor=pointer]:
+              - /url: /facturacion
+              - generic [ref=e147]: 
+              - generic [ref=e148]: Facturación
+          - listitem [ref=e149]:
+            - link " Configuración" [ref=e150] [cursor=pointer]:
+              - /url: /configuracion
+              - generic [ref=e151]: 
+              - generic [ref=e152]: Configuración
+          - listitem [ref=e153]:
+            - link " Reportes" [ref=e154] [cursor=pointer]:
+              - /url: /reportes
+              - generic [ref=e155]: 
+              - generic [ref=e156]: Reportes
+          - listitem [ref=e157]:
+            - link " Auditoría y Logs" [ref=e158] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e159]: 
+              - generic [ref=e160]: Auditoría y Logs
+            - link "Logs del Sistema" [ref=e162] [cursor=pointer]:
+              - /url: /auditoria
+              - heading "Logs del Sistema" [level=3] [ref=e163]
+      - button " Cerrar Sesión" [ref=e165] [cursor=pointer]:
+        - generic [ref=e166]: 
+        - generic [ref=e167]: Cerrar Sesión
+    - main [ref=e168]:
+      - generic [ref=e169]:
+        - heading "Lista de Productos" [level=1] [ref=e170]
+        - link "@vendedor VE" [ref=e172] [cursor=pointer]:
+          - /url: /perfil
+          - generic [ref=e174]: "@vendedor"
+          - generic [ref=e175]: VE
+      - generic [ref=e177]:
+        - generic [ref=e178]:
+          - heading "Lista de Productos" [level=2] [ref=e179]
+          - generic [ref=e180]:
+            - textbox "Buscar productos..." [ref=e181]
+            - button "Filtros Avanzados" [ref=e182] [cursor=pointer]
+            - button "Nuevo Producto" [ref=e183] [cursor=pointer]
+        - table [ref=e184]:
+          - rowgroup [ref=e185]:
+            - row "Código Nombre Categoría Precio Stock Estado Unidad Ubicación Acciones" [ref=e186]:
+              - cell "Código" [ref=e187]
+              - cell "Nombre" [ref=e188]
+              - cell "Categoría" [ref=e189]
+              - cell "Precio" [ref=e190]
+              - cell "Stock" [ref=e191]
+              - cell "Estado" [ref=e192]
+              - cell "Unidad" [ref=e193]
+              - cell "Ubicación" [ref=e194]
+              - cell "Acciones" [ref=e195]
+          - rowgroup [ref=e196]:
+            - row "PRO-161025-02 Camara z pro Cámaras S/ 170.00 9 Activo unidad Almacén B Editar Inhabilitar" [ref=e197]:
+              - cell "PRO-161025-02" [ref=e198]
+              - cell "Camara z pro" [ref=e199]
+              - cell "Cámaras" [ref=e200]
+              - cell "S/ 170.00" [ref=e201]
+              - cell "9" [ref=e202]
+              - cell "Activo" [ref=e203]
+              - cell "unidad" [ref=e204]
+              - cell "Almacén B" [ref=e205]
+              - cell "Editar Inhabilitar" [ref=e206]:
+                - button "Editar" [ref=e207] [cursor=pointer]
+                - button "Inhabilitar" [ref=e208] [cursor=pointer]
+            - row "PRO-161025-01 CamaraPro 2000 Cámaras S/ 200.00 10 Activo unidad Almacén A Editar Inhabilitar" [ref=e209]:
+              - cell "PRO-161025-01" [ref=e210]
+              - cell "CamaraPro 2000" [ref=e211]
+              - cell "Cámaras" [ref=e212]
+              - cell "S/ 200.00" [ref=e213]
+              - cell "10" [ref=e214]
+              - cell "Activo" [ref=e215]
+              - cell "unidad" [ref=e216]
+              - cell "Almacén A" [ref=e217]
+              - cell "Editar Inhabilitar" [ref=e218]:
+                - button "Editar" [ref=e219] [cursor=pointer]
+                - button "Inhabilitar" [ref=e220] [cursor=pointer]
+            - row "PRD-080313-001 Laptop Pro 14 2025 Computo S/ 3,099.50 12 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e221]:
+              - cell "PRD-080313-001" [ref=e222]
+              - cell "Laptop Pro 14 2025" [ref=e223]
+              - cell "Computo" [ref=e224]
+              - cell "S/ 3,099.50" [ref=e225]
+              - cell "12" [ref=e226]
+              - cell "Activo" [ref=e227]
+              - cell "unidad" [ref=e228]
+              - cell "Almacen B2" [ref=e229]
+              - cell "Editar Inhabilitar" [ref=e230]:
+                - button "Editar" [ref=e231] [cursor=pointer]
+                - button "Inhabilitar" [ref=e232] [cursor=pointer]
+            - row "PRD-817895-001 Laptop Pro 14 2025 Computo S/ 3,099.50 12 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e233]:
+              - cell "PRD-817895-001" [ref=e234]
+              - cell "Laptop Pro 14 2025" [ref=e235]
+              - cell "Computo" [ref=e236]
+              - cell "S/ 3,099.50" [ref=e237]
+              - cell "12" [ref=e238]
+              - cell "Activo" [ref=e239]
+              - cell "unidad" [ref=e240]
+              - cell "Almacen B2" [ref=e241]
+              - cell "Editar Inhabilitar" [ref=e242]:
+                - button "Editar" [ref=e243] [cursor=pointer]
+                - button "Inhabilitar" [ref=e244] [cursor=pointer]
+            - row "PRD-201954-001 Laptop Pro 14 2025 Computo S/ 3,099.50 12 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e245]:
+              - cell "PRD-201954-001" [ref=e246]
+              - cell "Laptop Pro 14 2025" [ref=e247]
+              - cell "Computo" [ref=e248]
+              - cell "S/ 3,099.50" [ref=e249]
+              - cell "12" [ref=e250]
+              - cell "Activo" [ref=e251]
+              - cell "unidad" [ref=e252]
+              - cell "Almacen B2" [ref=e253]
+              - cell "Editar Inhabilitar" [ref=e254]:
+                - button "Editar" [ref=e255] [cursor=pointer]
+                - button "Inhabilitar" [ref=e256] [cursor=pointer]
+            - row "PRD-535331-001 Laptop Pro 14 2025 Computo S/ 3,099.50 12 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e257]:
+              - cell "PRD-535331-001" [ref=e258]
+              - cell "Laptop Pro 14 2025" [ref=e259]
+              - cell "Computo" [ref=e260]
+              - cell "S/ 3,099.50" [ref=e261]
+              - cell "12" [ref=e262]
+              - cell "Activo" [ref=e263]
+              - cell "unidad" [ref=e264]
+              - cell "Almacen B2" [ref=e265]
+              - cell "Editar Inhabilitar" [ref=e266]:
+                - button "Editar" [ref=e267] [cursor=pointer]
+                - button "Inhabilitar" [ref=e268] [cursor=pointer]
+            - row "PRD-144757-001 Laptop Pro 14 2025 Computo S/ 3,099.50 12 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e269]:
+              - cell "PRD-144757-001" [ref=e270]
+              - cell "Laptop Pro 14 2025" [ref=e271]
+              - cell "Computo" [ref=e272]
+              - cell "S/ 3,099.50" [ref=e273]
+              - cell "12" [ref=e274]
+              - cell "Activo" [ref=e275]
+              - cell "unidad" [ref=e276]
+              - cell "Almacen B2" [ref=e277]
+              - cell "Editar Inhabilitar" [ref=e278]:
+                - button "Editar" [ref=e279] [cursor=pointer]
+                - button "Inhabilitar" [ref=e280] [cursor=pointer]
+            - row "PRD-805424-001 Laptop Pro 14 2025 Computo S/ 3,099.50 12 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e281]:
+              - cell "PRD-805424-001" [ref=e282]
+              - cell "Laptop Pro 14 2025" [ref=e283]
+              - cell "Computo" [ref=e284]
+              - cell "S/ 3,099.50" [ref=e285]
+              - cell "12" [ref=e286]
+              - cell "Activo" [ref=e287]
+              - cell "unidad" [ref=e288]
+              - cell "Almacen B2" [ref=e289]
+              - cell "Editar Inhabilitar" [ref=e290]:
+                - button "Editar" [ref=e291] [cursor=pointer]
+                - button "Inhabilitar" [ref=e292] [cursor=pointer]
+            - row "PRD-260380-001 Laptop Pro 14 2025 Alarmas S/ 4,000.00 99 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e293]:
+              - cell "PRD-260380-001" [ref=e294]
+              - cell "Laptop Pro 14 2025" [ref=e295]
+              - cell "Alarmas" [ref=e296]
+              - cell "S/ 4,000.00" [ref=e297]
+              - cell "99" [ref=e298]
+              - cell "Activo" [ref=e299]
+              - cell "unidad" [ref=e300]
+              - cell "Almacen B2" [ref=e301]
+              - cell "Editar Inhabilitar" [ref=e302]:
+                - button "Editar" [ref=e303] [cursor=pointer]
+                - button "Inhabilitar" [ref=e304] [cursor=pointer]
+            - row "PRD-001 Laptop Pro 14 2025 Computo S/ 3,099.50 20 Activo unidad Almacen B2 Editar Inhabilitar" [ref=e305]:
+              - cell "PRD-001" [ref=e306]
+              - cell "Laptop Pro 14 2025" [ref=e307]
+              - cell "Computo" [ref=e308]
+              - cell "S/ 3,099.50" [ref=e309]
+              - cell "20" [ref=e310]
+              - cell "Activo" [ref=e311]
+              - cell "unidad" [ref=e312]
+              - cell "Almacen B2" [ref=e313]
+              - cell "Editar Inhabilitar" [ref=e314]:
+                - button "Editar" [ref=e315] [cursor=pointer]
+                - button "Inhabilitar" [ref=e316] [cursor=pointer]
+            - row "PRD-201954-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e317]:
+              - cell "PRD-201954-003" [ref=e318]
+              - cell "Monitor 24\" IPS" [ref=e319]
+              - cell "Computo" [ref=e320]
+              - cell "S/ 499.50" [ref=e321]
+              - cell "0" [ref=e322]
+              - cell "Activo" [ref=e323]
+              - cell "caja" [ref=e324]
+              - cell "Almacen C1" [ref=e325]
+              - cell "Editar Inhabilitar" [ref=e326]:
+                - button "Editar" [ref=e327] [cursor=pointer]
+                - button "Inhabilitar" [ref=e328] [cursor=pointer]
+            - row "PRD-535331-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e329]:
+              - cell "PRD-535331-003" [ref=e330]
+              - cell "Monitor 24\" IPS" [ref=e331]
+              - cell "Computo" [ref=e332]
+              - cell "S/ 499.50" [ref=e333]
+              - cell "0" [ref=e334]
+              - cell "Activo" [ref=e335]
+              - cell "caja" [ref=e336]
+              - cell "Almacen C1" [ref=e337]
+              - cell "Editar Inhabilitar" [ref=e338]:
+                - button "Editar" [ref=e339] [cursor=pointer]
+                - button "Inhabilitar" [ref=e340] [cursor=pointer]
+            - row "PRD-260380-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e341]:
+              - cell "PRD-260380-003" [ref=e342]
+              - cell "Monitor 24\" IPS" [ref=e343]
+              - cell "Computo" [ref=e344]
+              - cell "S/ 499.50" [ref=e345]
+              - cell "0" [ref=e346]
+              - cell "Activo" [ref=e347]
+              - cell "caja" [ref=e348]
+              - cell "Almacen C1" [ref=e349]
+              - cell "Editar Inhabilitar" [ref=e350]:
+                - button "Editar" [ref=e351] [cursor=pointer]
+                - button "Inhabilitar" [ref=e352] [cursor=pointer]
+            - row "PRD-080313-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e353]:
+              - cell "PRD-080313-003" [ref=e354]
+              - cell "Monitor 24\" IPS" [ref=e355]
+              - cell "Computo" [ref=e356]
+              - cell "S/ 499.50" [ref=e357]
+              - cell "0" [ref=e358]
+              - cell "Activo" [ref=e359]
+              - cell "caja" [ref=e360]
+              - cell "Almacen C1" [ref=e361]
+              - cell "Editar Inhabilitar" [ref=e362]:
+                - button "Editar" [ref=e363] [cursor=pointer]
+                - button "Inhabilitar" [ref=e364] [cursor=pointer]
+            - row "PRD-144757-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e365]:
+              - cell "PRD-144757-003" [ref=e366]
+              - cell "Monitor 24\" IPS" [ref=e367]
+              - cell "Computo" [ref=e368]
+              - cell "S/ 499.50" [ref=e369]
+              - cell "0" [ref=e370]
+              - cell "Activo" [ref=e371]
+              - cell "caja" [ref=e372]
+              - cell "Almacen C1" [ref=e373]
+              - cell "Editar Inhabilitar" [ref=e374]:
+                - button "Editar" [ref=e375] [cursor=pointer]
+                - button "Inhabilitar" [ref=e376] [cursor=pointer]
+            - row "PRD-817895-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e377]:
+              - cell "PRD-817895-003" [ref=e378]
+              - cell "Monitor 24\" IPS" [ref=e379]
+              - cell "Computo" [ref=e380]
+              - cell "S/ 499.50" [ref=e381]
+              - cell "0" [ref=e382]
+              - cell "Activo" [ref=e383]
+              - cell "caja" [ref=e384]
+              - cell "Almacen C1" [ref=e385]
+              - cell "Editar Inhabilitar" [ref=e386]:
+                - button "Editar" [ref=e387] [cursor=pointer]
+                - button "Inhabilitar" [ref=e388] [cursor=pointer]
+            - row "PRD-805424-003 Monitor 24\" IPS Computo S/ 499.50 0 Activo caja Almacen C1 Editar Inhabilitar" [ref=e389]:
+              - cell "PRD-805424-003" [ref=e390]
+              - cell "Monitor 24\" IPS" [ref=e391]
+              - cell "Computo" [ref=e392]
+              - cell "S/ 499.50" [ref=e393]
+              - cell "0" [ref=e394]
+              - cell "Activo" [ref=e395]
+              - cell "caja" [ref=e396]
+              - cell "Almacen C1" [ref=e397]
+              - cell "Editar Inhabilitar" [ref=e398]:
+                - button "Editar" [ref=e399] [cursor=pointer]
+                - button "Inhabilitar" [ref=e400] [cursor=pointer]
+            - row "PRD-817895-002 Mouse Gamer X Accesorios S/ 79.99 25 Inactivo unidad Almacen A2 Editar Habilitar" [ref=e401]:
+              - cell "PRD-817895-002" [ref=e402]
+              - cell "Mouse Gamer X" [ref=e403]
+              - cell "Accesorios" [ref=e404]
+              - cell "S/ 79.99" [ref=e405]
+              - cell "25" [ref=e406]
+              - cell "Inactivo" [ref=e407]
+              - cell "unidad" [ref=e408]
+              - cell "Almacen A2" [ref=e409]
+              - cell "Editar Habilitar" [ref=e410]:
+                - button "Editar" [ref=e411] [cursor=pointer]
+                - button "Habilitar" [ref=e412] [cursor=pointer]
+            - row "PRD-805424-002 Mouse Gamer X Accesorios S/ 79.99 25 Inactivo unidad Almacen A2 Editar Habilitar" [ref=e413]:
+              - cell "PRD-805424-002" [ref=e414]
+              - cell "Mouse Gamer X" [ref=e415]
+              - cell "Accesorios" [ref=e416]
+              - cell "S/ 79.99" [ref=e417]
+              - cell "25" [ref=e418]
+              - cell "Inactivo" [ref=e419]
+              - cell "unidad" [ref=e420]
+              - cell "Almacen A2" [ref=e421]
+              - cell "Editar Habilitar" [ref=e422]:
+                - button "Editar" [ref=e423] [cursor=pointer]
+                - button "Habilitar" [ref=e424] [cursor=pointer]
+            - row "PRD-080313-002 Mouse Gamer X Accesorios S/ 79.99 25 Inactivo unidad Almacen A2 Editar Habilitar" [ref=e425]:
+              - cell "PRD-080313-002" [ref=e426]
+              - cell "Mouse Gamer X" [ref=e427]
+              - cell "Accesorios" [ref=e428]
+              - cell "S/ 79.99" [ref=e429]
+              - cell "25" [ref=e430]
+              - cell "Inactivo" [ref=e431]
+              - cell "unidad" [ref=e432]
+              - cell "Almacen A2" [ref=e433]
+              - cell "Editar Habilitar" [ref=e434]:
+                - button "Editar" [ref=e435] [cursor=pointer]
+                - button "Habilitar" [ref=e436] [cursor=pointer]
+            - row "PRD-535331-002 Mouse Gamer X Accesorios S/ 79.99 25 Inactivo unidad Almacen A2 Editar Habilitar" [ref=e437]:
+              - cell "PRD-535331-002" [ref=e438]
+              - cell "Mouse Gamer X" [ref=e439]
+              - cell "Accesorios" [ref=e440]
+              - cell "S/ 79.99" [ref=e441]
+              - cell "25" [ref=e442]
+              - cell "Inactivo" [ref=e443]
+              - cell "unidad" [ref=e444]
+              - cell "Almacen A2" [ref=e445]
+              - cell "Editar Habilitar" [ref=e446]:
+                - button "Editar" [ref=e447] [cursor=pointer]
+                - button "Habilitar" [ref=e448] [cursor=pointer]
+            - row "PRD-260380-002 Mouse Gamer X Accesorios S/ 79.99 25 Activo unidad Almacen A2 Editar Inhabilitar" [ref=e449]:
+              - cell "PRD-260380-002" [ref=e450]
+              - cell "Mouse Gamer X" [ref=e451]
+              - cell "Accesorios" [ref=e452]
+              - cell "S/ 79.99" [ref=e453]
+              - cell "25" [ref=e454]
+              - cell "Activo" [ref=e455]
+              - cell "unidad" [ref=e456]
+              - cell "Almacen A2" [ref=e457]
+              - cell "Editar Inhabilitar" [ref=e458]:
+                - button "Editar" [ref=e459] [cursor=pointer]
+                - button "Inhabilitar" [ref=e460] [cursor=pointer]
+            - row "PRD-144757-002 Mouse Gamer X Accesorios S/ 79.99 25 Inactivo unidad Almacen A2 Editar Habilitar" [ref=e461]:
+              - cell "PRD-144757-002" [ref=e462]
+              - cell "Mouse Gamer X" [ref=e463]
+              - cell "Accesorios" [ref=e464]
+              - cell "S/ 79.99" [ref=e465]
+              - cell "25" [ref=e466]
+              - cell "Inactivo" [ref=e467]
+              - cell "unidad" [ref=e468]
+              - cell "Almacen A2" [ref=e469]
+              - cell "Editar Habilitar" [ref=e470]:
+                - button "Editar" [ref=e471] [cursor=pointer]
+                - button "Habilitar" [ref=e472] [cursor=pointer]
+            - row "PRD-201954-002 Mouse Gamer X Accesorios S/ 79.99 25 Inactivo unidad Almacen A2 Editar Habilitar" [ref=e473]:
+              - cell "PRD-201954-002" [ref=e474]
+              - cell "Mouse Gamer X" [ref=e475]
+              - cell "Accesorios" [ref=e476]
+              - cell "S/ 79.99" [ref=e477]
+              - cell "25" [ref=e478]
+              - cell "Inactivo" [ref=e479]
+              - cell "unidad" [ref=e480]
+              - cell "Almacen A2" [ref=e481]
+              - cell "Editar Habilitar" [ref=e482]:
+                - button "Editar" [ref=e483] [cursor=pointer]
+                - button "Habilitar" [ref=e484] [cursor=pointer]
+            - row "E2E-1760605420153 Producto E2E 1760605420153 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e485]:
+              - cell "E2E-1760605420153" [ref=e486]
+              - cell "Producto E2E 1760605420153" [ref=e487]
+              - cell "Cámaras" [ref=e488]
+              - cell "S/ 199.99" [ref=e489]
+              - cell "5" [ref=e490]
+              - cell "Activo" [ref=e491]
+              - cell "unidad" [ref=e492]
+              - cell "Almacén A" [ref=e493]
+              - cell "Editar Inhabilitar" [ref=e494]:
+                - button "Editar" [ref=e495] [cursor=pointer]
+                - button "Inhabilitar" [ref=e496] [cursor=pointer]
+            - row "E2E-1760630799708 Producto E2E 1760630799708 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e497]:
+              - cell "E2E-1760630799708" [ref=e498]
+              - cell "Producto E2E 1760630799708" [ref=e499]
+              - cell "Cámaras" [ref=e500]
+              - cell "S/ 199.99" [ref=e501]
+              - cell "5" [ref=e502]
+              - cell "Activo" [ref=e503]
+              - cell "unidad" [ref=e504]
+              - cell "Almacén A" [ref=e505]
+              - cell "Editar Inhabilitar" [ref=e506]:
+                - button "Editar" [ref=e507] [cursor=pointer]
+                - button "Inhabilitar" [ref=e508] [cursor=pointer]
+            - row "E2E-1760630860105 Producto E2E 1760630860105 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e509]:
+              - cell "E2E-1760630860105" [ref=e510]
+              - cell "Producto E2E 1760630860105" [ref=e511]
+              - cell "Cámaras" [ref=e512]
+              - cell "S/ 199.99" [ref=e513]
+              - cell "5" [ref=e514]
+              - cell "Activo" [ref=e515]
+              - cell "unidad" [ref=e516]
+              - cell "Almacén A" [ref=e517]
+              - cell "Editar Inhabilitar" [ref=e518]:
+                - button "Editar" [ref=e519] [cursor=pointer]
+                - button "Inhabilitar" [ref=e520] [cursor=pointer]
+            - row "E2E-1760631064617 Producto E2E 1760631064617 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e521]:
+              - cell "E2E-1760631064617" [ref=e522]
+              - cell "Producto E2E 1760631064617" [ref=e523]
+              - cell "Cámaras" [ref=e524]
+              - cell "S/ 199.99" [ref=e525]
+              - cell "5" [ref=e526]
+              - cell "Activo" [ref=e527]
+              - cell "unidad" [ref=e528]
+              - cell "Almacén A" [ref=e529]
+              - cell "Editar Inhabilitar" [ref=e530]:
+                - button "Editar" [ref=e531] [cursor=pointer]
+                - button "Inhabilitar" [ref=e532] [cursor=pointer]
+            - row "E2E-1760631113865 Producto E2E 1760631113865 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e533]:
+              - cell "E2E-1760631113865" [ref=e534]
+              - cell "Producto E2E 1760631113865" [ref=e535]
+              - cell "Cámaras" [ref=e536]
+              - cell "S/ 199.99" [ref=e537]
+              - cell "5" [ref=e538]
+              - cell "Activo" [ref=e539]
+              - cell "unidad" [ref=e540]
+              - cell "Almacén A" [ref=e541]
+              - cell "Editar Inhabilitar" [ref=e542]:
+                - button "Editar" [ref=e543] [cursor=pointer]
+                - button "Inhabilitar" [ref=e544] [cursor=pointer]
+            - row "E2E-1760631223203 Producto E2E 1760631223203 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e545]:
+              - cell "E2E-1760631223203" [ref=e546]
+              - cell "Producto E2E 1760631223203" [ref=e547]
+              - cell "Cámaras" [ref=e548]
+              - cell "S/ 199.99" [ref=e549]
+              - cell "5" [ref=e550]
+              - cell "Activo" [ref=e551]
+              - cell "unidad" [ref=e552]
+              - cell "Almacén A" [ref=e553]
+              - cell "Editar Inhabilitar" [ref=e554]:
+                - button "Editar" [ref=e555] [cursor=pointer]
+                - button "Inhabilitar" [ref=e556] [cursor=pointer]
+            - row "E2E-1760631355061 Producto E2E 1760631355061 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e557]:
+              - cell "E2E-1760631355061" [ref=e558]
+              - cell "Producto E2E 1760631355061" [ref=e559]
+              - cell "Cámaras" [ref=e560]
+              - cell "S/ 199.99" [ref=e561]
+              - cell "5" [ref=e562]
+              - cell "Activo" [ref=e563]
+              - cell "unidad" [ref=e564]
+              - cell "Almacén A" [ref=e565]
+              - cell "Editar Inhabilitar" [ref=e566]:
+                - button "Editar" [ref=e567] [cursor=pointer]
+                - button "Inhabilitar" [ref=e568] [cursor=pointer]
+            - row "E2E-1760631537222 Producto E2E 1760631537222 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e569]:
+              - cell "E2E-1760631537222" [ref=e570]
+              - cell "Producto E2E 1760631537222" [ref=e571]
+              - cell "Cámaras" [ref=e572]
+              - cell "S/ 199.99" [ref=e573]
+              - cell "5" [ref=e574]
+              - cell "Activo" [ref=e575]
+              - cell "unidad" [ref=e576]
+              - cell "Almacén A" [ref=e577]
+              - cell "Editar Inhabilitar" [ref=e578]:
+                - button "Editar" [ref=e579] [cursor=pointer]
+                - button "Inhabilitar" [ref=e580] [cursor=pointer]
+            - row "E2E-1760631747479 Producto E2E 1760631747479 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e581]:
+              - cell "E2E-1760631747479" [ref=e582]
+              - cell "Producto E2E 1760631747479" [ref=e583]
+              - cell "Cámaras" [ref=e584]
+              - cell "S/ 199.99" [ref=e585]
+              - cell "5" [ref=e586]
+              - cell "Activo" [ref=e587]
+              - cell "unidad" [ref=e588]
+              - cell "Almacén A" [ref=e589]
+              - cell "Editar Inhabilitar" [ref=e590]:
+                - button "Editar" [ref=e591] [cursor=pointer]
+                - button "Inhabilitar" [ref=e592] [cursor=pointer]
+            - row "E2E-1760631851499 Producto E2E 1760631851499 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e593]:
+              - cell "E2E-1760631851499" [ref=e594]
+              - cell "Producto E2E 1760631851499" [ref=e595]
+              - cell "Cámaras" [ref=e596]
+              - cell "S/ 199.99" [ref=e597]
+              - cell "5" [ref=e598]
+              - cell "Activo" [ref=e599]
+              - cell "unidad" [ref=e600]
+              - cell "Almacén A" [ref=e601]
+              - cell "Editar Inhabilitar" [ref=e602]:
+                - button "Editar" [ref=e603] [cursor=pointer]
+                - button "Inhabilitar" [ref=e604] [cursor=pointer]
+            - row "E2E-1760632353215 Producto E2E 1760632353215 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e605]:
+              - cell "E2E-1760632353215" [ref=e606]
+              - cell "Producto E2E 1760632353215" [ref=e607]
+              - cell "Cámaras" [ref=e608]
+              - cell "S/ 199.99" [ref=e609]
+              - cell "5" [ref=e610]
+              - cell "Activo" [ref=e611]
+              - cell "unidad" [ref=e612]
+              - cell "Almacén A" [ref=e613]
+              - cell "Editar Inhabilitar" [ref=e614]:
+                - button "Editar" [ref=e615] [cursor=pointer]
+                - button "Inhabilitar" [ref=e616] [cursor=pointer]
+            - row "E2E-1760632464739 Producto E2E 1760632464739 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e617]:
+              - cell "E2E-1760632464739" [ref=e618]
+              - cell "Producto E2E 1760632464739" [ref=e619]
+              - cell "Cámaras" [ref=e620]
+              - cell "S/ 199.99" [ref=e621]
+              - cell "5" [ref=e622]
+              - cell "Activo" [ref=e623]
+              - cell "unidad" [ref=e624]
+              - cell "Almacén A" [ref=e625]
+              - cell "Editar Inhabilitar" [ref=e626]:
+                - button "Editar" [ref=e627] [cursor=pointer]
+                - button "Inhabilitar" [ref=e628] [cursor=pointer]
+            - row "E2E-1760632560934 Producto E2E 1760632560934 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e629]:
+              - cell "E2E-1760632560934" [ref=e630]
+              - cell "Producto E2E 1760632560934" [ref=e631]
+              - cell "Cámaras" [ref=e632]
+              - cell "S/ 199.99" [ref=e633]
+              - cell "5" [ref=e634]
+              - cell "Activo" [ref=e635]
+              - cell "unidad" [ref=e636]
+              - cell "Almacén A" [ref=e637]
+              - cell "Editar Inhabilitar" [ref=e638]:
+                - button "Editar" [ref=e639] [cursor=pointer]
+                - button "Inhabilitar" [ref=e640] [cursor=pointer]
+            - row "E2E-1760763780382 Producto E2E 1760763780382 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e641]:
+              - cell "E2E-1760763780382" [ref=e642]
+              - cell "Producto E2E 1760763780382" [ref=e643]
+              - cell "Cámaras" [ref=e644]
+              - cell "S/ 199.99" [ref=e645]
+              - cell "5" [ref=e646]
+              - cell "Activo" [ref=e647]
+              - cell "unidad" [ref=e648]
+              - cell "Almacén A" [ref=e649]
+              - cell "Editar Inhabilitar" [ref=e650]:
+                - button "Editar" [ref=e651] [cursor=pointer]
+                - button "Inhabilitar" [ref=e652] [cursor=pointer]
+            - row "E2E-1760763843765 Producto E2E 1760763843765 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e653]:
+              - cell "E2E-1760763843765" [ref=e654]
+              - cell "Producto E2E 1760763843765" [ref=e655]
+              - cell "Cámaras" [ref=e656]
+              - cell "S/ 199.99" [ref=e657]
+              - cell "5" [ref=e658]
+              - cell "Activo" [ref=e659]
+              - cell "unidad" [ref=e660]
+              - cell "Almacén A" [ref=e661]
+              - cell "Editar Inhabilitar" [ref=e662]:
+                - button "Editar" [ref=e663] [cursor=pointer]
+                - button "Inhabilitar" [ref=e664] [cursor=pointer]
+            - row "E2E-1760763910260 Producto E2E 1760763910260 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e665]:
+              - cell "E2E-1760763910260" [ref=e666]
+              - cell "Producto E2E 1760763910260" [ref=e667]
+              - cell "Cámaras" [ref=e668]
+              - cell "S/ 199.99" [ref=e669]
+              - cell "5" [ref=e670]
+              - cell "Activo" [ref=e671]
+              - cell "unidad" [ref=e672]
+              - cell "Almacén A" [ref=e673]
+              - cell "Editar Inhabilitar" [ref=e674]:
+                - button "Editar" [ref=e675] [cursor=pointer]
+                - button "Inhabilitar" [ref=e676] [cursor=pointer]
+            - row "E2E-1760763984691 Producto E2E 1760763984691 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e677]:
+              - cell "E2E-1760763984691" [ref=e678]
+              - cell "Producto E2E 1760763984691" [ref=e679]
+              - cell "Cámaras" [ref=e680]
+              - cell "S/ 199.99" [ref=e681]
+              - cell "5" [ref=e682]
+              - cell "Activo" [ref=e683]
+              - cell "unidad" [ref=e684]
+              - cell "Almacén A" [ref=e685]
+              - cell "Editar Inhabilitar" [ref=e686]:
+                - button "Editar" [ref=e687] [cursor=pointer]
+                - button "Inhabilitar" [ref=e688] [cursor=pointer]
+            - row "E2E-1760764160672 Producto E2E 1760764160672 Cámaras S/ 199.99 5 Activo unidad Almacén A Editar Inhabilitar" [ref=e689]:
+              - cell "E2E-1760764160672" [ref=e690]
+              - cell "Producto E2E 1760764160672" [ref=e691]
+              - cell "Cámaras" [ref=e692]
+              - cell "S/ 199.99" [ref=e693]
+              - cell "5" [ref=e694]
+              - cell "Activo" [ref=e695]
+              - cell "unidad" [ref=e696]
+              - cell "Almacén A" [ref=e697]
+              - cell "Editar Inhabilitar" [ref=e698]:
+                - button "Editar" [ref=e699] [cursor=pointer]
+                - button "Inhabilitar" [ref=e700] [cursor=pointer]
+```

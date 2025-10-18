@@ -1,0 +1,219 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - text: 
+  - generic [ref=e3]:
+    - button "" [ref=e4] [cursor=pointer]:
+      - generic [ref=e5]: 
+    - generic [ref=e6]:
+      - navigation [ref=e7]:
+        - list [ref=e8]:
+          - listitem [ref=e9]:
+            - link " Dashboard" [ref=e10] [cursor=pointer]:
+              - /url: /dashboard
+              - generic [ref=e11]: 
+              - generic [ref=e12]: Dashboard
+          - listitem [ref=e13]:
+            - link " Usuarios" [ref=e14] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e15]: 
+              - generic [ref=e16]: Usuarios
+            - link "Lista de Usuarios" [ref=e18] [cursor=pointer]:
+              - /url: /usuarios
+              - heading "Lista de Usuarios" [level=3] [ref=e19]
+          - listitem [ref=e20]:
+            - link " Entidades Comerciales" [ref=e21] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e22]: 
+              - generic [ref=e23]: Entidades Comerciales
+            - link "Lista de Entidades" [ref=e26] [cursor=pointer]:
+              - /url: /lista-entidades
+              - heading "Lista de Entidades" [level=3] [ref=e27]
+          - listitem [ref=e28]:
+            - link " Ventas" [ref=e29] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e30]: 
+              - generic [ref=e31]: Ventas
+            - generic:
+              - link "Apertura de caja" [ref=e33] [cursor=pointer]:
+                - /url: /ventas/apertura-caja
+                - heading "Apertura de caja" [level=3] [ref=e34]
+              - link "Gestión Caja" [ref=e36] [cursor=pointer]:
+                - /url: /ventas/gestion-caja
+                - heading "Gestión Caja" [level=3] [ref=e37]
+              - link "Realizar Venta" [ref=e39] [cursor=pointer]:
+                - /url: /ventas/realizar
+                - heading "Realizar Venta" [level=3] [ref=e40]
+              - link "Lista de Ventas" [ref=e42] [cursor=pointer]:
+                - /url: /ventas/lista
+                - heading "Lista de Ventas" [level=3] [ref=e43]
+              - link "Gestión de Caja" [ref=e45] [cursor=pointer]:
+                - /url: /gestion-caja
+                - heading "Gestión de Caja" [level=3] [ref=e46]
+          - listitem [ref=e47]:
+            - link " Productos" [ref=e48] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e49]: 
+              - generic [ref=e50]: Productos
+            - link "Lista de Productos" [ref=e52] [cursor=pointer]:
+              - /url: /lista-productos
+              - heading "Lista de Productos" [level=3] [ref=e53]
+          - listitem [ref=e54]:
+            - link " Inventario" [ref=e55] [cursor=pointer]:
+              - /url: /inventario
+              - generic [ref=e56]: 
+              - generic [ref=e57]: Inventario
+          - listitem [ref=e58]:
+            - link " Compras" [ref=e59] [cursor=pointer]:
+              - /url: /compras
+              - generic [ref=e60]: 
+              - generic [ref=e61]: Compras
+          - listitem [ref=e62]:
+            - link " Facturación" [ref=e63] [cursor=pointer]:
+              - /url: /facturacion
+              - generic [ref=e64]: 
+              - generic [ref=e65]: Facturación
+          - listitem [ref=e66]:
+            - link " Configuración" [ref=e67] [cursor=pointer]:
+              - /url: /configuracion
+              - generic [ref=e68]: 
+              - generic [ref=e69]: Configuración
+          - listitem [ref=e70]:
+            - link " Reportes" [ref=e71] [cursor=pointer]:
+              - /url: /reportes
+              - generic [ref=e72]: 
+              - generic [ref=e73]: Reportes
+          - listitem [ref=e74]:
+            - link " Auditoría y Logs" [ref=e75] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e76]: 
+              - generic [ref=e77]: Auditoría y Logs
+            - link "Logs del Sistema" [ref=e79] [cursor=pointer]:
+              - /url: /auditoria
+              - heading "Logs del Sistema" [level=3] [ref=e80]
+      - button " Cerrar Sesión" [ref=e82] [cursor=pointer]:
+        - generic [ref=e83]: 
+        - generic [ref=e84]: Cerrar Sesión
+  - generic [ref=e85]:
+    - complementary [ref=e86]:
+      - link "AlexaTech" [ref=e88] [cursor=pointer]:
+        - /url: /dashboard
+        - heading "AlexaTech" [level=2] [ref=e89]
+      - navigation [ref=e90]:
+        - list [ref=e91]:
+          - listitem [ref=e92]:
+            - link " Dashboard" [ref=e93] [cursor=pointer]:
+              - /url: /dashboard
+              - generic [ref=e94]: 
+              - generic [ref=e95]: Dashboard
+          - listitem [ref=e96]:
+            - link " Usuarios" [ref=e97] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e98]: 
+              - generic [ref=e99]: Usuarios
+            - link "Lista de Usuarios" [ref=e101] [cursor=pointer]:
+              - /url: /usuarios
+              - heading "Lista de Usuarios" [level=3] [ref=e102]
+          - listitem [ref=e103]:
+            - link " Entidades Comerciales" [ref=e104] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e105]: 
+              - generic [ref=e106]: Entidades Comerciales
+            - link "Lista de Entidades" [ref=e109] [cursor=pointer]:
+              - /url: /lista-entidades
+              - heading "Lista de Entidades" [level=3] [ref=e110]
+          - listitem [ref=e111]:
+            - link " Ventas" [ref=e112] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e113]: 
+              - generic [ref=e114]: Ventas
+            - generic:
+              - link "Apertura de caja" [ref=e116] [cursor=pointer]:
+                - /url: /ventas/apertura-caja
+                - heading "Apertura de caja" [level=3] [ref=e117]
+              - link "Gestión Caja" [ref=e119] [cursor=pointer]:
+                - /url: /ventas/gestion-caja
+                - heading "Gestión Caja" [level=3] [ref=e120]
+              - link "Realizar Venta" [ref=e122] [cursor=pointer]:
+                - /url: /ventas/realizar
+                - heading "Realizar Venta" [level=3] [ref=e123]
+              - link "Lista de Ventas" [ref=e125] [cursor=pointer]:
+                - /url: /ventas/lista
+                - heading "Lista de Ventas" [level=3] [ref=e126]
+              - link "Gestión de Caja" [ref=e128] [cursor=pointer]:
+                - /url: /gestion-caja
+                - heading "Gestión de Caja" [level=3] [ref=e129]
+          - listitem [ref=e130]:
+            - link " Productos" [ref=e131] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e132]: 
+              - generic [ref=e133]: Productos
+            - link "Lista de Productos" [ref=e135] [cursor=pointer]:
+              - /url: /lista-productos
+              - heading "Lista de Productos" [level=3] [ref=e136]
+          - listitem [ref=e137]:
+            - link " Inventario" [ref=e138] [cursor=pointer]:
+              - /url: /inventario
+              - generic [ref=e139]: 
+              - generic [ref=e140]: Inventario
+          - listitem [ref=e141]:
+            - link " Compras" [ref=e142] [cursor=pointer]:
+              - /url: /compras
+              - generic [ref=e143]: 
+              - generic [ref=e144]: Compras
+          - listitem [ref=e145]:
+            - link " Facturación" [ref=e146] [cursor=pointer]:
+              - /url: /facturacion
+              - generic [ref=e147]: 
+              - generic [ref=e148]: Facturación
+          - listitem [ref=e149]:
+            - link " Configuración" [ref=e150] [cursor=pointer]:
+              - /url: /configuracion
+              - generic [ref=e151]: 
+              - generic [ref=e152]: Configuración
+          - listitem [ref=e153]:
+            - link " Reportes" [ref=e154] [cursor=pointer]:
+              - /url: /reportes
+              - generic [ref=e155]: 
+              - generic [ref=e156]: Reportes
+          - listitem [ref=e157]:
+            - link " Auditoría y Logs" [ref=e158] [cursor=pointer]:
+              - /url: "#"
+              - generic [ref=e159]: 
+              - generic [ref=e160]: Auditoría y Logs
+            - link "Logs del Sistema" [ref=e162] [cursor=pointer]:
+              - /url: /auditoria
+              - heading "Logs del Sistema" [level=3] [ref=e163]
+      - button " Cerrar Sesión" [ref=e165] [cursor=pointer]:
+        - generic [ref=e166]: 
+        - generic [ref=e167]: Cerrar Sesión
+    - main [ref=e168]:
+      - generic [ref=e169]:
+        - heading "Entidades Comerciales" [level=1] [ref=e170]
+        - link "@cajero CA" [ref=e172] [cursor=pointer]:
+          - /url: /perfil
+          - generic [ref=e174]: "@cajero"
+          - generic [ref=e175]: CA
+      - generic [ref=e177]:
+        - generic [ref=e178]:
+          - generic [ref=e179]:
+            - textbox "Buscar entidad..." [ref=e180]
+            - generic: 
+            - button "Filtros Avanzados" [ref=e181] [cursor=pointer]
+          - button "+ Nueva Entidad" [ref=e182] [cursor=pointer]:
+            - generic [ref=e183]: +
+            - text: Nueva Entidad
+        - table [ref=e185]:
+          - rowgroup [ref=e186]:
+            - row "Nombre Completo Email Teléfono Documento Dirección Acciones" [ref=e187]:
+              - cell "Nombre Completo" [ref=e188]
+              - cell "Email" [ref=e189]
+              - cell "Teléfono" [ref=e190]
+              - cell "Documento" [ref=e191]
+              - cell "Dirección" [ref=e192]
+              - cell "Acciones" [ref=e193]
+          - rowgroup [ref=e194]:
+            - row "No se encontraron entidades que coincidan con la búsqueda" [ref=e195]:
+              - cell "No se encontraron entidades que coincidan con la búsqueda" [ref=e196]
+```

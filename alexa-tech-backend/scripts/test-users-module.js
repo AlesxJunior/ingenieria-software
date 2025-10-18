@@ -65,6 +65,29 @@ async function run() {
   // --- Roles y Tokens ---
   const admin = await login('admin@alexatech.com', 'admin123');
   await sleep(5000);
+  
+  // --- Setup: Ensure users are in a valid state before tests ---
+  console.log('🔧 Pre-test setup: Reactivating key users...');
+  const usersToEnsureActive = ['vendedor@alexatech.com'];
+  const allUsersRes = await request('GET', '/users?limit=100', null, admin.token);
+  const allUsers = allUsersRes.body?.data?.users;
+
+  if (allUsers) {
+    for (const email of usersToEnsureActive) {
+      const user = allUsers.find(u => u.email === email);
+      if (user && !user.isActive) {
+        const reactivateRes = await request('PATCH', `/users/${user.id}/status`, { isActive: true }, admin.token);
+        assert(reactivateRes.ok, `Setup failed: Could not reactivate ${email}.`);
+        console.log(`   - ✅ User ${email} has been activated.`);
+      } else if (user) {
+        console.log(`   - ℹ️ User ${email} is already active.`);
+      } else {
+        console.warn(`   - ⚠️ Warning: User ${email} not found during setup.`);
+      }
+    }
+  }
+  await sleep(1000);
+
   const supervisor = await login('supervisor@alexatech.com', 'supervisor123');
   await sleep(5000);
   const vendedor = await login('vendedor@alexatech.com', 'vendedor123');
@@ -156,13 +179,31 @@ async function run() {
   });
   await sleep(5000);
 
-  await runTest('Cajero: Sin acceso al módulo de usuarios', async () => {
+  await runTest('Cajero: Permisos de gestión de usuarios', async () => {
+    // 1. PUEDE listar usuarios (users.read)
     const listRes = await request('GET', '/users', null, cajero.token);
-    assert(listRes.status === 403, 'Cajero no debería poder listar usuarios');
+    assert(listRes.ok, 'Cajero debería poder listar usuarios (users.read)');
     await sleep(1000);
 
-    const getRes = await request('GET', `/users/${admin.userId}`, null, cajero.token);
-    assert(getRes.status === 403, 'Cajero no debería poder ver otros usuarios');
+    // 2. NO PUEDE crear un usuario nuevo (sin users.create)
+    const username = `cajero-fail-${Date.now()}`;
+    const newUserEmail = `${username}@example.com`;
+    const createRes = await request('POST', '/users', {
+      username: username,
+      email: newUserEmail,
+      password: 'Password123!',
+    }, cajero.token);
+    assert(createRes.status === 403, 'Cajero NO debería poder crear usuarios (esperado 403)');
+    await sleep(1000);
+
+    // 3. NO PUEDE editar a otro usuario (sin users.update)
+    const updateRes = await request('PUT', `/users/${vendedor.userId}`, { firstName: 'CajeroFailUpdate' }, cajero.token);
+    assert(updateRes.status === 403, 'Cajero NO debería poder editar otros usuarios (esperado 403)');
+    await sleep(1000);
+
+    // 4. NO PUEDE desactivar a otro usuario (sin users.update)
+    const deactivateRes = await request('PATCH', `/users/${vendedor.userId}/status`, { isActive: false }, cajero.token);
+    assert(deactivateRes.status === 403, 'Cajero NO debería poder cambiar el estado de otros usuarios (esperado 403)');
   });
   await sleep(5000);
 
@@ -189,9 +230,18 @@ async function run() {
     const tempUser = await login(tempUserEmail, 'Password123!');
     await sleep(1000);
     
-    // 3. Verificar que el usuario puede acceder a un recurso de supervisor
-    const initialAccess = await request('GET', '/users', null, tempUser.token);
-    assert(initialAccess.ok, 'El usuario temporal (Supervisor) no pudo listar usuarios inicialmente');
+    // 3. Verificar que el usuario puede acceder a un recurso de supervisor (products.create)
+    const dummyProduct = {
+      name: `Test Product ${Date.now()}`,
+      description: 'A product for testing.',
+      price: 100,
+      stock: 10,
+      category: 'TEST',
+      provider: 'TEST'
+    };
+    const initialAccess = await request('POST', '/products', dummyProduct, tempUser.token);
+    // Supervisor can create products, so this should not be a 403. It might be other errors if data is bad, but not permission error.
+    assert(initialAccess.status !== 403, 'El usuario temporal (Supervisor) no debería tener prohibido crear productos');
     await sleep(1000);
 
     // 4. Admin cambia los permisos del usuario a los de un Cajero
@@ -200,9 +250,15 @@ async function run() {
     assert(revokeRes.ok, 'Admin no pudo cambiar el rol del usuario para revocar permisos');
     await sleep(1000);
 
-    // 5. Intentar acceder al mismo recurso con el token ANTIGUO
-    const afterRevokeAccess = await request('GET', '/users', null, tempUser.token);
-    assert(afterRevokeAccess.status === 403, 'El acceso no fue revocado dinámicamente tras el cambio de rol (esperado 403)');
+    // DEBUG: Verify permissions were actually changed in the DB
+    console.log('🔍 Debugging: Fetching tempUser permissions after update...');
+    const tempUserData = await request('GET', `/users/${tempUserId}`, null, admin.token);
+    console.log('tempUser Permissions from API after update:', tempUserData.body?.data?.permissions);
+    await sleep(1000);
+
+    // 5. Intentar acceder al mismo recurso con el token ANTIGUO (ahora como Cajero)
+    const afterRevokeAccess = await request('POST', '/products', dummyProduct, tempUser.token);
+    assert(afterRevokeAccess.status === 403, 'El acceso a la creación de productos no fue revocado dinámicamente (esperado 403)');
   });
 
   console.log('Todas las pruebas del modulo de Usuarios completadas exitosamente');

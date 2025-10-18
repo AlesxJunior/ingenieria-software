@@ -602,8 +602,10 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
       // Cerrar modal
       onClose();
     } catch (error) {
+      const errorMessage = (error as Error).message || 'No se pudo crear el usuario. Es posible que no tengas los permisos necesarios.';
       console.error('Error al crear el usuario:', error);
-      showNotification('error', 'Error', 'Error al crear el usuario');
+      showNotification('error', 'Error de Creación', errorMessage);
+      return;
     } finally {
       setIsLoading(false);
     }

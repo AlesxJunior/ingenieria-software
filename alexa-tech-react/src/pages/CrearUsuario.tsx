@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { useNotification } from '../context/NotificationContext';
 import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
 import PasswordRequirements from '../components/PasswordRequirements';
+import { apiService } from '../utils/api';
 
 interface UserFormData {
   username: string;
@@ -121,10 +122,6 @@ const ErrorMessage = styled.span`
   margin-top: 0.25rem;
 `;
 
-
-
-
-
 const ButtonContainer = styled.div`
   display: flex;
   gap: 1rem;
@@ -176,29 +173,23 @@ const CrearUsuario: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
-
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Validar username
     const usernameValidation = validateUsername(formData.username);
     if (!usernameValidation.isValid) {
       newErrors.username = usernameValidation.errors[0]?.message || 'Error en nombre de usuario';
     }
 
-    // Validar email
     const emailValidation = validateEmail(formData.email);
     if (!emailValidation.isValid) {
       newErrors.email = emailValidation.errors[0]?.message || 'Error en email';
     }
 
-    // Validar nombre completo
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'El nombre completo es requerido';
     }
 
-    // Validar contraseña con requisitos robustos
     const passwordValidation = validatePasswordWithConfirmation(formData.password, formData.confirmPassword);
     if (!passwordValidation.isValid) {
       const passwordErrors = passwordValidation.errors.filter(e => e.field === 'Contraseña');
@@ -212,8 +203,6 @@ const CrearUsuario: React.FC = () => {
       }
     }
 
-
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -225,7 +214,6 @@ const CrearUsuario: React.FC = () => {
       [name]: value
     }));
 
-    // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -233,10 +221,6 @@ const CrearUsuario: React.FC = () => {
       }));
     }
   };
-
-
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,13 +233,31 @@ const CrearUsuario: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts.shift() || '';
+      const lastName = nameParts.join(' ');
 
-      showSuccess('Usuario creado exitosamente');
-      navigate('/usuarios');
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        firstName,
+        lastName,
+        isActive: formData.status === 'activo',
+        permissions: [], // Permisos por defecto para un nuevo usuario
+      };
+
+      const response = await apiService.createUser(payload);
+
+      if (response.success) {
+        showSuccess('Usuario creado exitosamente');
+        navigate('/usuarios');
+      } else {
+        throw new Error(response.message || 'Ocurrió un error desconocido al crear el usuario');
+      }
     } catch (error) {
-      showError('Error al crear el usuario');
+      const errorMessage = (error as Error).message || 'Error al crear el usuario. Es posible que no tengas permisos.';
+      showError('Error de Creación', errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -360,8 +362,6 @@ const CrearUsuario: React.FC = () => {
                 {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
               </FormGroup>
             </FormRow>
-
-
 
             <ButtonContainer>
               <Button type="button" onClick={() => navigate('/usuarios')}>

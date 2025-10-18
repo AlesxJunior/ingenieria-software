@@ -419,27 +419,26 @@ const ListaUsuarios: React.FC = () => {
   };
 
   const handleSaveUser = async (userData: UserFormData) => {
-    try {
-      if (selectedUser) {
-        // Filtrar solo las propiedades que acepta la API
-        const backendUserData: any = {};
-        
-        if (userData.username) backendUserData.username = userData.username;
-        if (userData.email) backendUserData.email = userData.email;
-        if (userData.firstName) backendUserData.firstName = userData.firstName;
-        if (userData.lastName) backendUserData.lastName = userData.lastName;
-        if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-        if (userData.permissions) backendUserData.permissions = userData.permissions;
+    if (selectedUser) {
+      // Filtrar solo las propiedades que acepta la API
+      const backendUserData: any = {};
+      
+      if (userData.username) backendUserData.username = userData.username;
+      if (userData.email) backendUserData.email = userData.email;
+      if (userData.firstName) backendUserData.firstName = userData.firstName;
+      if (userData.lastName) backendUserData.lastName = userData.lastName;
+      if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
+      if (userData.permissions) backendUserData.permissions = userData.permissions;
 
-        
-        await apiService.updateUser(selectedUser.id, backendUserData);
-        showInfo('Usuario actualizado exitosamente');
-        loadUsers(); // Recargar la lista
+      const res = await apiService.updateUser(selectedUser.id, backendUserData);
+      if (!res.success) {
+        // Lanzar error para que el modal lo capture
+        throw new Error(res.message || 'Error al actualizar el usuario');
       }
-    } catch (error) {
-      console.error('Error updating user:', error);
-      showError('Error al actualizar el usuario');
-    } finally {
+
+      // El modal se encarga de la notificación y de cerrarse.
+      // Este componente solo recarga los datos y actualiza su estado.
+      loadUsers();
       setIsEditModalOpen(false);
       setSelectedUser(null);
     }
@@ -448,39 +447,42 @@ const ListaUsuarios: React.FC = () => {
   const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const newStatus = !currentStatus;
-      await apiService.updateUserStatus(userId, newStatus);
+      const res = await apiService.updateUserStatus(userId, newStatus);
+      if (!res.success) {
+        throw new Error(res.message || 'Error al cambiar el estado del usuario');
+      }
       
       const action = newStatus ? 'activado' : 'desactivado';
       showInfo(`Usuario ${action} exitosamente`);
       loadUsers(); // Recargar la lista
     } catch (error) {
       console.error('Error updating user status:', error);
-      showError('Error al cambiar el estado del usuario');
+      showError((error as Error).message || 'Error al cambiar el estado del usuario');
     }
   };
 
   const handleCreateUser = async (userData: any) => {
-    try {
-      // Filtrar solo las propiedades que acepta la API
-      const backendUserData: any = {};
-      
-      if (userData.username) backendUserData.username = userData.username;
-      if (userData.email) backendUserData.email = userData.email;
-      if (userData.password) backendUserData.password = userData.password;
-      if (userData.firstName) backendUserData.firstName = userData.firstName;
-      if (userData.lastName) backendUserData.lastName = userData.lastName;
-      if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-      if (userData.permissions) backendUserData.permissions = userData.permissions;
+    // Filtrar solo las propiedades que acepta la API
+    const backendUserData: any = {};
+    
+    if (userData.username) backendUserData.username = userData.username;
+    if (userData.email) backendUserData.email = userData.email;
+    if (userData.password) backendUserData.password = userData.password;
+    if (userData.firstName) backendUserData.firstName = userData.firstName;
+    if (userData.lastName) backendUserData.lastName = userData.lastName;
+    if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
+    if (userData.permissions) backendUserData.permissions = userData.permissions;
 
-      
-      await apiService.createUser(backendUserData);
-      showInfo('Usuario creado exitosamente');
-      loadUsers(); // Recargar la lista
-      setIsNuevoUsuarioModalOpen(false);
-    } catch (error) {
-      console.error('Error creating user:', error);
-      showError('Error al crear el usuario');
+    const res = await apiService.createUser(backendUserData);
+    if (!res.success) {
+      // Lanzar error para que el modal lo capture y muestre la notificación de error
+      throw new Error(res.message || 'No se pudo crear el usuario');
     }
+
+    // Si la operación es exitosa, el modal se encargará de la notificación de éxito.
+    // Este componente solo se encarga de recargar los datos y cerrar el modal.
+    loadUsers();
+    setIsNuevoUsuarioModalOpen(false);
   };
 
   const handleOpenCreateModal = () => {

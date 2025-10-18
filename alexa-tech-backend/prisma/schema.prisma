@@ -32,6 +32,8 @@ model User {
   userActivities UserActivity[]
   productsCreated Product[] @relation("ProductCreatedBy")
   productsUpdated Product[] @relation("ProductUpdatedBy")
+  clientsCreated  Client[]  @relation("ClientCreatedBy")
+  clientsUpdated  Client[]  @relation("ClientUpdatedBy")
 
   @@map("users")
 }

@@ -12,7 +12,7 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "db:seed": "ts-node prisma/seed.ts",
     "test:clients": "node scripts/test-clients-module.js",
-    "test:users": "node scripts/test-users-module.js",
+    "test:users": "npx prisma migrate reset --force && node scripts/test-users-module.js",
     "test:productos": "node scripts/test-products-module.js",
     "test:all": "node scripts/run-all-tests.js",
     "check:auth": "node scripts/check-auth-health.js",

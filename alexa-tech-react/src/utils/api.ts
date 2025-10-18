@@ -227,7 +227,8 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
+    console.log(`[API Request] Iniciando fetch a: ${options.method || 'GET'} ${url}`);
+
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -236,6 +237,9 @@ class ApiService {
     const token = localStorage.getItem('alexatech_token');
     if (token) {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
+      console.log('[API Request] Token enviado:', token);
+    } else {
+      console.log('[API Request] No se encontró token.');
     }
 
     const config: RequestInit = {
@@ -250,6 +254,13 @@ class ApiService {
       const response = await fetch(url, config);
       const data = await response.json();
 
+      console.log(`[API Response] Status: ${response.status}`, {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        data,
+      });
+
       if (!response.ok) {
         return {
           success: false,
@@ -260,7 +271,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error(`[API Error] Fallo en la petición a ${url}:`, error);
       return {
         success: false,
         message: 'Error de conexión con el servidor',

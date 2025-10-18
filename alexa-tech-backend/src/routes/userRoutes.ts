@@ -4,6 +4,7 @@ import {
   authenticate,
   requireAdmin,
   requireSupervisor,
+  requirePermission,
 } from '../middleware/auth';
 import { rateLimiter } from '../middleware/rateLimiter';
 
@@ -16,7 +17,7 @@ router.use(authenticate);
 // Requiere permiso específico para ver usuarios
 router.get(
   '/',
-  requireSupervisor,
+  requirePermission('users.read'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }), // 100 requests per 15 minutes
   UserController.getAllUsers,
 );
@@ -34,7 +35,7 @@ router.get(
 // Requiere permiso específico para crear usuarios
 router.post(
   '/',
-  requireAdmin,
+  requirePermission('users.create'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 10 }), // 10 creations per 15 minutes
   UserController.createUser,
 );
@@ -43,7 +44,7 @@ router.post(
 // Requiere permiso específico para editar usuarios
 router.put(
   '/:id',
-  requireAdmin,
+  requirePermission('users.update'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 updates per 15 minutes
   UserController.updateUser,
 );
@@ -52,7 +53,7 @@ router.put(
 // Requiere permiso específico para editar usuarios
 router.patch(
   '/:id',
-  requireAdmin,
+  requirePermission('users.update'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 updates per 15 minutes
   UserController.patchUser,
 );
@@ -61,7 +62,7 @@ router.patch(
 // Requiere permiso específico para editar usuarios (Admin o Supervisor)
 router.patch(
   '/:id/status',
-  requireSupervisor,
+  requirePermission('users.update'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 20 }), // 20 status changes per 15 minutes
   UserController.updateUserStatus,
 );
