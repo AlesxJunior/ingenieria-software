@@ -8,7 +8,6 @@ import NuevoProductoModal from '../components/NuevoProductoModal';
 import EditarProductoModal from '../components/EditarProductoModal';
 import { apiService } from '../utils/api';
 import { media } from '../styles/breakpoints';
-import type { Product } from '../context/AppContext';
 
 const TableContainer = styled.div`
   background: white;

@@ -2,9 +2,8 @@
 // Ejecutar con: npm run test:users (o usando alias con cuentas)
 
 const BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/api';
-const DEFAULT_EMAIL = process.env.AUTH_EMAIL || 'admin@alexatech.com';
-const DEFAULT_PASSWORD = process.env.AUTH_PASSWORD || 'admin123';
 
+// --- Helpers ---
 async function request(method, path, body, token) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -27,58 +26,189 @@ async function request(method, path, body, token) {
 
 function assert(condition, message) {
   if (!condition) {
-    console.error(`❌ ${message}`);
+    console.error(`❌ Assertion Failed: ${message}`);
     process.exit(1);
   }
 }
 
 async function login(email, password) {
-  const { ok, body } = await request('POST', '/auth/login', { email, password });
+  const { ok, body, status } = await request('POST', '/auth/login', { email, password });
+  if (!ok || !body?.data?.accessToken) {
+    console.error(`Login failed for ${email}. Status: ${status}. Body: ${JSON.stringify(body)}`);
+  }
   assert(ok && body?.data?.accessToken, `Login fallido o sin accessToken para ${email}`);
-  console.log(`🔐 Login ok: ${email}`);
-  return body.data.accessToken;
+  console.log(`   - 🔐 Login ok: ${email}`);
+  return { token: body.data.accessToken, refreshToken: body.data.refreshToken, userId: body.data.user.id };
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runTest(name, testFn) {
+  console.log(`
+🧪 Ejecutando: ${name}`);
+  try {
+    await testFn();
+    console.log(`✅ Prueba pasada: ${name}`);
+  } catch (error) {
+    console.error(`💥 Prueba fallida: ${name}`);
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+// --- Pruebas ---
 async function run() {
   console.log('🚀 Iniciando pruebas del módulo de Usuarios...');
 
-  // 1) Verificación sin token (debe fallar 401)
-  const noToken = await request('GET', '/users', null, null);
-  assert(noToken.status === 401, `Acceso sin token debería ser 401, recibido ${noToken.status}`);
-  console.log('🔒 Acceso sin token correctamente bloqueado (401)');
+  // --- Roles y Tokens ---
+  const admin = await login('admin@alexatech.com', 'admin123');
+  await sleep(5000);
+  const supervisor = await login('supervisor@alexatech.com', 'supervisor123');
+  await sleep(5000);
+  const vendedor = await login('vendedor@alexatech.com', 'vendedor123');
+  await sleep(5000);
+  const cajero = await login('cajero@alexatech.com', 'cajero123');
+  await sleep(5000);
 
-  // 2) Login Admin y listado de usuarios (debe funcionar 200)
-  const adminToken = await login(DEFAULT_EMAIL, DEFAULT_PASSWORD);
-  // Confirmar /auth/me devuelve el perfil actual
-  const adminMe = await request('GET', '/auth/me', null, adminToken);
-  assert(adminMe.ok && adminMe.body?.data?.email === DEFAULT_EMAIL, 'Admin: /auth/me falló');
-  console.log('👤 Admin: /auth/me ok');
-  const adminList = await request('GET', '/users', null, adminToken);
-  assert(adminList.ok && Array.isArray(adminList.body?.data?.users), 'Admin: listado de usuarios falló');
-  console.log(`📚 Admin: listado ok con ${adminList.body.data.users.length} usuarios`);
+  await runTest('Acceso sin token', async () => {
+    const res = await request('GET', '/users', null, null);
+    assert(res.status === 401, 'Acceso sin token debería ser 401');
+  });
+  await sleep(5000);
 
-  // 3) Login Cajero y verificación de permisos (debe ser 403)
-  const cajeroToken = await login('cajero@alexatech.com', 'cajero123');
-  const cajeroList = await request('GET', '/users', null, cajeroToken);
-  assert(cajeroList.status === 403, `Cajero debería recibir 403 al listar usuarios, recibido ${cajeroList.status}`);
-  console.log('🔒 Cajero: permiso denegado correctamente (403)');
+  await runTest('Admin: Acceso total', async () => {
+    // Puede listar
+    const listRes = await request('GET', '/users', null, admin.token);
+    assert(listRes.ok && Array.isArray(listRes.body?.data?.users), 'Admin no pudo listar usuarios');
+    await sleep(1000);
 
-  // 4) Ver usuario por ID propio con supervisor
-  const supervisorToken = await login('supervisor@alexatech.com', 'supervisor123');
-  // Obtener lista para conseguir un ID válido
-  const supList = await request('GET', '/users', null, supervisorToken);
-  assert(supList.ok && Array.isArray(supList.body?.data?.users), 'Supervisor: listado de usuarios falló');
-  console.log(`📚 Supervisor: listado ok con ${supList.body.data.users.length} usuarios`);
-  const someUser = supList.body.data.users[0];
-  const supGet = await request('GET', `/users/${someUser.id}`, null, supervisorToken);
-  // El controlador de usuarios devuelve el usuario directamente en data, no envuelve bajo data.user
-  assert(supGet.ok && supGet.body?.data?.id === someUser.id, 'Supervisor: get usuario por ID falló');
-  console.log('📍 Supervisor: get usuario por ID ok');
+    // Puede crear
+    const vendedorPermissions = (await request('GET', `/users/${vendedor.userId}`, null, admin.token)).body.data.permissions;
+    const username = `testuser${Date.now()}`;
+    const newUserEmail = `${username}@example.com`;
+    const createRes = await request('POST', '/users', {
+      username: username,
+      email: newUserEmail,
+      password: 'Password123!',
+      firstName: 'Testlongname',
+      lastName: 'Userlongname',
+      permissions: vendedorPermissions
+    }, admin.token);
+    if (!createRes.ok) {
+      console.log('User creation failed. Response:', JSON.stringify(createRes));
+    }
+    assert(createRes.ok && createRes.body?.data?.email === newUserEmail, `Admin no pudo crear usuario: ${createRes.body?.message}`);
+    const newUserId = createRes.body.data.id;
+    await sleep(1000);
 
-  console.log('🎉 Pruebas del módulo de Usuarios completadas exitosamente');
+    // Puede ver
+    const getRes = await request('GET', `/users/${newUserId}`, null, admin.token);
+    assert(getRes.ok && getRes.body?.data?.id === newUserId, 'Admin no pudo ver usuario creado');
+    await sleep(1000);
+
+    // Puede actualizar
+    const updateRes = await request('PUT', `/users/${newUserId}`, { firstName: 'Updated' }, admin.token);
+    assert(updateRes.ok && updateRes.body?.data?.firstName === 'Updated', 'Admin no pudo actualizar usuario');
+    await sleep(1000);
+
+    // Puede eliminar (desactivar)
+    const deleteRes = await request('DELETE', `/users/${newUserId}`, null, admin.token);
+    assert(deleteRes.ok && deleteRes.body?.data?.deleted === true, 'Admin no pudo desactivar usuario');
+  });
+  await sleep(5000);
+
+  await runTest('Supervisor: Acceso de lectura', async () => {
+    // Puede listar
+    const listRes = await request('GET', '/users', null, supervisor.token);
+    assert(listRes.ok, 'Supervisor no pudo listar usuarios');
+    await sleep(1000);
+
+    // Puede ver perfiles
+    const getRes = await request('GET', `/users/${admin.userId}`, null, supervisor.token);
+    assert(getRes.ok, 'Supervisor no pudo ver perfil de admin');
+    await sleep(1000);
+
+    // NO puede crear
+    const createRes = await request('POST', '/users', { username: 'fail.user', email: 'fail@test.com', password: 'p' }, supervisor.token);
+    assert(createRes.status === 403, 'Supervisor no debería poder crear usuarios (esperado 403)');
+    await sleep(1000);
+
+    // NO puede editar
+    const updateRes = await request('PUT', `/users/${admin.userId}`, { firstName: 'Fail' }, supervisor.token);
+    assert(updateRes.status === 403, 'Supervisor no debería poder editar usuarios (esperado 403)');
+  });
+  await sleep(5000);
+
+  await runTest('Vendedor: Sin acceso al módulo de usuarios', async () => {
+    const listRes = await request('GET', '/users', null, vendedor.token);
+    assert(listRes.status === 403, 'Vendedor no debería poder listar usuarios');
+    await sleep(1000);
+
+    const getRes = await request('GET', `/users/${admin.userId}`, null, vendedor.token);
+    assert(getRes.status === 403, 'Vendedor no debería poder ver otros usuarios');
+    await sleep(1000);
+
+    // Puede ver su propio perfil
+    const meRes = await request('GET', '/auth/me', null, vendedor.token);
+    assert(meRes.ok && meRes.body?.data?.id === vendedor.userId, 'Vendedor no pudo ver su propio perfil');
+  });
+  await sleep(5000);
+
+  await runTest('Cajero: Sin acceso al módulo de usuarios', async () => {
+    const listRes = await request('GET', '/users', null, cajero.token);
+    assert(listRes.status === 403, 'Cajero no debería poder listar usuarios');
+    await sleep(1000);
+
+    const getRes = await request('GET', `/users/${admin.userId}`, null, cajero.token);
+    assert(getRes.status === 403, 'Cajero no debería poder ver otros usuarios');
+  });
+  await sleep(5000);
+
+  await runTest('Edge Case: Permiso revocado dinámicamente', async () => {
+    // 1. Admin crea un usuario de prueba con permisos de supervisor
+    const tempUsername = `revoketest${Date.now()}`;
+    const tempUserEmail = `${tempUsername}@example.com`;
+    const supervisorPermissions = (await request('GET', `/users/${supervisor.userId}`, null, admin.token)).body.data.permissions;
+    console.log('Supervisor Permissions:', supervisorPermissions);
+
+    const createRes = await request('POST', '/users', {
+      username: tempUsername,
+      email: tempUserEmail,
+      password: 'Password123!',
+      firstName: 'Revoke',
+      lastName: 'Test',
+      permissions: supervisorPermissions
+    }, admin.token);
+    assert(createRes.ok, 'No se pudo crear usuario para prueba de revocación');
+    const tempUserId = createRes.body.data.id;
+    await sleep(1000);
+
+    // 2. Iniciar sesión como el nuevo usuario para obtener un token
+    const tempUser = await login(tempUserEmail, 'Password123!');
+    await sleep(1000);
+    
+    // 3. Verificar que el usuario puede acceder a un recurso de supervisor
+    const initialAccess = await request('GET', '/users', null, tempUser.token);
+    assert(initialAccess.ok, 'El usuario temporal (Supervisor) no pudo listar usuarios inicialmente');
+    await sleep(1000);
+
+    // 4. Admin cambia los permisos del usuario a los de un Cajero
+    const cajeroPermissions = (await request('GET', `/users/${cajero.userId}`, null, admin.token)).body.data.permissions;
+    const revokeRes = await request('PUT', `/users/${tempUserId}`, { permissions: cajeroPermissions }, admin.token);
+    assert(revokeRes.ok, 'Admin no pudo cambiar el rol del usuario para revocar permisos');
+    await sleep(1000);
+
+    // 5. Intentar acceder al mismo recurso con el token ANTIGUO
+    const afterRevokeAccess = await request('GET', '/users', null, tempUser.token);
+    assert(afterRevokeAccess.status === 403, 'El acceso no fue revocado dinámicamente tras el cambio de rol (esperado 403)');
+  });
+
+  console.log('Todas las pruebas del modulo de Usuarios completadas exitosamente');
 }
 
 run().catch((err) => {
-  console.error('❌ Error en pruebas de usuarios:', err);
+  console.error('Error fatal en las pruebas de usuarios:', err.message);
   process.exit(1);
 });

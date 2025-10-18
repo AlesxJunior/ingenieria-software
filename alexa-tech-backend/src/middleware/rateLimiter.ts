@@ -1,5 +1,5 @@
 import rateLimit, { RateLimitRequestHandler } from 'express-rate-limit';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 interface RateLimiterOptions {
   windowMs: number;
@@ -11,7 +11,10 @@ interface RateLimiterOptions {
 
 export const rateLimiter = (
   options: RateLimiterOptions,
-): RateLimitRequestHandler => {
+): RateLimitRequestHandler | ((req: Request, res: Response, next: NextFunction) => void) => {
+  if (process.env.NODE_ENV === 'test') {
+    return (req: Request, res: Response, next: NextFunction) => next();
+  }
   return rateLimit({
     windowMs: options.windowMs,
     max: options.max,

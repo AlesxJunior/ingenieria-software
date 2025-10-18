@@ -7,7 +7,6 @@ import { useClients, type Client } from '../context/ClientContext';
 import { useSales, type SaleItem } from '../context/SalesContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import type { Product, Client, SaleItem } from '../context/AppContext';
 
 const Container = styled.div`
   display: grid;

@@ -13,7 +13,7 @@ function run(cmd, args, env = {}) {
       shell: true,
       stdio: 'inherit',
       cwd: backendDir,
-      env: { ...process.env, ...env },
+      env: { ...process.env, ...env, NODE_ENV: 'test' },
     });
     child.on('close', (code) => {
       if (code === 0) resolve();
