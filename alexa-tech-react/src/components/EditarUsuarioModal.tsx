@@ -76,31 +76,26 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
     description: 'Modificar información de usuarios existentes',
     module: 'USUARIOS'
   },
-  {
-    id: 'users.delete',
-    name: 'Eliminar Usuarios',
-    description: 'Eliminar usuarios del sistema',
-    module: 'USUARIOS'
-  },
   
-  // MÓDULO: CLIENTES
+  
+  // MÓDULO: ENTIDADES COMERCIALES
   {
-    id: 'clients.create',
-    name: 'Crear Clientes',
-    description: 'Registrar nuevos clientes en el sistema',
-    module: 'CLIENTES'
+    id: 'commercial_entities.create',
+    name: 'Crear Entidades Comerciales',
+    description: 'Registrar nuevas entidades comerciales en el sistema',
+    module: 'ENTIDADES COMERCIALES'
   },
   {
-    id: 'clients.read',
-    name: 'Ver Clientes',
-    description: 'Ver la lista de clientes del sistema',
-    module: 'CLIENTES'
+    id: 'commercial_entities.read',
+    name: 'Ver Entidades Comerciales',
+    description: 'Ver la lista de entidades comerciales del sistema',
+    module: 'ENTIDADES COMERCIALES'
   },
   {
-    id: 'clients.update',
-    name: 'Actualizar Clientes',
-    description: 'Modificar información de clientes existentes',
-    module: 'CLIENTES'
+    id: 'commercial_entities.update',
+    name: 'Actualizar Entidades Comerciales',
+    description: 'Modificar información de entidades comerciales',
+    module: 'ENTIDADES COMERCIALES'
   },
   
   // MÓDULO: VENTAS

@@ -420,15 +420,15 @@ const AuditoriaLogs: React.FC = () => {
       userId: 'user2',
       username: 'vendedor1',
       action: 'Create',
-      module: 'Clientes',
-      details: 'Cliente registrado: Juan Pérez (juan.perez@email.com)',
+      module: 'Entidades Comerciales',
+      details: 'Entidad comercial registrada: Juan Pérez (juan.perez@email.com)',
       ipAddress: '192.168.1.105',
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       status: 'success'
     }
   ];
 
-  const modules = ['Todos', 'Autenticación', 'Usuarios', 'Ventas', 'Inventario', 'Productos', 'Clientes', 'Configuración'];
+  const modules = ['Todos', 'Autenticación', 'Usuarios', 'Ventas', 'Inventario', 'Productos', 'Entidades Comerciales', 'Configuración'];
   const actions = ['Todos', 'Login', 'Logout', 'Create', 'Update', 'Delete', 'View'];
   const statuses = ['Todos', 'success', 'error', 'warning'];
 

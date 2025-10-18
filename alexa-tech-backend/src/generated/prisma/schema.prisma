@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum para el tipo de entidad comercial
+enum TipoEntidad {
+  Cliente
+  Proveedor
+  Ambos
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  username    String    @unique
+  password    String
+  firstName   String
+  lastName    String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastAccess  DateTime?
+  permissions String[]  @default([])
+
+  // Relaciones
+  auditLogs      AuditLog[]
+  userActivities UserActivity[]
+  clientsCreated Client[]       @relation("ClientCreatedBy")
+  clientsUpdated Client[]       @relation("ClientUpdatedBy")
+
+  @@map("users")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String // LOGIN, CREATE_USER, UPDATE_USER, DELETE_USER, etc.
+  userId    String? // Usuario que realizó la acción
+  targetId  String? // ID del recurso afectado
+  details   String? // Detalles adicionales de la acción
+  ipAddress String? // Dirección IP del usuario
+  userAgent String? // User agent del navegador
+  createdAt DateTime @default(now())
+
+  // Relación con usuario
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model UserActivity {
+  id        String   @id @default(cuid())
+  userId    String // Usuario que realizó la actividad
+  action    String // Tipo de actividad
+  details   String? // Detalles de la actividad
+  ipAddress String? // Dirección IP
+  userAgent String? // User agent del navegador
+  createdAt DateTime @default(now())
+
+  // Relación con usuario
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activities")
+}
+
+model SystemEvent {
+  id        String   @id @default(cuid())
+  type      String // SYSTEM_START, DATABASE_BACKUP, ERROR, etc.
+  details   String? // Detalles del evento
+  metadata  Json? // Metadatos adicionales en formato JSON
+  createdAt DateTime @default(now())
+
+  @@map("system_events")
+}
+
+model Client {
+  id              String      @id @default(cuid())
+  // Tipo de entidad comercial (Cliente, Proveedor o Ambos)
+  tipoEntidad     TipoEntidad @default(Cliente)
+  tipoDocumento   String // DNI, RUC, CE
+  numeroDocumento String      @unique // Número de documento único
+
+  // Campos para DNI y CE (Personas Naturales)
+  nombres   String? // Nombres (solo para DNI/CE)
+  apellidos String? // Apellidos (solo para DNI/CE)
+
+  // Campos para RUC (Personas Jurídicas)
+  razonSocial String? // Razón Social (solo para RUC)
+
+  // Campos comunes
+  email     String @unique // Email único del cliente
+  telefono  String // Teléfono de contacto
+  direccion String // Dirección completa
+  ciudad    String // Ciudad de residencia
+
+  // Auditoría de creación/actualización
+  usuarioCreacion      String?
+  usuarioActualizacion String?
+  createdBy            User?   @relation("ClientCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
+  updatedBy            User?   @relation("ClientUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
+
+  isActive  Boolean  @default(true) // Soft delete
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clients")
+}

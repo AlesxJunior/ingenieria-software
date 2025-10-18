@@ -1,4 +1,4 @@
-import { User } from '../generated/prisma';
+import { User } from '@prisma/client';
 import { prisma } from '../config/database';
 import { UserCreateInput, UserUpdateInput } from '../types';
 import * as bcrypt from 'bcrypt';
@@ -11,7 +11,7 @@ export class UserService {
     try {
       // Verificar si el email ya existe
       const existingUserByEmail = await prisma.user.findUnique({
-        where: { email: userData.email }
+        where: { email: userData.email },
       });
 
       if (existingUserByEmail) {
@@ -20,7 +20,7 @@ export class UserService {
 
       // Verificar si el username ya existe
       const existingUserByUsername = await prisma.user.findUnique({
-        where: { username: userData.username }
+        where: { username: userData.username },
       });
 
       if (existingUserByUsername) {
@@ -28,7 +28,10 @@ export class UserService {
       }
 
       // Hashear la contraseña
-      const hashedPassword = await bcrypt.hash(userData.password, config.bcryptRounds);
+      const hashedPassword = await bcrypt.hash(
+        userData.password,
+        config.bcryptRounds,
+      );
 
       // Crear el usuario
       const user = await prisma.user.create({
@@ -39,10 +42,8 @@ export class UserService {
           firstName: userData.firstName,
           lastName: userData.lastName,
           permissions: userData.permissions || [],
-        }
+        },
       });
-
-
 
       logger.info(`Usuario creado: ${user.email}`);
       return user;
@@ -56,7 +57,7 @@ export class UserService {
   async findById(id: string): Promise<User | null> {
     try {
       return await prisma.user.findUnique({
-        where: { id }
+        where: { id },
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por ID:', error);
@@ -68,7 +69,7 @@ export class UserService {
   async findByEmail(email: string): Promise<User | null> {
     try {
       return await prisma.user.findUnique({
-        where: { email }
+        where: { email },
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por email:', error);
@@ -80,7 +81,7 @@ export class UserService {
   async findByUsername(username: string): Promise<User | null> {
     try {
       return await prisma.user.findUnique({
-        where: { username }
+        where: { username },
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por username:', error);
@@ -88,14 +89,12 @@ export class UserService {
     }
   }
 
-
-
   // Actualizar usuario
   async update(id: string, userData: UserUpdateInput): Promise<User | null> {
     try {
       // Verificar si el usuario existe
       const existingUser = await prisma.user.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!existingUser) {
@@ -105,7 +104,7 @@ export class UserService {
       // Verificar email único si se está actualizando
       if (userData.email && userData.email !== existingUser.email) {
         const emailExists = await prisma.user.findUnique({
-          where: { email: userData.email }
+          where: { email: userData.email },
         });
 
         if (emailExists) {
@@ -116,7 +115,7 @@ export class UserService {
       // Verificar username único si se está actualizando
       if (userData.username && userData.username !== existingUser.username) {
         const usernameExists = await prisma.user.findUnique({
-          where: { username: userData.username }
+          where: { username: userData.username },
         });
 
         if (usernameExists) {
@@ -129,13 +128,16 @@ export class UserService {
 
       // Hashear nueva contraseña si se proporciona
       if (userData.password) {
-        updateData.password = await bcrypt.hash(userData.password, config.bcryptRounds);
+        updateData.password = await bcrypt.hash(
+          userData.password,
+          config.bcryptRounds,
+        );
       }
 
       // Actualizar usuario
       const updatedUser = await prisma.user.update({
         where: { id },
-        data: updateData
+        data: updateData,
       });
 
       logger.info(`Usuario actualizado: ${updatedUser.email}`);
@@ -150,7 +152,7 @@ export class UserService {
   async delete(id: string): Promise<boolean> {
     try {
       const user = await prisma.user.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!user) {
@@ -160,7 +162,7 @@ export class UserService {
       // Soft delete - marcar como inactivo
       await prisma.user.update({
         where: { id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       logger.info(`Usuario eliminado (soft delete): ${user.email}`);
@@ -186,7 +188,7 @@ export class UserService {
     try {
       return await prisma.user.findMany({
         where: { isActive: true },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     } catch (error) {
       logger.error('Error obteniendo usuarios activos:', error);
@@ -213,7 +215,7 @@ export class UserService {
           { username: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } }
+          { lastName: { contains: search, mode: 'insensitive' } },
         ];
       }
 
@@ -221,7 +223,7 @@ export class UserService {
         where: whereConditions,
         orderBy: { createdAt: 'desc' },
         take: limit,
-        skip: offset
+        skip: offset,
       });
     } catch (error) {
       logger.error('Error obteniendo usuarios con filtros:', error);
@@ -240,12 +242,12 @@ export class UserService {
           { username: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } }
+          { lastName: { contains: search, mode: 'insensitive' } },
         ];
       }
 
       return await prisma.user.count({
-        where: whereConditions
+        where: whereConditions,
       });
     } catch (error) {
       logger.error('Error contando usuarios:', error);
@@ -257,7 +259,7 @@ export class UserService {
   async softDelete(id: string): Promise<User | null> {
     try {
       const user = await prisma.user.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!user) {
@@ -267,7 +269,7 @@ export class UserService {
       // Soft delete - marcar como inactivo
       const deletedUser = await prisma.user.update({
         where: { id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       logger.info(`Usuario eliminado (soft delete): ${user.email}`);
@@ -278,15 +280,13 @@ export class UserService {
     }
   }
 
-
-
   // Obtener todos los usuarios
   async findAll(options: {
     page?: number;
     limit?: number;
     search?: string;
     isActive?: boolean;
-  }): Promise<{ users: User[], total: number }> {
+  }): Promise<{ users: User[]; total: number }> {
     try {
       const { page = 1, limit = 10, search, isActive } = options;
       const offset = (page - 1) * limit;
@@ -304,7 +304,7 @@ export class UserService {
           { username: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } }
+          { lastName: { contains: search, mode: 'insensitive' } },
         ];
       }
 
@@ -313,11 +313,11 @@ export class UserService {
           where: whereConditions,
           orderBy: { createdAt: 'desc' },
           take: limit,
-          skip: offset
+          skip: offset,
         }),
         prisma.user.count({
-          where: whereConditions
-        })
+          where: whereConditions,
+        }),
       ]);
 
       return { users, total };
@@ -332,7 +332,7 @@ export class UserService {
     try {
       await prisma.user.update({
         where: { id: userId },
-        data: { lastAccess: new Date() }
+        data: { lastAccess: new Date() },
       });
       logger.info('Last access updated', { userId });
     } catch (error) {
@@ -340,8 +340,6 @@ export class UserService {
       // No lanzamos error para no interrumpir el login
     }
   }
-
-
 }
 
 // Instancia singleton

@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useApp } from '../hooks/useApp';
+import { useNotification } from '../context/NotificationContext';
 
 const NotificationWrapper = styled.div`
   position: fixed;
@@ -113,7 +113,7 @@ const NotificationIcon = styled.span<{ $type: 'success' | 'error' | 'warning' | 
 `;
 
 const NotificationContainer: React.FC = () => {
-  const { notifications, removeNotification } = useApp();
+  const { notifications, removeNotification } = useNotification();
 
   if (notifications.length === 0) {
     return null;

@@ -13,7 +13,9 @@ const startServer = async (): Promise<void> => {
 
     // Validar configuración crítica
     if (!config.jwtSecret || config.jwtSecret === 'fallback-secret') {
-      logger.warn('⚠️  JWT_SECRET no está configurado correctamente. Usando valor por defecto.');
+      logger.warn(
+        '⚠️  JWT_SECRET no está configurado correctamente. Usando valor por defecto.',
+      );
     }
 
     if (!config.databaseUrl) {
@@ -29,7 +31,7 @@ const startServer = async (): Promise<void> => {
       logger.info(`📚 API: http://localhost:${config.port}/api`);
       logger.info(`🔐 Auth: http://localhost:${config.port}/api/auth`);
       logger.info(`❤️  Health: http://localhost:${config.port}/api/health`);
-      
+
       if (config.isDevelopment) {
         logger.info(`🔧 Modo desarrollo activado`);
         logger.info(`🌐 CORS origen: ${config.corsOrigin}`);
@@ -40,11 +42,11 @@ const startServer = async (): Promise<void> => {
         await AuditService.createSystemEvent({
           type: 'SERVER_START',
           details: 'Servidor iniciado exitosamente',
-          metadata: { 
-            port: config.port, 
+          metadata: {
+            port: config.port,
             environment: config.nodeEnv,
-            version: process.env.npm_package_version || '1.0.0'
-          }
+            version: process.env.npm_package_version || '1.0.0',
+          },
         });
       } catch (error) {
         logger.error('Error al registrar evento del sistema:', error);
@@ -68,7 +70,7 @@ const startServer = async (): Promise<void> => {
     // Manejo de cierre graceful
     const gracefulShutdown = (signal: string) => {
       logger.info(`📡 Señal ${signal} recibida, cerrando servidor...`);
-      
+
       server.close((error) => {
         if (error) {
           logger.error('❌ Error cerrando servidor', { error: error.message });
@@ -89,7 +91,6 @@ const startServer = async (): Promise<void> => {
     // Registrar manejadores de señales
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
   } catch (error) {
     logger.error('❌ Error iniciando servidor', { error });
     process.exit(1);

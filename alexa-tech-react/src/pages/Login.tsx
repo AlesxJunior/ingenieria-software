@@ -8,7 +8,7 @@ const LoginContainer = styled.div`
   font-family: 'Roboto', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: black;
+  background-color: #f0f2f5;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -151,21 +151,16 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const success = await login(email, password);
-      
-      if (success) {
-        const from = location.state?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
-      } else {
-        setError('Usuario o contraseña incorrectos');
-      }
-    } catch {
-      setError('Error al iniciar sesión. Inténtalo de nuevo.');
+      await login(email, password);
+      // Si el login es exitoso, el useEffect se encargará de la redirección
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión. Inténtalo de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Mensaje de bienvenida que se muestra mientras se carga
   return (
     <LoginContainer>
       <LoginBox>

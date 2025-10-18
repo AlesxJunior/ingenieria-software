@@ -6,48 +6,54 @@ import { config } from './config';
 import { logger } from './utils/logger';
 import { requestLogger, parseErrorLogger } from './middleware/requestLogger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import { connectDatabase } from './config/database';
+
 import routes from './routes';
 
 // Crear aplicación Express
 const app = express();
 
 // Configuración de seguridad
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }),
+);
 
 // Configuración de CORS dinámica
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ) => {
     // Permitir requests sin origin (como Postman, aplicaciones móviles nativas)
     if (!origin) return callback(null, true);
-    
+
     // En desarrollo, permitir cualquier IP local
     if (config.isDevelopment) {
       // Permitir localhost en cualquier puerto
       if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
         return callback(null, true);
       }
-      
+
       // Permitir cualquier IP privada (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-      const privateIPRegex = /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)[\d.]+:\d+$/;
+      const privateIPRegex =
+        /^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)[\d.]+:\d+$/;
       if (privateIPRegex.test(origin)) {
         return callback(null, true);
       }
     }
-    
+
     // En producción o si no coincide con IPs privadas, usar configuración específica
     if (origin === config.corsOrigin) {
       return callback(null, true);
     }
-    
+
     // Rechazar otros orígenes
     callback(new Error('No permitido por CORS'), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
 app.use(cors(corsOptions));
@@ -87,9 +93,9 @@ app.get('/', (req, res) => {
       endpoints: {
         api: '/api',
         auth: '/api/auth',
-        health: '/api/health'
-      }
-    }
+        health: '/api/health',
+      },
+    },
   });
 });
 
@@ -101,7 +107,10 @@ app.use(errorHandler);
 
 // Manejo de errores no capturados
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
+  logger.error('Uncaught Exception', {
+    error: error.message,
+    stack: error.stack,
+  });
   process.exit(1);
 });
 

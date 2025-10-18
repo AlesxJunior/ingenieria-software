@@ -1,8 +1,8 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
 // Instancia global de Prisma
-let prisma: PrismaClient;
+const prisma: PrismaClient = createPrismaClient();
 
 declare global {
   var __prisma: PrismaClient | undefined;
@@ -84,8 +84,7 @@ export async function disconnectDatabase(): Promise<void> {
   }
 }
 
-// Crear la instancia de Prisma
-prisma = createPrismaClient();
+
 
 // Exportar la instancia
 export { prisma };

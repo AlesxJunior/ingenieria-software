@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { useApp } from '../hooks/useApp';
+import { useProducts } from '../context/ProductContext';
+import { useNotification } from '../context/NotificationContext';
+import { apiService } from '../utils/api';
 import { media } from '../styles/breakpoints';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS, LOCATION_OPTIONS } from '../utils/productOptions';
 
 const FormContainer = styled.div`
   background: white;
@@ -175,8 +178,7 @@ interface ProductFormData {
   category: string;
   price: string;
   initialStock: string;
-  status: string;
-  warranty: string;
+  ubicacion: string;
   unit: string;
 }
 
@@ -188,11 +190,11 @@ interface FormErrors {
   price?: string;
   initialStock?: string;
   unit?: string;
-  warranty?: string;
 }
 
 const RegistroProducto: React.FC = () => {
-  const { addProduct, showSuccess, showError } = useApp();
+  const { addProduct, products } = useProducts();
+  const { showSuccess, showError } = useNotification();
   
   const [formData, setFormData] = useState<ProductFormData>({
     productCode: '',
@@ -200,14 +202,41 @@ const RegistroProducto: React.FC = () => {
     category: '',
     price: '',
     initialStock: '',
-    status: 'disponible',
-    warranty: '',
+    ubicacion: '',
     unit: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Fusionar opciones dinámicas desde BD con opciones por defecto
+  const mergeOptions = (primary: string[], fallback: string[]) => {
+    const seen = new Set(primary.map(v => v.toLowerCase()));
+    const merged = [...primary];
+    for (const f of fallback) {
+      if (!seen.has(f.toLowerCase())) {
+        merged.push(f);
+        seen.add(f.toLowerCase());
+      }
+    }
+    return merged;
+  };
+
+  const categoryOptions = useMemo(() => {
+    const dyn = Array.from(new Set((products || []).map(p => p.category).filter(Boolean))).sort();
+    return mergeOptions(dyn, CATEGORY_OPTIONS);
+  }, [products]);
+
+  const unitOptions = useMemo(() => {
+    const dyn = Array.from(new Set((products || []).map(p => p.unit).filter(Boolean))).sort();
+    return mergeOptions(dyn, UNIT_OPTIONS);
+  }, [products]);
+
+  const locationOptions = useMemo(() => {
+    const dyn = Array.from(new Set((products || []).map(p => p.ubicacion || '').filter(v => v))).sort();
+    return mergeOptions(dyn, LOCATION_OPTIONS);
+  }, [products]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -301,12 +330,8 @@ const RegistroProducto: React.FC = () => {
       newErrors.unit = 'La unidad de medida es requerida';
     }
 
-    // Validación de la garantía (opcional pero si se proporciona debe ser válida)
-    if (formData.warranty && formData.warranty.trim()) {
-      if (formData.warranty.length < 2) {
-        newErrors.warranty = 'La garantía debe tener al menos 2 caracteres';
-      }
-    }
+    // Ubicación es opcional; validar sólo si se proporciona
+    // (Sin restricción estricta, puede ser nombre de almacén o estantería)
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -322,20 +347,39 @@ const RegistroProducto: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Usar el contexto para agregar el producto
+      // Construir payload y llamar al backend
+      const payload = {
+        codigo: formData.productCode,
+        nombre: formData.productName,
+        // Sin descripción; el requerimiento pide no mostrar garantía
+        categoria: formData.category,
+        precioVenta: parseFloat(formData.price),
+        stock: parseInt(formData.initialStock),
+        estado: true,
+        unidadMedida: formData.unit.toLowerCase(),
+        ubicacion: formData.ubicacion?.trim() ? formData.ubicacion : undefined,
+      };
+
+      const response = await apiService.createProduct(payload);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al registrar el producto');
+      }
+
+      // Derivar estado del stock según cantidad
+      const stockStatus = payload.stock > 0 ? 'disponible' : 'agotado';
+
+      // Reflejar el producto creado en estado local para la UI
       addProduct({
-        productCode: formData.productCode,
-        productName: formData.productName,
-        category: formData.category,
-        price: parseFloat(formData.price),
-        initialStock: parseInt(formData.initialStock),
-        currentStock: parseInt(formData.initialStock),
-        status: formData.status as 'disponible' | 'agotado' | 'proximamente',
-        warranty: formData.warranty || undefined,
-        unit: formData.unit
+        productCode: payload.codigo,
+        productName: payload.nombre,
+        category: payload.categoria,
+        price: payload.precioVenta,
+        initialStock: payload.stock,
+        currentStock: payload.stock,
+        status: stockStatus as 'disponible' | 'agotado',
+        ubicacion: payload.ubicacion,
+        unit: payload.unidadMedida,
+        isActive: payload.estado
       });
       
       // Mostrar notificación de éxito
@@ -352,8 +396,7 @@ const RegistroProducto: React.FC = () => {
         category: '',
         price: '',
         initialStock: '',
-        status: 'disponible',
-        warranty: '',
+        ubicacion: '',
         unit: ''
       });
 
@@ -406,14 +449,17 @@ const RegistroProducto: React.FC = () => {
 
             <FormGroup>
               <Label htmlFor="category">Categoría *</Label>
-              <Input
-                type="text"
+              <Select
                 id="category"
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                placeholder="Ej. Cámaras, Alarmas"
-              />
+              >
+                <option value="">Selecciona una categoría</option>
+                {categoryOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </Select>
               {errors.category && <ErrorMessage>{errors.category}</ErrorMessage>}
             </FormGroup>
 
@@ -446,42 +492,36 @@ const RegistroProducto: React.FC = () => {
               {errors.initialStock && <ErrorMessage>{errors.initialStock}</ErrorMessage>}
             </FormGroup>
 
+            
+
             <FormGroup>
-              <Label htmlFor="status">Estado</Label>
+              <Label htmlFor="ubicacion">Ubicación (almacén)</Label>
               <Select
-                id="status"
-                name="status"
-                value={formData.status}
+                id="ubicacion"
+                name="ubicacion"
+                value={formData.ubicacion}
                 onChange={handleInputChange}
               >
-                <option value="disponible">Disponible</option>
-                <option value="agotado">Agotado</option>
-                <option value="proximamente">Próximamente</option>
+                <option value="">Sin ubicación</option>
+                {locationOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
               </Select>
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="warranty">Garantía</Label>
-              <Input
-                type="text"
-                id="warranty"
-                name="warranty"
-                value={formData.warranty}
-                onChange={handleInputChange}
-                placeholder="Ej. 12 meses"
-              />
-            </FormGroup>
-
-            <FormGroup>
               <Label htmlFor="unit">Unidad de Medida *</Label>
-              <Input
-                type="text"
+              <Select
                 id="unit"
                 name="unit"
                 value={formData.unit}
                 onChange={handleInputChange}
-                placeholder="Ej. Unidad, Caja"
-              />
+              >
+                <option value="">Selecciona unidad</option>
+                {unitOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </Select>
               {errors.unit && <ErrorMessage>{errors.unit}</ErrorMessage>}
             </FormGroup>
           </FormGrid>

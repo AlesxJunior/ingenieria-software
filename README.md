@@ -84,6 +84,13 @@ AlexaTech es un sistema completo de gestión empresarial desarrollado con tecnol
 - ✅ Asociación con usuarios y ventas
 - ✅ Historial de movimientos de caja
 
+### 🧪 Testing y Calidad de Código
+- ✅ **Linting y Formateo**: Configuración de ESLint y Prettier para mantener un código limpio y consistente.
+- ✅ **Tests Unitarios (Backend)**: Base de tests con Jest para los servicios de negocio, mockeando la base de datos.
+- ✅ **Tests de Integración (Backend)**: Pruebas con Supertest para verificar el comportamiento de los endpoints de la API.
+- ✅ **Tests de Componentes (Frontend)**: Configuración de Vitest y React Testing Library para probar componentes de UI.
+- ✅ **Integración Continua (CI)**: Workflow de GitHub Actions que ejecuta automáticamente todos los linters y tests en cada push.
+
 ### 📊 Dashboard y Reportes
 - ✅ Dashboard principal con métricas
 - ✅ Estadísticas de ventas en tiempo real
@@ -141,106 +148,65 @@ AlexaTech es un sistema completo de gestión empresarial desarrollado con tecnol
 
 ```
 ingenieria-software/
-├── alexa-tech-react/       # Frontend (React + TypeScript + Vite)
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── README.md
+├── VALIDACION_REQUISITOS.md
+├── 📋 PLAN DE IMPLEMENTACIÓN.md
+├── docs/
+│   └── prompts/
+│       ├── CHECKLIST_QA_MODULO.md
+│       ├── PROMPT_ENTIDADES.md
+│       ├── PROMPT_NUEVO_MODULO.md
+│       ├── PROMPT_PRODUCTOS.md
+│       └── PROMPT_USUARIOS.md
+├── alexa-tech-react/                # Frontend (React + TypeScript + Vite)
 │   ├── src/
-│   │   ├── components/     # Componentes reutilizables
-│   │   │   ├── Layout.tsx
-│   │   │   ├── ProtectedRoute.tsx
-│   │   │   ├── Modal.tsx
-│   │   │   ├── NotificationContainer.tsx
-│   │   │   ├── NuevoClienteModal.tsx
-│   │   │   ├── EditarClienteModal.tsx
-│   │   │   ├── NuevoUsuarioModal.tsx
-│   │   │   ├── EditarUsuarioModal.tsx
-│   │   │   ├── ConfirmDeleteModal.tsx
-│   │   │   ├── PasswordRequirements.tsx
-│   │   │   ├── PermissionSelector.tsx
-│   │   │   ├── Sidebar.tsx
-│   │   │   └── UserInfo.tsx
-│   │   ├── pages/          # Páginas principales
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── Login.tsx
-│   │   │   ├── ListaUsuarios.tsx
-│   │   │   ├── CrearUsuario.tsx
-│   │   │   ├── EditarUsuario.tsx
-│   │   │   ├── PerfilUsuario.tsx
-│   │   │   ├── ListaClientes.tsx
-│   │   │   ├── RegistroCliente.tsx
-│   │   │   ├── EditarCliente.tsx
-│   │   │   ├── ListaProductos.tsx
-│   │   │   ├── RegistroProducto.tsx
-│   │   │   ├── EditarProducto.tsx
-│   │   │   ├── RealizarVenta.tsx
-│   │   │   ├── ListaVentas.tsx
-│   │   │   ├── GestionCaja.tsx
-│   │   │   ├── AperturaCaja.tsx
-│   │   │   └── AuditoriaLogs.tsx
-│   │   ├── context/        # Contextos de React
-│   │   │   ├── AuthContext.tsx
-│   │   │   ├── AppContext.tsx
-│   │   │   ├── NotificationContext.tsx
-│   │   │   └── ModalContext.tsx
-│   │   ├── hooks/          # Hooks personalizados
-│   │   │   ├── useApp.ts
-│   │   │   └── useAuth.ts
-│   │   ├── utils/          # Utilidades y validaciones
-│   │   │   ├── api.ts
-│   │   │   └── validation.ts
-│   │   ├── styles/         # Estilos globales
-│   │   │   └── GlobalStyles.ts
-│   │   ├── assets/         # Recursos estáticos
-│   │   │   └── images/
-│   │   ├── App.tsx         # Componente principal
-│   │   └── main.tsx        # Punto de entrada
-│   ├── public/             # Archivos públicos
-│   ├── package.json        # Dependencias frontend
-│   ├── tsconfig.json       # Configuración TypeScript
-│   └── vite.config.ts      # Configuración Vite
-│
-├── alexa-tech-backend/     # Backend (Node.js + Express + TypeScript)
+│   │   ├── pages/                   # Páginas
+│   │   ├── components/              # Componentes UI
+│   │   ├── context/                 # Contextos (Auth, App, Notificaciones)
+│   │   ├── hooks/                   # Hooks personalizados
+│   │   ├── utils/                   # API y validaciones
+│   │   ├── styles/                  # Estilos globales
+│   │   ├── assets/                  # Recursos estáticos
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── tests/
+│   │   └── e2e/                     # Pruebas E2E (Playwright)
+│   ├── playwright.config.ts
+│   ├── .env                         # Configuración local
+│   ├── .env.e2e                     # Configuración E2E
+│   ├── .env.example
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── alexa-tech-backend/              # Backend (Node.js + Express + TS)
 │   ├── src/
-│   │   ├── controllers/    # Controladores de rutas
-│   │   │   ├── authController.ts
-│   │   │   └── userController.ts
-│   │   ├── middleware/     # Middleware personalizado
-│   │   │   ├── auth.ts
-│   │   │   ├── errorHandler.ts
-│   │   │   ├── requestLogger.ts
-│   │   │   └── rateLimiter.ts
-│   │   ├── routes/         # Definición de rutas
-│   │   │   ├── index.ts
-│   │   │   ├── authRoutes.ts
-│   │   │   ├── userRoutes.ts
-│   │   │   └── auditRoutes.ts
-│   │   ├── services/       # Lógica de negocio
-│   │   │   ├── authService.ts
-│   │   │   └── userService.ts
-│   │   ├── utils/          # Utilidades y validaciones
-│   │   │   ├── validation.ts
-│   │   │   ├── jwt.ts
-│   │   │   ├── logger.ts
-│   │   │   └── response.ts
-│   │   ├── types/          # Tipos TypeScript
-│   │   │   └── index.ts
-│   │   ├── config/         # Configuraciones
-│   │   │   ├── index.ts
-│   │   │   └── database.ts
-│   │   ├── generated/      # Archivos generados por Prisma
-│   │   │   └── prisma/
-│   │   ├── app.ts          # Configuración de Express
-│   │   └── index.ts        # Servidor principal
-│   ├── prisma/             # Configuración Prisma
-│   │   ├── schema.prisma   # Esquema de base de datos
-│   │   ├── migrations/     # Migraciones
-│   │   └── seed.ts         # Datos iniciales
-│   ├── package.json        # Dependencias backend
-│   ├── tsconfig.json       # Configuración TypeScript
-│   └── .env                # Variables de entorno
-│
-├── docs/                   # Documentación adicional
-│   ├── VALIDACION_REQUISITOS.md
-│   └── ...
-└── README.md               # Documentación principal
+│   │   ├── app.ts                   # Configuración de Express
+│   │   ├── index.ts                 # Entrada del servidor
+│   │   ├── controllers/             # Controladores
+│   │   ├── routes/                  # Rutas (auth, users, entidades, etc.)
+│   │   ├── middleware/              # Autenticación y permisos
+│   │   ├── services/                # Lógica de negocio (auth, usuarios, entidades)
+│   │   ├── models/                  # Modelos auxiliares
+│   │   ├── utils/                   # JWT, logger, response
+│   │   ├── types/                   # Tipos TS compartidos
+│   │   ├── tests/                   # Pruebas de integración
+│   │   └── __tests__/               # Pruebas unitarias
+│   ├── prisma/
+│   │   ├── schema.prisma            # Esquema de BD
+│   │   ├── migrations/              # Migraciones
+│   │   └── seed.ts                  # Datos iniciales
+│   ├── scripts/                     # Scripts de verificación y tests
+│   │   ├── check-auth-health.js
+│   │   ├── run-all-tests.js
+│   │   ├── test-clients-module.js
+│   │   ├── test-products-module.js
+│   │   └── test-users-module.js
+│   ├── package.json
+│   └── tsconfig.json
+└── package.json                      # Configuración monorepo
 ```
 
 ## 📊 Estado Actual del Desarrollo
@@ -383,8 +349,11 @@ npm run build
 # Iniciar en producción
 npm start
 
-# Linting
+# Ejecutar linter
 npm run lint
+
+# Ejecutar tests
+npm test
 
 # Prisma Studio (administrador de BD)
 npx prisma studio --port 5555
@@ -401,8 +370,14 @@ npm run build
 # Preview de construcción
 npm run preview
 
-# Linting
+# Ejecutar linter
 npm run lint
+
+# Ejecutar tests de componentes
+npm test
+
+# Ejecutar tests End-to-End
+npm run test:e2e
 ```
 
 ### 5. Configuración de Puertos Fijos
@@ -487,6 +462,8 @@ El sistema incluye usuarios predefinidos para pruebas:
 - [x] **Health check endpoint** (/health)
 - [x] **Frontend React** con TypeScript y Vite
 - [x] **Interfaz de usuario** moderna y responsive
+- [x] **Bases del testing automatizado** (Unit, Integration, Component, E2E)
+- [x] **Integración Continua (CI)** con GitHub Actions
 
 ### ✅ Pruebas Realizadas
 - [x] **Login con credenciales correctas** ✓
@@ -507,7 +484,7 @@ El sistema incluye usuarios predefinidos para pruebas:
 - [ ] Auditoría de logs
 
 ### 🎯 Próximas Mejoras
-- [ ] Tests unitarios y de integración
+- [ ] Aumentar cobertura de tests
 - [ ] Documentación de API (Swagger)
 - [ ] Rate limiting y throttling
 - [ ] Logs estructurados

@@ -1,75 +1,45 @@
-# React + TypeScript + Vite
+# Alexa Tech - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este directorio contiene todo el código fuente para la aplicación de frontend del sistema de gestión empresarial Alexa Tech.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologías Principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Framework**: React 19 con TypeScript
+- **Build Tool**: Vite
+- **Styling**: Styled Components
+- **Routing**: React Router DOM
+- **Gestión de Estado**: React Context API
+- **Testing de Componentes**: Vitest, React Testing Library
+- **Testing E2E**: Playwright
 
-## React Compiler
+---
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## ⚙️ Instalación y Configuración
 
-Note: This will impact Vite dev & build performances.
+Para instrucciones detalladas sobre la configuración de las variables de entorno, por favor consulta el [README principal del proyecto](../README.md).
 
-## Expanding the ESLint configuration
+1.  **Navegar al directorio**
+    ```bash
+    cd alexa-tech-react
+    ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+2.  **Instalar dependencias**
+    ```bash
+    npm install
+    ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📜 Scripts Disponibles
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+-   **`npm run dev`**: Inicia el servidor de desarrollo de Vite. La aplicación estará disponible en `http://localhost:5173`.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+-   **`npm run build`**: Compila la aplicación para producción.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+-   **`npm run preview`**: Sirve localmente el contenido de la compilación de producción.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+-   **`npm run lint`**: Ejecuta ESLint para analizar la calidad y consistencia del código.
+
+-   **`npm test`**: Ejecuta los tests de componentes y unitarios con Vitest.
+
+-   **`npm run test:e2e`**: Ejecuta los tests End-to-End con Playwright.

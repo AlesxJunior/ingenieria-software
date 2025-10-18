@@ -4,7 +4,7 @@ export enum LogLevel {
   ERROR = 'ERROR',
   WARN = 'WARN',
   INFO = 'INFO',
-  DEBUG = 'DEBUG'
+  DEBUG = 'DEBUG',
 }
 
 class Logger {
@@ -16,18 +16,20 @@ class Logger {
 
   private shouldLog(level: LogLevel): boolean {
     const configLevel = config.logLevel.toLowerCase();
-    
+
     // Jerarquía de niveles: error > warn > info > debug
     const levelHierarchy = {
-      'error': 0,
-      'warn': 1,
-      'info': 2,
-      'debug': 3
+      error: 0,
+      warn: 1,
+      info: 2,
+      debug: 3,
     };
-    
-    const currentLevelValue = levelHierarchy[level.toLowerCase() as keyof typeof levelHierarchy];
-    const configLevelValue = levelHierarchy[configLevel as keyof typeof levelHierarchy];
-    
+
+    const currentLevelValue =
+      levelHierarchy[level.toLowerCase() as keyof typeof levelHierarchy];
+    const configLevelValue =
+      levelHierarchy[configLevel as keyof typeof levelHierarchy];
+
     // Solo mostrar logs del nivel configurado o superior
     return currentLevelValue <= configLevelValue;
   }
@@ -57,9 +59,17 @@ class Logger {
   }
 
   // Métodos específicos para casos comunes
-  request(method: string, url: string, statusCode?: number, duration?: number): void {
+  request(
+    method: string,
+    url: string,
+    statusCode?: number,
+    duration?: number,
+  ): void {
     const message = `${method} ${url}`;
-    const meta = { statusCode, duration: duration ? `${duration}ms` : undefined };
+    const meta = {
+      statusCode,
+      duration: duration ? `${duration}ms` : undefined,
+    };
     this.info(message, meta);
   }
 

@@ -44,8 +44,6 @@ export interface UserResponse {
   updatedAt: Date;
 }
 
-
-
 // Tipos de autenticación
 export interface LoginRequest {
   email: string;
@@ -130,4 +128,93 @@ export interface ValidationError {
 export interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
+}
+
+// Tipos de Productos
+export interface ProductCreateInput {
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  categoria: string;
+  precioVenta: number;
+  stock: number;
+  estado?: boolean;
+  unidadMedida: string;
+  ubicacion?: string;
+}
+
+export interface ProductUpdateInput {
+  nombre?: string;
+  descripcion?: string;
+  categoria?: string;
+  precioVenta?: number;
+  stock?: number;
+  estado?: boolean;
+  unidadMedida?: string;
+  ubicacion?: string;
+}
+
+export interface ProductStatusUpdateInput {
+  estado: boolean;
+}
+
+// Tipos de Compras
+export interface PurchaseItemInput {
+  productoId: string;
+  nombreProducto?: string;
+  cantidad: number;
+  precioUnitario: number;
+}
+
+export type PurchaseEstado = 'Pendiente' | 'Recibida' | 'Cancelada';
+
+export interface PurchaseCreateInput {
+  proveedorId: string;
+  almacenId: string;
+  fechaEmision: string; // ISO date string
+  tipoComprobante?: string;
+  items: PurchaseItemInput[];
+  formaPago?: string;
+  observaciones?: string;
+  fechaEntregaEstimada?: string; // ISO date string
+}
+
+export interface PurchaseUpdateInput {
+  proveedorId?: string;
+  almacenId?: string;
+  fechaEmision?: string;
+  tipoComprobante?: string;
+  items?: PurchaseItemInput[];
+  formaPago?: string;
+  observaciones?: string;
+  fechaEntregaEstimada?: string;
+}
+
+export interface PurchaseStatusUpdateInput {
+  estado: PurchaseEstado;
+}
+
+export interface Purchase {
+  id: string;
+  codigoOrden: string;
+  proveedorId: string;
+  almacenId: string;
+  fechaEmision: string;
+  tipoComprobante?: string;
+  items: Array<{
+    productoId: string;
+    nombreProducto?: string;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+  }>;
+  subtotal: number;
+  total: number;
+  formaPago?: string;
+  fechaEntregaEstimada?: string;
+  observaciones?: string;
+  usuarioId: string;
+  estado: PurchaseEstado;
+  createdAt: string;
+  updatedAt: string;
 }

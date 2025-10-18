@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { useApp } from '../hooks/useApp';
+import { useProducts } from '../context/ProductContext';
+import { useNotification } from '../context/NotificationContext';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS, LOCATION_OPTIONS } from '../utils/productOptions';
+import { apiService } from '../utils/api';
 
 const FormContainer = styled.div`
   background-color: #fff;
@@ -105,8 +108,9 @@ interface ProductFormData {
   price: string;
   initialStock: string;
   status: string;
-  warranty: string;
+  ubicacion: string;
   unit: string;
+  isActive: boolean;
 }
 
 interface FormErrors {
@@ -117,13 +121,14 @@ interface FormErrors {
   price?: string;
   initialStock?: string;
   unit?: string;
-  warranty?: string;
 }
 
 const EditarProducto: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { getProductById, updateProduct, showSuccess, showError } = useApp();
+  const { getProductById, updateProduct, products } = useProducts();
+  const { showSuccess, showError } = useNotification();
+  const [originalCode, setOriginalCode] = useState<string>('');
   
   const [formData, setFormData] = useState<ProductFormData>({
     productCode: '',
@@ -131,18 +136,48 @@ const EditarProducto: React.FC = () => {
     category: '',
     price: '',
     initialStock: '',
-    status: 'active',
-    warranty: '',
-    unit: ''
+    status: 'disponible',
+    ubicacion: '',
+    unit: '',
+    isActive: true
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Utilidad para fusionar opciones evitando duplicados (case-insensitive)
+  const mergeOptions = (primary: string[], fallback: string[]) => {
+    const seen = new Set(primary.map(v => v.toLowerCase()));
+    const merged = [...primary];
+    for (const f of fallback) {
+      if (!seen.has(f.toLowerCase())) {
+        merged.push(f);
+        seen.add(f.toLowerCase());
+      }
+    }
+    return merged;
+  };
+
+  const categoryOptions = useMemo(() => {
+    const dyn = Array.from(new Set((products || []).map(p => p.category).filter(Boolean))).sort();
+    return mergeOptions(dyn, CATEGORY_OPTIONS);
+  }, [products]);
+
+  const unitOptions = useMemo(() => {
+    const dyn = Array.from(new Set((products || []).map(p => p.unit).filter(Boolean))).sort();
+    return mergeOptions(dyn, UNIT_OPTIONS);
+  }, [products]);
+
+  const locationOptions = useMemo(() => {
+    const dyn = Array.from(new Set((products || []).map(p => p.ubicacion || '').filter(v => v))).sort();
+    return mergeOptions(dyn, LOCATION_OPTIONS);
+  }, [products]);
+
   useEffect(() => {
     if (id) {
       const product = getProductById(id);
       if (product) {
+        setOriginalCode(product.productCode);
         setFormData({
           productCode: product.productCode,
           productName: product.productName,
@@ -150,8 +185,9 @@ const EditarProducto: React.FC = () => {
           price: product.price.toString(),
           initialStock: product.currentStock.toString(),
           status: product.status,
-          warranty: product.warranty || '',
-          unit: product.unit
+          ubicacion: product.ubicacion || '',
+          unit: product.unit,
+          isActive: product.isActive ?? true
         });
       } else {
         showError('Producto no encontrado');
@@ -161,10 +197,14 @@ const EditarProducto: React.FC = () => {
   }, [id, getProductById, showError, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const target = e.target as HTMLInputElement | HTMLSelectElement;
+    const { name, value } = target;
+    const nextValue = target instanceof HTMLInputElement && target.type === 'checkbox'
+      ? target.checked
+      : value;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: nextValue
     }));
 
     // Limpiar errores cuando el usuario empiece a escribir
@@ -252,12 +292,7 @@ const EditarProducto: React.FC = () => {
       newErrors.unit = 'La unidad es requerida';
     }
 
-    // Validar garantía (opcional)
-    if (formData.warranty && formData.warranty.trim()) {
-      if (formData.warranty.length < 2) {
-        newErrors.warranty = 'La garantía debe tener al menos 2 caracteres';
-      }
-    }
+    // Ubicación es opcional; sin reglas estrictas
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -274,15 +309,31 @@ const EditarProducto: React.FC = () => {
 
     try {
       if (id) {
+        const payload = {
+          nombre: formData.productName || undefined,
+          categoria: formData.category || undefined,
+          precioVenta: formData.price ? parseFloat(formData.price) : undefined,
+          stock: formData.initialStock ? parseInt(formData.initialStock) : undefined,
+          estado: formData.isActive,
+          unidadMedida: formData.unit ? formData.unit.toLowerCase() : undefined,
+          ubicacion: formData.ubicacion?.trim() ? formData.ubicacion : undefined,
+        };
+
+        const response = await apiService.updateProductByCodigo(originalCode || formData.productCode, payload);
+        if (!response.success) {
+          throw new Error(response.message || 'Error al actualizar en servidor');
+        }
+
         updateProduct(id, {
-          productCode: formData.productCode,
+          productCode: originalCode || formData.productCode,
           productName: formData.productName,
           category: formData.category,
-          price: parseFloat(formData.price),
-          currentStock: parseInt(formData.initialStock),
+          price: formData.price ? parseFloat(formData.price) : undefined,
+          currentStock: formData.initialStock ? parseInt(formData.initialStock) : undefined,
           status: formData.status as 'disponible' | 'agotado' | 'proximamente',
-          warranty: formData.warranty || undefined,
-          unit: formData.unit
+          ubicacion: formData.ubicacion || undefined,
+          unit: formData.unit,
+          isActive: formData.isActive
         });
 
         showSuccess('Producto actualizado exitosamente');
@@ -306,17 +357,17 @@ const EditarProducto: React.FC = () => {
           <FormGrid>
             <FormGroup>
               <label htmlFor="productCode">Código del Producto *</label>
-              <input
-                type="text"
-                id="productCode"
-                name="productCode"
-                value={formData.productCode}
-                onChange={handleInputChange}
-                placeholder="Ej: PROD001"
-                disabled={isSubmitting}
-              />
-              {errors.productCode && <div className="error">{errors.productCode}</div>}
-            </FormGroup>
+          <input
+            type="text"
+            id="productCode"
+            name="productCode"
+            value={formData.productCode}
+            onChange={handleInputChange}
+            placeholder="Ej: PROD001"
+            disabled={true}
+          />
+          {errors.productCode && <div className="error">{errors.productCode}</div>}
+        </FormGroup>
 
             <FormGroup>
               <label htmlFor="productName">Nombre del Producto *</label>
@@ -342,12 +393,9 @@ const EditarProducto: React.FC = () => {
                 disabled={isSubmitting}
               >
                 <option value="">Seleccionar categoría</option>
-                <option value="Electrónicos">Electrónicos</option>
-                <option value="Ropa">Ropa</option>
-                <option value="Hogar">Hogar</option>
-                <option value="Deportes">Deportes</option>
-                <option value="Libros">Libros</option>
-                <option value="Otros">Otros</option>
+                {categoryOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
               </select>
               {errors.category && <div className="error">{errors.category}</div>}
             </FormGroup>
@@ -393,12 +441,9 @@ const EditarProducto: React.FC = () => {
                 disabled={isSubmitting}
               >
                 <option value="">Seleccionar unidad</option>
-                <option value="Unidad">Unidad</option>
-                <option value="Kilogramo">Kilogramo</option>
-                <option value="Litro">Litro</option>
-                <option value="Metro">Metro</option>
-                <option value="Caja">Caja</option>
-                <option value="Paquete">Paquete</option>
+                {unitOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
               </select>
               {errors.unit && <div className="error">{errors.unit}</div>}
             </FormGroup>
@@ -412,23 +457,38 @@ const EditarProducto: React.FC = () => {
                 onChange={handleInputChange}
                 disabled={isSubmitting}
               >
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
+                <option value="disponible">Disponible</option>
+                <option value="agotado">Agotado</option>
+                <option value="proximamente">Próximamente</option>
               </select>
             </FormGroup>
 
             <FormGroup>
-              <label htmlFor="warranty">Garantía (Opcional)</label>
+              <label htmlFor="isActive">Producto activo</label>
               <input
-                type="text"
-                id="warranty"
-                name="warranty"
-                value={formData.warranty}
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                checked={!!formData.isActive}
                 onChange={handleInputChange}
-                placeholder="Ej: 12 meses"
                 disabled={isSubmitting}
               />
-              {errors.warranty && <div className="error">{errors.warranty}</div>}
+            </FormGroup>
+
+            <FormGroup>
+              <label htmlFor="ubicacion">Ubicación (almacén)</label>
+              <select
+                id="ubicacion"
+                name="ubicacion"
+                value={formData.ubicacion}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+              >
+                <option value="">Sin ubicación</option>
+                {locationOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </FormGroup>
           </FormGrid>
 

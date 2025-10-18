@@ -1,4 +1,4 @@
-import { PrismaClient } from '../src/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -9,8 +9,8 @@ const ADMIN_PERMISSIONS = [
   'dashboard.read',
   // Usuarios
   'users.create', 'users.read', 'users.update', 'users.delete',
-  // Clientes
-  'clients.create', 'clients.read', 'clients.update',
+  // Entidades Comerciales
+  'commercial_entities.create', 'commercial_entities.read', 'commercial_entities.update',
   // Ventas
   'sales.create', 'sales.read', 'sales.update', 'sales.delete',
   // Productos
@@ -32,8 +32,8 @@ const SUPERVISOR_PERMISSIONS = [
   'dashboard.read',
   // Usuarios (solo lectura)
   'users.read',
-  // Clientes
-  'clients.create', 'clients.read', 'clients.update',
+  // Entidades Comerciales
+  'commercial_entities.create', 'commercial_entities.read', 'commercial_entities.update',
   // Ventas
   'sales.create', 'sales.read', 'sales.update',
   // Productos
@@ -53,8 +53,8 @@ const SUPERVISOR_PERMISSIONS = [
 const VENDEDOR_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
-  // Clientes
-  'clients.create', 'clients.read', 'clients.update',
+  // Entidades Comerciales
+  'commercial_entities.create', 'commercial_entities.read', 'commercial_entities.update',
   // Ventas
   'sales.create', 'sales.read',
   // Productos (solo lectura)
@@ -70,8 +70,8 @@ const VENDEDOR_PERMISSIONS = [
 const CAJERO_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
-  // Clientes (solo lectura)
-  'clients.read',
+  // Entidades Comerciales (solo lectura)
+  'commercial_entities.read',
   // Ventas
   'sales.create', 'sales.read',
   // Productos (solo lectura)

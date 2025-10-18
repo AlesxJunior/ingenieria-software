@@ -154,14 +154,14 @@ const InfoValue = styled.span`
   color: #7f8c8d;
 `;
 
-const Badge = styled.span<{ variant: string }>`
+const Badge = styled.span<{ $variant: string }>`
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
   
   ${props => {
-    switch (props.variant) {
+    switch (props.$variant) {
       case 'activo':
         return `background: #d4edda; color: #155724;`;
       case 'inactivo':
@@ -503,7 +503,7 @@ const PerfilUsuario: React.FC = () => {
 
               <InfoRow>
                 <InfoLabel>Estado:</InfoLabel>
-                <Badge variant="activo">Activo</Badge>
+                <Badge $variant="activo">Activo</Badge>
               </InfoRow>
             </InfoCard>
 

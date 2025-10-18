@@ -10,12 +10,11 @@ import Modal from './components/Modal';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import GestionCaja from './pages/GestionCaja';
-import ListaClientes from './pages/ListaClientes';
-import RegistroProducto from './pages/RegistroProducto';
+import ListaEntidades from './pages/ListaEntidades';
 import ListaProductos from './pages/ListaProductos';
 import EditarProducto from './pages/EditarProducto';
-import EditarCliente from './pages/EditarCliente';
-import RegistroCliente from './pages/RegistroCliente';
+import EditarEntidad from './pages/EditarEntidad';
+import RegistroEntidad from './pages/RegistroEntidad';
 import AperturaCaja from './pages/AperturaCaja';
 import RealizarVenta from './pages/RealizarVenta';
 import ListaVentas from './pages/ListaVentas';
@@ -24,6 +23,7 @@ import CrearUsuario from './pages/CrearUsuario';
 import EditarUsuario from './pages/EditarUsuario';
 import PerfilUsuario from './pages/PerfilUsuario';
 import AuditoriaLogs from './pages/AuditoriaLogs';
+import ListaCompras from './pages/ListaCompras';
 
 // Componente interno para manejar el modal
 const AppContent = () => {
@@ -73,18 +73,13 @@ function App() {
               } 
             />
             <Route 
-              path="/lista-clientes" 
+              path="/lista-entidades" 
               element={
-                <ProtectedRoute requiredPermission="clients.read">
-                  <ListaClientes />
+                <ProtectedRoute requiredPermission="commercial_entities.read">
+                  <ListaEntidades />
                 </ProtectedRoute>
               } 
             />
-            <Route path="/registrar-producto" element={
-              <ProtectedRoute requiredPermission="products.create">
-                <RegistroProducto />
-              </ProtectedRoute>
-            } />
             <Route path="/lista-productos" element={
               <ProtectedRoute requiredPermission="products.read">
                 <ListaProductos />
@@ -95,14 +90,14 @@ function App() {
                 <EditarProducto />
               </ProtectedRoute>
             } />
-            <Route path="/editar-cliente/:id" element={
-              <ProtectedRoute requiredPermission="clients.update">
-                <EditarCliente />
+            <Route path="/editar-entidad/:id" element={
+              <ProtectedRoute requiredPermission="commercial_entities.update">
+                <EditarEntidad />
               </ProtectedRoute>
             } />
-            <Route path="/registrar-cliente" element={
-              <ProtectedRoute requiredPermission="clients.create">
-                <RegistroCliente />
+            <Route path="/registrar-entidad" element={
+              <ProtectedRoute requiredPermission="commercial_entities.create">
+                <RegistroEntidad />
               </ProtectedRoute>
             } />
             <Route path="/ventas/apertura-caja" element={
@@ -146,6 +141,11 @@ function App() {
               </ProtectedRoute>
             } />
             {/* Aquí se pueden agregar más rutas según se vayan migrando las páginas */}
+            <Route path="/compras" element={
+              <ProtectedRoute requiredPermission="purchases.read">
+                <ListaCompras />
+              </ProtectedRoute>
+            } />
           </Routes>
             </Router>
           </ModalProvider>

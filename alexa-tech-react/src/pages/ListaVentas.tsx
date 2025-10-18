@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { useSales } from '../context/SalesContext';
+import { useClients } from '../context/ClientContext';
 
 
 const Container = styled.div`
@@ -255,7 +256,8 @@ const ActionButton = styled.button<{ variant?: 'view' | 'print' }>`
 `;
 
 const ListaVentas: React.FC = () => {
-  const { sales, getClientById } = useApp();
+  const { sales } = useSales();
+  const { getClientById } = useClients();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -269,7 +271,7 @@ const ListaVentas: React.FC = () => {
         ? (client.tipoDocumento === 'RUC' 
             ? client.razonSocial || ''
             : `${client.nombres || ''} ${client.apellidos || ''}`.trim())
-        : 'Cliente General';
+        : 'Entidad Comercial General';
       
       const matchesSearch = 
         sale.saleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -364,7 +366,7 @@ const ListaVentas: React.FC = () => {
           <SearchContainer>
             <SearchInput
               type="text"
-              placeholder="Buscar por número de venta o cliente..."
+              placeholder="Buscar por número de venta o entidad comercial..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -435,7 +437,7 @@ const ListaVentas: React.FC = () => {
               <TableHeader>
                 <tr>
                   <TableHeaderCell>Número de Venta</TableHeaderCell>
-                  <TableHeaderCell>Cliente</TableHeaderCell>
+                  <TableHeaderCell>Entidad Comercial</TableHeaderCell>
                   <TableHeaderCell>Fecha</TableHeaderCell>
                   <TableHeaderCell>Hora</TableHeaderCell>
                   <TableHeaderCell>Total</TableHeaderCell>
@@ -457,7 +459,7 @@ const ListaVentas: React.FC = () => {
                           ? (client.tipoDocumento === 'RUC' 
                               ? client.razonSocial || ''
                               : `${client.nombres || ''} ${client.apellidos || ''}`.trim())
-                          : 'Cliente General'
+                          : 'Entidad Comercial General'
                         }
                         {client && (
                           <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>

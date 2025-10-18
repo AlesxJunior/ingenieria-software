@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { useApp } from '../hooks/useApp';
+import { useProducts, type Product } from '../context/ProductContext';
+import { useNotification } from '../context/NotificationContext';
+import { useModal } from '../context/ModalContext';
+import NuevoProductoModal from '../components/NuevoProductoModal';
+import EditarProductoModal from '../components/EditarProductoModal';
+import { apiService } from '../utils/api';
 import { media } from '../styles/breakpoints';
+import type { Product } from '../context/AppContext';
 
 const TableContainer = styled.div`
   background: white;
@@ -171,6 +176,22 @@ const ToggleButton = styled.button`
   }
 `;
 
+const PrimaryButton = styled.button`
+  padding: 8px 16px;
+  border: 1px solid #0047b3;
+  border-radius: 4px;
+  background: #0047b3;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #003a92;
+    border-color: #003a92;
+  }
+`;
+
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
@@ -268,24 +289,14 @@ const MobileCardActions = styled.div`
   padding-top: 12px;
 `;
 
-const StatusBadge = styled.span<{ $status: string }>`
+
+const ActiveBadge = styled.span<{ $active: boolean }>`
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  
-  ${props => {
-    switch (props.$status) {
-      case 'disponible':
-        return 'background-color: #d4edda; color: #155724;';
-      case 'agotado':
-        return 'background-color: #f8d7da; color: #721c24;';
-      case 'proximamente':
-        return 'background-color: #fff3cd; color: #856404;';
-      default:
-        return 'background-color: #e2e3e5; color: #383d41;';
-    }
-  }}
+  background-color: ${props => props.$active ? '#d4edda' : '#e2e3e5'};
+  color: ${props => props.$active ? '#155724' : '#383d41'};
 `;
 
 const ActionButton = styled.button<{ $color: string }>`
@@ -309,68 +320,34 @@ const EmptyState = styled.div`
   color: #666;
 `;
 
-const ModalOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-
-  h3 {
-    margin: 0 0 16px 0;
-    color: #333;
-  }
-
-  p {
-    margin: 0 0 24px 0;
-    color: #666;
-  }
-`;
-
-const ModalButtons = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-`;
-
-const ModalButton = styled.button<{ $color: string }>`
-  background-color: ${props => props.$color};
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover {
-    opacity: 0.8;
-  }
-`;
 
 const ListaProductos: React.FC = () => {
-  const navigate = useNavigate();
-  const { products, deleteProduct, showSuccess, showError } = useApp();
+  const { products, updateProduct, loadProducts } = useProducts();
+  const { showSuccess, showError } = useNotification();
+  const { openModal, closeModal } = useModal();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  
+
+  // Cargar productos al montar el componente
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        await loadProducts();
+      } catch (err) {
+        console.error('Error fetching products on mount:', err);
+      }
+    };
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleNewProduct = () => {
+    openModal(<NuevoProductoModal onClose={closeModal} />, 'Registrar Producto', 'large');
+  };
 
   // Obtener categorías únicas para el filtro
   const categories = Array.from(new Set(products.map(product => product.category)));
@@ -390,34 +367,34 @@ const ListaProductos: React.FC = () => {
     return matchesSearchTerm && matchesCategory && matchesMinPrice && matchesMaxPrice;
   });
 
-  const handleEdit = (productCode: string) => {
-    navigate(`/editar-producto/${productCode}`);
+  const handleEdit = (productId: string | number) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    openModal(
+      <EditarProductoModal product={product} onClose={closeModal} />,
+      'Editar Producto',
+      'large'
+    );
   };
 
-  const handleDelete = (productCode: string) => {
-    setProductToDelete(productCode);
-    setShowDeleteModal(true);
-  };
+  
 
-  const confirmDelete = () => {
-    if (productToDelete) {
-      try {
-        deleteProduct(productToDelete);
-        showSuccess('Producto eliminado exitosamente');
-        setShowDeleteModal(false);
-        setProductToDelete(null);
-      } catch {
-        showError('Error al eliminar el producto. Por favor, inténtalo de nuevo.');
-        setShowDeleteModal(false);
-        setProductToDelete(null);
+  const handleToggleActive = async (product: Product) => {
+    try {
+      const next = !product.isActive;
+      const response = await apiService.updateProductStatus(product.productCode, next);
+      if (!response.success) {
+        throw new Error(response.message || 'Error al cambiar estado del producto');
       }
+      updateProduct(product.id, { isActive: next });
+      showSuccess(`Producto ${next ? 'habilitado' : 'inhabilitado'} exitosamente`);
+    } catch (error) {
+      console.error('Error toggling product status:', error);
+      showError('No se pudo actualizar el estado del producto');
     }
   };
 
-  const cancelDelete = () => {
-    setShowDeleteModal(false);
-    setProductToDelete(null);
-  };
+  
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -433,18 +410,7 @@ const ListaProductos: React.FC = () => {
     }).format(price);
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'disponible':
-        return 'Disponible';
-      case 'agotado':
-        return 'Agotado';
-      case 'proximamente':
-        return 'Próximamente';
-      default:
-        return status;
-    }
-  };
+  
 
   return (
     <Layout title="Lista de Productos">
@@ -461,6 +427,7 @@ const ListaProductos: React.FC = () => {
             <ToggleButton onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}>
               {showAdvancedSearch ? 'Ocultar Filtros' : 'Filtros Avanzados'}
             </ToggleButton>
+            <PrimaryButton onClick={handleNewProduct}>Nuevo Producto</PrimaryButton>
           </SearchContainer>
         </TableHeader>
 
@@ -519,6 +486,7 @@ const ListaProductos: React.FC = () => {
               <th>Stock</th>
               <th>Estado</th>
               <th>Unidad</th>
+              <th>Ubicación</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -532,30 +500,31 @@ const ListaProductos: React.FC = () => {
                   <td>{formatPrice(product.price)}</td>
                   <td>{product.initialStock}</td>
                   <td>
-                    <StatusBadge $status={product.status}>
-                      {getStatusText(product.status)}
-                    </StatusBadge>
+                    <ActiveBadge $active={!!product.isActive}>
+                      {product.isActive ? 'Activo' : 'Inactivo'}
+                    </ActiveBadge>
                   </td>
                   <td>{product.unit}</td>
+                  <td>{product.ubicacion || '—'}</td>
                   <td>
                     <ActionButton 
-                      onClick={() => handleEdit(product.productCode)}
+                      onClick={() => handleEdit(product.id)}
                       $color="#007bff"
                     >
                       Editar
                     </ActionButton>
                     <ActionButton 
-                      onClick={() => handleDelete(product.productCode)}
-                      $color="#dc3545"
+                      onClick={() => handleToggleActive(product as Product)}
+                      $color={product.isActive ? '#6c757d' : '#28a745'}
                     >
-                      Eliminar
+                      {product.isActive ? 'Inhabilitar' : 'Habilitar'}
                     </ActionButton>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <EmptyState>
                     {searchTerm ? 
                       'No se encontraron productos que coincidan con la búsqueda.' : 
@@ -592,13 +561,12 @@ const ListaProductos: React.FC = () => {
                     <MobileCardLabel>Stock</MobileCardLabel>
                     <MobileCardValue>{product.initialStock}</MobileCardValue>
                   </MobileCardField>
-                  
                   <MobileCardField>
                     <MobileCardLabel>Estado</MobileCardLabel>
                     <MobileCardValue>
-                      <StatusBadge $status={product.status}>
-                        {getStatusText(product.status)}
-                      </StatusBadge>
+                      <ActiveBadge $active={!!product.isActive}>
+                        {product.isActive ? 'Activo' : 'Inactivo'}
+                      </ActiveBadge>
                     </MobileCardValue>
                   </MobileCardField>
                   
@@ -606,20 +574,25 @@ const ListaProductos: React.FC = () => {
                     <MobileCardLabel>Unidad</MobileCardLabel>
                     <MobileCardValue>{product.unit}</MobileCardValue>
                   </MobileCardField>
+
+                  <MobileCardField>
+                    <MobileCardLabel>Ubicación</MobileCardLabel>
+                    <MobileCardValue>{product.ubicacion || '—'}</MobileCardValue>
+                  </MobileCardField>
                 </MobileCardBody>
                 
                 <MobileCardActions>
                   <ActionButton 
-                    onClick={() => handleEdit(product.productCode)}
+                    onClick={() => handleEdit(product.id)}
                     $color="#007bff"
                   >
                     Editar
                   </ActionButton>
                   <ActionButton 
-                    onClick={() => handleDelete(product.productCode)}
-                    $color="#dc3545"
+                    onClick={() => handleToggleActive(product as Product)}
+                    $color={product.isActive ? '#6c757d' : '#28a745'}
                   >
-                    Eliminar
+                    {product.isActive ? 'Inhabilitar' : 'Habilitar'}
                   </ActionButton>
                 </MobileCardActions>
               </MobileCard>
@@ -634,29 +607,6 @@ const ListaProductos: React.FC = () => {
           )}
         </MobileCardContainer>
       </TableContainer>
-
-      {showDeleteModal && (
-        <ModalOverlay>
-          <ModalContent>
-            <h3>Confirmar Eliminación</h3>
-            <p>¿Estás seguro de que deseas eliminar este producto?</p>
-            <ModalButtons>
-              <ModalButton 
-                onClick={cancelDelete}
-                $color="#6c757d"
-              >
-                Cancelar
-              </ModalButton>
-              <ModalButton 
-                onClick={confirmDelete}
-                $color="#dc3545"
-              >
-                Eliminar
-              </ModalButton>
-            </ModalButtons>
-          </ModalContent>
-        </ModalOverlay>
-      )}
     </Layout>
   );
 };

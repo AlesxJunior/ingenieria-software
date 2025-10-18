@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { useSales } from '../context/SalesContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 
@@ -27,8 +27,8 @@ const Title = styled.h1`
   font-weight: 600;
 `;
 
-const StatusCard = styled(Card)<{ status: 'open' | 'closed' }>`
-  border-left: 4px solid ${props => props.status === 'open' ? '#27ae60' : '#e74c3c'};
+const StatusCard = styled(Card)<{ $status: 'open' | 'closed' }>`
+  border-left: 4px solid ${props => props.$status === 'open' ? '#27ae60' : '#e74c3c'};
 `;
 
 const StatusTitle = styled.h2`
@@ -166,19 +166,19 @@ const ErrorMessage = styled.span`
   margin-top: 0.25rem;
 `;
 
-const AlertCard = styled.div<{ type: 'warning' | 'info' }>`
-  background: ${props => props.type === 'warning' ? '#fff3cd' : '#d1ecf1'};
-  border: 1px solid ${props => props.type === 'warning' ? '#ffeaa7' : '#bee5eb'};
+const AlertCard = styled.div<{ $type: 'warning' | 'info' }>`
+  background: ${props => props.$type === 'warning' ? '#fff3cd' : '#d1ecf1'};
+  border: 1px solid ${props => props.$type === 'warning' ? '#ffeaa7' : '#bee5eb'};
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  color: ${props => props.type === 'warning' ? '#856404' : '#0c5460'};
+  color: ${props => props.$type === 'warning' ? '#856404' : '#0c5460'};
 `;
 
 const AperturaCaja: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cashRegisters, addCashRegister, getActiveCashRegister, updateCashRegister } = useApp();
+  const { cashRegisters, addCashRegister, getActiveCashRegister, updateCashRegister } = useSales();
   const { addNotification } = useNotification();
   
   const [activeCashRegister, setActiveCashRegister] = useState<any>(null);
@@ -304,7 +304,7 @@ const AperturaCaja: React.FC = () => {
         <Title>Gestión de Caja</Title>
 
         {activeCashRegister ? (
-          <StatusCard status="open">
+          <StatusCard $status="open">
             <StatusTitle>🟢 Caja Abierta</StatusTitle>
             <StatusInfo>
               <InfoRow>
@@ -329,7 +329,7 @@ const AperturaCaja: React.FC = () => {
               </InfoRow>
             </StatusInfo>
             
-            <AlertCard type="info">
+            <AlertCard $type="info">
               <strong>Información:</strong> Tienes una caja abierta. Puedes realizar ventas o cerrar la caja cuando termines tu turno.
             </AlertCard>
 
@@ -352,10 +352,10 @@ const AperturaCaja: React.FC = () => {
             </ButtonContainer>
           </StatusCard>
         ) : (
-          <StatusCard status="closed">
+          <StatusCard $status="closed">
             <StatusTitle>🔴 Sin Caja Abierta</StatusTitle>
             
-            <AlertCard type="warning">
+            <AlertCard $type="warning">
               <strong>Atención:</strong> No tienes ninguna caja abierta. Debes abrir una caja antes de poder realizar ventas.
             </AlertCard>
 

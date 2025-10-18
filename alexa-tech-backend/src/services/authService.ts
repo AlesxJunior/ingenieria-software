@@ -1,16 +1,24 @@
-import { LoginRequest, RegisterRequest, AuthResponse, UserResponse } from '../types';
+import {
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  UserResponse,
+} from '../types';
 import { userService } from './userService';
 import { jwtService } from '../utils/jwt';
 import { logger } from '../utils/logger';
-import { 
-  createValidationError, 
-  createUnauthorizedError, 
+import {
+  createValidationError,
+  createUnauthorizedError,
   createConflictError,
-  createNotFoundError 
+  createNotFoundError,
 } from '../middleware/errorHandler';
 
 // Simulación de refresh tokens en memoria (en producción usar Redis o DB)
-const refreshTokens = new Map<string, { userId: string; tokenVersion: number; expiresAt: Date }>();
+const refreshTokens = new Map<
+  string,
+  { userId: string; tokenVersion: number; expiresAt: Date }
+>();
 
 export class AuthService {
   // Login de usuario
@@ -47,7 +55,7 @@ export class AuthService {
     const { accessToken, refreshToken } = jwtService.generateTokenPair(
       user.id,
       user.email,
-      tokenVersion
+      tokenVersion,
     );
 
     // Guardar refresh token
@@ -65,10 +73,10 @@ export class AuthService {
         isActive: user.isActive,
         permissions: user.permissions || [],
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
       },
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
 
@@ -90,7 +98,7 @@ export class AuthService {
         email,
         password,
         firstName: '',
-        lastName: ''
+        lastName: '',
       });
 
       // Generar tokens
@@ -98,7 +106,7 @@ export class AuthService {
       const { accessToken, refreshToken } = jwtService.generateTokenPair(
         newUser.id,
         newUser.email,
-        tokenVersion
+        tokenVersion,
       );
 
       // Guardar refresh token
@@ -116,10 +124,10 @@ export class AuthService {
           isActive: newUser.isActive,
           permissions: newUser.permissions || [],
           createdAt: newUser.createdAt,
-          updatedAt: newUser.updatedAt
+          updatedAt: newUser.updatedAt,
         },
         accessToken,
-        refreshToken
+        refreshToken,
       };
     } catch (error) {
       if (error instanceof Error) {
@@ -135,11 +143,13 @@ export class AuthService {
   }
 
   // Refresh token
-  static async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  static async refreshToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       // Verificar refresh token
       const decoded = jwtService.verifyRefreshToken(refreshToken);
-      
+
       // Verificar si el token está almacenado
       const storedToken = refreshTokens.get(refreshToken);
       if (!storedToken) {
@@ -157,7 +167,10 @@ export class AuthService {
       // Verificar versión del token
       if (storedToken.tokenVersion !== decoded.tokenVersion) {
         this.removeRefreshToken(refreshToken);
-        logger.auth('Refresh failed - token version mismatch', storedToken.userId);
+        logger.auth(
+          'Refresh failed - token version mismatch',
+          storedToken.userId,
+        );
         throw createUnauthorizedError('Refresh token inválido');
       }
 
@@ -165,17 +178,17 @@ export class AuthService {
       const user = await userService.findById(decoded.userId);
       if (!user || !user.isActive) {
         this.removeRefreshToken(refreshToken);
-        logger.auth('Refresh failed - user not found or inactive', decoded.userId);
+        logger.auth(
+          'Refresh failed - user not found or inactive',
+          decoded.userId,
+        );
         throw createUnauthorizedError('Usuario no encontrado o inactivo');
       }
 
       // Generar nuevos tokens
       const newTokenVersion = storedToken.tokenVersion + 1;
-      const { accessToken: newAccessToken, refreshToken: newRefreshToken } = jwtService.generateTokenPair(
-        user.id,
-        user.email,
-        newTokenVersion
-      );
+      const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+        jwtService.generateTokenPair(user.id, user.email, newTokenVersion);
 
       // Remover token anterior y guardar nuevo
       this.removeRefreshToken(refreshToken);
@@ -185,9 +198,9 @@ export class AuthService {
 
       return {
         accessToken: newAccessToken,
-        refreshToken: newRefreshToken
+        refreshToken: newRefreshToken,
       };
-    } catch (error) {
+    } catch {
       logger.auth('Refresh failed', undefined, undefined);
       throw createUnauthorizedError('Refresh token inválido');
     }
@@ -199,7 +212,7 @@ export class AuthService {
       const decoded = jwtService.verifyRefreshToken(refreshToken);
       this.removeRefreshToken(refreshToken);
       logger.auth('Logout successful', decoded.userId);
-    } catch (error) {
+    } catch {
       // Incluso si el token es inválido, consideramos el logout exitoso
       logger.auth('Logout with invalid token');
     }
@@ -209,7 +222,7 @@ export class AuthService {
   static async logoutAll(userId: string): Promise<void> {
     // Incrementar versión de token para invalidar todos los refresh tokens
     this.incrementTokenVersion(userId);
-    
+
     // Remover todos los refresh tokens del usuario
     for (const [token, data] of refreshTokens.entries()) {
       if (data.userId === userId) {
@@ -219,8 +232,6 @@ export class AuthService {
 
     logger.auth('Logout all devices', userId);
   }
-
-
 
   // Métodos privados para manejo de refresh tokens
   private static tokenVersions = new Map<string, number>();
@@ -239,14 +250,18 @@ export class AuthService {
     return newVersion;
   }
 
-  private static storeRefreshToken(token: string, userId: string, tokenVersion: number): void {
+  private static storeRefreshToken(
+    token: string,
+    userId: string,
+    tokenVersion: number,
+  ): void {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 días
 
     refreshTokens.set(token, {
       userId,
       tokenVersion,
-      expiresAt
+      expiresAt,
     });
   }
 
@@ -281,7 +296,7 @@ export class AuthService {
       isActive: user.isActive,
       permissions: user.permissions || [],
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      updatedAt: user.updatedAt,
     };
   }
 
@@ -292,9 +307,12 @@ export class AuthService {
   }
 
   // Obtener estadísticas de tokens activos
-  static getTokenStats(): { totalTokens: number; userTokens: Map<string, number> } {
+  static getTokenStats(): {
+    totalTokens: number;
+    userTokens: Map<string, number>;
+  } {
     const userTokens = new Map<string, number>();
-    
+
     for (const data of refreshTokens.values()) {
       const count = userTokens.get(data.userId) || 0;
       userTokens.set(data.userId, count + 1);
@@ -302,14 +320,17 @@ export class AuthService {
 
     return {
       totalTokens: refreshTokens.size,
-      userTokens
+      userTokens,
     };
   }
 }
 
 // Limpiar tokens expirados cada hora
-setInterval(() => {
-  AuthService.cleanExpiredTokens();
-}, 60 * 60 * 1000);
+setInterval(
+  () => {
+    AuthService.cleanExpiredTokens();
+  },
+  60 * 60 * 1000,
+);
 
 export default AuthService;

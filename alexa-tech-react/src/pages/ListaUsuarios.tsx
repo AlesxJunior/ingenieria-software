@@ -460,27 +460,24 @@ const ListaUsuarios: React.FC = () => {
   };
 
   const handleCreateUser = async (userData: any) => {
-    try {
-      // Filtrar solo las propiedades que acepta la API
-      const backendUserData: any = {};
-      
-      if (userData.username) backendUserData.username = userData.username;
-      if (userData.email) backendUserData.email = userData.email;
-      if (userData.password) backendUserData.password = userData.password;
-      if (userData.firstName) backendUserData.firstName = userData.firstName;
-      if (userData.lastName) backendUserData.lastName = userData.lastName;
-      if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-      if (userData.permissions) backendUserData.permissions = userData.permissions;
+    // Filtrar solo las propiedades que acepta la API
+    const backendUserData: any = {};
+    
+    if (userData.username) backendUserData.username = userData.username;
+    if (userData.email) backendUserData.email = userData.email;
+    if (userData.password) backendUserData.password = userData.password;
+    if (userData.firstName) backendUserData.firstName = userData.firstName;
+    if (userData.lastName) backendUserData.lastName = userData.lastName;
+    if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
+    if (userData.permissions) backendUserData.permissions = userData.permissions;
 
-      
-      await apiService.createUser(backendUserData);
-      showInfo('Usuario creado exitosamente');
-      loadUsers(); // Recargar la lista
-      setIsNuevoUsuarioModalOpen(false);
-    } catch (error) {
-      console.error('Error creating user:', error);
-      showError('Error al crear el usuario');
+    // Ejecutar creación y lanzar error si la API la rechaza (p.ej. 403)
+    const res = await apiService.createUser(backendUserData);
+    if (!res.success) {
+      throw new Error(res.message || 'No autorizado para crear usuario');
     }
+    // Recargar la lista tras éxito; el modal maneja notificación y cierre
+    loadUsers();
   };
 
   const handleOpenCreateModal = () => {

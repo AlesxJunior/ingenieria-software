@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { useApp } from '../context/AppContext';
+import { useProducts, type Product } from '../context/ProductContext';
+import { useClients, type Client } from '../context/ClientContext';
+import { useSales, type SaleItem } from '../context/SalesContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import type { Product, Client, SaleItem } from '../context/AppContext';
@@ -271,13 +273,13 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   }
 `;
 
-const AlertCard = styled.div<{ type: 'warning' | 'error' }>`
-  background: ${props => props.type === 'warning' ? '#fff3cd' : '#f8d7da'};
-  border: 1px solid ${props => props.type === 'warning' ? '#ffeaa7' : '#f5c6cb'};
+const AlertCard = styled.div<{ $type: 'warning' | 'error' }>`
+  background: ${props => props.$type === 'warning' ? '#fff3cd' : '#f8d7da'};
+  border: 1px solid ${props => props.$type === 'warning' ? '#ffeaa7' : '#f5c6cb'};
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  color: ${props => props.type === 'warning' ? '#856404' : '#721c24'};
+  color: ${props => props.$type === 'warning' ? '#856404' : '#721c24'};
 `;
 
 interface CartItem extends SaleItem {
@@ -287,13 +289,9 @@ interface CartItem extends SaleItem {
 const RealizarVenta: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { 
-    products, 
-    clients, 
-    getActiveCashRegister, 
-    addSale, 
-    updateProduct 
-  } = useApp();
+  const { products, updateProduct } = useProducts();
+  const { clients } = useClients();
+  const { getActiveCashRegister, addSale } = useSales();
   const { addNotification } = useNotification();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -305,6 +303,7 @@ const RealizarVenta: React.FC = () => {
   const activeCashRegister = getActiveCashRegister();
 
   const filteredProducts = products.filter((product: Product) =>
+    product.isActive &&
     product.status === 'disponible' &&
     product.currentStock > 0 &&
     (product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -459,7 +458,7 @@ const RealizarVenta: React.FC = () => {
   if (!activeCashRegister) {
     return (
       <Layout title="Realizar Venta">
-        <AlertCard type="error">
+        <AlertCard $type="error">
           <h3>⚠️ Caja Cerrada</h3>
           <p>No puedes realizar ventas sin tener una caja abierta.</p>
           <Button 
@@ -517,13 +516,13 @@ const RealizarVenta: React.FC = () => {
           
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              Cliente (Opcional)
+              Entidad Comercial (Opcional)
             </label>
             <Select
               value={selectedClient}
               onChange={(e) => setSelectedClient(e.target.value)}
             >
-              <option value="">Cliente General</option>
+              <option value="">Entidad Comercial General</option>
               {clients.map((client: Client) => (
                 <option key={client.id} value={client.id}>
                   {client.tipoDocumento === 'RUC' 

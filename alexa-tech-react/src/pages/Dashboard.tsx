@@ -177,7 +177,7 @@ const Dashboard: React.FC = () => {
               <i className="fas fa-user-plus"></i>
             </div>
             <div className="summary-text">
-              <h3>Nuevos Clientes</h3>
+              <h3>Nuevas Entidades Comerciales</h3>
               <p>12</p>
             </div>
           </div>
@@ -204,7 +204,7 @@ const Dashboard: React.FC = () => {
             </li>
             <li>
               <i className="fas fa-user-plus activity-icon"></i>
-              Nuevo cliente registrado: María López
+              Nueva entidad comercial registrada: María López
             </li>
             <li>
               <i className="fas fa-box activity-icon"></i>

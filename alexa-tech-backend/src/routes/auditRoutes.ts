@@ -19,39 +19,41 @@ router.get(
       const { page = '1', limit = '10' } = req.query;
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
-      
+
       const result = await AuditService.getAuditLogs(pageNum, limitNum);
-      
+
       res.json({
         success: true,
         message: 'Logs de auditoría obtenidos exitosamente',
         data: {
-          logs: result.logs.map(log => ({
+          logs: result.logs.map((log) => ({
             id: log.id,
             action: log.action,
-            user: log.user ? `${log.user.firstName} ${log.user.lastName} (${log.user.email})` : 'Sistema',
+            user: log.user
+              ? `${log.user.firstName} ${log.user.lastName} (${log.user.email})`
+              : 'Sistema',
             timestamp: log.createdAt.toISOString(),
             details: log.details,
             ipAddress: log.ipAddress,
-            userAgent: log.userAgent
+            userAgent: log.userAgent,
           })),
           pagination: {
             page: result.page,
             limit: result.limit,
             total: result.total,
-            totalPages: result.totalPages
-          }
-        }
+            totalPages: result.totalPages,
+          },
+        },
       });
     } catch (error) {
       console.error('Error al obtener logs de auditoría:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
-        error: process.env.NODE_ENV === 'development' ? error : undefined
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
-  }
+  },
 );
 
 // GET /audit/user-activity/:userId - Obtener actividad de un usuario específico
@@ -64,53 +66,60 @@ router.get(
     try {
       const { userId } = req.params;
       const { page = '1', limit = '10' } = req.query;
-      
+
       if (!userId) {
         res.status(400).json({
           success: false,
-          message: 'ID de usuario requerido'
+          message: 'ID de usuario requerido',
         });
         return;
       }
-      
+
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
-      
-      const result = await AuditService.getUserActivities(userId, pageNum, limitNum);
-      
+
+      const result = await AuditService.getUserActivities(
+        userId,
+        pageNum,
+        limitNum,
+      );
+
       res.json({
         success: true,
         message: `Actividad del usuario obtenida exitosamente`,
         data: {
-          activities: result.activities.map(activity => ({
+          activities: result.activities.map((activity) => ({
             id: activity.id,
             action: activity.action,
             timestamp: activity.createdAt.toISOString(),
             details: activity.details,
-            ipAddress: activity.ipAddress
+            ipAddress: activity.ipAddress,
           })),
           pagination: {
             page: result.page,
             limit: result.limit,
             total: result.total,
-            totalPages: result.totalPages
+            totalPages: result.totalPages,
           },
-          user: result.activities.length > 0 && result.activities[0]?.user ? {
-            id: result.activities[0].user.id,
-            name: `${result.activities[0].user?.firstName || ''} ${result.activities[0].user?.lastName || ''}`.trim(),
-            email: result.activities[0].user?.email || ''
-          } : null
-        }
+          user:
+            result.activities.length > 0 && result.activities[0]?.user
+              ? {
+                  id: result.activities[0].user.id,
+                  name: `${result.activities[0].user?.firstName || ''} ${result.activities[0].user?.lastName || ''}`.trim(),
+                  email: result.activities[0].user?.email || '',
+                }
+              : null,
+        },
       });
     } catch (error) {
       console.error('Error al obtener actividad del usuario:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
-        error: process.env.NODE_ENV === 'development' ? error : undefined
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
-  }
+  },
 );
 
 // GET /audit/my-activity - Obtener mi propia actividad
@@ -121,48 +130,52 @@ router.get(
     try {
       const { page = '1', limit = '10' } = req.query;
       const userId = req.user?.userId;
-      
+
       if (!req.user?.userId) {
         res.status(401).json({
           success: false,
-          message: 'Usuario no autenticado'
+          message: 'Usuario no autenticado',
         });
         return;
       }
-      
+
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
-      
-      const result = await AuditService.getUserActivities(userId, pageNum, limitNum);
-      
+
+      const result = await AuditService.getUserActivities(
+        userId,
+        pageNum,
+        limitNum,
+      );
+
       res.json({
         success: true,
         message: 'Mi actividad obtenida exitosamente',
         data: {
-          activities: result.activities.map(activity => ({
+          activities: result.activities.map((activity) => ({
             id: activity.id,
             action: activity.action,
             timestamp: activity.createdAt.toISOString(),
             details: activity.details,
-            ipAddress: activity.ipAddress
+            ipAddress: activity.ipAddress,
           })),
           pagination: {
             page: result.page,
             limit: result.limit,
             total: result.total,
-            totalPages: result.totalPages
-          }
-        }
+            totalPages: result.totalPages,
+          },
+        },
       });
     } catch (error) {
       console.error('Error al obtener mi actividad:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
-        error: process.env.NODE_ENV === 'development' ? error : undefined
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
-  }
+  },
 );
 
 // GET /audit/system-events - Obtener eventos del sistema
@@ -176,37 +189,37 @@ router.get(
       const { page = '1', limit = '10' } = req.query;
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
-      
+
       const result = await AuditService.getSystemEvents(pageNum, limitNum);
-      
+
       res.json({
         success: true,
         message: 'Eventos del sistema obtenidos exitosamente',
         data: {
-          events: result.events.map(event => ({
+          events: result.events.map((event) => ({
             id: event.id,
             type: event.type,
             timestamp: event.createdAt.toISOString(),
             details: event.details,
-            metadata: event.metadata
+            metadata: event.metadata,
           })),
           pagination: {
             page: result.page,
             limit: result.limit,
             total: result.total,
-            totalPages: result.totalPages
-          }
-        }
+            totalPages: result.totalPages,
+          },
+        },
       });
     } catch (error) {
       console.error('Error al obtener eventos del sistema:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
-        error: process.env.NODE_ENV === 'development' ? error : undefined
+        error: process.env.NODE_ENV === 'development' ? error : undefined,
       });
     }
-  }
+  },
 );
 
 export default router;

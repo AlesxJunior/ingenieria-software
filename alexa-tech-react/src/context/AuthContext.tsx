@@ -69,26 +69,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // Llamada real a la API de autenticación
       const response = await apiService.login({ email, password });
       
       if (response.success && response.data) {
         const { user: userData, accessToken, refreshToken } = response.data;
         
-        // Guardar tokens
         tokenUtils.setTokens(accessToken, refreshToken);
-        
-        // Guardar usuario
         setUser(userData as User);
         localStorage.setItem('alexatech_user', JSON.stringify(userData));
         
         return true;
       }
       
-      return false;
-    } catch (error) {
+      // Si la API devuelve un error, pero no es una excepción (ej: 401 Unauthorized)
+      throw new Error(response.message || 'Usuario o contraseña incorrectos');
+    } catch (error: any) {
       console.error('Login error:', error);
-      return false;
+      // Re-lanzar el error para que el componente de UI pueda manejarlo
+      throw new Error(error.message || 'Error al conectar con el servidor. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -117,10 +115,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const hasPermission = (permission: string): boolean => {
-    if (!user || !user.permissions) {
-      return false;
-    }
-    return user.permissions.includes(permission);
+    if (!user || !user.permissions) return false;
+
+    const perms = user.permissions;
+
+    if (perms.includes(permission)) return true;
+
+    // Compatibilidad de alias entre clients.* y commercial_entities.*
+    const legacyAliases: Record<string, string> = {
+      'commercial_entities.read': 'clients.read',
+      'commercial_entities.create': 'clients.create',
+      'commercial_entities.update': 'clients.update',
+    };
+
+    const legacy = legacyAliases[permission];
+    if (legacy && perms.includes(legacy)) return true;
+
+    const reverse = Object.entries(legacyAliases).find(([, old]) => old === permission);
+    if (reverse && perms.includes(reverse[0])) return true;
+
+    return false;
   };
 
   const value: AuthContextType = {

@@ -1,11 +1,17 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Enum para el tipo de entidad comercial
+enum TipoEntidad {
+  Cliente
+  Proveedor
+  Ambos
 }
 
 model User {
@@ -24,6 +30,8 @@ model User {
   // Relaciones
   auditLogs   AuditLog[]
   userActivities UserActivity[]
+  productsCreated Product[] @relation("ProductCreatedBy")
+  productsUpdated Product[] @relation("ProductUpdatedBy")
 
   @@map("users")
 }
@@ -71,6 +79,8 @@ model SystemEvent {
 
 model Client {
   id               String   @id @default(cuid())
+  // Tipo de entidad comercial (Cliente, Proveedor o Ambos)
+  tipoEntidad      TipoEntidad @default(Cliente)
   tipoDocumento    String   // DNI, RUC, CE
   numeroDocumento  String   @unique // Número de documento único
   
@@ -87,9 +97,39 @@ model Client {
   direccion        String   // Dirección completa
   ciudad           String   // Ciudad de residencia
   
+  // Auditoría de creación/actualización
+  usuarioCreacion      String?
+  usuarioActualizacion String?
+  createdBy            User?    @relation("ClientCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
+  updatedBy            User?    @relation("ClientUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
+
   isActive         Boolean  @default(true) // Soft delete
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  @@map("clients")
+  @@map("commercial_entities")
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  codigo             String   @unique
+  nombre             String
+  descripcion        String?
+  categoria          String
+  precioVenta        Decimal
+  stock              Int      @default(0)
+  estado             Boolean  @default(true) // Activo/Inactivo (soft delete)
+  unidadMedida       String
+  ubicacion          String?
+
+  // Auditoría de creación/actualización
+  usuarioCreacion      String?
+  usuarioActualizacion String?
+  createdBy            User?    @relation("ProductCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
+  updatedBy            User?    @relation("ProductUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("products")
 }

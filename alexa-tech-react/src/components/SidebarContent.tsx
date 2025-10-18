@@ -176,13 +176,13 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
     if (pathname.includes('/auditoria')) {
       return 'auditoria';
     }
-    if (pathname.includes('/lista-clientes') || pathname.includes('/registrar-cliente')) {
-      return 'clientes';
+    if (pathname.includes('/lista-entidades') || pathname.includes('/registrar-entidad')) {
+      return 'entidades_comerciales';
     }
     if (pathname.includes('/ventas') || pathname.includes('/gestion-caja')) {
       return 'ventas';
     }
-    if (pathname.includes('/lista-productos') || pathname.includes('/registrar-producto')) {
+    if (pathname.includes('/lista-productos')) {
       return 'productos';
     }
     return null;
@@ -256,15 +256,15 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/lista-clientes') || isActive('/registrar-cliente')}>
-            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('clientes'); }}>
+          <NavItem $isActive={isActive('/lista-entidades') || isActive('/registrar-entidad')}>
+            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('entidades_comerciales'); }}>
               <i className="fas fa-users"></i>
-              <span>Clientes</span>
+              <span>Entidades Comerciales</span>
             </a>
-            <SubMenu $isOpen={openMenus.clientes}>
-              <SubMenuItem $isActive={isActive('/lista-clientes')}>
-                <Link to="/lista-clientes" onClick={handleItemClick}>
-                  <h3>Lista de Clientes</h3>
+            <SubMenu $isOpen={openMenus.entidades_comerciales}>
+              <SubMenuItem $isActive={isActive('/lista-entidades')}>
+                <Link to="/lista-entidades" onClick={handleItemClick}>
+                  <h3>Lista de Entidades</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>
@@ -304,7 +304,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/lista-productos') || isActive('/registrar-producto')}>
+          <NavItem $isActive={isActive('/lista-productos')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('productos'); }}>
               <i className="fas fa-cube"></i>
               <span>Productos</span>
@@ -313,11 +313,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               <SubMenuItem $isActive={isActive('/lista-productos')}>
                 <Link to="/lista-productos" onClick={handleItemClick}>
                   <h3>Lista de Productos</h3>
-                </Link>
-              </SubMenuItem>
-              <SubMenuItem $isActive={isActive('/registrar-producto')}>
-                <Link to="/registrar-producto" onClick={handleItemClick}>
-                  <h3>Registrar Producto</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>

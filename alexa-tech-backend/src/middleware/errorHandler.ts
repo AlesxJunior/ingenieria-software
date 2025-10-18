@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../types';
 import { logger } from '../utils/logger';
-import { sendError } from '../utils/response';
 import { config } from '../config';
 
 // Clase personalizada para errores de API
@@ -10,7 +8,12 @@ export class AppError extends Error {
   public code?: string;
   public details?: any;
 
-  constructor(message: string, statusCode: number = 500, code?: string, details?: any) {
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    code?: string,
+    details?: any,
+  ) {
     super(message);
     this.statusCode = statusCode;
     if (code !== undefined) {
@@ -31,7 +34,7 @@ export const errorHandler = (
   error: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction,
 ): void => {
   let statusCode = 500;
   let message = 'Error interno del servidor';
@@ -67,8 +70,7 @@ export const errorHandler = (
   else if (error.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Token inválido';
-  }
-  else if (error.name === 'TokenExpiredError') {
+  } else if (error.name === 'TokenExpiredError') {
     statusCode = 401;
     message = 'Token expirado';
   }
@@ -93,7 +95,7 @@ export const errorHandler = (
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    userId: (req as any).user?.userId
+    userId: (req as any).user?.userId,
   };
 
   if (statusCode >= 500) {
@@ -107,7 +109,7 @@ export const errorHandler = (
     success: false,
     message,
     ...(code && { code }),
-    ...(details && { details })
+    ...(details && { details }),
   };
 
   if (config.isDevelopment && error.stack) {
@@ -118,24 +120,33 @@ export const errorHandler = (
 };
 
 // Middleware para manejar rutas no encontradas
-export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
+export const notFoundHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   const error = new AppError(
     `Ruta no encontrada: ${req.method} ${req.originalUrl}`,
     404,
-    'ROUTE_NOT_FOUND'
+    'ROUTE_NOT_FOUND',
   );
   next(error);
 };
 
 // Wrapper para funciones async que automáticamente captura errores
-export const asyncHandler = (fn: Function) => {
+export const asyncHandler = (
+  fn: (req: Request, res: Response, next: NextFunction) => any,
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
 
 // Funciones de utilidad para crear errores específicos
-export const createValidationError = (message: string, details?: any): AppError => {
+export const createValidationError = (
+  message: string,
+  details?: any,
+): AppError => {
   return new AppError(message, 400, 'VALIDATION_ERROR', details);
 };
 
@@ -143,19 +154,28 @@ export const createNotFoundError = (resource: string = 'Recurso'): AppError => {
   return new AppError(`${resource} no encontrado`, 404, 'NOT_FOUND');
 };
 
-export const createUnauthorizedError = (message: string = 'No autorizado'): AppError => {
+export const createUnauthorizedError = (
+  message: string = 'No autorizado',
+): AppError => {
   return new AppError(message, 401, 'UNAUTHORIZED');
 };
 
-export const createForbiddenError = (message: string = 'Acceso prohibido'): AppError => {
+export const createForbiddenError = (
+  message: string = 'Acceso prohibido',
+): AppError => {
   return new AppError(message, 403, 'FORBIDDEN');
 };
 
-export const createConflictError = (message: string, details?: any): AppError => {
+export const createConflictError = (
+  message: string,
+  details?: any,
+): AppError => {
   return new AppError(message, 409, 'CONFLICT', details);
 };
 
-export const createInternalError = (message: string = 'Error interno del servidor'): AppError => {
+export const createInternalError = (
+  message: string = 'Error interno del servidor',
+): AppError => {
   return new AppError(message, 500, 'INTERNAL_ERROR');
 };
 
@@ -169,5 +189,5 @@ export default {
   createUnauthorizedError,
   createForbiddenError,
   createConflictError,
-  createInternalError
+  createInternalError,
 };

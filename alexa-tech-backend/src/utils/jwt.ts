@@ -10,7 +10,7 @@ export class JWTService {
       const options: any = {
         expiresIn: config.jwtExpiresIn,
         issuer: 'alexa-tech-api',
-        audience: 'alexa-tech-client'
+        audience: 'alexa-tech-client',
       };
       return jwt.sign(payload, config.jwtSecret, options);
     } catch (error) {
@@ -20,12 +20,14 @@ export class JWTService {
   }
 
   // Generar token de refresh
-  generateRefreshToken(payload: Omit<RefreshTokenPayload, 'iat' | 'exp'>): string {
+  generateRefreshToken(
+    payload: Omit<RefreshTokenPayload, 'iat' | 'exp'>,
+  ): string {
     try {
       const options: any = {
         expiresIn: config.jwtRefreshExpiresIn,
         issuer: 'alexa-tech-api',
-        audience: 'alexa-tech-client'
+        audience: 'alexa-tech-client',
       };
       return jwt.sign(payload, config.jwtRefreshSecret, options);
     } catch (error) {
@@ -39,9 +41,9 @@ export class JWTService {
     try {
       const decoded = jwt.verify(token, config.jwtSecret, {
         issuer: 'alexa-tech-api',
-        audience: 'alexa-tech-client'
+        audience: 'alexa-tech-client',
       }) as TokenPayload;
-      
+
       return decoded;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
@@ -60,9 +62,9 @@ export class JWTService {
     try {
       const decoded = jwt.verify(token, config.jwtRefreshSecret, {
         issuer: 'alexa-tech-api',
-        audience: 'alexa-tech-client'
+        audience: 'alexa-tech-client',
       }) as RefreshTokenPayload;
-      
+
       return decoded;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
@@ -104,10 +106,10 @@ export class JWTService {
   isTokenExpiringSoon(token: string): boolean {
     const expiration = this.getTokenExpiration(token);
     if (!expiration) return true;
-    
+
     const now = new Date();
     const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-    
+
     return expiration <= fiveMinutesFromNow;
   }
 
@@ -115,17 +117,17 @@ export class JWTService {
   generateTokenPair(userId: string, email: string, tokenVersion: number = 1) {
     const accessTokenPayload: Omit<TokenPayload, 'iat' | 'exp'> = {
       userId,
-      email
+      email,
     };
 
     const refreshTokenPayload: Omit<RefreshTokenPayload, 'iat' | 'exp'> = {
       userId,
-      tokenVersion
+      tokenVersion,
     };
 
     return {
       accessToken: this.generateAccessToken(accessTokenPayload),
-      refreshToken: this.generateRefreshToken(refreshTokenPayload)
+      refreshToken: this.generateRefreshToken(refreshTokenPayload),
     };
   }
 }
