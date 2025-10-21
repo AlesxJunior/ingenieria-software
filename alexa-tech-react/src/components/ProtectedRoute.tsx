@@ -42,14 +42,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermission,
   requiredPermissions 
 }) => {
-  // Bypass de autenticación en modo desarrollo
-  const devBypass = false; // For test reliability, disable bypass entirely
+  // Llamar hooks SIEMPRE al inicio del componente
+  const { isAuthenticated, isLoading, hasPermission } = useAuth();
+  const location = useLocation();
+
+  // Bypass de autenticación en modo desarrollo (deshabilitado por defecto)
+  const devBypass = false;
   if (devBypass) {
     return <>{children}</>;
   }
-
-  const { isAuthenticated, isLoading, hasPermission } = useAuth();
-  const location = useLocation();
 
   // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {

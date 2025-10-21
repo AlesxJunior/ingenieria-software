@@ -41,9 +41,9 @@ const validateClientCreate = (
   if (!data.tipoDocumento || typeof data.tipoDocumento !== 'string') {
     errors.push('El tipo de documento es requerido');
   } else {
-    const validTypes = ['DNI', 'CE', 'RUC'];
+    const validTypes = ['DNI', 'CE', 'RUC', 'Pasaporte'];
     if (!validTypes.includes(data.tipoDocumento)) {
-      errors.push('Tipo de documento inválido. Debe ser DNI, CE o RUC');
+      errors.push('Tipo de documento inválido. Debe ser DNI, CE, RUC o Pasaporte');
     }
   }
 
@@ -51,7 +51,7 @@ const validateClientCreate = (
   if (!data.numeroDocumento || typeof data.numeroDocumento !== 'string') {
     errors.push('El número de documento es requerido');
   } else {
-    const numDoc = data.numeroDocumento.trim();
+    const numDoc = data.numeroDocumento.trim().toUpperCase();
     if (data.tipoDocumento === 'DNI') {
       if (!/^\d{8}$/.test(numDoc)) {
         errors.push('El DNI debe tener exactamente 8 dígitos numéricos');
@@ -64,6 +64,10 @@ const validateClientCreate = (
       if (!/^\d{11}$/.test(numDoc)) {
         errors.push('El RUC debe tener exactamente 11 dígitos numéricos');
       }
+    } else if (data.tipoDocumento === 'Pasaporte') {
+      if (!/^[A-Z][0-9]{7}$/.test(numDoc)) {
+        errors.push('El Pasaporte debe tener el formato: 1 letra seguida de 7 dígitos (ej: A1234567)');
+      }
     } else if (numDoc.length < 6) {
       // Fallback si tipoDocumento no es válido pero hay número
       errors.push('El número de documento debe tener al menos 6 caracteres');
@@ -71,7 +75,7 @@ const validateClientCreate = (
   }
 
   // Validar campos según tipo de documento
-  if (['DNI', 'CE'].includes(data.tipoDocumento)) {
+  if (['DNI', 'CE', 'Pasaporte'].includes(data.tipoDocumento)) {
     if (
       !data.nombres ||
       typeof data.nombres !== 'string' ||
@@ -122,12 +126,27 @@ const validateClientCreate = (
     errors.push('La dirección debe tener al menos 5 caracteres');
   }
 
+  // Ubigeo requerido
   if (
-    !data.ciudad ||
-    typeof data.ciudad !== 'string' ||
-    data.ciudad.trim().length < 2
+    !data.departamentoId ||
+    typeof data.departamentoId !== 'string' ||
+    !data.departamentoId.trim()
   ) {
-    errors.push('La ciudad debe tener al menos 2 caracteres');
+    errors.push('El departamentoId es requerido');
+  }
+  if (
+    !data.provinciaId ||
+    typeof data.provinciaId !== 'string' ||
+    !data.provinciaId.trim()
+  ) {
+    errors.push('La provinciaId es requerida');
+  }
+  if (
+    !data.distritoId ||
+    typeof data.distritoId !== 'string' ||
+    !data.distritoId.trim()
+  ) {
+    errors.push('El distritoId es requerido');
   }
 
   return {
@@ -160,9 +179,9 @@ const validateClientUpdate = (
     if (typeof data.tipoDocumento !== 'string') {
       errors.push('El tipo de documento debe ser una cadena de texto');
     } else {
-      const validTypes = ['DNI', 'CE', 'RUC'];
+      const validTypes = ['DNI', 'CE', 'RUC', 'Pasaporte'];
       if (!validTypes.includes(data.tipoDocumento)) {
-        errors.push('Tipo de documento inválido. Debe ser DNI, CE o RUC');
+        errors.push('Tipo de documento inválido. Debe ser DNI, CE, RUC o Pasaporte');
       }
     }
   }
@@ -172,7 +191,7 @@ const validateClientUpdate = (
     if (typeof data.numeroDocumento !== 'string') {
       errors.push('El número de documento debe ser una cadena de texto');
     } else {
-      const numDoc = data.numeroDocumento.trim();
+      const numDoc = data.numeroDocumento.trim().toUpperCase();
       // Si se proporciona tipoDocumento, validar longitud exacta
       if (data.tipoDocumento === 'DNI') {
         if (!/^\d{8}$/.test(numDoc)) {
@@ -186,9 +205,13 @@ const validateClientUpdate = (
         if (!/^\d{11}$/.test(numDoc)) {
           errors.push('El RUC debe tener exactamente 11 dígitos numéricos');
         }
-      } else if (!/^\d+$/.test(numDoc)) {
-        // Si no hay tipoDocumento válido, al menos exigir dígitos
-        errors.push('El número de documento debe contener solo dígitos');
+      } else if (data.tipoDocumento === 'Pasaporte') {
+        if (!/^[A-Z][0-9]{7}$/.test(numDoc)) {
+          errors.push('El Pasaporte debe tener el formato: 1 letra seguida de 7 dígitos (ej: A1234567)');
+        }
+      } else if (!/^[A-Z0-9]+$/.test(numDoc)) {
+        // Si no hay tipoDocumento válido, al menos exigir alfanumérico
+        errors.push('El número de documento debe contener solo letras y números');
       }
     }
   }
@@ -215,7 +238,6 @@ const validateClientUpdate = (
     errors.push('La razón social debe tener al menos 2 caracteres');
   }
 
-  // Validar campos comunes
   if (data.email !== undefined) {
     if (typeof data.email !== 'string') {
       errors.push('El email debe ser una cadena de texto');
@@ -241,16 +263,29 @@ const validateClientUpdate = (
     errors.push('La dirección debe tener al menos 5 caracteres');
   }
 
-  if (
-    data.ciudad !== undefined &&
-    (typeof data.ciudad !== 'string' || data.ciudad.trim().length < 2)
-  ) {
-    errors.push('La ciudad debe tener al menos 2 caracteres');
-  }
-
-  // Validar estado activo si se proporciona
+  // Validar isActive
   if (data.isActive !== undefined && typeof data.isActive !== 'boolean') {
     errors.push('El estado isActive debe ser un booleano');
+  }
+
+  // Validaciones opcionales de ubigeo
+  if (
+    data.departamentoId !== undefined &&
+    (typeof data.departamentoId !== 'string' || !data.departamentoId.trim())
+  ) {
+    errors.push('El departamentoId debe ser una cadena no vacía');
+  }
+  if (
+    data.provinciaId !== undefined &&
+    (typeof data.provinciaId !== 'string' || !data.provinciaId.trim())
+  ) {
+    errors.push('La provinciaId debe ser una cadena no vacía');
+  }
+  if (
+    data.distritoId !== undefined &&
+    (typeof data.distritoId !== 'string' || !data.distritoId.trim())
+  ) {
+    errors.push('El distritoId debe ser una cadena no vacía');
   }
 
   return {
@@ -265,7 +300,9 @@ export class ClientController {
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       const {
         search,
-        ciudad,
+        departamentoId,
+        provinciaId,
+        distritoId,
         tipoDocumento,
         tipoEntidad,
         fechaDesde,
@@ -307,8 +344,14 @@ export class ClientController {
           filters.search = search as string;
         }
 
-        if (ciudad) {
-          filters.ciudad = ciudad as string;
+        if (departamentoId) {
+          filters.departamentoId = departamentoId as string;
+        }
+        if (provinciaId) {
+          filters.provinciaId = provinciaId as string;
+        }
+        if (distritoId) {
+          filters.distritoId = distritoId as string;
         }
 
         if (tipoDocumento) {
@@ -473,11 +516,13 @@ export class ClientController {
           email: req.body.email,
           telefono: req.body.telefono,
           direccion: req.body.direccion,
-          ciudad: req.body.ciudad,
+          departamentoId: req.body.departamentoId,
+          provinciaId: req.body.provinciaId,
+          distritoId: req.body.distritoId,
         };
 
         // Agregar campos condicionales según tipo de documento
-        if (['DNI', 'CE'].includes(req.body.tipoDocumento)) {
+        if (['DNI', 'CE', 'Pasaporte'].includes(req.body.tipoDocumento)) {
           clientData.nombres = req.body.nombres;
           clientData.apellidos = req.body.apellidos;
         } else if (req.body.tipoDocumento === 'RUC') {
@@ -594,7 +639,12 @@ export class ClientController {
           updateData.telefono = req.body.telefono;
         if (req.body.direccion !== undefined)
           updateData.direccion = req.body.direccion;
-        if (req.body.ciudad !== undefined) updateData.ciudad = req.body.ciudad;
+        if (req.body.departamentoId !== undefined)
+          updateData.departamentoId = req.body.departamentoId;
+        if (req.body.provinciaId !== undefined)
+          updateData.provinciaId = req.body.provinciaId;
+        if (req.body.distritoId !== undefined)
+          updateData.distritoId = req.body.distritoId;
         if (req.body.isActive !== undefined)
           updateData.isActive = req.body.isActive;
 

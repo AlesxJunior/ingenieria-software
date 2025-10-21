@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
 import { useClients } from '../context/ClientContext';
+import UbigeoSelector from './UbigeoSelector';
 
 interface ClienteFormData {
   tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
-  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  tipoDocumento: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
   numeroDocumento: string;
   // Campos para DNI y CE
   nombres?: string;
@@ -16,7 +17,10 @@ interface ClienteFormData {
   email: string;
   telefono: string;
   direccion: string;
-  ciudad: string;
+  // Ubigeo
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
 }
 
 interface FormErrors {
@@ -217,14 +221,16 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: ''
+    departamentoId: '',
+    provinciaId: '',
+    distritoId: ''
   });
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     // Validar campos según tipo de documento
-    if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+    if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') {
       if (!formData.nombres?.trim()) {
         newErrors.nombres = 'Los nombres son requeridos';
       }
@@ -253,6 +259,10 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
         if (!/^\d{11}$/.test(formData.numeroDocumento)) {
           newErrors.numeroDocumento = 'El RUC debe tener 11 dígitos';
         }
+      } else if (formData.tipoDocumento === 'Pasaporte') {
+        if (!/^[A-Za-z][0-9]{7}$/.test(formData.numeroDocumento)) {
+          newErrors.numeroDocumento = 'Formato: Letra + 7 dígitos (ej: A1234567)';
+        }
       }
     }
 
@@ -272,8 +282,16 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
       newErrors.direccion = 'La dirección es requerida';
     }
 
-    if (!formData.ciudad.trim()) {
-      newErrors.ciudad = 'La ciudad es requerida';
+    if (!formData.departamentoId) {
+      newErrors.departamentoId = 'El departamento es requerido';
+    }
+
+    if (!formData.provinciaId) {
+      newErrors.provinciaId = 'La provincia es requerida';
+    }
+
+    if (!formData.distritoId) {
+      newErrors.distritoId = 'El distrito es requerido';
     }
 
     setErrors(newErrors);
@@ -288,7 +306,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
     if (name === 'tipoDocumento') {
       setFormData(prev => ({
         ...prev,
-        [name]: value as 'DNI' | 'CE' | 'RUC',
+        [name]: value as 'DNI' | 'CE' | 'RUC' | 'Pasaporte',
         nombres: '',
         apellidos: '',
         razonSocial: '',
@@ -304,11 +322,16 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
         numeroDocumento: ''
       }));
     } else {
-      // Sanitizar dígitos para documentos numéricos
-      if (name === 'numeroDocumento' && ['DNI', 'CE', 'RUC'].includes(formData.tipoDocumento)) {
-        value = value.replace(/\D+/g, '');
-        const maxLen = formData.tipoDocumento === 'DNI' ? 8 : formData.tipoDocumento === 'CE' ? 12 : 11;
-        if (value.length > maxLen) value = value.slice(0, maxLen);
+      // Sanitizar dígitos para documentos numéricos y normalización para Pasaporte
+      if (name === 'numeroDocumento') {
+        if (['DNI', 'CE', 'RUC'].includes(formData.tipoDocumento)) {
+          value = value.replace(/\D+/g, '');
+          const maxLen = formData.tipoDocumento === 'DNI' ? 8 : formData.tipoDocumento === 'CE' ? 12 : 11;
+          if (value.length > maxLen) value = value.slice(0, maxLen);
+        } else if (formData.tipoDocumento === 'Pasaporte') {
+          value = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+          if (value.length > 8) value = value.slice(0, 8);
+        }
       }
       setFormData(prev => ({
         ...prev,
@@ -342,11 +365,13 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
         email: formData.email,
         telefono: formData.telefono,
         direccion: formData.direccion,
-        ciudad: formData.ciudad
+        departamentoId: formData.departamentoId || '',
+        provinciaId: formData.provinciaId || '',
+        distritoId: formData.distritoId || ''
       };
 
       // Agregar campos específicos según tipo de documento
-      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') {
         clientData.nombres = formData.nombres;
         clientData.apellidos = formData.apellidos;
       } else if (formData.tipoDocumento === 'RUC') {
@@ -368,9 +393,11 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
         email: '',
         telefono: '',
         direccion: '',
-        ciudad: '',
         tipoDocumento: 'DNI',
-        numeroDocumento: ''
+        numeroDocumento: '',
+        departamentoId: '',
+        provinciaId: '',
+        distritoId: ''
       });
     } catch (error) {
       console.error('Error al registrar el cliente:', error);
@@ -421,6 +448,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
               >
                 <option value="DNI">DNI</option>
                 <option value="CE">Carnet de Extranjería</option>
+                <option value="Pasaporte">Pasaporte</option>
                 <option value="RUC">RUC</option>
               </Select>
               {errors.tipoDocumento && <ErrorMessage>{errors.tipoDocumento}</ErrorMessage>}
@@ -430,7 +458,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
               <Label htmlFor="numeroDocumento">
                 Número de {formData.tipoDocumento === 'DNI' ? 'DNI' : 
                           formData.tipoDocumento === 'CE' ? 'Carnet de Extranjería' : 
-                          formData.tipoDocumento === 'RUC' ? 'RUC' : 'Documento'} *
+                          formData.tipoDocumento === 'RUC' ? 'RUC' : formData.tipoDocumento === 'Pasaporte' ? 'Pasaporte' : 'Documento'} *
               </Label>
               <Input
                 type="text"
@@ -443,8 +471,11 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
                   formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
                   formData.tipoDocumento === 'CE' ? 'Ingrese 12 dígitos' :
                   formData.tipoDocumento === 'RUC' ? 'Ingrese 11 dígitos' :
+                  formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' :
                   'Ingrese el número de documento'
                 }
+                pattern={formData.tipoDocumento === 'Pasaporte' ? '[A-Za-z][0-9]{7}' : undefined}
+                title={formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' : undefined}
               />
               {errors.numeroDocumento && <ErrorMessage>{errors.numeroDocumento}</ErrorMessage>}
             </FormGroup>
@@ -452,8 +483,8 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
 
           <SectionTitle>Información Personal</SectionTitle>
           
-          {/* Campos para DNI y CE */}
-          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') && (
+          {/* Campos para DNI, CE y Pasaporte */}
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') && (
             <FormRow>
               <FormGroup>
                 <Label htmlFor="nombres">Nombres *</Label>
@@ -547,19 +578,34 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
             {errors.direccion && <ErrorMessage>{errors.direccion}</ErrorMessage>}
           </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="ciudad">Ciudad *</Label>
-            <Input
-              type="text"
-              id="ciudad"
-              name="ciudad"
-              value={formData.ciudad}
-              onChange={handleInputChange}
-              $hasError={!!errors.ciudad}
-              placeholder="Ingrese la ciudad"
-            />
-            {errors.ciudad && <ErrorMessage>{errors.ciudad}</ErrorMessage>}
-          </FormGroup>
+          <SectionTitle>Ubigeo</SectionTitle>
+
+          <UbigeoSelector
+            value={{
+              departamentoId: formData.departamentoId,
+              provinciaId: formData.provinciaId,
+              distritoId: formData.distritoId,
+            }}
+            errors={{
+              departamentoId: errors.departamentoId,
+              provinciaId: errors.provinciaId,
+              distritoId: errors.distritoId,
+            }}
+            onChange={(vals) => {
+              setFormData(prev => ({
+                ...prev,
+                departamentoId: vals.departamentoId,
+                provinciaId: vals.provinciaId,
+                distritoId: vals.distritoId,
+              }));
+              setErrors(prev => ({
+                ...prev,
+                departamentoId: '',
+                provinciaId: '',
+                distritoId: '',
+              }));
+            }}
+          />
 
           <ButtonGroup>
             <Button type="button" $variant="secondary" onClick={onClose}>

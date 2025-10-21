@@ -79,16 +79,46 @@ model SystemEvent {
   @@map("system_events")
 }
 
+model Departamento {
+  id       String   @id
+  nombre   String
+  provincias Provincia[]
+  clients    Client[]
+
+  @@map("departments")
+}
+
+model Provincia {
+  id              String   @id
+  nombre          String
+  departamentoId  String
+  departamento    Departamento @relation(fields: [departamentoId], references: [id])
+  distritos       Distrito[]
+  clients         Client[]
+
+  @@map("provinces")
+}
+
+model Distrito {
+  id           String   @id
+  nombre       String
+  provinciaId  String
+  provincia    Provincia @relation(fields: [provinciaId], references: [id])
+  clients      Client[]
+
+  @@map("districts")
+}
+
 model Client {
   id               String   @id @default(cuid())
   // Tipo de entidad comercial (Cliente, Proveedor o Ambos)
   tipoEntidad      TipoEntidad @default(Cliente)
-  tipoDocumento    String   // DNI, RUC, CE
+  tipoDocumento    String   // DNI, RUC, CE, Pasaporte
   numeroDocumento  String   @unique // Número de documento único
   
   // Campos para DNI y CE (Personas Naturales)
-  nombres          String?  // Nombres (solo para DNI/CE)
-  apellidos        String?  // Apellidos (solo para DNI/CE)
+  nombres          String?  // Nombres (solo para DNI/CE/Pasaporte)
+  apellidos        String?  // Apellidos (solo para DNI/CE/Pasaporte)
   
   // Campos para RUC (Personas Jurídicas)
   razonSocial      String?  // Razón Social (solo para RUC)
@@ -96,8 +126,15 @@ model Client {
   // Campos comunes
   email            String   @unique // Email único del cliente
   telefono         String   // Teléfono de contacto
-  direccion        String   // Dirección completa
-  ciudad           String   // Ciudad de residencia
+  direccion        String   // Dirección
+
+  // Ubicación (Perú)
+  departamentoId   String
+  provinciaId      String
+  distritoId       String
+  departamento     Departamento @relation(fields: [departamentoId], references: [id])
+  provincia        Provincia    @relation(fields: [provinciaId], references: [id])
+  distrito         Distrito     @relation(fields: [distritoId], references: [id])
   
   // Auditoría de creación/actualización
   usuarioCreacion      String?

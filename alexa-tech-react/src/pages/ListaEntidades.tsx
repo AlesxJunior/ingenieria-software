@@ -6,6 +6,7 @@ import { useUI } from '../context/UIContext';
 import NuevaEntidadModal from '../components/NuevaEntidadModal';
 import EditarEntidadModal from '../components/EditarEntidadModal';
 import { media } from '../styles/breakpoints';
+import UbigeoSelector from '../components/UbigeoSelector';
 
 const TableContainer = styled.div`
   background-color: #fff;
@@ -273,9 +274,11 @@ const ListaEntidades: React.FC = () => {
   // Estados para filtros avanzados
   const [tipoEntidadFilter, setTipoEntidadFilter] = useState('');
   const [tipoDocumentoFilter, setTipoDocumentoFilter] = useState('');
-  const [ciudadFilter, setCiudadFilter] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [departamentoIdFilter, setDepartamentoIdFilter] = useState('');
+  const [provinciaIdFilter, setProvinciaIdFilter] = useState('');
+  const [distritoIdFilter, setDistritoIdFilter] = useState('');
 
   // Función para aplicar filtros
   const applyFilters = () => {
@@ -284,9 +287,11 @@ const ListaEntidades: React.FC = () => {
     if (searchTerm) params.search = searchTerm;
     if (tipoEntidadFilter) params.tipoEntidad = tipoEntidadFilter;
     if (tipoDocumentoFilter) params.tipoDocumento = tipoDocumentoFilter;
-    if (ciudadFilter) params.ciudad = ciudadFilter;
     if (fechaDesde) params.fechaDesde = fechaDesde;
     if (fechaHasta) params.fechaHasta = fechaHasta;
+    if (departamentoIdFilter) params.departamentoId = departamentoIdFilter;
+    if (provinciaIdFilter) params.provinciaId = provinciaIdFilter;
+    if (distritoIdFilter) params.distritoId = distritoIdFilter;
     
     loadClients(params);
   };
@@ -298,7 +303,7 @@ const ListaEntidades: React.FC = () => {
     }, 500); // Debounce de 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, tipoEntidadFilter, tipoDocumentoFilter, ciudadFilter, fechaDesde, fechaHasta]);
+  }, [searchTerm, tipoEntidadFilter, tipoDocumentoFilter, fechaDesde, fechaHasta, departamentoIdFilter, provinciaIdFilter, distritoIdFilter]);
 
   const handleNuevoCliente = () => {
     setIsNuevoClienteModalOpen(true);
@@ -342,9 +347,11 @@ const ListaEntidades: React.FC = () => {
     setSearchTerm('');
     setTipoEntidadFilter('');
     setTipoDocumentoFilter('');
-    setCiudadFilter('');
     setFechaDesde('');
     setFechaHasta('');
+    setDepartamentoIdFilter('');
+    setProvinciaIdFilter('');
+    setDistritoIdFilter('');
     // Cargar todos los clientes sin filtros
     loadClients();
   };
@@ -408,25 +415,28 @@ const ListaEntidades: React.FC = () => {
                 <option value="DNI">DNI</option>
                 <option value="RUC">RUC</option>
                 <option value="CE">CE</option>
+                <option value="Pasaporte">Pasaporte</option>
               </select>
             </FilterGroup>
 
-            <FilterGroup>
-              <FilterLabel>Ciudad</FilterLabel>
-              <input
-                type="text"
-                value={ciudadFilter}
-                onChange={(e) => setCiudadFilter(e.target.value)}
-                placeholder="Filtrar por ciudad"
-                style={{
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  width: '150px'
-                }}
-              />
-            </FilterGroup>
+
+          </FilterRow>
+
+          {/* Ubigeo: Departamento, Provincia, Distrito */}
+          <FilterRow>
+            <UbigeoSelector
+              compact
+              value={{
+                departamentoId: departamentoIdFilter || '',
+                provinciaId: provinciaIdFilter || '',
+                distritoId: distritoIdFilter || ''
+              }}
+              onChange={(v) => {
+                setDepartamentoIdFilter(v.departamentoId || '');
+                setProvinciaIdFilter(v.provinciaId || '');
+                setDistritoIdFilter(v.distritoId || '');
+              }}
+            />
           </FilterRow>
 
           <FilterRow>

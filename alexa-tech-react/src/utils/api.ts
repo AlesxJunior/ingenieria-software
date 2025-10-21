@@ -424,9 +424,11 @@ class ApiService {
     search?: string;
     tipoEntidad?: 'Cliente' | 'Proveedor' | 'Ambos';
     tipoDocumento?: string;
-    ciudad?: string;
     fechaDesde?: string;
     fechaHasta?: string;
+    departamentoId?: string;
+    provinciaId?: string;
+    distritoId?: string;
   }): Promise<ApiResponse<{
     clients: any[];
     pagination: {
@@ -443,9 +445,11 @@ class ApiService {
     if (params?.search) queryParams.append('search', params.search);
     if (params?.tipoEntidad) queryParams.append('tipoEntidad', params.tipoEntidad);
     if (params?.tipoDocumento) queryParams.append('tipoDocumento', params.tipoDocumento);
-    if (params?.ciudad) queryParams.append('ciudad', params.ciudad);
     if (params?.fechaDesde) queryParams.append('fechaDesde', params.fechaDesde);
     if (params?.fechaHasta) queryParams.append('fechaHasta', params.fechaHasta);
+    if (params?.departamentoId) queryParams.append('departamentoId', params.departamentoId);
+    if (params?.provinciaId) queryParams.append('provinciaId', params.provinciaId);
+    if (params?.distritoId) queryParams.append('distritoId', params.distritoId);
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/entidades?${queryString}` : '/entidades';
@@ -454,12 +458,50 @@ class ApiService {
   }
 
   async getClientById(id: string): Promise<ApiResponse<any>> {
-    return this.request(`/entidades/${id}`);
+     return this.request(`/entidades/${id}`);
+   }
+
+  // ==== Ubigeo ====
+  async getDepartamentos(): Promise<ApiResponse<Array<{ id: string; nombre: string }>>> {
+    const res = await this.get<{ departamentos: Array<{ id: string; nombre: string }> }>(
+      '/ubigeo/departamentos'
+    );
+    if (res.success) {
+      const data = Array.isArray(res.data?.departamentos) ? res.data!.departamentos : [];
+      return { success: res.success, message: res.message, data, error: res.error };
+    }
+    return { success: res.success, message: res.message, data: [], error: res.error };
+  }
+
+  async getProvincias(
+    departamentoId: string
+  ): Promise<ApiResponse<Array<{ id: string; nombre: string; departamentoId: string }>>> {
+    const res = await this.get<{ provincias: Array<{ id: string; nombre: string; departamentoId: string }> }>(
+      `/ubigeo/departamentos/${departamentoId}/provincias`
+    );
+    if (res.success) {
+      const data = Array.isArray(res.data?.provincias) ? res.data!.provincias : [];
+      return { success: res.success, message: res.message, data, error: res.error };
+    }
+    return { success: res.success, message: res.message, data: [], error: res.error };
+  }
+
+  async getDistritos(
+    provinciaId: string
+  ): Promise<ApiResponse<Array<{ id: string; nombre: string; provinciaId: string }>>> {
+    const res = await this.get<{ distritos: Array<{ id: string; nombre: string; provinciaId: string }> }>(
+      `/ubigeo/provincias/${provinciaId}/distritos`
+    );
+    if (res.success) {
+      const data = Array.isArray(res.data?.distritos) ? res.data!.distritos : [];
+      return { success: res.success, message: res.message, data, error: res.error };
+    }
+    return { success: res.success, message: res.message, data: [], error: res.error };
   }
 
   async createClient(clientData: {
     tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
-    tipoDocumento: 'DNI' | 'CE' | 'RUC';
+    tipoDocumento: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
     numeroDocumento: string;
     nombres?: string;
     apellidos?: string;
@@ -467,7 +509,12 @@ class ApiService {
     email: string;
     telefono: string;
     direccion: string;
-    ciudad: string;
+    // Ubigeo
+    departamentoId: string;
+    provinciaId: string;
+    distritoId: string;
+    // Campo opcional manteniendo compatibilidad
+    ciudad?: string;
   }): Promise<ApiResponse<any>> {
     return this.request('/entidades', {
       method: 'POST',
@@ -477,7 +524,7 @@ class ApiService {
 
   async updateClient(id: string, clientData: {
     tipoEntidad?: 'Cliente' | 'Proveedor' | 'Ambos';
-    tipoDocumento?: 'DNI' | 'CE' | 'RUC';
+    tipoDocumento?: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
     numeroDocumento?: string;
     nombres?: string;
     apellidos?: string;
@@ -485,6 +532,10 @@ class ApiService {
     email?: string;
     telefono?: string;
     direccion?: string;
+    // Ubigeo
+    departamentoId?: string;
+    provinciaId?: string;
+    distritoId?: string;
     ciudad?: string;
     isActive?: boolean;
   }): Promise<ApiResponse<any>> {

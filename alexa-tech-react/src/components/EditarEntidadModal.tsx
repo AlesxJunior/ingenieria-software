@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
+import UbigeoSelector from './UbigeoSelector';
 
 interface Client {
   id: string;
@@ -12,9 +13,28 @@ interface Client {
   direccion: string;
   ciudad: string;
   tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
-  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  tipoDocumento: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
   numeroDocumento: string;
   isActive: boolean;
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
+}
+
+interface ClienteFormData {
+  tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
+  tipoDocumento: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
+  numeroDocumento: string;
+  nombres?: string;
+  apellidos?: string;
+  razonSocial?: string;
+  email: string;
+  telefono: string;
+  direccion: string;
+  // Ubigeo
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
 }
 
 interface EditarClienteModalProps {
@@ -171,38 +191,52 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
   onSave
 }) => {
   const { showNotification } = useNotification();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ClienteFormData>({
+    tipoEntidad: 'Cliente',
+    tipoDocumento: 'DNI',
+    numeroDocumento: '',
     nombres: '',
     apellidos: '',
     razonSocial: '',
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: '',
-    tipoEntidad: 'Cliente' as 'Cliente' | 'Proveedor' | 'Ambos',
-    tipoDocumento: 'DNI' as 'DNI' | 'CE' | 'RUC',
-    numeroDocumento: ''
+    departamentoId: '',
+    provinciaId: '',
+    distritoId: '',
   });
+  const [errors, setErrors] = useState<{ departamentoId?: string; provinciaId?: string; distritoId?: string }>({});
 
   useEffect(() => {
     if (client) {
       setFormData({
+        tipoEntidad: client.tipoEntidad,
+        tipoDocumento: client.tipoDocumento,
+        numeroDocumento: client.numeroDocumento,
         nombres: client.nombres || '',
         apellidos: client.apellidos || '',
         razonSocial: client.razonSocial || '',
         email: client.email,
         telefono: client.telefono,
         direccion: client.direccion,
-        ciudad: client.ciudad,
-        tipoEntidad: client.tipoEntidad,
-        tipoDocumento: client.tipoDocumento,
-        numeroDocumento: client.numeroDocumento
+        departamentoId: client.departamentoId || '',
+        provinciaId: client.provinciaId || '',
+        distritoId: client.distritoId || ''
       });
     }
   }, [client]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const newErrors: { departamentoId?: string; provinciaId?: string; distritoId?: string } = {};
+    if (!formData.departamentoId) newErrors.departamentoId = 'El departamento es requerido';
+    if (!formData.provinciaId) newErrors.provinciaId = 'La provincia es requerida';
+    if (!formData.distritoId) newErrors.distritoId = 'El distrito es requerido';
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      showNotification('error', 'Validación', 'Complete los campos de Ubigeo');
+      return;
+    }
     try {
       // Construir datos del cliente según tipo de documento
       const clientData: any = {
@@ -212,11 +246,13 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
         email: formData.email,
         telefono: formData.telefono,
         direccion: formData.direccion,
-        ciudad: formData.ciudad
+        departamentoId: formData.departamentoId || '',
+        provinciaId: formData.provinciaId || '',
+        distritoId: formData.distritoId || ''
       };
 
       // Agregar campos específicos según tipo de documento
-      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') {
         clientData.nombres = formData.nombres;
         clientData.apellidos = formData.apellidos;
       } else if (formData.tipoDocumento === 'RUC') {
@@ -299,6 +335,7 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
                 <option value="DNI">DNI</option>
                 <option value="CE">Carnet de Extranjería</option>
                 <option value="RUC">RUC</option>
+                <option value="Pasaporte">Pasaporte</option>
               </Select>
             </FormGroup>
             
@@ -306,7 +343,8 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
               <Label htmlFor="numeroDocumento">
                 Número de {formData.tipoDocumento === 'DNI' ? 'DNI' : 
                           formData.tipoDocumento === 'CE' ? 'Carnet de Extranjería' : 
-                          formData.tipoDocumento === 'RUC' ? 'RUC' : 'Documento'}
+                          formData.tipoDocumento === 'RUC' ? 'RUC' : 
+                          formData.tipoDocumento === 'Pasaporte' ? 'Pasaporte' : 'Documento'}
               </Label>
               <Input
                 type="text"
@@ -318,6 +356,7 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
                   formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
                   formData.tipoDocumento === 'CE' ? 'Ingrese 12 dígitos' :
                   formData.tipoDocumento === 'RUC' ? 'Ingrese 11 dígitos' :
+                  formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' :
                   'Ingrese el número de documento'
                 }
                 required
@@ -325,8 +364,8 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
             </FormGroup>
           </FormRow>
 
-          {/* Campos para DNI y CE */}
-          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') && (
+          {/* Campos para DNI, CE y Pasaporte */}
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') && (
             <FormRow>
               <FormGroup>
                 <Label htmlFor="nombres">Nombres</Label>
@@ -408,16 +447,36 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
           </FormGroup>
           
           <FormGroup>
-            <Label htmlFor="ciudad">Ciudad</Label>
-            <Input
-              type="text"
-              id="ciudad"
-              name="ciudad"
-              value={formData.ciudad}
-              onChange={handleChange}
-              required
+            <Label>Ubigeo</Label>
+            <UbigeoSelector
+              value={{
+                departamentoId: formData.departamentoId,
+                provinciaId: formData.provinciaId,
+                distritoId: formData.distritoId,
+              }}
+              errors={{
+                departamentoId: errors.departamentoId,
+                provinciaId: errors.provinciaId,
+                distritoId: errors.distritoId,
+              }}
+              onChange={(vals) => {
+                setFormData(prev => ({
+                  ...prev,
+                  departamentoId: vals.departamentoId,
+                  provinciaId: vals.provinciaId,
+                  distritoId: vals.distritoId,
+                }));
+                setErrors(prev => ({
+                  ...prev,
+                  departamentoId: '',
+                  provinciaId: '',
+                  distritoId: '',
+                }));
+              }}
             />
           </FormGroup>
+          
+          {/* Campo de ciudad eliminado en favor de Ubigeo */}
           
           <ButtonGroup>
             <Button type="button" $variant="secondary" onClick={onClose}>

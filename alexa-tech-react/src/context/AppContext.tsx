@@ -31,17 +31,3 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     </AuthProvider>
   );
 };
-
-// Exportar los hooks de los nuevos contextos para fácil acceso
-export { useAuth } from './AuthContext';
-export { useNotification } from './NotificationContext';
-export { useModal } from './ModalContext';
-export { useUI } from './UIContext';
-export { useProducts } from './ProductContext';
-export { useClients } from './ClientContext';
-export { useSales } from './SalesContext';
-
-// Exportar las interfaces para que sigan estando disponibles desde un único lugar si se desea
-export type { Product } from './ProductContext';
-export type { Client } from './ClientContext';
-export type { Sale, SaleItem, CashRegister } from './SalesContext';

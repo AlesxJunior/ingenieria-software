@@ -5,6 +5,7 @@ import entidadRoutes from './entidadRoutes';
 import auditRoutes from './auditRoutes';
 import productRoutes from './productRoutes';
 import purchaseRoutes from './purchaseRoutes';
+import ubigeoRoutes from './ubigeoRoutes';
 
 const router = Router();
 
@@ -22,6 +23,9 @@ router.use('/productos', productRoutes);
 
 // Rutas de compras
 router.use('/compras', purchaseRoutes);
+
+// Rutas de ubigeo
+router.use('/ubigeo', ubigeoRoutes);
 
 // Rutas de auditoría
 router.use('/audit', auditRoutes);
@@ -56,6 +60,7 @@ router.get('/', (req, res) => {
         productos: '/api/productos',
         compras: '/api/compras',
         audit: '/api/audit',
+        ubigeo: '/api/ubigeo',
         health: '/api/health',
       },
       documentation: 'En desarrollo',

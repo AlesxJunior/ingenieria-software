@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useClients } from '../context/ClientContext';
+import UbigeoSelector from '../components/UbigeoSelector';
 
 const FormContainer = styled.div`
   max-width: 600px;
@@ -125,7 +126,7 @@ const Button = styled.button`
 `;
 
 interface FormData {
-  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  tipoDocumento: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
   numeroDocumento: string;
   nombres?: string;
   apellidos?: string;
@@ -134,6 +135,10 @@ interface FormData {
   telefono: string;
   direccion: string;
   ciudad: string;
+  // Ubigeo
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
 }
 
 interface FormErrors {
@@ -145,6 +150,10 @@ interface FormErrors {
   telefono?: string;
   direccion?: string;
   ciudad?: string;
+  // Ubigeo
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
 }
 
 const EditarEntidad: React.FC = () => {
@@ -161,7 +170,10 @@ const EditarEntidad: React.FC = () => {
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: ''
+    ciudad: '',
+    departamentoId: '',
+    provinciaId: '',
+    distritoId: ''
   });
   
   const [errors, setErrors] = useState<FormErrors>({});
@@ -180,7 +192,10 @@ const EditarEntidad: React.FC = () => {
           email: client.email,
           telefono: client.telefono,
           direccion: client.direccion,
-          ciudad: client.ciudad
+          ciudad: client.ciudad,
+          departamentoId: client.departamentoId || '',
+          provinciaId: client.provinciaId || '',
+          distritoId: client.distritoId || ''
         });
         setIsLoading(false);
       } else {
@@ -198,7 +213,7 @@ const EditarEntidad: React.FC = () => {
     if (name === 'tipoDocumento') {
       setFormData(prev => ({
         ...prev,
-        [name]: value as 'DNI' | 'CE' | 'RUC',
+        [name]: value as 'DNI' | 'CE' | 'RUC' | 'Pasaporte',
         numeroDocumento: '',
         nombres: '',
         apellidos: '',
@@ -210,6 +225,10 @@ const EditarEntidad: React.FC = () => {
         value = value.replace(/\D+/g, '');
         const maxLen = formData.tipoDocumento === 'DNI' ? 8 : formData.tipoDocumento === 'CE' ? 12 : 11;
         if (value.length > maxLen) value = value.slice(0, maxLen);
+      }
+      if (name === 'numeroDocumento' && formData.tipoDocumento === 'Pasaporte') {
+        value = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (value.length > 8) value = value.slice(0, 8);
       }
       setFormData(prev => ({
         ...prev,
@@ -247,10 +266,14 @@ const EditarEntidad: React.FC = () => {
       if (!/^\d{11}$/.test(formData.numeroDocumento)) {
         newErrors.numeroDocumento = 'El RUC debe tener 11 dígitos';
       }
+    } else if (formData.tipoDocumento === 'Pasaporte') {
+      if (!/^[A-Z][0-9]{7}$/.test(formData.numeroDocumento.trim().toUpperCase())) {
+        newErrors.numeroDocumento = 'El Pasaporte debe ser Letra + 7 dígitos (ej: A1234567)';
+      }
     }
 
     // Validar campos según tipo de documento
-    if (['DNI', 'CE'].includes(formData.tipoDocumento)) {
+    if (['DNI', 'CE', 'Pasaporte'].includes(formData.tipoDocumento)) {
       if (!formData.nombres?.trim()) {
         newErrors.nombres = 'Los nombres son requeridos';
       }
@@ -282,9 +305,15 @@ const EditarEntidad: React.FC = () => {
       newErrors.direccion = 'La dirección es requerida';
     }
 
-    // Validar ciudad
-    if (!formData.ciudad.trim()) {
-      newErrors.ciudad = 'La ciudad es requerida';
+    // Validar Ubigeo
+    if (!formData.departamentoId) {
+      newErrors.departamentoId = 'El departamento es requerido';
+    }
+    if (!formData.provinciaId) {
+      newErrors.provinciaId = 'La provincia es requerida';
+    }
+    if (!formData.distritoId) {
+      newErrors.distritoId = 'El distrito es requerido';
     }
 
     setErrors(newErrors);
@@ -307,11 +336,14 @@ const EditarEntidad: React.FC = () => {
           email: formData.email,
           telefono: formData.telefono,
           direccion: formData.direccion,
-          ciudad: formData.ciudad
+          ciudad: formData.ciudad,
+          departamentoId: formData.departamentoId || '',
+          provinciaId: formData.provinciaId || '',
+          distritoId: formData.distritoId || ''
         };
 
         // Agregar campos condicionales según tipo de documento
-        if (['DNI', 'CE'].includes(formData.tipoDocumento)) {
+        if (['DNI', 'CE', 'Pasaporte'].includes(formData.tipoDocumento)) {
           updateData.nombres = formData.nombres;
           updateData.apellidos = formData.apellidos;
         } else if (formData.tipoDocumento === 'RUC') {
@@ -358,6 +390,7 @@ const EditarEntidad: React.FC = () => {
               <option value="DNI">DNI</option>
               <option value="CE">CE</option>
               <option value="RUC">RUC</option>
+              <option value="Pasaporte">Pasaporte</option>
             </Select>
           </FormGroup>
 
@@ -374,14 +407,17 @@ const EditarEntidad: React.FC = () => {
                 formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
                 formData.tipoDocumento === 'CE' ? 'Ingrese 12 dígitos' :
                 formData.tipoDocumento === 'RUC' ? 'Ingrese 11 dígitos' :
+                formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' :
                 'Ingrese el número de documento'
               }
+              pattern={formData.tipoDocumento === 'Pasaporte' ? '^[A-Z][0-9]{7}$' : undefined}
+              title={formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' : undefined}
             />
             {errors.numeroDocumento && <ErrorMessage>{errors.numeroDocumento}</ErrorMessage>}
           </FormGroup>
 
           {/* Campos condicionales según tipo de documento */}
-          {['DNI', 'CE'].includes(formData.tipoDocumento) && (
+          {['DNI', 'CE', 'Pasaporte'].includes(formData.tipoDocumento) && (
             <FormRow>
               <FormGroup>
                 <Label htmlFor="nombres">Nombres</Label>
@@ -473,17 +509,33 @@ const EditarEntidad: React.FC = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="ciudad">Ciudad</Label>
-              <Input
-                type="text"
-                id="ciudad"
-                name="ciudad"
-                value={formData.ciudad}
-                onChange={handleInputChange}
-                className={errors.ciudad ? 'error' : ''}
-                placeholder="Ingrese la ciudad"
+              <Label>Ubigeo</Label>
+              <UbigeoSelector
+                value={{
+                  departamentoId: formData.departamentoId,
+                  provinciaId: formData.provinciaId,
+                  distritoId: formData.distritoId,
+                }}
+                errors={{
+                  departamentoId: errors.departamentoId,
+                  provinciaId: errors.provinciaId,
+                  distritoId: errors.distritoId,
+                }}
+                onChange={(vals) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    departamentoId: vals.departamentoId,
+                    provinciaId: vals.provinciaId,
+                    distritoId: vals.distritoId,
+                  }));
+                  setErrors(prev => ({
+                    ...prev,
+                    departamentoId: undefined,
+                    provinciaId: undefined,
+                    distritoId: undefined,
+                  }));
+                }}
               />
-              {errors.ciudad && <ErrorMessage>{errors.ciudad}</ErrorMessage>}
             </FormGroup>
           </FormRow>
 

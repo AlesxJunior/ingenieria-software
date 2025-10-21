@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import { useClients } from '../context/ClientContext';
 import { useNotification } from '../context/NotificationContext';
 import { media } from '../styles/breakpoints';
+import UbigeoSelector from '../components/UbigeoSelector';
 
 const FormContainer = styled.div`
   max-width: 800px;
@@ -188,7 +189,7 @@ const ErrorMessage = styled.span`
 
 interface FormData {
   tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
-  tipoDocumento: 'DNI' | 'CE' | 'RUC';
+  tipoDocumento: 'DNI' | 'CE' | 'RUC' | 'Pasaporte';
   numeroDocumento: string;
   // Campos para DNI y CE
   nombres?: string;
@@ -200,6 +201,10 @@ interface FormData {
   telefono: string;
   direccion: string;
   ciudad: string;
+  // Ubigeo
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
 }
 
 interface FormErrors {
@@ -211,6 +216,10 @@ interface FormErrors {
   ciudad?: string;
   telefono?: string;
   email?: string;
+  // Ubigeo
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
 }
 
 const RegistroEntidad: React.FC = () => {
@@ -228,7 +237,10 @@ const RegistroEntidad: React.FC = () => {
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: ''
+    ciudad: '',
+    departamentoId: '',
+    provinciaId: '',
+    distritoId: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -238,7 +250,7 @@ const RegistroEntidad: React.FC = () => {
     const newErrors: FormErrors = {};
 
     // Validar campos según tipo de documento
-    if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+    if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') {
       // Validar nombres
       if (!formData.nombres?.trim()) {
         newErrors.nombres = 'Los nombres son requeridos';
@@ -277,6 +289,10 @@ const RegistroEntidad: React.FC = () => {
         if (!/^\d{11}$/.test(formData.numeroDocumento)) {
           newErrors.numeroDocumento = 'El RUC debe tener 11 dígitos';
         }
+      } else if (formData.tipoDocumento === 'Pasaporte') {
+        if (!/^[A-Z][0-9]{7}$/.test(formData.numeroDocumento.trim().toUpperCase())) {
+          newErrors.numeroDocumento = 'El Pasaporte debe ser Letra + 7 dígitos (ej: A1234567)';
+        }
       }
     }
 
@@ -299,9 +315,15 @@ const RegistroEntidad: React.FC = () => {
       newErrors.direccion = 'La dirección es requerida';
     }
 
-    // Validar ciudad
-    if (!formData.ciudad.trim()) {
-      newErrors.ciudad = 'La ciudad es requerida';
+    // Validar Ubigeo
+    if (!formData.departamentoId?.trim()) {
+      newErrors.departamentoId = 'El departamento es requerido';
+    }
+    if (!formData.provinciaId?.trim()) {
+      newErrors.provinciaId = 'La provincia es requerida';
+    }
+    if (!formData.distritoId?.trim()) {
+      newErrors.distritoId = 'El distrito es requerido';
     }
 
     setErrors(newErrors);
@@ -318,12 +340,17 @@ const RegistroEntidad: React.FC = () => {
       const maxLen = formData.tipoDocumento === 'DNI' ? 8 : formData.tipoDocumento === 'CE' ? 12 : 11;
       if (value.length > maxLen) value = value.slice(0, maxLen);
     }
+    // Normalización y límites para Pasaporte
+    if (name === 'numeroDocumento' && formData.tipoDocumento === 'Pasaporte') {
+      value = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (value.length > 8) value = value.slice(0, 8);
+    }
 
     // Si cambia el tipo de documento, limpiar campos específicos
     if (name === 'tipoDocumento') {
       setFormData(prev => ({
         ...prev,
-        [name]: value as 'DNI' | 'CE' | 'RUC',
+        [name]: value as 'DNI' | 'CE' | 'RUC' | 'Pasaporte',
         nombres: '',
         apellidos: '',
         razonSocial: '',
@@ -372,10 +399,13 @@ const RegistroEntidad: React.FC = () => {
         email: formData.email.trim(),
         telefono: formData.telefono.trim(),
         direccion: formData.direccion.trim(),
-        ciudad: formData.ciudad.trim()
+        ciudad: formData.ciudad.trim(),
+        departamentoId: formData.departamentoId || '',
+        provinciaId: formData.provinciaId || '',
+        distritoId: formData.distritoId || ''
       };
 
-      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') {
+      if (formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') {
         clientData.nombres = formData.nombres?.trim();
         clientData.apellidos = formData.apellidos?.trim();
       } else if (formData.tipoDocumento === 'RUC') {
@@ -398,7 +428,10 @@ const RegistroEntidad: React.FC = () => {
         email: '',
         telefono: '',
         direccion: '',
-        ciudad: ''
+        ciudad: '',
+        departamentoId: '',
+        provinciaId: '',
+        distritoId: ''
       });
 
       // Navegar a la lista de entidades después de un breve delay
@@ -453,6 +486,7 @@ const RegistroEntidad: React.FC = () => {
                 <option value="DNI">DNI</option>
                 <option value="CE">CE (Carnet de Extranjería)</option>
                 <option value="RUC">RUC</option>
+                <option value="Pasaporte">Pasaporte</option>
               </Select>
             </FormGroup>
 
@@ -467,8 +501,12 @@ const RegistroEntidad: React.FC = () => {
                 placeholder={
                   formData.tipoDocumento === 'DNI' ? 'Ingrese 8 dígitos' :
                   formData.tipoDocumento === 'CE' ? 'Ingrese 12 dígitos' :
-                  'Ingrese 11 dígitos'
+                  formData.tipoDocumento === 'RUC' ? 'Ingrese 11 dígitos' :
+                  formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' :
+                  'Ingrese el número de documento'
                 }
+                pattern={formData.tipoDocumento === 'Pasaporte' ? '^[A-Z][0-9]{7}$' : undefined}
+                title={formData.tipoDocumento === 'Pasaporte' ? 'Letra + 7 dígitos (ej: A1234567)' : undefined}
                 required
               />
               {errors.numeroDocumento && <ErrorMessage>{errors.numeroDocumento}</ErrorMessage>}
@@ -476,7 +514,7 @@ const RegistroEntidad: React.FC = () => {
           </FormRow>
 
           {/* Campos dinámicos según tipo de documento */}
-          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE') && (
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'CE' || formData.tipoDocumento === 'Pasaporte') && (
             <FormRow>
               <FormGroup>
                 <Label htmlFor="nombres">Nombres *</Label>
@@ -570,19 +608,32 @@ const RegistroEntidad: React.FC = () => {
               {errors.direccion && <ErrorMessage>{errors.direccion}</ErrorMessage>}
             </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="ciudad">Ciudad *</Label>
-              <Input
-                type="text"
-                id="ciudad"
-                name="ciudad"
-                value={formData.ciudad}
-                onChange={handleInputChange}
-                placeholder="Ingrese la ciudad"
-                required
-              />
-              {errors.ciudad && <ErrorMessage>{errors.ciudad}</ErrorMessage>}
-            </FormGroup>
+            <UbigeoSelector
+              value={{
+                departamentoId: formData.departamentoId || '',
+                provinciaId: formData.provinciaId || '',
+                distritoId: formData.distritoId || ''
+              }}
+              errors={{
+                departamentoId: errors.departamentoId,
+                provinciaId: errors.provinciaId,
+                distritoId: errors.distritoId
+              }}
+              onChange={({ departamentoId, provinciaId, distritoId }) => {
+                setFormData(prev => ({
+                  ...prev,
+                  departamentoId,
+                  provinciaId,
+                  distritoId
+                }));
+                setErrors(prev => ({
+                  ...prev,
+                  departamentoId: undefined,
+                  provinciaId: undefined,
+                  distritoId: undefined
+                }));
+              }}
+            />
           </FormRow>
 
           <ButtonContainer>

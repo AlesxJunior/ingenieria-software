@@ -159,7 +159,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
 
 const CrearUsuario: React.FC = () => {
   const navigate = useNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess, showError, showNotification } = useNotification();
 
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
@@ -257,7 +257,7 @@ const CrearUsuario: React.FC = () => {
       }
     } catch (error) {
       const errorMessage = (error as Error).message || 'Error al crear el usuario. Es posible que no tengas permisos.';
-      showError('Error de Creación', errorMessage);
+      showNotification('error', 'Error de Creación', errorMessage);
     } finally {
       setIsSubmitting(false);
     }

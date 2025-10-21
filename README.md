@@ -418,6 +418,49 @@ lsof -i :3001
 lsof -i :5173
 ```
 
+## 🧭 Preflight y Reset Rápido
+
+- Backend en `http://localhost:3001/api`; BD en `localhost:5433`.
+- Frontend en `http://localhost:5173`; `VITE_API_URL=http://localhost:3001/api`.
+- `DATABASE_URL` apuntando a `5433` en `alexa-tech-backend/.env`.
+
+### Preflight
+```powershell
+# Verificar puerto de PostgreSQL (Windows)
+Test-NetConnection -ComputerName localhost -Port 5433
+
+# Estado de migraciones Prisma
+npx prisma migrate status
+
+# Salud de API y login (usa credenciales semilla por defecto)
+API_URL=http://localhost:3001/api node scripts/check-auth-health.js
+```
+
+### Reset Rápido
+```powershell
+# Re-sincronizar esquema con la BD
+npx prisma migrate dev
+
+# Poblar datos semilla (usuarios, productos, entidades)
+npm run db:seed
+
+# Limpiar tokens del navegador y reintentar login
+# Abrir consola del navegador:
+localStorage.clear()
+```
+
+### Golden Path (debe pasar siempre)
+- Backend responde `HEALTH: OK` y `LOGIN: OK`.
+- Seed crea 4 usuarios, 10 productos y 10 entidades.
+- Login con `admin@alexatech.com / admin123` funciona.
+- Listas principales cargan con permisos correctos.
+
+### Evitar Pitfalls
+- No alternar el puerto de BD: mantener `5433` consistente.
+- Si cambias el esquema, genera migración antes del seed.
+- Tras cambios de backend, limpia tokens (`localStorage.clear()`).
+- Si ves errores `EPERM rename` en Windows, evita rutas bajo `OneDrive` para Prisma/Node.
+
 ## 👤 Usuarios de Prueba
 
 El sistema incluye usuarios predefinidos para pruebas:

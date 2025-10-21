@@ -18,10 +18,13 @@ export interface CreateClientData {
   email: string;
   telefono: string;
   direccion: string;
-  ciudad: string;
+  // Ubicación (ubigeo)
+  departamentoId: string;
+  provinciaId: string;
+  distritoId: string;
   // Campos condicionales según tipo de documento
-  nombres?: string; // Para DNI y CE
-  apellidos?: string; // Para DNI y CE
+  nombres?: string; // Para DNI, CE y Pasaporte
+  apellidos?: string; // Para DNI, CE y Pasaporte
   razonSocial?: string; // Para RUC
 }
 
@@ -32,17 +35,23 @@ export interface UpdateClientData {
   email?: string;
   telefono?: string;
   direccion?: string;
-  ciudad?: string;
+  // Ubicación (ubigeo)
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
   isActive?: boolean;
   // Campos condicionales según tipo de documento
-  nombres?: string; // Para DNI y CE
-  apellidos?: string; // Para DNI y CE
+  nombres?: string; // Para DNI, CE y Pasaporte
+  apellidos?: string; // Para DNI, CE y Pasaporte
   razonSocial?: string; // Para RUC
 }
 
 export interface ClientFilters {
   search?: string;
-  ciudad?: string;
+  // Ubicación (ubigeo)
+  departamentoId?: string;
+  provinciaId?: string;
+  distritoId?: string;
   tipoDocumento?: string;
   tipoEntidad?: TipoEntidad | 'Cliente' | 'Proveedor' | 'Ambos';
   fechaDesde?: string;
@@ -64,32 +73,39 @@ export const clientService = {
         );
       }
 
+      // Normalizar número de documento
+      const normalizedDocument = String(data.numeroDocumento).trim().toUpperCase();
+
       // Validar formato de número de documento por tipo
       if (data.tipoDocumento === 'DNI') {
-        if (!/^\d{8}$/.test(String(data.numeroDocumento))) {
+        if (!/^\d{8}$/.test(normalizedDocument)) {
           throw new Error('El DNI debe tener exactamente 8 dígitos numéricos');
         }
       } else if (data.tipoDocumento === 'CE') {
-        if (!/^\d{12}$/.test(String(data.numeroDocumento))) {
+        if (!/^\d{12}$/.test(normalizedDocument)) {
           throw new Error('El CE debe tener exactamente 12 dígitos numéricos');
         }
       } else if (data.tipoDocumento === 'RUC') {
-        if (!/^\d{11}$/.test(String(data.numeroDocumento))) {
+        if (!/^\d{11}$/.test(normalizedDocument)) {
           throw new Error('El RUC debe tener exactamente 11 dígitos numéricos');
+        }
+      } else if (data.tipoDocumento === 'Pasaporte') {
+        if (!/^[A-Z][0-9]{7}$/.test(normalizedDocument)) {
+          throw new Error('El Pasaporte debe tener el formato: 1 letra seguida de 7 dígitos (ej: A1234567)');
         }
       }
 
       // Validar campos según tipo de documento
-      if (['DNI', 'CE'].includes(data.tipoDocumento)) {
+      if (['DNI', 'CE', 'Pasaporte'].includes(data.tipoDocumento)) {
         if (!data.nombres || !data.apellidos) {
-          throw new Error('Para DNI y CE son requeridos nombres y apellidos');
+          throw new Error('Para DNI, CE y Pasaporte son requeridos nombres y apellidos');
         }
         if (
           typeof data.nombres !== 'string' ||
           data.nombres.trim().length < 2
         ) {
           throw new Error(
-            'Para DNI y CE, los nombres deben tener al menos 2 caracteres',
+            'Para DNI, CE y Pasaporte, los nombres deben tener al menos 2 caracteres',
           );
         }
         if (
@@ -97,7 +113,7 @@ export const clientService = {
           data.apellidos.trim().length < 2
         ) {
           throw new Error(
-            'Para DNI y CE, los apellidos deben tener al menos 2 caracteres',
+            'Para DNI, CE y Pasaporte, los apellidos deben tener al menos 2 caracteres',
           );
         }
       } else if (data.tipoDocumento === 'RUC') {
@@ -112,6 +128,32 @@ export const clientService = {
             'Para RUC, la razón social debe tener al menos 2 caracteres',
           );
         }
+      }
+
+      // Validar ubigeo (existencia y consistencia)
+      const departamento = await prisma.departamento.findUnique({
+        where: { id: data.departamentoId },
+      });
+      if (!departamento) {
+        throw new Error('Departamento inválido');
+      }
+      const provincia = await prisma.provincia.findUnique({
+        where: { id: data.provinciaId },
+      });
+      if (!provincia) {
+        throw new Error('Provincia inválida');
+      }
+      if (provincia.departamentoId !== data.departamentoId) {
+        throw new Error('La provincia no pertenece al departamento seleccionado');
+      }
+      const distrito = await prisma.distrito.findUnique({
+        where: { id: data.distritoId },
+      });
+      if (!distrito) {
+        throw new Error('Distrito inválido');
+      }
+      if (distrito.provinciaId !== data.provinciaId) {
+        throw new Error('El distrito no pertenece a la provincia seleccionada');
       }
 
       // Verificar si el email ya existe
@@ -142,16 +184,19 @@ export const clientService = {
       const clientData: any = {
         tipoEntidad: data.tipoEntidad as TipoEntidad,
         tipoDocumento: data.tipoDocumento,
-        numeroDocumento: data.numeroDocumento.trim(),
+        numeroDocumento: normalizedDocument,
         email: data.email.toLowerCase().trim(),
         telefono: data.telefono.trim(),
         direccion: data.direccion.trim(),
-        ciudad: data.ciudad.trim(),
+        // Ubigeo
+        departamentoId: data.departamentoId,
+        provinciaId: data.provinciaId,
+        distritoId: data.distritoId,
         usuarioCreacion: userId || null,
       };
 
       // Agregar campos condicionales según tipo de documento
-      if (['DNI', 'CE'].includes(data.tipoDocumento)) {
+      if (['DNI', 'CE', 'Pasaporte'].includes(data.tipoDocumento)) {
         clientData.nombres = data.nombres!.trim();
         clientData.apellidos = data.apellidos!.trim();
       } else if (data.tipoDocumento === 'RUC') {
@@ -201,9 +246,15 @@ export const clientService = {
         ];
       }
 
-      // Filtro por ciudad
-      if (filters.ciudad) {
-        where.ciudad = { contains: filters.ciudad, mode: 'insensitive' };
+      // Filtro por ubicación (ubigeo)
+      if (filters.departamentoId) {
+        where.departamentoId = filters.departamentoId;
+      }
+      if (filters.provinciaId) {
+        where.provinciaId = filters.provinciaId;
+      }
+      if (filters.distritoId) {
+        where.distritoId = filters.distritoId;
       }
 
       // Filtro por tipo de documento
@@ -218,145 +269,83 @@ export const clientService = {
 
       // Filtro por rango de fechas
       if (filters.fechaDesde || filters.fechaHasta) {
-        where.createdAt = {};
+        where.createdAt = {} as any;
 
         if (filters.fechaDesde) {
-          where.createdAt.gte = new Date(filters.fechaDesde);
+          (where.createdAt as any).gte = new Date(filters.fechaDesde);
         }
-
         if (filters.fechaHasta) {
-          // Agregar 23:59:59 para incluir todo el día
-          const fechaHasta = new Date(filters.fechaHasta);
-          fechaHasta.setHours(23, 59, 59, 999);
-          where.createdAt.lte = fechaHasta;
+          (where.createdAt as any).lte = new Date(filters.fechaHasta);
         }
       }
 
+      // Obtener lista de clientes
       const clients = await prisma.client.findMany({
         where,
-        orderBy: [
-          { apellidos: 'asc' },
-          { nombres: 'asc' },
-          { razonSocial: 'asc' },
-        ],
+        orderBy: { createdAt: 'desc' },
       });
-      // Respetar todos los registros activos: devolver tal cual sin filtrar
+
       return clients;
     } catch (error) {
       console.error('Error al obtener clientes:', error);
-      throw new Error('Error al obtener la lista de clientes');
-    }
-  },
-
-  // Obtener un cliente por ID
-  async getClientById(id: string): Promise<Client | null> {
-    try {
-      const client = await prisma.client.findFirst({
-        where: {
-          id,
-          isActive: true,
-        },
-      });
-
-      return client;
-    } catch (error) {
-      console.error('Error al obtener cliente:', error);
-      throw new Error('Error al obtener el cliente');
-    }
-  },
-
-  // Obtener un cliente por email
-  async getClientByEmail(email: string): Promise<Client | null> {
-    try {
-      const client = await prisma.client.findFirst({
-        where: {
-          email: email.toLowerCase(),
-          isActive: true,
-        },
-      });
-
-      return client;
-    } catch (error) {
-      console.error('Error al obtener cliente por email:', error);
-      throw new Error('Error al obtener el cliente');
-    }
-  },
-
-  // Obtener un cliente por número de documento
-  async getClientByDocument(numeroDocumento: string): Promise<Client | null> {
-    try {
-      const client = await prisma.client.findFirst({
-        where: {
-          numeroDocumento,
-          isActive: true,
-        },
-      });
-
-      return client;
-    } catch (error) {
-      console.error('Error al obtener cliente por documento:', error);
-      throw new Error('Error al obtener el cliente');
+      throw error;
     }
   },
 
   // Actualizar un cliente
-  async updateClient(
-    id: string,
-    data: UpdateClientData,
-    userId?: string,
-  ): Promise<Client> {
+  async updateClient(id: string, data: UpdateClientData, userId?: string): Promise<Client> {
     try {
-      // Verificar que el cliente existe
-      const existingClient = await this.getClientById(id);
+      // Validar existencia del cliente
+      const existingClient = await prisma.client.findUnique({ where: { id } });
       if (!existingClient) {
         throw new Error('Cliente no encontrado');
       }
 
-      // Verificar email único si se está actualizando
-      if (data.email && data.email !== existingClient.email) {
-        const clientWithEmail = await prisma.client.findFirst({
-          where: {
-            email: data.email.toLowerCase(),
-            isActive: true,
-            NOT: { id },
-          },
-        });
+      const tipoDocumento = data.tipoDocumento ?? existingClient.tipoDocumento;
+      const numeroDocumento = data.numeroDocumento ?? existingClient.numeroDocumento;
 
-        if (clientWithEmail) {
-          throw new Error('Ya existe un cliente con este email');
+      // Validaciones de documento si se actualiza
+      if (tipoDocumento) {
+        const expected = expectedLengthFor(tipoDocumento);
+        const digitsDoc = onlyDigits(numeroDocumento);
+        if (expected && digitsDoc.length !== expected) {
+          throw new Error(
+            `El ${tipoDocumento} debe tener exactamente ${expected} dígitos`,
+          );
         }
       }
 
-      // Verificar documento único si se está actualizando
-      if (
-        data.numeroDocumento &&
-        data.numeroDocumento !== existingClient.numeroDocumento
-      ) {
-        const clientWithDocument = await prisma.client.findFirst({
-          where: {
-            numeroDocumento: data.numeroDocumento,
-            isActive: true,
-            NOT: { id },
-          },
-        });
-
-        if (clientWithDocument) {
-          throw new Error('Ya existe un cliente con este número de documento');
-        }
-      }
-
-      // Validar campos según tipo de documento si se está cambiando
-      const tipoDocumento = data.tipoDocumento || existingClient.tipoDocumento;
-      if (['DNI', 'CE'].includes(tipoDocumento)) {
+      // Validar campos condicionales
+      if (['DNI', 'CE', 'Pasaporte'].includes(tipoDocumento)) {
         if (data.nombres !== undefined && !data.nombres) {
-          throw new Error('Para DNI y CE son requeridos nombres');
+          throw new Error('Para DNI, CE y Pasaporte son requeridos nombres');
         }
         if (data.apellidos !== undefined && !data.apellidos) {
-          throw new Error('Para DNI y CE son requeridos apellidos');
+          throw new Error('Para DNI, CE y Pasaporte son requeridos apellidos');
         }
       } else if (tipoDocumento === 'RUC') {
         if (data.razonSocial !== undefined && !data.razonSocial) {
           throw new Error('Para RUC es requerida la razón social');
+        }
+      }
+
+      // Validar ubigeo si se actualiza
+      const nextDepartamentoId = data.departamentoId ?? existingClient.departamentoId;
+      const nextProvinciaId = data.provinciaId ?? existingClient.provinciaId;
+      const nextDistritoId = data.distritoId ?? existingClient.distritoId;
+
+      if (data.departamentoId || data.provinciaId || data.distritoId) {
+        const dep = await prisma.departamento.findUnique({ where: { id: nextDepartamentoId } });
+        if (!dep) throw new Error('Departamento inválido');
+        const prov = await prisma.provincia.findUnique({ where: { id: nextProvinciaId } });
+        if (!prov) throw new Error('Provincia inválida');
+        if (prov.departamentoId !== nextDepartamentoId) {
+          throw new Error('La provincia no pertenece al departamento seleccionado');
+        }
+        const dist = await prisma.distrito.findUnique({ where: { id: nextDistritoId } });
+        if (!dist) throw new Error('Distrito inválido');
+        if (dist.provinciaId !== nextProvinciaId) {
+          throw new Error('El distrito no pertenece a la provincia seleccionada');
         }
       }
 
@@ -370,7 +359,10 @@ export const clientService = {
       if (data.email) updateData.email = data.email.toLowerCase().trim();
       if (data.telefono) updateData.telefono = data.telefono.trim();
       if (data.direccion) updateData.direccion = data.direccion.trim();
-      if (data.ciudad) updateData.ciudad = data.ciudad.trim();
+      // Ubigeo
+      if (data.departamentoId) updateData.departamentoId = data.departamentoId;
+      if (data.provinciaId) updateData.provinciaId = data.provinciaId;
+      if (data.distritoId) updateData.distritoId = data.distritoId;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
       // Campos condicionales según tipo de documento
@@ -406,54 +398,17 @@ export const clientService = {
     }
   },
 
-  // Reactivar un cliente
+  // Reactivar cliente (sin cambios de ubicación)
   async reactivateClient(id: string, userId?: string): Promise<Client> {
     try {
-      // Verificar que el cliente existe (incluso inactivos)
-      const existingClient = await prisma.client.findUnique({
-        where: { id },
-      });
-
+      const existingClient = await prisma.client.findUnique({ where: { id } });
       if (!existingClient) {
         throw new Error('Cliente no encontrado');
       }
 
-      if (existingClient.isActive) {
-        throw new Error('El cliente ya está activo');
-      }
-
-      // Verificar que no haya conflictos con email o documento
-      const conflictEmail = await prisma.client.findFirst({
-        where: {
-          email: existingClient.email,
-          isActive: true,
-          NOT: { id },
-        },
-      });
-
-      if (conflictEmail) {
-        throw new Error(
-          'No se puede reactivar: ya existe un cliente activo con este email',
-        );
-      }
-
-      const conflictDocument = await prisma.client.findFirst({
-        where: {
-          numeroDocumento: existingClient.numeroDocumento,
-          isActive: true,
-          NOT: { id },
-        },
-      });
-
-      if (conflictDocument) {
-        throw new Error(
-          'No se puede reactivar: ya existe un cliente activo con este documento',
-        );
-      }
-
-      // Validar y sanear documento antes de reactivar
-      const expected = expectedLengthFor(String(existingClient.tipoDocumento));
-      const digitsDoc = onlyDigits(String(existingClient.numeroDocumento));
+      // Verificar y sanear documento
+      const expected = expectedLengthFor(existingClient.tipoDocumento);
+      const digitsDoc = onlyDigits(existingClient.numeroDocumento);
       if (expected && digitsDoc.length !== expected) {
         throw new Error(
           `No se puede reactivar: el ${existingClient.tipoDocumento} debe tener exactamente ${expected} dígitos`,
@@ -511,20 +466,20 @@ export const clientService = {
     total: number;
     active: number;
     inactive: number;
-    byCity: { ciudad: string; count: number }[];
+    byDepartamento: { departamentoId: string; count: number }[];
     byDocumentType: { tipoDocumento: string; count: number }[];
   }> {
     try {
-      const [total, active, inactive, byCity, byDocumentType] =
+      const [total, active, inactive, byDepartamento, byDocumentType] =
         await Promise.all([
           prisma.client.count(),
           prisma.client.count({ where: { isActive: true } }),
           prisma.client.count({ where: { isActive: false } }),
           prisma.client.groupBy({
-            by: ['ciudad'],
+            by: ['departamentoId'],
             where: { isActive: true },
-            _count: { ciudad: true },
-            orderBy: { _count: { ciudad: 'desc' } },
+            _count: { departamentoId: true },
+            orderBy: { _count: { departamentoId: 'desc' } },
           }),
           prisma.client.groupBy({
             by: ['tipoDocumento'],
@@ -538,18 +493,52 @@ export const clientService = {
         total,
         active,
         inactive,
-        byCity: byCity.map((item) => ({
-          ciudad: item.ciudad,
-          count: item._count.ciudad,
+        byDepartamento: byDepartamento.map((item) => ({
+          departamentoId: item.departamentoId,
+          count: (item as any)._count.departamentoId,
         })),
         byDocumentType: byDocumentType.map((item) => ({
           tipoDocumento: item.tipoDocumento,
-          count: item._count.tipoDocumento,
+          count: (item as any)._count.tipoDocumento,
         })),
       };
     } catch (error) {
       console.error('Error al obtener estadísticas de clientes:', error);
       throw new Error('Error al obtener estadísticas');
+    }
+  },
+
+  // Obtener cliente por ID
+  async getClientById(id: string): Promise<Client | null> {
+    try {
+      return await prisma.client.findUnique({ where: { id } });
+    } catch (error) {
+      console.error('Error al obtener cliente por ID:', error);
+      throw error;
+    }
+  },
+
+  // Obtener cliente por email
+  async getClientByEmail(email: string): Promise<Client | null> {
+    try {
+      const normalized = email.toLowerCase().trim();
+      return await prisma.client.findUnique({ where: { email: normalized } });
+    } catch (error) {
+      console.error('Error al obtener cliente por email:', error);
+      throw error;
+    }
+  },
+
+  // Obtener cliente por número de documento
+  async getClientByDocument(numeroDocumento: string): Promise<Client | null> {
+    try {
+      const normalized = String(numeroDocumento).trim().toUpperCase();
+      return await prisma.client.findFirst({
+        where: { numeroDocumento: normalized },
+      });
+    } catch (error) {
+      console.error('Error al obtener cliente por documento:', error);
+      throw error;
     }
   },
 };

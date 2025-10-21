@@ -17,6 +17,10 @@ export interface Client {
   numeroDocumento: string;
   direccion: string;
   ciudad: string;
+  // Campos de Ubigeo
+  departamentoId: string;
+  provinciaId: string;
+  distritoId: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -35,10 +39,13 @@ interface ClientContextType {
     page?: number;
     limit?: number;
     search?: string;
+    tipoEntidad?: 'Cliente' | 'Proveedor' | 'Ambos';
     tipoDocumento?: string;
-    ciudad?: string;
     fechaDesde?: string;
     fechaHasta?: string;
+    departamentoId?: string;
+    provinciaId?: string;
+    distritoId?: string;
   }) => Promise<void>;
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateClient: (id: string, client: Partial<Client>) => Promise<void>;
