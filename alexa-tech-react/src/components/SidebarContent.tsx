@@ -185,6 +185,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
     if (pathname.includes('/lista-productos')) {
       return 'productos';
     }
+    if (pathname.includes('/compras')) {
+      return 'compras';
+    }
     return null;
   };
 
@@ -326,10 +329,17 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
           </NavItem>
 
           <NavItem $isActive={isActive('/compras')}>
-            <Link to="/compras" onClick={handleItemClick}>
+            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('compras'); }}>
               <i className="fas fa-receipt"></i>
               <span>Compras</span>
-            </Link>
+            </a>
+            <SubMenu $isOpen={openMenus.compras}>
+              <SubMenuItem $isActive={isActive('/compras')}>
+                <Link to="/compras" onClick={handleItemClick}>
+                  <h3>Lista de Compras</h3>
+                </Link>
+              </SubMenuItem>
+            </SubMenu>
           </NavItem>
 
           <NavItem $isActive={isActive('/facturacion')}>
