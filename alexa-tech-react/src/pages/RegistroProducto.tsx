@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useProducts } from '../context/ProductContext';
 import { useNotification } from '../context/NotificationContext';
 import { apiService } from '../utils/api';
 import { media } from '../styles/breakpoints';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS, LOCATION_OPTIONS } from '../utils/productOptions';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
+import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../constants/warehouses';
 
 const FormContainer = styled.div`
   background: white;
@@ -178,7 +179,7 @@ interface ProductFormData {
   category: string;
   price: string;
   initialStock: string;
-  ubicacion: string;
+  warehouseId: string;
   unit: string;
 }
 
@@ -189,6 +190,7 @@ interface FormErrors {
   category?: string;
   price?: string;
   initialStock?: string;
+  warehouseId?: string;
   unit?: string;
 }
 
@@ -202,13 +204,32 @@ const RegistroProducto: React.FC = () => {
     category: '',
     price: '',
     initialStock: '',
-    ubicacion: '',
+    warehouseId: '',
     unit: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Opciones de almacén (fallback estático + fetch real)
+  const [warehouseOptions, setWarehouseOptions] = useState<{ id: string; name: string }[]>(WAREHOUSE_SELECT_OPTIONS.map(o => ({ id: o.value, name: o.label })));
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await apiService.getWarehouses();
+        const list = (resp.data?.warehouses || resp.data || []) as Array<{ id: string; nombre: string }>;
+        if (Array.isArray(list) && mounted) {
+          setWarehouseOptions(list.map(w => ({ id: w.id, name: w.nombre })));
+        }
+      } catch (e) {
+        // fallback ya set, no romper UI
+        console.warn('No se pudieron cargar almacenes, usando fallback');
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Fusionar opciones dinámicas desde BD con opciones por defecto
   const mergeOptions = (primary: string[], fallback: string[]) => {
@@ -233,10 +254,7 @@ const RegistroProducto: React.FC = () => {
     return mergeOptions(dyn, UNIT_OPTIONS);
   }, [products]);
 
-  const locationOptions = useMemo(() => {
-    const dyn = Array.from(new Set((products || []).map(p => p.ubicacion || '').filter(v => v))).sort();
-    return mergeOptions(dyn, LOCATION_OPTIONS);
-  }, [products]);
+  // Eliminado: locationOptions y campo ubicacion
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -245,7 +263,6 @@ const RegistroProducto: React.FC = () => {
       [name]: value
     }));
 
-    // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
@@ -253,7 +270,6 @@ const RegistroProducto: React.FC = () => {
       }));
     }
 
-    // Validación en tiempo real para campos específicos
     if (name === 'price' && value) {
       const price = Number(value);
       if (isNaN(price) || price <= 0) {
@@ -278,26 +294,22 @@ const RegistroProducto: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Validación del código del producto
     if (!formData.productCode.trim()) {
       newErrors.productCode = 'El código del producto es requerido';
     } else if (formData.productCode.length < 3) {
       newErrors.productCode = 'El código debe tener al menos 3 caracteres';
     }
 
-    // Validación del nombre del producto
     if (!formData.productName.trim()) {
       newErrors.productName = 'El nombre del producto es requerido';
     } else if (formData.productName.length < 2) {
       newErrors.productName = 'El nombre debe tener al menos 2 caracteres';
     }
 
-    // Validación de la categoría
     if (!formData.category.trim()) {
       newErrors.category = 'La categoría es requerida';
     }
 
-    // Validación del precio
     if (!formData.price.trim()) {
       newErrors.price = 'El precio es requerido';
     } else {
@@ -311,7 +323,6 @@ const RegistroProducto: React.FC = () => {
       }
     }
 
-    // Validación del stock inicial
     if (!formData.initialStock.trim()) {
       newErrors.initialStock = 'El stock inicial es requerido';
     } else {
@@ -322,16 +333,14 @@ const RegistroProducto: React.FC = () => {
         newErrors.initialStock = 'El stock no puede ser negativo';
       } else if (!Number.isInteger(stock)) {
         newErrors.initialStock = 'El stock debe ser un número entero';
+      } else if (stock > 0 && !formData.warehouseId) {
+        newErrors.warehouseId = 'Selecciona un almacén para el stock inicial';
       }
     }
 
-    // Validación de la unidad de medida
     if (!formData.unit.trim()) {
       newErrors.unit = 'La unidad de medida es requerida';
     }
-
-    // Ubicación es opcional; validar sólo si se proporciona
-    // (Sin restricción estricta, puede ser nombre de almacén o estantería)
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -347,17 +356,15 @@ const RegistroProducto: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Construir payload y llamar al backend
+      const initial = parseInt(formData.initialStock);
       const payload = {
         codigo: formData.productCode,
         nombre: formData.productName,
-        // Sin descripción; el requerimiento pide no mostrar garantía
         categoria: formData.category,
         precioVenta: parseFloat(formData.price),
-        stock: parseInt(formData.initialStock),
         estado: true,
         unidadMedida: formData.unit.toLowerCase(),
-        ubicacion: formData.ubicacion?.trim() ? formData.ubicacion : undefined,
+        stockInitial: initial > 0 ? { warehouseId: formData.warehouseId, cantidad: initial } : undefined,
       };
 
       const response = await apiService.createProduct(payload);
@@ -365,38 +372,31 @@ const RegistroProducto: React.FC = () => {
         throw new Error(response.message || 'Error al registrar el producto');
       }
 
-      // Derivar estado del stock según cantidad
-      const stockStatus = payload.stock > 0 ? 'disponible' : 'agotado';
+      const stockStatus = initial > 0 ? 'disponible' : 'agotado';
 
-      // Reflejar el producto creado en estado local para la UI
       addProduct({
         productCode: payload.codigo,
         productName: payload.nombre,
         category: payload.categoria,
         price: payload.precioVenta,
-        initialStock: payload.stock,
-        currentStock: payload.stock,
+        initialStock: initial,
+        currentStock: initial,
         status: stockStatus as 'disponible' | 'agotado',
-        ubicacion: payload.ubicacion,
         unit: payload.unidadMedida,
         isActive: payload.estado
       });
       
-      // Mostrar notificación de éxito
       showSuccess('Producto registrado exitosamente');
       setShowSuccessMessage(true);
-      
-      // Ocultar mensaje después de 3 segundos
       setTimeout(() => setShowSuccessMessage(false), 3000);
       
-      // Limpiar formulario
       setFormData({
         productCode: '',
         productName: '',
         category: '',
         price: '',
         initialStock: '',
-        ubicacion: '',
+        warehouseId: '',
         unit: ''
       });
 
@@ -492,22 +492,23 @@ const RegistroProducto: React.FC = () => {
               {errors.initialStock && <ErrorMessage>{errors.initialStock}</ErrorMessage>}
             </FormGroup>
 
-            
-
             <FormGroup>
-              <Label htmlFor="ubicacion">Ubicación (almacén)</Label>
+              <Label htmlFor="stockWarehouse">Almacén para Stock Inicial *</Label>
               <Select
-                id="ubicacion"
-                name="ubicacion"
-                value={formData.ubicacion}
+                id="stockWarehouse"
+                name="warehouseId"
+                value={formData.warehouseId}
                 onChange={handleInputChange}
               >
-                <option value="">Sin ubicación</option>
-                {locationOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
+                <option value="">Selecciona un almacén</option>
+                {warehouseOptions.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.name}</option>
                 ))}
               </Select>
+              {errors.warehouseId && <ErrorMessage>{errors.warehouseId}</ErrorMessage>}
             </FormGroup>
+
+            {/* Eliminado: campo Ubicación */}
 
             <FormGroup>
               <Label htmlFor="unit">Unidad de Medida *</Label>
@@ -527,14 +528,12 @@ const RegistroProducto: React.FC = () => {
           </FormGrid>
 
           <FormActions>
-            <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Registrando...' : 'Registrar Producto'}
-            </SubmitButton>
+            <SubmitButton type="submit" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Registrar'}</SubmitButton>
           </FormActions>
         </form>
       </FormContainer>
     </Layout>
   );
-};
+}
 
 export default RegistroProducto;

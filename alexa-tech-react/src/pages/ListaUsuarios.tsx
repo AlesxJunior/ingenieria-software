@@ -473,7 +473,10 @@ const ListaUsuarios: React.FC = () => {
       if (userData.permissions) backendUserData.permissions = userData.permissions;
 
       
-      await apiService.createUser(backendUserData);
+      const resp = await apiService.createUser(backendUserData);
+      if (!resp.success) {
+        throw new Error(resp.message || 'Error al crear el usuario');
+      }
       showInfo('Usuario creado exitosamente');
       loadUsers(); // Recargar la lista
       setIsNuevoUsuarioModalOpen(false);

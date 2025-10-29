@@ -29,6 +29,8 @@ describe('Product Service', () => {
         categoria: 'Electronics',
         precioVenta: new Decimal(1500.0),
         stock: 100,
+        minStock: null,
+        trackInventory: true,
         estado: true,
         unidadMedida: 'unit',
         ubicacion: 'Warehouse A',
@@ -45,6 +47,8 @@ describe('Product Service', () => {
         categoria: 'Peripherals',
         precioVenta: new Decimal(150.0),
         stock: 250,
+        minStock: null,
+        trackInventory: true,
         estado: true,
         unidadMedida: 'unit',
         ubicacion: 'Warehouse B',
@@ -85,19 +89,21 @@ describe('Product Service', () => {
       ubicacion: 'Closet C',
     };
     const userId = 'user-test-id';
-
+  
     const expectedProduct = {
       id: 'product-id-3',
       ...productInput,
       precioVenta: new Decimal(productInput.precioVenta),
       descripcion: productInput.descripcion ?? null,
       ubicacion: productInput.ubicacion ?? null,
+      minStock: null,
+      trackInventory: true,
       usuarioCreacion: userId,
       usuarioActualizacion: null,
       createdAt: now,
       updatedAt: now,
     };
-
+  
     // Setup the mock to return the expected product
     prismaMock.product.create.mockResolvedValue(expectedProduct);
 
@@ -129,6 +135,8 @@ describe('Product Service', () => {
       categoria: 'Electronics',
       precioVenta: new Decimal(1500.0),
       stock: 100,
+      minStock: null,
+      trackInventory: true,
       estado: true,
       unidadMedida: 'unit',
       ubicacion: 'Warehouse A',
@@ -161,6 +169,8 @@ describe('Product Service', () => {
       categoria: 'Electronics',
       precioVenta: new Decimal(1600.0),
       stock: 100,
+      minStock: null,
+      trackInventory: true,
       estado: true,
       unidadMedida: 'unit',
       ubicacion: 'Warehouse A',
@@ -196,6 +206,8 @@ describe('Product Service', () => {
       categoria: 'Electronics',
       precioVenta: new Decimal(1500.0),
       stock: 100,
+      minStock: null,
+      trackInventory: true,
       estado: false,
       unidadMedida: 'unit',
       ubicacion: 'Warehouse A',

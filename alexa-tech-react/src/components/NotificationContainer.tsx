@@ -115,7 +115,8 @@ const NotificationIcon = styled.span<{ $type: 'success' | 'error' | 'warning' | 
 const NotificationContainer: React.FC = () => {
   const { notifications, removeNotification } = useNotification();
 
-  if (notifications.length === 0) {
+  // Defensive: ensure notifications is an array before accessing length
+  if (!Array.isArray(notifications) || notifications.length === 0) {
     return null;
   }
 

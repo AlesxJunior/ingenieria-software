@@ -250,8 +250,12 @@ describe('User Service', () => {
 
     it('should throw an error if updating with an existing email', async () => {
       const anotherUser: User = { ...existingUser, id: 'user-456', email: 'another@example.com' };
-      prismaMock.user.findUnique.mockResolvedValueOnce(existingUser); // find the user to update
-      prismaMock.user.findUnique.mockResolvedValueOnce(anotherUser); // check for existing email
+      // Mock por argumentos para evitar dependencia del orden de llamadas
+      (prismaMock.user.findUnique as any).mockImplementation((args: any) => {
+        if (args?.where?.id === 'user-123') return Promise.resolve(existingUser);
+        if (args?.where?.email === 'another@example.com') return Promise.resolve(anotherUser);
+        return Promise.resolve(null);
+      });
 
       await expect(userService.update('user-123', { email: 'another@example.com' })).rejects.toThrow(
         'El email ya está registrado',
@@ -260,8 +264,12 @@ describe('User Service', () => {
 
     it('should throw an error if updating with an existing username', async () => {
       const anotherUser: User = { ...existingUser, id: 'user-456', username: 'anotheruser' };
-      prismaMock.user.findUnique.mockResolvedValueOnce(existingUser); // find the user to update
-      prismaMock.user.findUnique.mockResolvedValueOnce(anotherUser); // check for existing username
+      // Mock por argumentos para evitar dependencia del orden de llamadas
+      (prismaMock.user.findUnique as any).mockImplementation((args: any) => {
+        if (args?.where?.id === 'user-123') return Promise.resolve(existingUser);
+        if (args?.where?.username === 'anotheruser') return Promise.resolve(anotherUser);
+        return Promise.resolve(null);
+      });
       prismaMock.user.update.mockResolvedValue(existingUser);
 
       await expect(userService.update('user-123', { username: 'anotheruser' })).rejects.toThrow(

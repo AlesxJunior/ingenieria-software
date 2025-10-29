@@ -2,14 +2,13 @@ import request from 'supertest';
 import app from '../app';
 import { prisma } from '../config/database';
 
-// Limpiar la base de datos antes de cada prueba y desconectar al final
+// Limpiar la base de datos antes de cada prueba
 beforeEach(async () => {
   await prisma.user.deleteMany({});
 });
 
-afterAll(async () => {
-  await prisma.$disconnect();
-});
+// Nota: No desconectar Prisma en afterAll para no interferir con otras suites
+// Si se requiere teardown global, usar la configuración de Jest global setup/teardown
 
 describe('Auth Routes: POST /api/auth/register', () => {
   const newUser = {

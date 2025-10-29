@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useProducts, type Product } from '../context/ProductContext';
 import { useNotification } from '../context/NotificationContext';
 import { apiService } from '../utils/api';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS, LOCATION_OPTIONS } from '../utils/productOptions';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
 
 const FormGrid = styled.div`
   display: grid;
@@ -82,7 +82,6 @@ interface EditProductFormData {
   category: string;
   price: string;
   currentStock: string;
-  ubicacion: string;
   unit: string;
 }
 
@@ -103,7 +102,6 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     category: product.category || '',
     price: product.price?.toString() || '',
     currentStock: product.currentStock?.toString() || '0',
-    ubicacion: product.ubicacion || '',
     unit: product.unit || ''
   });
 
@@ -130,11 +128,6 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     return mergeOptions(dyn, UNIT_OPTIONS);
   }, [products]);
 
-  const locationOptions = useMemo(() => {
-    const dyn = Array.from(new Set((products || []).map(p => p.ubicacion || '').filter(v => v))).sort();
-    return mergeOptions(dyn, LOCATION_OPTIONS);
-  }, [products]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target as HTMLInputElement & HTMLSelectElement;
     setFormData(prev => ({
@@ -152,13 +145,6 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
         setErrors(prev => ({ ...prev, price: 'El precio debe ser mayor a 0' }));
       }
     }
-
-    if (name === 'currentStock' && value) {
-      const stock = Number(value);
-      if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
-        setErrors(prev => ({ ...prev, currentStock: 'El stock debe ser entero ≥ 0' }));
-      }
-    }
   };
 
   const validateForm = (): boolean => {
@@ -172,13 +158,6 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     } else {
       const price = Number(formData.price);
       if (isNaN(price) || price <= 0) newErrors.price = 'Precio inválido';
-    }
-
-    if (!formData.currentStock.trim()) {
-      newErrors.currentStock = 'El stock es requerido';
-    } else {
-      const stock = Number(formData.currentStock);
-      if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) newErrors.currentStock = 'Stock inválido';
     }
 
     if (!formData.unit.trim()) newErrors.unit = 'La unidad es requerida';
@@ -197,26 +176,23 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
         nombre: formData.productName,
         categoria: formData.category,
         precioVenta: parseFloat(formData.price),
-        stock: parseInt(formData.currentStock),
         estado: product.isActive ?? true,
         unidadMedida: formData.unit.toLowerCase(),
-        ubicacion: formData.ubicacion?.trim() ? formData.ubicacion : undefined,
       };
 
       const response = await apiService.updateProductByCodigo(product.productCode, payload);
       if (!response.success) throw new Error(response.message || 'Error al actualizar');
 
-      const stockStatus = payload.stock > 0 ? 'disponible' : 'agotado';
+      const stockStatus = (product.currentStock ?? 0) > 0 ? 'disponible' : 'agotado';
 
       updateProduct(product.id, {
         productCode: product.productCode,
         productName: payload.nombre,
         category: payload.categoria,
         price: payload.precioVenta,
-        currentStock: payload.stock,
-        initialStock: payload.stock,
+        currentStock: product.currentStock ?? 0,
+        initialStock: product.initialStock ?? product.currentStock ?? 0,
         status: stockStatus as 'disponible' | 'agotado',
-        ubicacion: payload.ubicacion,
         unit: payload.unidadMedida,
         isActive: product.isActive ?? true
       });
@@ -259,9 +235,8 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
           {errors.price && <span className="error">{errors.price}</span>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="currentStock">Stock *</label>
-          <input id="currentStock" name="currentStock" type="number" min="0" value={formData.currentStock} onChange={handleInputChange} />
-          {errors.currentStock && <span className="error">{errors.currentStock}</span>}
+          <label htmlFor="currentStock">Stock</label>
+          <input id="currentStock" name="currentStock" type="number" min="0" value={formData.currentStock} disabled />
         </FormGroup>
         <FormGroup>
           <label htmlFor="unit">Unidad *</label>
@@ -272,15 +247,6 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
             ))}
           </select>
           {errors.unit && <span className="error">{errors.unit}</span>}
-        </FormGroup>
-        <FormGroup>
-          <label htmlFor="ubicacion">Ubicación (almacén)</label>
-          <select id="ubicacion" name="ubicacion" value={formData.ubicacion} onChange={handleInputChange}>
-            <option value="">Sin ubicación</option>
-            {locationOptions.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
         </FormGroup>
       </FormGrid>
       <Actions>

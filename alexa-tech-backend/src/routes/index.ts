@@ -2,10 +2,12 @@ import { Router } from 'express';
 import authRoutes from './authRoutes';
 import userRoutes from './userRoutes';
 import entidadRoutes from './entidadRoutes';
+import inventoryRoutes from './inventoryRoutes';
 import auditRoutes from './auditRoutes';
 import productRoutes from './productRoutes';
 import purchaseRoutes from './purchaseRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
+import warehouseRoutes from './warehouseRoutes';
 
 const router = Router();
 
@@ -23,12 +25,21 @@ router.use('/productos', productRoutes);
 
 // Rutas de compras
 router.use('/compras', purchaseRoutes);
+// Alias en inglés para compatibilidad Frontend
+router.use('/purchases', purchaseRoutes);
 
 // Rutas de ubigeo
 router.use('/ubigeo', ubigeoRoutes);
 
+// Rutas de almacenes
+router.use('/warehouses', warehouseRoutes);
+
 // Rutas de auditoría
 router.use('/audit', auditRoutes);
+// Rutas de inventario
+router.use('/inventario', inventoryRoutes);
+// Alias en inglés para compatibilidad Frontend
+router.use('/inventory', inventoryRoutes);
 
 // Ruta de salud general de la API
 router.get('/health', (req, res) => {
@@ -59,6 +70,9 @@ router.get('/', (req, res) => {
         entidades: '/api/entidades',
         productos: '/api/productos',
         compras: '/api/compras',
+        purchases: '/api/purchases',
+        warehouses: '/api/warehouses',
+        inventory: '/api/inventory',
         audit: '/api/audit',
         ubigeo: '/api/ubigeo',
         health: '/api/health',

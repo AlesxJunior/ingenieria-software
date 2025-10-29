@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import { useProducts } from '../context/ProductContext';
 import { useNotification } from '../context/NotificationContext';
 import { apiService } from '../utils/api';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS, LOCATION_OPTIONS } from '../utils/productOptions';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
+import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../constants/warehouses';
 
 const FormGrid = styled.div`
   display: grid;
@@ -82,7 +83,7 @@ interface ProductFormData {
   category: string;
   price: string;
   initialStock: string;
-  ubicacion: string;
+  warehouseId: string;
   unit: string;
 }
 
@@ -101,9 +102,25 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     category: '',
     price: '',
     initialStock: '',
-    ubicacion: '',
+    warehouseId: '',
     unit: ''
   });
+  const [warehouseOptions, setWarehouseOptions] = useState<{ id: string; name: string }[]>(WAREHOUSE_SELECT_OPTIONS.map(o => ({ id: o.value, name: o.label })));
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await apiService.getWarehouses();
+        const list = (resp.data?.warehouses || resp.data || []) as Array<{ id: string; nombre: string }>;
+        if (Array.isArray(list) && mounted) {
+          setWarehouseOptions(list.map(w => ({ id: w.id, name: w.nombre })));
+        }
+      } catch (e) {
+        console.warn('No se pudieron cargar almacenes, usando fallback');
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Fusionar opciones dinámicas con listas por defecto evitando duplicados
   const mergeOptions = (primary: string[], fallback: string[]) => {
@@ -126,11 +143,6 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
   const unitOptions = useMemo(() => {
     const dyn = Array.from(new Set((products || []).map(p => p.unit).filter(Boolean))).sort();
     return mergeOptions(dyn, UNIT_OPTIONS);
-  }, [products]);
-
-  const locationOptions = useMemo(() => {
-    const dyn = Array.from(new Set((products || []).map(p => p.ubicacion || '').filter(v => v))).sort();
-    return mergeOptions(dyn, LOCATION_OPTIONS);
   }, [products]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -177,7 +189,11 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
       newErrors.initialStock = 'El stock es requerido';
     } else {
       const stock = Number(formData.initialStock);
-      if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) newErrors.initialStock = 'Stock inválido';
+      if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+        newErrors.initialStock = 'Stock inválido';
+      } else if (stock > 0 && !formData.warehouseId) {
+        newErrors.warehouseId = 'Selecciona almacén';
+      }
     }
 
     if (!formData.unit.trim()) newErrors.unit = 'La unidad es requerida';
@@ -192,33 +208,32 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     setIsSubmitting(true);
 
     try {
+      const initial = parseInt(formData.initialStock || '0');
       const payload = {
         codigo: formData.productCode,
         nombre: formData.productName,
         categoria: formData.category,
         precioVenta: parseFloat(formData.price),
-        stock: parseInt(formData.initialStock),
         estado: true,
         unidadMedida: formData.unit.toLowerCase(),
-        ubicacion: formData.ubicacion?.trim() ? formData.ubicacion : undefined,
+        stockInitial: initial > 0 ? { warehouseId: formData.warehouseId, cantidad: initial } : undefined,
       };
 
       const response = await apiService.createProduct(payload);
       if (!response.success) throw new Error(response.message || 'Error al registrar');
 
-      const stockStatus = payload.stock > 0 ? 'disponible' : 'agotado';
+      const stockStatus = initial > 0 ? 'disponible' : 'agotado';
 
       addProduct({
         productCode: payload.codigo,
         productName: payload.nombre,
         category: payload.categoria,
         price: payload.precioVenta,
-        initialStock: payload.stock,
-        currentStock: payload.stock,
+        initialStock: initial,
+        currentStock: initial,
         status: stockStatus as 'disponible' | 'agotado',
-        ubicacion: payload.ubicacion,
         unit: payload.unidadMedida,
-        isActive: true
+        isActive: payload.estado
       });
 
       showSuccess('Producto registrado exitosamente');
@@ -276,13 +291,14 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
         </FormGroup>
         
         <FormGroup>
-          <label htmlFor="ubicacion">Ubicación (almacén)</label>
-          <select id="ubicacion" name="ubicacion" value={formData.ubicacion} onChange={handleInputChange}>
-            <option value="">Sin ubicación</option>
-            {locationOptions.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
+          <label htmlFor="warehouseId">Almacén para Stock Inicial *</label>
+          <select id="warehouseId" name="warehouseId" value={formData.warehouseId} onChange={handleInputChange}>
+            <option value="">Selecciona un almacén</option>
+            {warehouseOptions.map(opt => (
+              <option key={opt.id} value={opt.id}>{opt.name}</option>
             ))}
           </select>
+          {errors.warehouseId && <span className="error">{errors.warehouseId}</span>}
         </FormGroup>
       </FormGrid>
       <Actions>

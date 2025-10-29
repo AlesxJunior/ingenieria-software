@@ -93,6 +93,9 @@ async function main() {
   await prisma.provincia.deleteMany();
   await prisma.departamento.deleteMany();
   await prisma.product.deleteMany();
++  await prisma.stockByWarehouse.deleteMany();
++  await prisma.inventoryMovement.deleteMany();
++  await prisma.warehouse.deleteMany();
   await prisma.user.deleteMany();
   console.log('🗑️  Datos existentes eliminados');
 
@@ -158,6 +161,16 @@ async function main() {
   console.log(`   Vendedor: ${vendedor.email} (${vendedor.permissions.length} permisos)`);
   console.log(`   Cajero: ${cajero.email} (${cajero.permissions.length} permisos)`);
   console.log(`   Supervisor: ${supervisor.email} (${supervisor.permissions.length} permisos)`);
+
+  // Crear almacenes
+  console.log('🏬 Creando almacenes...');
+  const principalWarehouse = await prisma.warehouse.create({
+    data: { id: 'WH-PRINCIPAL', codigo: 'WH-PRINCIPAL', nombre: 'Almacén Principal', ubicacion: 'Sede Central' },
+  });
+  const secundarioWarehouse = await prisma.warehouse.create({
+    data: { id: 'WH-SECUNDARIO', codigo: 'WH-SECUNDARIO', nombre: 'Almacén Secundario', ubicacion: 'Sucursal Norte' },
+  });
+  console.log(`   Warehouses creados: ${principalWarehouse.id}, ${secundarioWarehouse.id}`);
 
   // =====================
   // Ubigeo Perú (simplificado)
@@ -228,21 +241,31 @@ async function main() {
 
   // Crear productos de prueba
   console.log('📦 Creando productos de prueba...');
-  const products = await prisma.product.createMany({
-    data: [
-      { codigo: 'LP-001', nombre: 'Laptop Pro', descripcion: 'Potente laptop para profesionales', categoria: 'Laptops', precioVenta: 1499.99, stock: 50, unidadMedida: 'Unidad', ubicacion: 'Almacén A', usuarioCreacion: admin.id },
-      { codigo: 'SM-002', nombre: 'Smartphone X', descripcion: 'Teléfono inteligente de última generación', categoria: 'Smartphones', precioVenta: 899.99, stock: 120, unidadMedida: 'Unidad', ubicacion: 'Almacén B', usuarioCreacion: admin.id },
-      { codigo: 'MN-003', nombre: 'Monitor UltraWide', descripcion: 'Monitor curvo de 34 pulgadas', categoria: 'Monitores', precioVenta: 599.99, stock: 80, unidadMedida: 'Unidad', ubicacion: 'Almacén A', usuarioCreacion: admin.id },
-      { codigo: 'KB-004', nombre: 'Teclado Mecánico RGB', descripcion: 'Teclado para gaming con iluminación personalizable', categoria: 'Periféricos', precioVenta: 129.99, stock: 200, unidadMedida: 'Unidad', ubicacion: 'Almacén C', usuarioCreacion: admin.id },
-      { codigo: 'MS-005', nombre: 'Mouse Inalámbrico Ergonómico', descripcion: 'Mouse diseñado para máxima comodidad', categoria: 'Periféricos', precioVenta: 49.99, stock: 300, unidadMedida: 'Unidad', ubicacion: 'Almacén C', usuarioCreacion: admin.id },
-      { codigo: 'WC-006', nombre: 'Webcam HD 1080p', descripcion: 'Webcam con resolución Full HD para videollamadas', categoria: 'Accesorios', precioVenta: 69.99, stock: 150, unidadMedida: 'Unidad', ubicacion: 'Almacén B', usuarioCreacion: admin.id },
-      { codigo: 'HD-007', nombre: 'Disco Duro Externo 2TB', descripcion: 'Almacenamiento portátil de alta capacidad', categoria: 'Almacenamiento', precioVenta: 89.99, stock: 100, unidadMedida: 'Unidad', ubicacion: 'Almacén A', usuarioCreacion: admin.id },
-      { codigo: 'LS-008', nombre: 'Soporte para Laptop', descripcion: 'Soporte ergonómico de aluminio para laptops', categoria: 'Accesorios', precioVenta: 39.99, stock: 250, unidadMedida: 'Unidad', ubicacion: 'Almacén C', usuarioCreacion: admin.id },
-      { codigo: 'HB-009', nombre: 'Hub USB-C 7 en 1', descripcion: 'Concentrador con múltiples puertos para conectividad', categoria: 'Accesorios', precioVenta: 59.99, stock: 180, unidadMedida: 'Unidad', ubicacion: 'Almacén B', usuarioCreacion: admin.id },
-      { codigo: 'EA-010', nombre: 'Auriculares Inalámbricos TWS', descripcion: 'Auriculares con cancelación de ruido y alta fidelidad', categoria: 'Audio', precioVenta: 199.99, stock: 90, unidadMedida: 'Unidad', ubicacion: 'Almacén A', usuarioCreacion: admin.id },
-    ],
-  });
-  console.log(`   ${products.count} productos creados.`);
+  const nowIso = new Date().toISOString();
+  const sampleProducts = [
+    { id: 'PRD-LP-001', codigo: 'LP-001', nombre: 'Laptop Pro', descripcion: 'Potente laptop para profesionales', categoria: 'Laptops', precioVenta: 1499.99, stock: 50, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
+    { id: 'PRD-SM-002', codigo: 'SM-002', nombre: 'Smartphone X', descripcion: 'Teléfono inteligente de última generación', categoria: 'Smartphones', precioVenta: 899.99, stock: 120, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén B' },
+    { id: 'PRD-MN-003', codigo: 'MN-003', nombre: 'Monitor UltraWide', descripcion: 'Monitor curvo de 34 pulgadas', categoria: 'Monitores', precioVenta: 599.99, stock: 80, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
+    { id: 'PRD-KB-004', codigo: 'KB-004', nombre: 'Teclado Mecánico RGB', descripcion: 'Teclado para gaming con iluminación personalizable', categoria: 'Periféricos', precioVenta: 129.99, stock: 200, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén C' },
+    { id: 'PRD-MS-005', codigo: 'MS-005', nombre: 'Mouse Inalámbrico Ergonómico', descripcion: 'Mouse diseñado para máxima comodidad', categoria: 'Periféricos', precioVenta: 49.99, stock: 300, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén C' },
+    { id: 'PRD-WC-006', codigo: 'WC-006', nombre: 'Webcam HD 1080p', descripcion: 'Webcam con resolución Full HD para videollamadas', categoria: 'Accesorios', precioVenta: 69.99, stock: 150, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén B' },
+    { id: 'PRD-HD-007', codigo: 'HD-007', nombre: 'Disco Duro Externo 2TB', descripcion: 'Almacenamiento portátil de alta capacidad', categoria: 'Almacenamiento', precioVenta: 89.99, stock: 100, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
+    { id: 'PRD-LS-008', codigo: 'LS-008', nombre: 'Soporte para Laptop', descripcion: 'Soporte ergonómico de aluminio para laptops', categoria: 'Accesorios', precioVenta: 39.99, stock: 250, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén C' },
+    { id: 'PRD-HB-009', codigo: 'HB-009', nombre: 'Hub USB-C 7 en 1', descripcion: 'Concentrador con múltiples puertos para conectividad', categoria: 'Accesorios', precioVenta: 59.99, stock: 180, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén B' },
+    { id: 'PRD-EA-010', codigo: 'EA-010', nombre: 'Auriculares Inalámbricos TWS', descripcion: 'Auriculares con cancelación de ruido y alta fidelidad', categoria: 'Audio', precioVenta: 199.99, stock: 90, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
+  ];
+  let createdCount = 0;
+  for (const p of sampleProducts) {
+    const sql = `
+      INSERT INTO "public"."products"
+      ("id","codigo","nombre","descripcion","categoria","precioVenta","stock","estado","unidadMedida","ubicacion","usuarioCreacion","usuarioActualizacion","createdAt","updatedAt")
+      VALUES ('${p.id}','${p.codigo}','${p.nombre}',${p.descripcion ? `'${p.descripcion.replace(/'/g, "''")}'` : 'NULL'},'${p.categoria}',${p.precioVenta},${p.stock},${p.estado ? 'true' : 'false'},'${p.unidadMedida}',${p.ubicacion ? `'${p.ubicacion.replace(/'/g, "''")}'` : 'NULL'},'${admin.id}',NULL,'${nowIso}','${nowIso}')
+      ON CONFLICT ("codigo") DO NOTHING;
+    `;
+    const result = await prisma.$executeRawUnsafe(sql);
+    if (typeof result === 'number' && result > 0) createdCount += result;
+  }
+  console.log(`   Productos insertados (raw): ${createdCount} (puede incluir 0 si ya existían).`);
 
   // Crear entidades comerciales de prueba (usando ubigeo)
   console.log('🏢 Creando entidades comerciales de prueba...');

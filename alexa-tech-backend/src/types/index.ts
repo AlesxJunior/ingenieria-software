@@ -137,10 +137,13 @@ export interface ProductCreateInput {
   descripcion?: string;
   categoria: string;
   precioVenta: number;
-  stock: number;
+  stock?: number; // solo para compatibilidad temporal
   estado?: boolean;
   unidadMedida: string;
-  ubicacion?: string;
+  stockInitial?: {
+    warehouseId: string;
+    cantidad: number;
+  };
 }
 
 export interface ProductUpdateInput {
@@ -148,17 +151,16 @@ export interface ProductUpdateInput {
   descripcion?: string;
   categoria?: string;
   precioVenta?: number;
-  stock?: number;
+  // stock se gestiona por inventario; evitar actualizar directamente
   estado?: boolean;
   unidadMedida?: string;
-  ubicacion?: string;
 }
 
 export interface ProductStatusUpdateInput {
   estado: boolean;
 }
 
-// Tipos de Compras
+// Compras
 export interface PurchaseItemInput {
   productoId: string;
   nombreProducto?: string;
@@ -177,6 +179,7 @@ export interface PurchaseCreateInput {
   formaPago?: string;
   observaciones?: string;
   fechaEntregaEstimada?: string; // ISO date string
+  descuento?: number;
 }
 
 export interface PurchaseUpdateInput {
@@ -188,6 +191,7 @@ export interface PurchaseUpdateInput {
   formaPago?: string;
   observaciones?: string;
   fechaEntregaEstimada?: string;
+  descuento?: number;
 }
 
 export interface PurchaseStatusUpdateInput {
@@ -209,6 +213,7 @@ export interface Purchase {
     subtotal: number;
   }>;
   subtotal: number;
+  descuento: number;
   total: number;
   formaPago?: string;
   fechaEntregaEstimada?: string;

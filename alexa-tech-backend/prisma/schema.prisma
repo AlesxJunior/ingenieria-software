@@ -34,6 +34,8 @@ model User {
   productsUpdated Product[] @relation("ProductUpdatedBy")
   clientsCreated  Client[]  @relation("ClientCreatedBy")
   clientsUpdated  Client[]  @relation("ClientUpdatedBy")
+  purchaseOrders  Purchase[] @relation("PurchaseCreatedBy")
+  inventoryMovements InventoryMovement[]
 
   @@map("users")
 }
@@ -157,9 +159,10 @@ model Product {
   categoria          String
   precioVenta        Decimal
   stock              Int      @default(0)
+  minStock           Int?
+  trackInventory     Boolean  @default(true)
   estado             Boolean  @default(true) // Activo/Inactivo (soft delete)
   unidadMedida       String
-  ubicacion          String?
 
   // Auditoría de creación/actualización
   usuarioCreacion      String?
@@ -167,8 +170,151 @@ model Product {
   createdBy            User?    @relation("ProductCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
   updatedBy            User?    @relation("ProductUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
 
+  // Relación con items de compra
+  purchaseItems       PurchaseItem[] @relation("PurchaseItemProduct")
+
+  // Relaciones de inventario
+  stockByWarehouses   StockByWarehouse[]
+  inventoryMovements  InventoryMovement[]
+
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   @@map("products")
+}
+
+// Enum para estado de compra
+enum PurchaseStatus {
+  Pendiente
+  Recibida
+  Cancelada
+}
+
+// Enum para tipo de comprobante
+enum VoucherType {
+  Factura
+  Boleta
+  GuiaRemision
+}
+
+// Enum para forma de pago
+enum PaymentMethod {
+  Efectivo
+  Credito_30
+  Credito_60
+}
+
+model Purchase {
+  id                  String          @id @default(cuid())
+  codigoOrden         String          @unique
+  proveedorId         String
+  almacenId           String
+  fechaEmision        DateTime
+  fechaEntregaEstimada DateTime?
+  tipoComprobante     VoucherType?
+  formaPago           PaymentMethod?
+  subtotal            Decimal         @default(0)
+  descuento           Decimal         @default(0)
+  total               Decimal         @default(0)
+  estado              PurchaseStatus  @default(Pendiente)
+  observaciones       String?
+
+  usuarioId           String?
+  usuario             User?           @relation("PurchaseCreatedBy", fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  items               PurchaseItem[]
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("purchase_orders")
+}
+
+model PurchaseItem {
+  id             String   @id @default(cuid())
+  purchaseId     String
+  purchase       Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  productCodigo  String
+  product        Product  @relation("PurchaseItemProduct", fields: [productCodigo], references: [codigo], onDelete: SetNull)
+
+  nombreProducto String?
+  cantidad       Int
+  precioUnitario Decimal
+  subtotal       Decimal
+
+  @@map("purchase_items")
+}
+
+// Inventario: enums
+enum MovementType {
+  ENTRADA
+  SALIDA
+  AJUSTE
+}
+
+enum AdjustmentDirection {
+  INCREMENT
+  DECREMENT
+}
+
+enum AdjustmentReason {
+  MermaDanio
+  MermaRotura
+  DevolucionCliente
+  ErrorConteo
+  OtroRazon
+}
+
+model Warehouse {
+  id         String   @id @default(cuid())
+  codigo     String   @unique
+  nombre     String
+  ubicacion  String?
+  capacidad  Int?
+  activo     Boolean  @default(true) @map("isActive")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relaciones de inventario
+  stockByWarehouses   StockByWarehouse[]
+  inventoryMovements  InventoryMovement[]
+
+  @@map("warehouses")
+}
+
+model StockByWarehouse {
+  id           String   @id @default(cuid())
+  productId    String
+  warehouseId  String
+  quantity     Int      @default(0) @map("cantidad")
+  minStock     Int?                     @map("stockMinimo")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, warehouseId])
+  @@map("stock_by_warehouse")
+}
+
+model InventoryMovement {
+  id            String   @id @default(cuid())
+  productId     String
+  warehouseId   String
+  type          String   @map("tipo")
+  quantity      Int      @map("cantidad")
+  stockBefore   Int      @map("stockAntes")
+  stockAfter    Int      @map("stockDespues")
+  reason        String   @map("motivo")
+  documentRef   String?  @map("documentoReferencia")
+  userId        String?  @map("usuarioId")
+  createdAt     DateTime @default(now())
+
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("inventory_movements")
 }

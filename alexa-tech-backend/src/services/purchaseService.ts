@@ -1,3 +1,4 @@
+import { prisma } from '../config/database';
 import {
   Purchase,
   PurchaseCreateInput,
@@ -7,10 +8,7 @@ import {
 import { clientService } from './entidadService';
 import { productService } from './productService';
 import { AuditService } from './auditService';
-import crypto from 'node:crypto';
-
-// Servicio de Compras (en memoria por ahora)
-const purchases = new Map<string, Purchase>();
+import { inventoryService } from './inventoryService';
 
 const genCodigoOrden = (): string => {
   const now = new Date();
@@ -27,136 +25,222 @@ export const purchaseService = {
   async create(data: PurchaseCreateInput, userId: string): Promise<Purchase> {
     // Validar proveedor
     const proveedor = await clientService.getClientById(data.proveedorId);
-    if (
-      !proveedor ||
-      !['Proveedor', 'Ambos'].includes(String(proveedor.tipoEntidad))
-    ) {
+    if (!proveedor || !['Proveedor', 'Ambos'].includes(String(proveedor.tipoEntidad))) {
       throw new Error('Proveedor no encontrado o inválido');
     }
 
-    // Nota: Validación de almacén pendiente (no hay servicio de almacén)
-
-    // Calcular totales
+    // Calcular items y totales
     const items = data.items.map((it) => ({
-      productoId: String(it.productoId),
-      nombreProducto: it.nombreProducto,
+      productCodigo: String(it.productoId),
+      nombreProducto: it.nombreProducto ?? null,
       cantidad: Number(it.cantidad),
-      precioUnitario: Number(it.precioUnitario),
-      subtotal: Number(it.cantidad) * Number(it.precioUnitario),
+      precioUnitario: Number(it.precioUnitario) as any,
+      subtotal: Number(it.cantidad) * Number(it.precioUnitario) as any,
     }));
-    const subtotal = items.reduce((acc, cur) => acc + cur.subtotal, 0);
-    const total = subtotal; // sin impuestos por ahora
+    const subtotal = items.reduce((acc, cur) => acc + Number(cur.subtotal), 0);
+    const descuento = Number(data.descuento ?? 0);
+    const total = subtotal - descuento;
 
-    // Generar ID y código únicos
-    const id = crypto.randomUUID();
+    // Generar código único
     let codigoOrden = genCodigoOrden();
-    while ([...purchases.values()].some((p) => p.codigoOrden === codigoOrden)) {
-      codigoOrden = genCodigoOrden();
+    // Asegurar unicidad por si se crean simultáneamente
+    const exists = await prisma.purchase.findUnique({ where: { codigoOrden } });
+    if (exists) {
+      codigoOrden = `${codigoOrden}-${Date.now()}`;
     }
 
-    const nowIso = new Date().toISOString();
-    const purchase: Purchase = {
-      id,
-      codigoOrden,
-      proveedorId: data.proveedorId,
-      almacenId: data.almacenId,
-      fechaEmision: data.fechaEmision,
-      tipoComprobante: data.tipoComprobante,
-      items,
-      subtotal,
-      total,
-      formaPago: data.formaPago,
-      fechaEntregaEstimada: data.fechaEntregaEstimada,
-      observaciones: data.observaciones,
-      usuarioId: userId,
-      estado: 'Pendiente',
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    };
-
-    purchases.set(id, purchase);
+    const now = new Date();
+    const created = await prisma.purchase.create({
+      data: {
+        codigoOrden,
+        proveedorId: data.proveedorId,
+        almacenId: data.almacenId,
+        fechaEmision: new Date(data.fechaEmision),
+        fechaEntregaEstimada: data.fechaEntregaEstimada ? new Date(data.fechaEntregaEstimada) : null,
+        tipoComprobante: (data.tipoComprobante as any) ?? null,
+        formaPago: (data.formaPago as any) ?? null,
+        subtotal: subtotal as any,
+        descuento: descuento as any,
+        total: total as any,
+        estado: 'Pendiente' as any,
+        observaciones: data.observaciones ?? null,
+        usuarioId: userId,
+        createdAt: now,
+        updatedAt: now,
+        items: {
+          create: items,
+        },
+      },
+      include: { items: true },
+    });
 
     await AuditService.createAuditLog({
       action: 'CREATE_PURCHASE_ORDER',
       userId,
-      targetId: id,
-      details: `Orden de compra creada: ${codigoOrden}`,
+      targetId: created.id,
+      details: `Orden de compra creada: ${created.codigoOrden}`,
     });
 
-    return purchase;
+    return {
+      id: created.id,
+      codigoOrden: created.codigoOrden,
+      proveedorId: created.proveedorId,
+      almacenId: created.almacenId,
+      fechaEmision: created.fechaEmision.toISOString(),
+      tipoComprobante: created.tipoComprobante ?? undefined,
+      items: created.items.map((it) => ({
+        productoId: it.productCodigo,
+        nombreProducto: it.nombreProducto ?? undefined,
+        cantidad: it.cantidad,
+        precioUnitario: Number(it.precioUnitario),
+        subtotal: Number(it.subtotal),
+      })),
+      subtotal: Number(created.subtotal),
+      descuento: Number(created.descuento),
+      total: Number(created.total),
+      formaPago: created.formaPago ?? undefined,
+      fechaEntregaEstimada: created.fechaEntregaEstimada?.toISOString(),
+      observaciones: created.observaciones ?? undefined,
+      usuarioId: created.usuarioId!,
+      estado: created.estado as any,
+      createdAt: created.createdAt.toISOString(),
+      updatedAt: created.updatedAt.toISOString(),
+    };
   },
 
   async list(filters: any = {}): Promise<Purchase[]> {
-    const all = [...purchases.values()];
-    const q = String(filters.q || '').toLowerCase();
-    const proveedorId = filters.proveedorId
-      ? String(filters.proveedorId)
-      : undefined;
-    const almacenId = filters.almacenId ? String(filters.almacenId) : undefined;
-    const estado = filters.estado ? String(filters.estado) : undefined;
-    const fechaInicio = filters.fechaInicio
-      ? new Date(filters.fechaInicio)
-      : undefined;
-    const fechaFin = filters.fechaFin ? new Date(filters.fechaFin) : undefined;
+    const where: any = {};
+    if (filters.proveedorId) where.proveedorId = String(filters.proveedorId);
+    if (filters.almacenId) where.almacenId = String(filters.almacenId);
+    if (filters.estado) where.estado = String(filters.estado) as any;
+    if (filters.fechaInicio || filters.fechaFin) {
+      // Usar límites en UTC como espera el test
+      const start = filters.fechaInicio ? new Date(filters.fechaInicio) : undefined;
+      const end = filters.fechaFin ? new Date(filters.fechaFin) : undefined;
+      where.fechaEmision = {};
+      if (start) (where.fechaEmision as any).gte = start;
+      if (end) (where.fechaEmision as any).lte = end; // inclusivo
+    }
+    if (filters.q) {
+      const q = String(filters.q);
+      where.OR = [
+        { codigoOrden: { contains: q, mode: 'insensitive' } },
+        { items: { some: { nombreProducto: { contains: q, mode: 'insensitive' } } } },
+      ];
+    }
 
-    return all.filter((p) => {
-      if (q) {
-        const matchQ =
-          p.codigoOrden.toLowerCase().includes(q) ||
-          p.items.some((it) =>
-            (it.nombreProducto || '').toLowerCase().includes(q),
-          );
-        if (!matchQ) return false;
-      }
-      if (proveedorId && p.proveedorId !== proveedorId) return false;
-      if (almacenId && p.almacenId !== almacenId) return false;
-      if (estado && p.estado !== estado) return false;
-      if (fechaInicio && new Date(p.fechaEmision) < fechaInicio) return false;
-      if (fechaFin && new Date(p.fechaEmision) > fechaFin) return false;
-      return true;
+    const purchases = await prisma.purchase.findMany({
+      where,
+      orderBy: { fechaEmision: 'desc' },
+      include: { items: true },
     });
+
+    return purchases.map((p) => ({
+      id: p.id,
+      codigoOrden: p.codigoOrden,
+      proveedorId: p.proveedorId,
+      almacenId: p.almacenId,
+      fechaEmision: p.fechaEmision.toISOString(),
+      tipoComprobante: p.tipoComprobante ?? undefined,
+      items: p.items.map((it) => ({
+        productoId: it.productCodigo,
+        nombreProducto: it.nombreProducto ?? undefined,
+        cantidad: it.cantidad,
+        precioUnitario: Number(it.precioUnitario),
+        subtotal: Number(it.subtotal),
+      })),
+      subtotal: Number(p.subtotal),
+      descuento: Number(p.descuento),
+      total: Number(p.total),
+      formaPago: p.formaPago ?? undefined,
+      fechaEntregaEstimada: p.fechaEntregaEstimada?.toISOString(),
+      observaciones: p.observaciones ?? undefined,
+      usuarioId: p.usuarioId!,
+      estado: p.estado as any,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    }));
   },
 
   async getById(id: string): Promise<Purchase | null> {
-    return purchases.get(id) || null;
+    const p = await prisma.purchase.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+    if (!p) return null;
+    return {
+      id: p.id,
+      codigoOrden: p.codigoOrden,
+      proveedorId: p.proveedorId,
+      almacenId: p.almacenId,
+      fechaEmision: p.fechaEmision.toISOString(),
+      tipoComprobante: p.tipoComprobante ?? undefined,
+      items: p.items.map((it) => ({
+        productoId: it.productCodigo,
+        nombreProducto: it.nombreProducto ?? undefined,
+        cantidad: it.cantidad,
+        precioUnitario: Number(it.precioUnitario),
+        subtotal: Number(it.subtotal),
+      })),
+      subtotal: Number(p.subtotal),
+      descuento: Number(p.descuento),
+      total: Number(p.total),
+      formaPago: p.formaPago ?? undefined,
+      fechaEntregaEstimada: p.fechaEntregaEstimada?.toISOString(),
+      observaciones: p.observaciones ?? undefined,
+      usuarioId: p.usuarioId!,
+      estado: p.estado as any,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    };
   },
 
-  async update(
-    id: string,
-    data: PurchaseUpdateInput,
-    userId: string,
-  ): Promise<Purchase> {
-    const existing = purchases.get(id);
+  async update(id: string, data: PurchaseUpdateInput, userId: string): Promise<Purchase> {
+    const existing = await prisma.purchase.findUnique({ where: { id }, include: { items: true } });
     if (!existing) throw new Error('Orden de compra no encontrada');
-    if (existing.estado !== 'Pendiente') {
+    if (existing.estado !== ('Pendiente' as any)) {
       throw new Error('Solo se puede actualizar órdenes en estado Pendiente');
     }
 
-    const merged: Purchase = {
-      ...existing,
-      proveedorId: data.proveedorId ?? existing.proveedorId,
-      almacenId: data.almacenId ?? existing.almacenId,
-      fechaEmision: data.fechaEmision ?? existing.fechaEmision,
-      tipoComprobante: data.tipoComprobante ?? existing.tipoComprobante,
-      formaPago: data.formaPago ?? existing.formaPago,
-      observaciones: data.observaciones ?? existing.observaciones,
-      fechaEntregaEstimada:
-        data.fechaEntregaEstimada ?? existing.fechaEntregaEstimada,
-      items: data.items
-        ? data.items.map((it) => ({
-            productoId: String(it.productoId),
-            nombreProducto: it.nombreProducto,
-            cantidad: Number(it.cantidad),
-            precioUnitario: Number(it.precioUnitario),
-            subtotal: Number(it.cantidad) * Number(it.precioUnitario),
-          }))
-        : existing.items,
-    };
-    merged.subtotal = merged.items.reduce((acc, cur) => acc + cur.subtotal, 0);
-    merged.total = merged.subtotal;
-    merged.updatedAt = new Date().toISOString();
+    // Preparar items
+    const items = (data.items ?? existing.items.map((it) => ({
+      productoId: it.productCodigo,
+      nombreProducto: it.nombreProducto ?? undefined,
+      cantidad: it.cantidad,
+      precioUnitario: Number(it.precioUnitario),
+    })) ).map((it) => ({
+      productCodigo: String(it.productoId),
+      nombreProducto: it.nombreProducto ?? null,
+      cantidad: Number(it.cantidad),
+      precioUnitario: Number(it.precioUnitario) as any,
+      subtotal: Number(it.cantidad) * Number(it.precioUnitario) as any,
+    }));
 
-    purchases.set(id, merged);
+    const subtotal = items.reduce((acc, cur) => acc + Number(cur.subtotal), 0);
+    const descuento = Number(data.descuento ?? Number(existing.descuento));
+    const total = subtotal - descuento;
+
+    const updated = await prisma.$transaction([
+      prisma.purchaseItem.deleteMany({ where: { purchaseId: id } }),
+      prisma.purchase.update({
+        where: { id },
+        data: {
+          proveedorId: data.proveedorId ?? existing.proveedorId,
+          almacenId: data.almacenId ?? existing.almacenId,
+          fechaEmision: data.fechaEmision ? new Date(data.fechaEmision) : existing.fechaEmision,
+          fechaEntregaEstimada: data.fechaEntregaEstimada ? new Date(data.fechaEntregaEstimada) : existing.fechaEntregaEstimada,
+          tipoComprobante: (data.tipoComprobante as any) ?? existing.tipoComprobante,
+          formaPago: (data.formaPago as any) ?? existing.formaPago,
+          observaciones: data.observaciones ?? existing.observaciones,
+          subtotal: subtotal as any,
+          descuento: descuento as any,
+          total: total as any,
+          updatedAt: new Date(),
+          items: { create: items },
+        },
+        include: { items: true },
+      }),
+    ]).then(([, purchase]) => purchase);
 
     await AuditService.createAuditLog({
       action: 'UPDATE_PURCHASE_ORDER',
@@ -165,25 +249,45 @@ export const purchaseService = {
       details: `Orden de compra actualizada: ${existing.codigoOrden}`,
     });
 
-    return merged;
+    return {
+      id: updated.id,
+      codigoOrden: updated.codigoOrden,
+      proveedorId: updated.proveedorId,
+      almacenId: updated.almacenId,
+      fechaEmision: updated.fechaEmision.toISOString(),
+      tipoComprobante: updated.tipoComprobante ?? undefined,
+      items: updated.items.map((it) => ({
+        productoId: it.productCodigo,
+        nombreProducto: it.nombreProducto ?? undefined,
+        cantidad: it.cantidad,
+        precioUnitario: Number(it.precioUnitario),
+        subtotal: Number(it.subtotal),
+      })),
+      subtotal: Number(updated.subtotal),
+      descuento: Number(updated.descuento),
+      total: Number(updated.total),
+      formaPago: updated.formaPago ?? undefined,
+      fechaEntregaEstimada: updated.fechaEntregaEstimada?.toISOString(),
+      observaciones: updated.observaciones ?? undefined,
+      usuarioId: updated.usuarioId!,
+      estado: updated.estado as any,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
   },
 
-  async updateStatus(
-    id: string,
-    data: PurchaseStatusUpdateInput,
-    userId: string,
-  ): Promise<Purchase> {
-    const existing = purchases.get(id);
+  async updateStatus(id: string, data: PurchaseStatusUpdateInput, userId: string): Promise<Purchase> {
+    const existing = await prisma.purchase.findUnique({ where: { id }, include: { items: true } });
     if (!existing) throw new Error('Orden de compra no encontrada');
 
-    const prevEstado = existing.estado;
-    const nextEstado = data.estado;
-    const updated: Purchase = {
-      ...existing,
-      estado: nextEstado,
-      updatedAt: new Date().toISOString(),
-    };
-    purchases.set(id, updated);
+    const prevEstado = existing.estado as any;
+    const nextEstado = data.estado as any;
+
+    const updated = await prisma.purchase.update({
+      where: { id },
+      data: { estado: nextEstado, updatedAt: new Date() },
+      include: { items: true },
+    });
 
     await AuditService.createAuditLog({
       action: 'CHANGE_PURCHASE_STATUS',
@@ -192,22 +296,61 @@ export const purchaseService = {
       details: `Estado cambiado de ${prevEstado} a ${nextEstado} (${existing.codigoOrden})`,
     });
 
-    // Efecto: actualizar stock al pasar a Recibida
-    if (nextEstado === 'Recibida' && prevEstado !== 'Recibida') {
+    if (nextEstado === ('Recibida' as any) && prevEstado !== ('Recibida' as any)) {
+      // Aplicar ENTRADA de inventario por almacén usando inventoryService
+      const itemsForInventory: Array<{ productId: string; cantidad: number }> = [];
       for (const it of existing.items) {
-        // Interpretar productoId como código de producto
-        const prod = await productService.findByCodigo(it.productoId);
+        const prod = await productService.findByCodigo(it.productCodigo);
         if (!prod) continue;
-        const newStock = Number(prod.stock || 0) + Number(it.cantidad);
-        await productService.updateByCodigo(
-          String(prod.codigo),
-          { stock: newStock } as any,
-          userId,
-        );
+        itemsForInventory.push({ productId: prod.id, cantidad: Number(it.cantidad) });
+      }
+      if (itemsForInventory.length > 0 && existing.almacenId) {
+        await inventoryService.applyPurchaseEntrada(id, itemsForInventory, existing.almacenId, userId);
       }
     }
 
-    return updated;
+    return {
+      id: updated.id,
+      codigoOrden: updated.codigoOrden,
+      proveedorId: updated.proveedorId,
+      almacenId: updated.almacenId,
+      fechaEmision: updated.fechaEmision.toISOString(),
+      tipoComprobante: updated.tipoComprobante ?? undefined,
+      items: updated.items.map((it) => ({
+        productoId: it.productCodigo,
+        nombreProducto: it.nombreProducto ?? undefined,
+        cantidad: it.cantidad,
+        precioUnitario: Number(it.precioUnitario),
+        subtotal: Number(it.subtotal),
+      })),
+      subtotal: Number(updated.subtotal),
+      descuento: Number(updated.descuento),
+      total: Number(updated.total),
+      formaPago: updated.formaPago ?? undefined,
+      fechaEntregaEstimada: updated.fechaEntregaEstimada?.toISOString(),
+      observaciones: updated.observaciones ?? undefined,
+      usuarioId: updated.usuarioId!,
+      estado: updated.estado as any,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+  },
+
+  async delete(id: string, userId: string): Promise<void> {
+    const existing = await prisma.purchase.findUnique({ where: { id } });
+    if (!existing) throw new Error('Orden de compra no encontrada');
+    if (existing.estado !== ('Pendiente' as any)) {
+      throw new Error('Solo se puede eliminar órdenes en estado Pendiente');
+    }
+
+    await prisma.purchase.delete({ where: { id } });
+
+    await AuditService.createAuditLog({
+      action: 'DELETE_PURCHASE_ORDER',
+      userId,
+      targetId: id,
+      details: `Orden de compra eliminada: ${existing.codigoOrden}`,
+    });
   },
 };
 

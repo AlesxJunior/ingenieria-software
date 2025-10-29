@@ -485,7 +485,6 @@ const ListaProductos: React.FC = () => {
               <th>Stock</th>
               <th>Estado</th>
               <th>Unidad</th>
-              <th>Ubicación</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -504,7 +503,6 @@ const ListaProductos: React.FC = () => {
                     </ActiveBadge>
                   </td>
                   <td>{product.unit}</td>
-                  <td>{product.ubicacion || '—'}</td>
                   <td>
                     <ActionButton 
                       onClick={() => handleEdit(product.id)}
@@ -523,7 +521,7 @@ const ListaProductos: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={9}>
+                <td colSpan={8}>
                   <EmptyState>
                     {searchTerm ? 
                       'No se encontraron productos que coincidan con la búsqueda.' : 
@@ -574,10 +572,7 @@ const ListaProductos: React.FC = () => {
                     <MobileCardValue>{product.unit}</MobileCardValue>
                   </MobileCardField>
 
-                  <MobileCardField>
-                    <MobileCardLabel>Ubicación</MobileCardLabel>
-                    <MobileCardValue>{product.ubicacion || '—'}</MobileCardValue>
-                  </MobileCardField>
+
                 </MobileCardBody>
                 
                 <MobileCardActions>

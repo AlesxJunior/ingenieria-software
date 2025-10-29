@@ -1,4 +1,5 @@
 // Configuración dinámica de la API
+/// <reference types="vite/client" />
 const getApiBaseUrl = (): string => {
   // Si estamos en desarrollo y hay una variable de entorno específica, usarla
   if (import.meta.env.VITE_API_URL) {
@@ -71,15 +72,19 @@ class ApiService {
     descripcion?: string;
     categoria: string;
     precioVenta: number;
-    stock: number;
     estado?: boolean;
     unidadMedida: string;
-    ubicacion?: string;
+    stockInitial?: { warehouseId: string; cantidad: number };
   }): Promise<ApiResponse<any>> {
     return this.request('/productos', {
       method: 'POST',
       body: JSON.stringify(productData),
     });
+  }
+
+  // Obtener almacenes
+  async getWarehouses(): Promise<ApiResponse<{ warehouses: Array<{ id: string; codigo: string; nombre: string; activo: boolean }> }>> {
+    return this.request('/warehouses', { method: 'GET' });
   }
 
   // ==== Compras ====
@@ -97,6 +102,7 @@ class ApiService {
     formaPago?: string;
     observaciones?: string;
     fechaEntregaEstimada?: string;
+    descuento?: number;
   }): Promise<ApiResponse<any>> {
     return this.request('/compras', {
       method: 'POST',
@@ -147,6 +153,7 @@ class ApiService {
     formaPago?: string;
     observaciones?: string;
     fechaEntregaEstimada?: string;
+    descuento?: number;
   }): Promise<ApiResponse<any>> {
     return this.request(`/compras/${id}`, {
       method: 'PUT',
@@ -161,23 +168,27 @@ class ApiService {
     });
   }
 
+  async deletePurchase(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/compras/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Listar productos con filtros opcionales
   async getProducts(params?: {
     categoria?: string;
     estado?: boolean;
     unidadMedida?: string;
-    ubicacion?: string;
     q?: string;
     minPrecio?: number;
     maxPrecio?: number;
     minStock?: number;
     maxStock?: number;
-  }): Promise<ApiResponse<{ products: any[]; total: number; filters: Record<string, any> }>> {
+  }, options?: RequestInit): Promise<ApiResponse<{ products: any[]; total: number; filters: Record<string, any> }>> {
     const queryParams = new URLSearchParams();
     if (params?.categoria) queryParams.append('categoria', params.categoria);
     if (typeof params?.estado === 'boolean') queryParams.append('estado', String(params.estado));
     if (params?.unidadMedida) queryParams.append('unidadMedida', params.unidadMedida);
-    if (params?.ubicacion) queryParams.append('ubicacion', params.ubicacion);
     if (params?.q) queryParams.append('q', params.q);
     if (typeof params?.minPrecio === 'number') queryParams.append('minPrecio', String(params.minPrecio));
     if (typeof params?.maxPrecio === 'number') queryParams.append('maxPrecio', String(params.maxPrecio));
@@ -186,7 +197,7 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/productos?${queryString}` : '/productos';
-    return this.request<{ products: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET' });
+    return this.request<{ products: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET', ...(options || {}) });
   }
 
   // Obtener producto por código
@@ -202,10 +213,8 @@ class ApiService {
     descripcion?: string;
     categoria?: string;
     precioVenta?: number;
-    stock?: number;
     estado?: boolean;
     unidadMedida?: string;
-    ubicacion?: string;
   }): Promise<ApiResponse<any>> {
     return this.request(`/productos/${codigo}`, {
       method: 'PUT',
@@ -233,13 +242,25 @@ class ApiService {
       'Content-Type': 'application/json',
     };
 
-    // Agregar token de autorización si existe
-    const token = localStorage.getItem('alexatech_token');
+    // Agregar token de autorización si existe (soporta 'authToken' y clave legacy)
+    const token = localStorage.getItem('authToken') || localStorage.getItem('alexatech_token');
     if (token) {
       defaultHeaders['Authorization'] = `Bearer ${token}`;
-      console.log('[API Request] Token enviado:', token);
+      console.log('Headers:', { Authorization: 'Bearer ...' });
     } else {
-      console.log('[API Request] No se encontró token.');
+      console.log('Headers:', { Authorization: 'sin token' });
+    }
+
+    // Log de datos enviados (si hay body)
+    try {
+      if (options.body) {
+        const maybeStr = typeof options.body === 'string' ? options.body : String(options.body);
+        let parsed: any = maybeStr;
+        try { parsed = JSON.parse(maybeStr as string); } catch {}
+        console.log('Datos:', parsed);
+      }
+    } catch (e) {
+      console.log('No se pudo loguear datos del request:', e);
     }
 
     const config: RequestInit = {
@@ -261,12 +282,31 @@ class ApiService {
         data,
       });
 
+      // Si el backend responde 401, limpiar tokens y redirigir a login
+      if (response.status === 401) {
+        // Limpiar posibles claves de token
+        try {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('alexatech_token');
+          localStorage.removeItem('alexatech_refresh_token');
+        } catch {}
+        console.log('401 Unauthorized: limpiando tokens');
+        // Evitar bucles de redirección: no redirigir si ya estamos en /login
+        if (!window.location.pathname.includes('/login')) {
+          // Mostrar mensaje si está disponible
+          (window as any).showToast?.('Sesión expirada. Inicia sesión nuevamente.');
+          window.location.href = '/login';
+        }
+      }
+
       if (!response.ok) {
         return {
           success: false,
           message: data.message || `HTTP error! status: ${response.status}`,
-          error: data.error || `HTTP ${response.status}`
-        };
+          error: data.error || `HTTP ${response.status}`,
+          // incluir payload crudo para ver errores de validación del backend
+          data,
+        } as any;
       }
 
       return data;
@@ -584,12 +624,14 @@ export const apiService = new ApiService();
 // Funciones de utilidad para el manejo de tokens
 export const tokenUtils = {
   setTokens: (accessToken: string, refreshToken: string) => {
+    // Almacenar bajo nueva clave y legacy para compatibilidad
+    localStorage.setItem('authToken', accessToken);
     localStorage.setItem('alexatech_token', accessToken);
     localStorage.setItem('alexatech_refresh_token', refreshToken);
   },
 
   getAccessToken: (): string | null => {
-    return localStorage.getItem('alexatech_token');
+    return localStorage.getItem('authToken') || localStorage.getItem('alexatech_token');
   },
 
   getRefreshToken: (): string | null => {
@@ -597,6 +639,7 @@ export const tokenUtils = {
   },
 
   clearTokens: () => {
+    localStorage.removeItem('authToken');
     localStorage.removeItem('alexatech_token');
     localStorage.removeItem('alexatech_refresh_token');
   },

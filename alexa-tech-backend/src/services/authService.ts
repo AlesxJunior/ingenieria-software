@@ -326,11 +326,17 @@ export class AuthService {
 }
 
 // Limpiar tokens expirados cada hora
-setInterval(
-  () => {
-    AuthService.cleanExpiredTokens();
-  },
-  60 * 60 * 1000,
-);
+if (process.env.NODE_ENV !== 'test') {
+  const interval = setInterval(
+    () => {
+      AuthService.cleanExpiredTokens();
+    },
+    60 * 60 * 1000,
+  );
+  // Evitar que el intervalo mantenga el proceso vivo en entornos no críticos
+  if (typeof (interval as any).unref === 'function') {
+    (interval as any).unref();
+  }
+}
 
 export default AuthService;

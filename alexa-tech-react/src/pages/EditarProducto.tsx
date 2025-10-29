@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useProducts } from '../context/ProductContext';
 import { useNotification } from '../context/NotificationContext';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS, LOCATION_OPTIONS } from '../utils/productOptions';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
 import { apiService } from '../utils/api';
 
 const FormContainer = styled.div`
@@ -108,7 +108,6 @@ interface ProductFormData {
   price: string;
   initialStock: string;
   status: string;
-  ubicacion: string;
   unit: string;
   isActive: boolean;
 }
@@ -137,7 +136,6 @@ const EditarProducto: React.FC = () => {
     price: '',
     initialStock: '',
     status: 'disponible',
-    ubicacion: '',
     unit: '',
     isActive: true
   });
@@ -168,10 +166,7 @@ const EditarProducto: React.FC = () => {
     return mergeOptions(dyn, UNIT_OPTIONS);
   }, [products]);
 
-  const locationOptions = useMemo(() => {
-    const dyn = Array.from(new Set((products || []).map(p => p.ubicacion || '').filter(v => v))).sort();
-    return mergeOptions(dyn, LOCATION_OPTIONS);
-  }, [products]);
+
 
   useEffect(() => {
     if (id) {
@@ -185,7 +180,6 @@ const EditarProducto: React.FC = () => {
           price: product.price.toString(),
           initialStock: product.currentStock.toString(),
           status: product.status,
-          ubicacion: product.ubicacion || '',
           unit: product.unit,
           isActive: product.isActive ?? true
         });
@@ -313,10 +307,8 @@ const EditarProducto: React.FC = () => {
           nombre: formData.productName || undefined,
           categoria: formData.category || undefined,
           precioVenta: formData.price ? parseFloat(formData.price) : undefined,
-          stock: formData.initialStock ? parseInt(formData.initialStock) : undefined,
           estado: formData.isActive,
           unidadMedida: formData.unit ? formData.unit.toLowerCase() : undefined,
-          ubicacion: formData.ubicacion?.trim() ? formData.ubicacion : undefined,
         };
 
         const response = await apiService.updateProductByCodigo(originalCode || formData.productCode, payload);
@@ -331,7 +323,6 @@ const EditarProducto: React.FC = () => {
           price: formData.price ? parseFloat(formData.price) : undefined,
           currentStock: formData.initialStock ? parseInt(formData.initialStock) : undefined,
           status: formData.status as 'disponible' | 'agotado' | 'proximamente',
-          ubicacion: formData.ubicacion || undefined,
           unit: formData.unit,
           isActive: formData.isActive
         });
@@ -475,21 +466,7 @@ const EditarProducto: React.FC = () => {
               />
             </FormGroup>
 
-            <FormGroup>
-              <label htmlFor="ubicacion">Ubicación (almacén)</label>
-              <select
-                id="ubicacion"
-                name="ubicacion"
-                value={formData.ubicacion}
-                onChange={handleInputChange}
-                disabled={isSubmitting}
-              >
-                <option value="">Sin ubicación</option>
-                {locationOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </FormGroup>
+
           </FormGrid>
 
           <ButtonGroup>

@@ -86,9 +86,7 @@ test('Admin can register new entity with Pasaporte via modal', async ({ page }) 
   const clients: any[] = [];
   await page.route('**/api/entidades*', async route => {
     const req = route.request();
-    const url = req.url();
-    const method = req.method();
-    if (method === 'GET') {
+    if (req.method() === 'GET') {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -97,36 +95,14 @@ test('Admin can register new entity with Pasaporte via modal', async ({ page }) 
           message: 'Lista de entidades',
           data: {
             clients,
-            pagination: {
-              currentPage: 1,
-              totalPages: 1,
-              totalClients: clients.length,
-              hasNextPage: false,
-              hasPrevPage: false,
-            }
+            pagination: { currentPage: 1, totalPages: 1, totalClients: clients.length, hasNextPage: false, hasPrevPage: false }
           }
         })
       });
     }
-    if (method === 'POST') {
-      const payload = await req.postDataJSON();
-      const now = new Date().toISOString();
-      const newClient = {
-        id: `client-${Date.now()}`,
-        tipoEntidad: payload.tipoEntidad,
-        tipoDocumento: payload.tipoDocumento,
-        numeroDocumento: String(payload.numeroDocumento).trim().toUpperCase(),
-        nombres: payload.nombres,
-        apellidos: payload.apellidos,
-        razonSocial: payload.razonSocial || null,
-        email: payload.email,
-        telefono: payload.telefono,
-        direccion: payload.direccion,
-        ciudad: payload.ciudad,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now,
-      };
+    if (req.method() === 'POST') {
+      const body = await req.postDataJSON();
+      const newClient = { id: `c-${Date.now()}`, ...body, isActive: true };
       clients.push(newClient);
       return route.fulfill({
         status: 200,
@@ -135,6 +111,27 @@ test('Admin can register new entity with Pasaporte via modal', async ({ page }) 
       });
     }
     return route.continue();
+  });
+  await page.route('**/api/ubigeo/departamentos', async route => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, message: 'OK', data: { departamentos: [{ id: 'dep-lima', nombre: 'Lima' }] } })
+    });
+  });
+  await page.route('**/api/ubigeo/departamentos/dep-lima/provincias', async route => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, message: 'OK', data: { provincias: [{ id: 'prov-lima', nombre: 'Lima', departamentoId: 'dep-lima' }] } })
+    });
+  });
+  await page.route('**/api/ubigeo/provincias/prov-lima/distritos', async route => {
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, message: 'OK', data: { distritos: [{ id: 'dist-miraflores', nombre: 'Miraflores', provinciaId: 'prov-lima' }] } })
+    });
   });
 
   await login(page, admin);
@@ -161,7 +158,17 @@ test('Admin can register new entity with Pasaporte via modal', async ({ page }) 
   await page.locator('#email').fill(email);
   await page.locator('#telefono').fill('987654321');
   await page.locator('#direccion').fill('E2E Street 123');
-  await page.locator('#ciudad').fill('Lima');
+  // Seleccionar Ubigeo (Departamento/Provincia/Distrito)
+  const depSelect = page.locator('#departamentoId:visible');
+  const provSelect = page.locator('#provinciaId:visible');
+  const distSelect = page.locator('#distritoId:visible');
+  await depSelect.waitFor();
+  await expect(depSelect).toBeEnabled();
+  await depSelect.selectOption({ label: 'Lima' });
+  await expect(provSelect).toBeEnabled();
+  await provSelect.selectOption({ label: 'Lima' });
+  await expect(distSelect).toBeEnabled();
+  await distSelect.selectOption({ label: 'Miraflores' });
 
   // Submit
   await page.getByRole('button', { name: 'Registrar Entidad' }).click();

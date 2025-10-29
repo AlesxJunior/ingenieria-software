@@ -14,11 +14,3 @@ export const UNIT_OPTIONS = [
   'Paquete',
   'Metro',
 ];
-
-export const LOCATION_OPTIONS = [
-  'Almacén A',
-  'Almacén B',
-  'Almacén C',
-  'Mostrador',
-  'Depósito',
-];

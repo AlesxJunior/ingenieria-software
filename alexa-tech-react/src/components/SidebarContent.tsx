@@ -188,6 +188,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
     if (pathname.includes('/compras')) {
       return 'compras';
     }
+    if (pathname.includes('/inventario')) {
+      return 'inventario';
+    }
     return null;
   };
 
@@ -321,11 +324,23 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/inventario')}>
-            <Link to="/inventario" onClick={handleItemClick}>
+          <NavItem $isActive={isActive('/inventario/stock') || isActive('/inventario/kardex')}>
+            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('inventario'); }}>
               <i className="fas fa-box-open"></i>
               <span>Inventario</span>
-            </Link>
+            </a>
+            <SubMenu $isOpen={openMenus.inventario}>
+              <SubMenuItem $isActive={isActive('/inventario/stock')}>
+                <Link to="/inventario/stock" onClick={handleItemClick}>
+                  <h3>Stock</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/inventario/kardex')}>
+                <Link to="/inventario/kardex" onClick={handleItemClick}>
+                  <h3>Kardex</h3>
+                </Link>
+              </SubMenuItem>
+            </SubMenu>
           </NavItem>
 
           <NavItem $isActive={isActive('/compras')}>

@@ -1,0 +1,102 @@
+{
+  "summary": {
+    "totalTests": 5,
+    "passedTests": 4,
+    "failedTests": 1,
+    "successRate": 80,
+    "duration": 530,
+    "timestamp": "2025-10-25T00:51:45.563Z"
+  },
+  "results": [
+    {
+      "timestamp": "2025-10-25T00:51:45.282Z",
+      "test": "Basic Stock Queries",
+      "status": "FAIL",
+      "details": {
+        "recordsFound": 0,
+        "duration": 6,
+        "limit": 1000
+      }
+    },
+    {
+      "timestamp": "2025-10-25T00:51:45.292Z",
+      "test": "Basic Kardex Queries",
+      "status": "PASS",
+      "details": {
+        "recordsFound": 0,
+        "duration": 6,
+        "limit": 2000
+      }
+    },
+    {
+      "timestamp": "2025-10-25T00:51:45.336Z",
+      "test": "Stock Adjustments",
+      "status": "PASS",
+      "details": {
+        "initialStock": 33,
+        "adjustment": 15,
+        "expectedFinal": 48,
+        "actualFinal": 48,
+        "duration": 37,
+        "limit": 500
+      }
+    },
+    {
+      "timestamp": "2025-10-25T00:51:45.346Z",
+      "test": "Data Consistency",
+      "status": "PASS",
+      "details": {
+        "issuesFound": 0,
+        "issues": [],
+        "duration": 7,
+        "limit": 3000
+      }
+    },
+    {
+      "timestamp": "2025-10-25T00:51:45.547Z",
+      "test": "Performance Tests",
+      "status": "PASS",
+      "details": {
+        "results": {
+          "stockQuery": 4,
+          "kardexQuery": 4,
+          "concurrentAdjustments": 190
+        },
+        "limits": {
+          "stockQuery": 1000,
+          "kardexQuery": 2000,
+          "stockAdjustment": 500,
+          "consistencyCheck": 3000
+        },
+        "concurrentOperations": 5
+      }
+    }
+  ],
+  "config": {
+    "testProducts": [
+      "prod-test-001",
+      "prod-test-002",
+      "prod-test-003"
+    ],
+    "testWarehouses": [
+      "wh-test-001",
+      "wh-test-002"
+    ],
+    "testUserId": "user-test-001",
+    "performanceLimits": {
+      "stockQuery": 1000,
+      "kardexQuery": 2000,
+      "stockAdjustment": 500,
+      "consistencyCheck": 3000
+    },
+    "testDataConfig": {
+      "productsCount": 10,
+      "warehousesCount": 3,
+      "initialStock": 100,
+      "adjustmentRange": [
+        -50,
+        50
+      ]
+    }
+  }
+}

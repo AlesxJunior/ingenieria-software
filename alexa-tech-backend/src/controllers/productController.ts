@@ -28,10 +28,14 @@ export const ProductController = {
           descripcion: req.body.descripcion,
           categoria: req.body.categoria,
           precioVenta: Number(req.body.precioVenta),
-          stock: Number(req.body.stock ?? 0),
           estado: req.body.estado ?? true,
           unidadMedida: req.body.unidadMedida,
-          ubicacion: req.body.ubicacion,
+          stockInitial: req.body.stockInitial
+            ? {
+                warehouseId: req.body.stockInitial.warehouseId,
+                cantidad: Number(req.body.stockInitial.cantidad ?? 0),
+              }
+            : undefined,
         },
         userId,
       );
@@ -82,7 +86,6 @@ export const ProductController = {
         categoria,
         estado,
         unidadMedida,
-        ubicacion,
         q,
         minPrecio,
         maxPrecio,
@@ -100,7 +103,6 @@ export const ProductController = {
             : undefined,
         unidadMedida:
           unidadMedida !== undefined ? String(unidadMedida) : undefined,
-        ubicacion: ubicacion !== undefined ? String(ubicacion) : undefined,
         q: q !== undefined ? String(q) : undefined,
         minPrecio: minPrecio !== undefined ? Number(minPrecio) : undefined,
         maxPrecio: maxPrecio !== undefined ? Number(maxPrecio) : undefined,
@@ -145,11 +147,8 @@ export const ProductController = {
             req.body.precioVenta !== undefined
               ? Number(req.body.precioVenta)
               : undefined,
-          stock:
-            req.body.stock !== undefined ? Number(req.body.stock) : undefined,
           estado: req.body.estado,
           unidadMedida: req.body.unidadMedida,
-          ubicacion: req.body.ubicacion,
         },
         userId,
       );

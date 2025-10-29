@@ -23,4 +23,7 @@ router.patch('/:id', PurchaseController.update);
 // Cambiar estado (Pendiente|Recibida|Cancelada)
 router.patch('/:id/status', PurchaseController.updateStatus);
 
+// Eliminar orden de compra (solo si está Pendiente)
+router.delete('/:id', PurchaseController.delete);
+
 export default router;

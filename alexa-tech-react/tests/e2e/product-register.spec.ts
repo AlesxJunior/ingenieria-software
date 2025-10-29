@@ -47,7 +47,7 @@ test('Login and register a new product via modal', async ({ page }) => {
   await page.locator('#price').fill('199.99');
   await page.locator('#initialStock').fill('5');
   await selectByLabelCI('#unit', 'Unidad');
-  await selectByLabelCI('#ubicacion', 'Almacén A');
+  await selectByLabelCI('#warehouseId', 'Almacén A');
 
   // Submit
   await page.getByRole('button', { name: 'Registrar' }).click();

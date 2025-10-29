@@ -4,21 +4,52 @@ import { ProductCreateInput, ProductUpdateInput } from '../types';
 export const productService = {
   async create(data: ProductCreateInput, userId?: string) {
     const now = new Date();
-    return prisma.product.create({
-      data: {
-        codigo: data.codigo,
-        nombre: data.nombre,
-        descripcion: data.descripcion ?? null,
-        categoria: data.categoria,
-        precioVenta: data.precioVenta as any,
-        stock: data.stock ?? 0,
-        estado: data.estado ?? true,
-        unidadMedida: data.unidadMedida,
-        ubicacion: data.ubicacion ?? null,
-        usuarioCreacion: userId ?? null,
-        createdAt: now,
-        updatedAt: now,
-      },
+    return prisma.$transaction(async (tx) => {
+      // Crear producto como catálogo puro; stock se calcula desde StockByWarehouse
+      const product = await tx.product.create({
+        data: {
+          codigo: data.codigo,
+          nombre: data.nombre,
+          descripcion: data.descripcion ?? null,
+          categoria: data.categoria,
+          precioVenta: data.precioVenta as any,
+          stock: 0, // se actualizará después
+          estado: data.estado ?? true,
+          unidadMedida: data.unidadMedida,
+          usuarioCreacion: userId ?? null,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+
+      // Crear stock inicial por almacén si corresponde
+      const cantidadInicial = Number(data.stockInitial?.cantidad ?? 0);
+      const warehouseIdInicial = data.stockInitial?.warehouseId;
+      if (Number.isInteger(cantidadInicial) && cantidadInicial >= 0 && warehouseIdInicial) {
+        await tx.stockByWarehouse.upsert({
+          where: { productId_warehouseId: { productId: product.id, warehouseId: warehouseIdInicial } },
+          update: { quantity: cantidadInicial, updatedAt: new Date() },
+          create: {
+            productId: product.id,
+            warehouseId: warehouseIdInicial,
+            quantity: cantidadInicial,
+          },
+        });
+      }
+
+      // Recalcular stock total del producto desde StockByWarehouse
+      const totalByProduct = await tx.stockByWarehouse.aggregate({
+        where: { productId: product.id },
+        _sum: { quantity: true },
+      });
+      const total = totalByProduct._sum.quantity ?? 0;
+
+      const updated = await tx.product.update({
+        where: { id: product.id },
+        data: { stock: total, updatedAt: new Date() },
+      });
+
+      return updated;
     });
   },
 
@@ -33,6 +64,7 @@ export const productService = {
     data: ProductUpdateInput,
     userId?: string,
   ) {
+    // No actualizar stock directamente aquí; se gestiona por inventario
     return prisma.product.update({
       where: { codigo },
       data: {
@@ -40,10 +72,8 @@ export const productService = {
         descripcion: data.descripcion,
         categoria: data.categoria,
         precioVenta: data.precioVenta as any,
-        stock: data.stock,
         estado: data.estado,
         unidadMedida: data.unidadMedida,
-        ubicacion: data.ubicacion,
         usuarioActualizacion: userId ?? null,
         updatedAt: new Date(),
       },
@@ -65,7 +95,6 @@ export const productService = {
     categoria?: string;
     estado?: boolean;
     unidadMedida?: string;
-    ubicacion?: string;
     q?: string;
     minPrecio?: number;
     maxPrecio?: number;
@@ -76,9 +105,6 @@ export const productService = {
     if (filters.categoria) where.categoria = filters.categoria;
     if (typeof filters.estado === 'boolean') where.estado = filters.estado;
     if (filters.unidadMedida) where.unidadMedida = filters.unidadMedida;
-    if (filters.ubicacion) {
-      where.ubicacion = { contains: filters.ubicacion, mode: 'insensitive' };
-    }
 
     if (filters.q) {
       where.OR = [

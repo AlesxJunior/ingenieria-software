@@ -6,7 +6,10 @@ import { useNotification } from '../context/NotificationContext';
 import { useModal } from '../context/ModalContext';
 import NuevaCompraModal from '../components/NuevaCompraModal';
 import { apiService } from '../utils/api';
-import { getWarehouseName } from '../utils/warehouses';
+
+import { getWarehouseLabel } from '../constants/warehouses';
+import DetalleCompraModal from '../components/DetalleCompraModal';
+import CambiarEstadoModal from '../components/CambiarEstadoModal';
 
 const TableContainer = styled.div`
   background: white;
@@ -196,14 +199,17 @@ const ListaCompras: React.FC = () => {
   const fetchPurchases = async () => {
     try {
       setIsLoading(true);
-      const response = await apiService.getPurchases({
+      const params = {
         q: q || undefined,
         estado: (estado as any) || undefined,
         fechaInicio: fechaInicio || undefined,
         fechaFin: fechaFin || undefined,
         page,
         limit,
-      });
+      };
+      console.log('Filtro', { fechaInicio, fechaFin, params });
+      const response = await apiService.getPurchases(params);
+      console.log('API response compras', response);
       if (response.success && response.data) {
         setPurchases(response.data.purchases as Purchase[]);
         setTotal(response.data.total || 0);
@@ -241,6 +247,48 @@ const ListaCompras: React.FC = () => {
     );
   };
 
+  const handleEditPurchase = (purchase: Purchase) => {
+    openModal(
+      <NuevaCompraModal purchase={purchase} onClose={() => { closeModal(); fetchPurchases(); }} />,
+      'Editar Compra',
+      'large'
+    );
+  };
+
+  const handleViewPurchase = (purchaseId: string) => {
+    openModal(
+      <DetalleCompraModal purchaseId={purchaseId} onClose={() => { closeModal(); }} />,
+      'Detalle de Compra',
+      'large'
+    );
+  };
+
+  const openChangeStatus = (purchase: Purchase) => {
+    openModal(
+      <CambiarEstadoModal
+        purchaseId={purchase.id}
+        currentStatus={purchase.estado}
+        onClose={() => { closeModal(); }}
+        onUpdated={() => { fetchPurchases(); }}
+      />,
+      'Cambiar Estado',
+      'medium'
+    );
+  };
+
+  const handleDeletePurchase = async (purchaseId: string) => {
+    try {
+      if (!window.confirm('¿Eliminar esta compra? Esta acción no se puede deshacer.')) return;
+      const response = await apiService.deletePurchase(purchaseId);
+      if (!response.success) throw new Error(response.message || 'Error al eliminar compra');
+      showSuccess('Compra eliminada');
+      await fetchPurchases();
+    } catch (err) {
+      console.error('Error deleting purchase:', err);
+      showError('No se pudo eliminar la compra');
+    }
+  };
+
   const applyFilters = async () => {
     setPage(1);
     await fetchPurchases();
@@ -266,17 +314,7 @@ const ListaCompras: React.FC = () => {
     return `${prov.nombres || ''} ${prov.apellidos || ''}`.trim() || proveedorId;
   };
 
-  const handleStatusChange = async (purchaseId: string, next: 'Pendiente' | 'Recibida' | 'Cancelada') => {
-    try {
-      const response = await apiService.updatePurchaseStatus(purchaseId, next);
-      if (!response.success) throw new Error(response.message || 'Error al actualizar estado');
-      showSuccess('Estado de compra actualizado');
-      await fetchPurchases();
-    } catch (err) {
-      console.error('Error updating purchase status:', err);
-      showError('No se pudo actualizar el estado de la compra');
-    }
-  };
+
 
   const filteredPurchases = useMemo(() => purchases, [purchases]);
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / limit)), [total, limit]);
@@ -310,7 +348,7 @@ const ListaCompras: React.FC = () => {
             </Select>
             <PrimaryButton onClick={applyFilters} disabled={isLoading}>{isLoading ? 'Buscando...' : 'Buscar'}</PrimaryButton>
             <FilterButton onClick={clearFilters}>Limpiar</FilterButton>
-            <PrimaryButton onClick={handleNewPurchase}>Nueva Compra</PrimaryButton>
+            <PrimaryButton data-testid="new-purchase" onClick={handleNewPurchase}>Nueva Compra</PrimaryButton>
           </SearchContainer>
         </TableHeader>
 
@@ -333,24 +371,24 @@ const ListaCompras: React.FC = () => {
                 <tr key={p.id}>
                   <Td>{p.codigoOrden}</Td>
                   <Td>{getProveedorName(p.proveedorId)}</Td>
-                  <Td>{getWarehouseName(p.almacenId)}</Td>
+                  <Td>{getWarehouseLabel(p.almacenId)}</Td>
                   <Td>{new Date(p.fechaEmision).toLocaleDateString('es-PE')}</Td>
                   <Td><StatusBadge status={p.estado}>{p.estado}</StatusBadge></Td>
                   <Td>{formatCurrency(p.subtotal)}</Td>
                   <Td>{formatCurrency(p.total)}</Td>
                   <Td>
-                    {p.estado !== 'Recibida' && (
-                      <ActionButton $color="#27ae60" onClick={() => handleStatusChange(p.id, 'Recibida')}>Recibir</ActionButton>
-                    )}
-                    {p.estado !== 'Cancelada' && (
-                      <ActionButton $color="#c0392b" onClick={() => handleStatusChange(p.id, 'Cancelada')}>Cancelar</ActionButton>
+                    <ActionButton data-testid="view-purchase" $color="#2980b9" onClick={() => handleViewPurchase(p.id)}>Ver</ActionButton>
+                    <ActionButton data-testid="edit-purchase" $color="#8e44ad" onClick={() => handleEditPurchase(p)}>Editar</ActionButton>
+                    <ActionButton data-testid="delete-purchase" $color="#c0392b" onClick={() => handleDeletePurchase(p.id)}>Eliminar</ActionButton>
+                    {p.estado === 'Pendiente' && (
+                      <ActionButton data-testid="change-status" $color="#27ae60" onClick={() => openChangeStatus(p)}>Cambiar Estado</ActionButton>
                     )}
                   </Td>
                 </tr>
               ))
             ) : (
               <tr>
-                <Td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: '#777' }}>No hay órdenes de compra</Td>
+                <Td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#777' }}>No hay órdenes de compra</Td>
               </tr>
             )}
           </tbody>

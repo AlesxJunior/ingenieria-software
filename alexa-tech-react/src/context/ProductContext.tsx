@@ -15,7 +15,6 @@ export interface Product {
   initialStock: number;
   currentStock: number;
   status: 'disponible' | 'agotado' | 'proximamente';
-  ubicacion?: string;
   unit: string;
   isActive: boolean;
   createdAt: Date;
@@ -28,12 +27,12 @@ interface ProductContextType {
     categoria?: string;
     estado?: boolean;
     unidadMedida?: string;
-    ubicacion?: string;
     q?: string;
     minPrecio?: number;
     maxPrecio?: number;
     minStock?: number;
     maxStock?: number;
+    signal?: AbortSignal;
   }) => Promise<void>;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
@@ -51,7 +50,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadProducts = useCallback(async (params?: any) => {
     try {
       setIsLoading(true);
-      const response = await apiService.getProducts(params);
+      const { signal, ...filters } = params || {};
+      const response = await apiService.getProducts(filters, { signal });
       if (response.success && response.data) {
         const mapped = response.data.products.map((p: any) => ({
           id: p.codigo || p.id || p._id || String(Date.now()),
@@ -62,7 +62,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           initialStock: p.stock,
           currentStock: p.stock,
           status: (typeof p.stock === 'number' && p.stock > 0) ? 'disponible' : 'agotado',
-          ubicacion: p.ubicacion,
           unit: p.unidadMedida,
           isActive: !!p.estado,
           createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
@@ -73,8 +72,12 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         showError(response.message || 'Error al cargar los productos');
       }
     } catch (error) {
-      console.error('Error loading products:', error);
-      showError('Error al cargar los productos');
+      if ((error as any)?.name === 'AbortError') {
+        // request cancelado, no mostrar error
+      } else {
+        console.error('Error loading products:', error);
+        showError('Error al cargar los productos');
+      }
     } finally {
       setIsLoading(false);
     }

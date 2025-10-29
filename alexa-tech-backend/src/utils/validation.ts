@@ -237,10 +237,6 @@ export const validateProductCreate = (data: any): ValidationResult => {
     validator.maxLength(data.descripcion, 500, 'descripcion');
   }
 
-  if (data.ubicacion !== undefined) {
-    validator.maxLength(data.ubicacion, 200, 'ubicacion');
-  }
-
   // Validaciones numéricas básicas
   if (data.precioVenta !== undefined) {
     const precio = Number(data.precioVenta);
@@ -261,6 +257,30 @@ export const validateProductCreate = (data: any): ValidationResult => {
         message: 'stock debe ser un entero no negativo',
         value: data.stock,
       });
+    }
+  }
+
+  // Validación de stockInicial por almacén
+  if (data.stockInitial !== undefined) {
+    const cantidad = Number(data.stockInitial?.cantidad);
+    const warehouseId = data.stockInitial?.warehouseId;
+
+    if (!Number.isInteger(cantidad) || cantidad < 0) {
+      (validator as any).errors.push({
+        field: 'stockInitial.cantidad',
+        message: 'stockInitial.cantidad debe ser entero >= 0',
+        value: data.stockInitial?.cantidad,
+      });
+    }
+
+    if (cantidad > 0) {
+      if (warehouseId === undefined || warehouseId === null || warehouseId === '') {
+        (validator as any).errors.push({
+          field: 'stockInitial.warehouseId',
+          message: 'warehouseId es requerido cuando cantidad > 0',
+          value: warehouseId,
+        });
+      }
     }
   }
 
@@ -289,9 +309,6 @@ export const validateProductUpdate = (data: any): ValidationResult => {
   }
   if (data.descripcion !== undefined) {
     validator.maxLength(data.descripcion, 500, 'descripcion');
-  }
-  if (data.ubicacion !== undefined) {
-    validator.maxLength(data.ubicacion, 200, 'ubicacion');
   }
 
   if (data.precioVenta !== undefined) {
@@ -422,9 +439,6 @@ export const validateProductQueryFilters = (query: any): ValidationResult => {
   if (query.unidadMedida !== undefined) {
     validator.maxLength(query.unidadMedida, 50, 'unidadMedida');
   }
-  if (query.ubicacion !== undefined) {
-    validator.maxLength(query.ubicacion, 200, 'ubicacion');
-  }
   if (query.q !== undefined) {
     validator.maxLength(query.q, 200, 'q');
   }
@@ -442,10 +456,28 @@ export const validatePurchaseCreate = (data: any): ValidationResult => {
     .required(data.fechaEmision, 'fechaEmision');
 
   if (data.tipoComprobante !== undefined) {
-    validator.maxLength(data.tipoComprobante, 50, 'tipoComprobante');
+    validator.oneOf(
+      String(data.tipoComprobante),
+      ['Factura', 'Boleta', 'GuiaRemision'],
+      'tipoComprobante',
+    );
   }
   if (data.formaPago !== undefined) {
-    validator.maxLength(data.formaPago, 50, 'formaPago');
+    validator.oneOf(
+      String(data.formaPago),
+      ['Efectivo', 'Tarjeta', 'Transferencia'],
+      'formaPago',
+    );
+  }
+  if (data.descuento !== undefined) {
+    const descuento = Number(data.descuento);
+    if (!Number.isFinite(descuento) || descuento < 0) {
+      (validator as any).errors.push({
+        field: 'descuento',
+        message: 'descuento debe ser un número mayor o igual a 0',
+        value: data.descuento,
+      });
+    }
   }
   if (data.observaciones !== undefined) {
     validator.maxLength(data.observaciones, 500, 'observaciones');
@@ -460,34 +492,28 @@ export const validatePurchaseCreate = (data: any): ValidationResult => {
     });
   } else {
     data.items.forEach((item: any, idx: number) => {
-      const prefix = `items[${idx}]`;
-      new Validator()
-        .required(item.productoId, `${prefix}.productoId`)
-        .required(item.cantidad, `${prefix}.cantidad`)
-        .required(item.precioUnitario, `${prefix}.precioUnitario`);
-
       const cantidad = Number(item.cantidad);
-      if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      const precioUnitario = Number(item.precioUnitario);
+      if (!item.productoId) {
         (validator as any).errors.push({
-          field: `${prefix}.cantidad`,
-          message: 'cantidad debe ser un número mayor a 0',
+          field: `items[${idx}].productoId`,
+          message: 'productoId es requerido en cada item',
+          value: item.productoId,
+        });
+      }
+      if (!Number.isInteger(cantidad) || cantidad <= 0) {
+        (validator as any).errors.push({
+          field: `items[${idx}].cantidad`,
+          message: 'cantidad debe ser entero > 0',
           value: item.cantidad,
         });
       }
-      const precio = Number(item.precioUnitario);
-      if (!Number.isFinite(precio) || precio <= 0) {
+      if (!Number.isFinite(precioUnitario) || precioUnitario <= 0) {
         (validator as any).errors.push({
-          field: `${prefix}.precioUnitario`,
-          message: 'precioUnitario debe ser un número mayor a 0',
+          field: `items[${idx}].precioUnitario`,
+          message: 'precioUnitario debe ser número > 0',
           value: item.precioUnitario,
         });
-      }
-      if (item.nombreProducto !== undefined) {
-        validator.maxLength(
-          item.nombreProducto,
-          200,
-          `${prefix}.nombreProducto`,
-        );
       }
     });
   }
@@ -508,54 +534,65 @@ export const validatePurchaseUpdate = (data: any): ValidationResult => {
     validator.required(data.fechaEmision, 'fechaEmision');
   }
   if (data.tipoComprobante !== undefined) {
-    validator.maxLength(data.tipoComprobante, 50, 'tipoComprobante');
+    validator.oneOf(
+      String(data.tipoComprobante),
+      ['Factura', 'Boleta', 'GuiaRemision'],
+      'tipoComprobante',
+    );
   }
   if (data.formaPago !== undefined) {
-    validator.maxLength(data.formaPago, 50, 'formaPago');
+    validator.oneOf(
+      String(data.formaPago),
+      ['Efectivo', 'Tarjeta', 'Transferencia'],
+      'formaPago',
+    );
+  }
+  if (data.descuento !== undefined) {
+    const descuento = Number(data.descuento);
+    if (!Number.isFinite(descuento) || descuento < 0) {
+      (validator as any).errors.push({
+        field: 'descuento',
+        message: 'descuento debe ser un número mayor o igual a 0',
+        value: data.descuento,
+      });
+    }
   }
   if (data.observaciones !== undefined) {
     validator.maxLength(data.observaciones, 500, 'observaciones');
   }
 
+  // Items (opcional)
   if (data.items !== undefined) {
     if (!Array.isArray(data.items) || data.items.length === 0) {
       (validator as any).errors.push({
         field: 'items',
-        message: 'items debe tener al menos un elemento',
+        message: 'Debe incluir al menos un item de compra',
         value: data.items,
       });
     } else {
       data.items.forEach((item: any, idx: number) => {
-        const prefix = `items[${idx}]`;
-        if (item.productoId !== undefined) {
-          validator.required(item.productoId, `${prefix}.productoId`);
+        const cantidad = Number(item.cantidad);
+        const precioUnitario = Number(item.precioUnitario);
+        if (!item.productoId) {
+          (validator as any).errors.push({
+            field: `items[${idx}].productoId`,
+            message: 'productoId es requerido en cada item',
+            value: item.productoId,
+          });
         }
-        if (item.cantidad !== undefined) {
-          const cantidad = Number(item.cantidad);
-          if (!Number.isFinite(cantidad) || cantidad <= 0) {
-            (validator as any).errors.push({
-              field: `${prefix}.cantidad`,
-              message: 'cantidad debe ser > 0',
-              value: item.cantidad,
-            });
-          }
+        if (!Number.isInteger(cantidad) || cantidad <= 0) {
+          (validator as any).errors.push({
+            field: `items[${idx}].cantidad`,
+            message: 'cantidad debe ser entero > 0',
+            value: item.cantidad,
+          });
         }
-        if (item.precioUnitario !== undefined) {
-          const precio = Number(item.precioUnitario);
-          if (!Number.isFinite(precio) || precio <= 0) {
-            (validator as any).errors.push({
-              field: `${prefix}.precioUnitario`,
-              message: 'precioUnitario debe ser > 0',
-              value: item.precioUnitario,
-            });
-          }
-        }
-        if (item.nombreProducto !== undefined) {
-          validator.maxLength(
-            item.nombreProducto,
-            200,
-            `${prefix}.nombreProducto`,
-          );
+        if (!Number.isFinite(precioUnitario) || precioUnitario <= 0) {
+          (validator as any).errors.push({
+            field: `items[${idx}].precioUnitario`,
+            message: 'precioUnitario debe ser número > 0',
+            value: item.precioUnitario,
+          });
         }
       });
     }
@@ -565,36 +602,30 @@ export const validatePurchaseUpdate = (data: any): ValidationResult => {
 };
 
 export const validatePurchaseStatusUpdate = (data: any): ValidationResult => {
-  return new Validator()
-    .required(data.estado, 'estado')
-    .oneOf(data.estado, ['Pendiente', 'Recibida', 'Cancelada'], 'estado')
-    .getResult();
+  return new Validator().required(data.estado, 'estado').getResult();
 };
 
 export const validatePurchaseQueryFilters = (query: any): ValidationResult => {
   const validator = new Validator();
 
-  if (query.estado !== undefined) {
-    validator.oneOf(
-      query.estado,
-      ['Pendiente', 'Recibida', 'Cancelada'],
-      'estado',
-    );
-  }
-  if (query.fechaInicio !== undefined) {
-    validator.required(query.fechaInicio, 'fechaInicio');
-  }
-  if (query.fechaFin !== undefined) {
-    validator.required(query.fechaFin, 'fechaFin');
-  }
-  if (query.q !== undefined) {
-    validator.maxLength(query.q, 200, 'q');
-  }
-  if (query.proveedorId !== undefined) {
-    validator.maxLength(query.proveedorId, 100, 'proveedorId');
-  }
   if (query.almacenId !== undefined) {
-    validator.maxLength(query.almacenId, 100, 'almacenId');
+    validator.required(query.almacenId, 'almacenId');
+  }
+
+  if (query.estado !== undefined) {
+    const val = query.estado;
+    const isAllowed = ['Pendiente', 'Recibida', 'Cancelada'].includes(String(val));
+    if (!isAllowed) {
+      (validator as any).errors.push({
+        field: 'estado',
+        message: 'estado debe ser Pendiente, Recibida o Cancelada',
+        value: val,
+      });
+    }
+  }
+
+  if (query.q !== undefined) {
+    validator.maxLength(query.q, 100, 'q');
   }
 
   return validator.getResult();

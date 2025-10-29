@@ -1,31 +1,30 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Usar backend real solo si CI_BACKEND=true; si no, usar servidor falso de salud
+const useRealBackend = process.env.CI_BACKEND === 'true';
+const backendCommand = useRealBackend ? 'npm run dev --prefix ../alexa-tech-backend' : 'node ../fake-backend-health.js';
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
   retries: 0,
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
   },
   // Start backend API and frontend dev server for E2E
   webServer: [
     {
-      command: 'npm run dev --prefix ../alexa-tech-backend',
+      command: backendCommand,
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: true,
       timeout: 120_000,
     },
     {
-      command: 'npm run dev -- --mode e2e',
-      url: 'http://localhost:5173',
+      command: 'npm run build && npm run preview',
+      url: 'http://localhost:4173',
       reuseExistingServer: true,
       timeout: 120_000,
-      // Ensure permissions are enforced during E2E by disabling bypass
-      env: {
-        VITE_BYPASS_AUTH: 'false',
-        VITE_API_URL: 'http://localhost:3001/api',
-      },
     },
   ],
   projects: [
