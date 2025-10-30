@@ -2,6 +2,8 @@
 
 Bienvenido a la documentación centralizada del proyecto AlexaTech. Aquí encontrarás toda la información necesaria para desarrollar, mantener y desplegar el sistema.
 
+> **Índice Completo:** Ver [INDEX.md](./INDEX.md) para navegación detallada
+
 ---
 
 ## 🗺️ Navegación Rápida
@@ -24,34 +26,47 @@ Bienvenido a la documentación centralizada del proyecto AlexaTech. Aquí encont
 
 ```
 docs/
-├── README.md (este archivo)
-├── ANALISIS_Y_REESTRUCTURACION.md
-├── PLAN_ACCION_REESTRUCTURACION.md
-├── RESUMEN_EJECUTIVO_REESTRUCTURACION.md
-├── DIAGRAMA_VISUAL_REESTRUCTURACION.md
-├── CHECKLIST_REESTRUCTURACION.md
+├── README.md                   # Este archivo - Guía de navegación
+├── INDEX.md                    # Índice completo organizado por categorías
+├── architecture/               # Arquitectura y reestructuración
+│   ├── restructure-action-plan.md
+│   ├── restructure-analysis.md
+│   ├── restructure-executive-summary.md
+│   ├── restructure-diagram.md
+│   ├── restructure-checklist.md
+│   └── restructure-progress.md
+├── api/                        # Documentación de API (próximamente)
+├── development/                # Guías de desarrollo
+│   ├── implementation-plan.md
+│   ├── requirements-validation.md
+│   ├── shared-package-guide.md
+│   ├── inventory-ts-files.txt
+│   ├── inventory-config-files.txt
+│   └── inventory-docs.txt
+├── deployment/                 # Guías de despliegue (próximamente)
+├── modules/                    # Documentación por módulo
+│   └── purchases-presentation.md
 ├── prompts/                    # Prompts para desarrollo con IA
+│   ├── ai-prompts.md
 │   ├── CHECKLIST_QA_MODULO.md
 │   ├── PROMPT_ENTIDADES.md
 │   ├── PROMPT_NUEVO_MODULO.md
 │   ├── PROMPT_PRODUCTOS.md
 │   └── PROMPT_USUARIOS.md
-├── architecture/               # (Próximamente)
-├── api/                        # (Próximamente)
-├── development/                # (Próximamente)
-├── deployment/                 # (Próximamente)
-├── modules/                    # (Próximamente)
-└── reports/                    # (Próximamente)
+└── reports/                    # Reportes técnicos
+    ├── kardex-corrections.md
+    ├── diagnostico-sigo.md
+    └── kardex-final-report.md
 ```
 
 ---
 
 ## 🎯 Reestructuración del Proyecto
 
-### 📋 Documentos Principales
+### 📋 Documentos Principales (Ahora en `architecture/`)
 
 #### 1. **Resumen Ejecutivo** ⭐ EMPIEZA AQUÍ
-📄 [`RESUMEN_EJECUTIVO_REESTRUCTURACION.md`](./RESUMEN_EJECUTIVO_REESTRUCTURACION.md)
+📄 [`architecture/restructure-executive-summary.md`](./architecture/restructure-executive-summary.md)
 
 **¿Para quién?** Project Managers, Tech Leads, Stakeholders
 
@@ -67,7 +82,7 @@ docs/
 ---
 
 #### 2. **Diagrama Visual** 🎨
-📄 [`DIAGRAMA_VISUAL_REESTRUCTURACION.md`](./DIAGRAMA_VISUAL_REESTRUCTURACION.md)
+📄 [`architecture/restructure-diagram.md`](./architecture/restructure-diagram.md)
 
 **¿Para quién?** Todos - Visual learners
 
@@ -83,7 +98,7 @@ docs/
 ---
 
 #### 3. **Análisis Detallado** 📊
-📄 [`ANALISIS_Y_REESTRUCTURACION.md`](./ANALISIS_Y_REESTRUCTURACION.md)
+📄 [`architecture/restructure-analysis.md`](./architecture/restructure-analysis.md)
 
 **¿Para quién?** Desarrolladores, Arquitectos
 
@@ -100,7 +115,7 @@ docs/
 ---
 
 #### 4. **Plan de Acción** 🚀
-📄 [`PLAN_ACCION_REESTRUCTURACION.md`](./PLAN_ACCION_REESTRUCTURACION.md)
+📄 [`architecture/restructure-action-plan.md`](./architecture/restructure-action-plan.md)
 
 **¿Para quién?** Desarrolladores implementando cambios
 
@@ -117,7 +132,7 @@ docs/
 ---
 
 #### 5. **Checklist Ejecutiva** ✅
-📄 [`CHECKLIST_REESTRUCTURACION.md`](./CHECKLIST_REESTRUCTURACION.md)
+📄 [`architecture/restructure-checklist.md`](./architecture/restructure-checklist.md)
 
 **¿Para quién?** Todos - Para trackear progreso
 
@@ -133,87 +148,109 @@ docs/
 
 ---
 
+#### 6. **Progreso de Reestructuración** 📈
+📄 [`architecture/restructure-progress.md`](./architecture/restructure-progress.md)
+
+**Estado Actual:**
+- ✅ Fase 1 (Preparación): 100%
+- ✅ Fase 2 (Código Compartido): 100%
+- 🟡 Fase 3 (Documentación): En Progreso
+- ⏸️ Fases 4-8: Pendientes
+
+---
+
 ## 🏗️ Arquitectura
 
-> **Estado:** 🚧 En construcción
+> **Estado:** ✅ Documentación de reestructuración completa
 
 Documentación sobre la arquitectura del sistema:
-- Visión general del sistema
-- Diagramas de arquitectura
-- Patrones de diseño utilizados
-- Decisiones arquitectónicas (ADRs)
+- ✅ Visión general del sistema
+- ✅ Propuesta de reestructuración
+- ✅ Decisiones arquitectónicas
+- 🚧 Diagramas técnicos detallados (próximamente)
+- 🚧 Patrones de diseño utilizados (próximamente)
 
 ---
 
 ## 📡 API
 
-> **Estado:** 🚧 En construcción
+> **Estado:** 🚧 Planeado para Fase 4-5
 
 Documentación de los endpoints de la API:
-- Autenticación
-- Gestión de usuarios
-- Gestión de productos
-- Inventario y Kardex
-- Compras y ventas
+- 🚧 Autenticación y autorización
+- 🚧 Gestión de usuarios
+- 🚧 Gestión de productos
+- 🚧 Inventario y Kardex
+- 🚧 Compras y proveedores
+- 🚧 Ventas y facturación
 
 ---
 
 ## 💻 Desarrollo
 
-> **Estado:** 🚧 En construcción
+> **Estado:** � Parcialmente completo
 
 Guías para desarrolladores:
-- Setup del entorno de desarrollo
-- Estándares de código
-- Guía de testing
-- Workflow de Git
-- Troubleshooting común
+- ✅ [Plan de Implementación](./development/implementation-plan.md)
+- ✅ [Validación de Requisitos](./development/requirements-validation.md)
+- ✅ [Guía del Paquete Compartido](./development/shared-package-guide.md)
+- ✅ Inventarios de archivos (TS, Config, Docs)
+- 🚧 Setup del entorno de desarrollo
+- 🚧 Estándares de código
+- 🚧 Guía de testing
+- 🚧 Workflow de Git
+- 🚧 Troubleshooting común
 
 ---
 
 ## 📦 Módulos
 
-> **Estado:** 🚧 En construcción
+> **Estado:** � Documentación inicial
 
 Documentación específica de cada módulo:
-- Módulo de Usuarios
-- Módulo de Productos
-- Módulo de Inventario
-- Módulo de Compras
-- Módulo de Ventas
+- ✅ [Presentación del Módulo de Compras](./modules/purchases-presentation.md)
+- 🚧 Módulo de Usuarios
+- 🚧 Módulo de Productos
+- 🚧 Módulo de Inventario
+- 🚧 Módulo de Ventas
+- 🚧 Módulo de Almacenes
+- 🚧 Módulo de Entidades Comerciales
 
 ---
 
 ## 📊 Reportes
 
-> **Estado:** 🚧 En construcción
+> **Estado:** ✅ Reportes técnicos organizados
 
 Reportes técnicos y análisis:
-- Diagnósticos del sistema
-- Análisis de rendimiento
-- Correcciones y mejoras implementadas
+- ✅ [Correcciones del Módulo Kardex](./reports/kardex-corrections.md)
+- ✅ [Diagnóstico SIGO](./reports/diagnostico-sigo.md)
+- ✅ [Reporte Final Kardex](./reports/kardex-final-report.md)
 
 ---
 
 ## 🤖 Prompts para IA
 
-Colección de prompts para desarrollo asistido por IA.
+> **Estado:** ✅ Colección completa
 
-### Disponibles
+Colección de prompts para desarrollo asistido por IA:
 
-📄 [`CHECKLIST_QA_MODULO.md`](./prompts/CHECKLIST_QA_MODULO.md)
+📄 [`prompts/ai-prompts.md`](./prompts/ai-prompts.md)
+- Prompts históricos usados con Gemini y otros asistentes
+
+📄 [`prompts/CHECKLIST_QA_MODULO.md`](./prompts/CHECKLIST_QA_MODULO.md)
 - Checklist para QA de nuevos módulos
 
-📄 [`PROMPT_ENTIDADES.md`](./prompts/PROMPT_ENTIDADES.md)
+📄 [`prompts/PROMPT_ENTIDADES.md`](./prompts/PROMPT_ENTIDADES.md)
 - Prompt para crear módulo de entidades
 
-📄 [`PROMPT_NUEVO_MODULO.md`](./prompts/PROMPT_NUEVO_MODULO.md)
+📄 [`prompts/PROMPT_NUEVO_MODULO.md`](./prompts/PROMPT_NUEVO_MODULO.md)
 - Template genérico para crear módulos
 
-📄 [`PROMPT_PRODUCTOS.md`](./prompts/PROMPT_PRODUCTOS.md)
+📄 [`prompts/PROMPT_PRODUCTOS.md`](./prompts/PROMPT_PRODUCTOS.md)
 - Prompt para módulo de productos
 
-📄 [`PROMPT_USUARIOS.md`](./prompts/PROMPT_USUARIOS.md)
+📄 [`prompts/PROMPT_USUARIOS.md`](./prompts/PROMPT_USUARIOS.md)
 - Prompt para módulo de usuarios
 
 ---
@@ -228,9 +265,6 @@ Colección de prompts para desarrollo asistido por IA.
 - Arquitectura general
 - Comandos útiles
 
-📄 [`../VALIDACION_REQUISITOS.md`](../VALIDACION_REQUISITOS.md)
-- Validación de requisitos del sistema
-
 ### Backend
 
 📄 [`../alexa-tech-backend/README.md`](../alexa-tech-backend/README.md)
@@ -238,12 +272,22 @@ Colección de prompts para desarrollo asistido por IA.
 - Scripts disponibles
 - Configuración de Prisma
 
+📄 [`../alexa-tech-backend/PENDING_TEST_UPDATES.md`](../alexa-tech-backend/PENDING_TEST_UPDATES.md)
+- Actualizaciones pendientes en tests (Fase 2)
+
 ### Frontend
 
 📄 [`../alexa-tech-react/README.md`](../alexa-tech-react/README.md)
 - Documentación específica del frontend
 - Componentes principales
 - Configuración de Vite
+
+### Shared Package
+
+📄 [`../shared/README.md`](../shared/README.md)
+- Documentación del paquete compartido
+- Tipos, constantes y validaciones
+- Guía de uso
 
 ---
 
@@ -258,19 +302,22 @@ Colección de prompts para desarrollo asistido por IA.
 
 ### 🔧 Implementando la Reestructuración?
 
-1. Lee [`RESUMEN_EJECUTIVO_REESTRUCTURACION.md`](./RESUMEN_EJECUTIVO_REESTRUCTURACION.md)
-2. Estudia [`ANALISIS_Y_REESTRUCTURACION.md`](./ANALISIS_Y_REESTRUCTURACION.md)
-3. Sigue [`PLAN_ACCION_REESTRUCTURACION.md`](./PLAN_ACCION_REESTRUCTURACION.md) paso a paso
+1. Lee [`architecture/restructure-executive-summary.md`](./architecture/restructure-executive-summary.md)
+2. Estudia [`architecture/restructure-analysis.md`](./architecture/restructure-analysis.md)
+3. Sigue [`architecture/restructure-action-plan.md`](./architecture/restructure-action-plan.md) paso a paso
+4. Trackea progreso en [`architecture/restructure-progress.md`](./architecture/restructure-progress.md)
 
 ### 📝 Creando un Nuevo Módulo?
 
 1. Revisa [`prompts/PROMPT_NUEVO_MODULO.md`](./prompts/PROMPT_NUEVO_MODULO.md)
 2. Sigue el checklist de QA: [`prompts/CHECKLIST_QA_MODULO.md`](./prompts/CHECKLIST_QA_MODULO.md)
+3. Usa el paquete compartido: [`development/shared-package-guide.md`](./development/shared-package-guide.md)
 
 ### 🐛 Debugging un Problema?
 
 1. Revisa troubleshooting en [`README principal`](../README.md)
-2. Consulta reportes técnicos (cuando estén disponibles)
+2. Consulta reportes técnicos en [`reports/`](./reports/)
+3. Verifica actualizaciones pendientes en [`../alexa-tech-backend/PENDING_TEST_UPDATES.md`](../alexa-tech-backend/PENDING_TEST_UPDATES.md)
 
 ---
 
@@ -403,27 +450,37 @@ Para quién está destinado este documento.
 
 ### Completitud
 
-| Categoría | Estado | Progreso |
-|-----------|--------|----------|
-| Reestructuración | ✅ Completo | 100% |
-| Arquitectura | 🚧 Planeado | 0% |
-| API | 🚧 Planeado | 0% |
-| Desarrollo | 🚧 Planeado | 0% |
-| Módulos | 🚧 Planeado | 0% |
-| Reportes | 🚧 Planeado | 0% |
-| Despliegue | 🚧 Planeado | 0% |
+| Categoría | Estado | Progreso | Última Actualización |
+|-----------|--------|----------|---------------------|
+| Reestructuración | ✅ Completo | 100% | 30/10/2025 |
+| Arquitectura | ✅ Completo | 100% | 30/10/2025 |
+| Desarrollo | � Parcial | 60% | 30/10/2025 |
+| Módulos | � Iniciado | 20% | 30/10/2025 |
+| Reportes | ✅ Completo | 100% | 30/10/2025 |
+| Prompts | ✅ Completo | 100% | 30/10/2025 |
+| API | 🚧 Planeado | 0% | - |
+| Despliegue | 🚧 Planeado | 0% | - |
 
 ### Roadmap de Documentación
 
-**Q4 2025**
+**✅ Completado (Q4 2025)**
 - ✅ Análisis y propuesta de reestructuración
-- 🚧 Documentación de arquitectura
-- 🚧 Documentación de API
+- ✅ Fase 1: Preparación (estructura de carpetas)
+- ✅ Fase 2: Código compartido (@alexa-tech/shared)
+- ✅ Fase 3: Organización de documentación
+- ✅ Reportes técnicos consolidados
+- ✅ Prompts de IA organizados
 
-**Q1 2026**
-- ⏳ Guías de desarrollo
-- ⏳ Documentación de módulos
+**🚧 En Progreso (Q4 2025)**
+- 🟡 Fase 3: Completar índices y referencias
+- 🟡 Documentación de módulos individuales
+- 🟡 Guías de desarrollo detalladas
+
+**⏳ Próximo (Q1 2026)**
+- ⏳ Fase 4-5: Backend y Frontend modular
+- ⏳ Documentación completa de API
 - ⏳ Guías de despliegue
+- ⏳ Testing guides
 
 ---
 
@@ -435,4 +492,8 @@ Esta documentación está en constante evolución. Tu feedback es valioso para m
 
 ---
 
-*Última actualización: 29 de octubre de 2025*
+---
+
+*Última actualización: 30 de octubre de 2025, 21:00*
+
+````
