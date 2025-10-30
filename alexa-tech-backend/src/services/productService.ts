@@ -14,6 +14,7 @@ export const productService = {
           categoria: data.categoria,
           precioVenta: data.precioVenta as any,
           stock: 0, // se actualizará después
+          minStock: data.minStock ?? null,
           estado: data.estado ?? true,
           unidadMedida: data.unidadMedida,
           usuarioCreacion: userId ?? null,
@@ -72,6 +73,7 @@ export const productService = {
         descripcion: data.descripcion,
         categoria: data.categoria,
         precioVenta: data.precioVenta as any,
+        minStock: data.minStock !== undefined ? data.minStock : undefined,
         estado: data.estado,
         unidadMedida: data.unidadMedida,
         usuarioActualizacion: userId ?? null,

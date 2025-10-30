@@ -138,6 +138,7 @@ export interface ProductCreateInput {
   categoria: string;
   precioVenta: number;
   stock?: number; // solo para compatibilidad temporal
+  minStock?: number;
   estado?: boolean;
   unidadMedida: string;
   stockInitial?: {
@@ -151,6 +152,7 @@ export interface ProductUpdateInput {
   descripcion?: string;
   categoria?: string;
   precioVenta?: number;
+  minStock?: number;
   // stock se gestiona por inventario; evitar actualizar directamente
   estado?: boolean;
   unidadMedida?: string;

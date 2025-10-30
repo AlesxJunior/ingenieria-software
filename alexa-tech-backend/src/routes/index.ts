@@ -8,6 +8,7 @@ import productRoutes from './productRoutes';
 import purchaseRoutes from './purchaseRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
 import warehouseRoutes from './warehouseRoutes';
+import movementReasonRoutes from './movementReasonRoutes';
 
 const router = Router();
 
@@ -33,6 +34,11 @@ router.use('/ubigeo', ubigeoRoutes);
 
 // Rutas de almacenes
 router.use('/warehouses', warehouseRoutes);
+router.use('/almacenes', warehouseRoutes); // Alias en español
+
+// Rutas de motivos de movimiento
+router.use('/movement-reasons', movementReasonRoutes);
+router.use('/motivos-movimiento', movementReasonRoutes); // Alias en español
 
 // Rutas de auditoría
 router.use('/audit', auditRoutes);
@@ -72,6 +78,10 @@ router.get('/', (req, res) => {
         compras: '/api/compras',
         purchases: '/api/purchases',
         warehouses: '/api/warehouses',
+        almacenes: '/api/almacenes',
+        movementReasons: '/api/movement-reasons',
+        motivosMovimiento: '/api/motivos-movimiento',
+        inventario: '/api/inventario',
         inventory: '/api/inventory',
         audit: '/api/audit',
         ubigeo: '/api/ubigeo',

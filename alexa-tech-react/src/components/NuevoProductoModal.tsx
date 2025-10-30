@@ -85,6 +85,7 @@ interface ProductFormData {
   initialStock: string;
   warehouseId: string;
   unit: string;
+  minStock: string;
 }
 
 interface NuevoProductoModalProps {
@@ -103,7 +104,8 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     price: '',
     initialStock: '',
     warehouseId: '',
-    unit: ''
+    unit: '',
+    minStock: ''
   });
   const [warehouseOptions, setWarehouseOptions] = useState<{ id: string; name: string }[]>(WAREHOUSE_SELECT_OPTIONS.map(o => ({ id: o.value, name: o.label })));
   useEffect(() => {
@@ -111,12 +113,34 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     (async () => {
       try {
         const resp = await apiService.getWarehouses();
-        const list = (resp.data?.warehouses || resp.data || []) as Array<{ id: string; nombre: string }>;
-        if (Array.isArray(list) && mounted) {
-          setWarehouseOptions(list.map(w => ({ id: w.id, name: w.nombre })));
+        console.log('[NuevoProductoModal] Warehouses full response:', resp);
+        console.log('[NuevoProductoModal] Warehouses resp.data:', resp.data);
+        
+        // La respuesta puede venir de varias formas según el ResponseHelper del backend
+        const respData = resp.data as any;
+        let list: any[] = [];
+        
+        if (respData?.data?.rows) {
+          list = respData.data.rows;
+        } else if (respData?.rows) {
+          list = respData.rows;
+        } else if (respData?.warehouses) {
+          list = respData.warehouses;
+        } else if (Array.isArray(respData)) {
+          list = respData;
+        }
+        
+        console.log('[NuevoProductoModal] Parsed warehouse list:', list);
+        
+        if (Array.isArray(list) && list.length > 0 && mounted) {
+          // Filtrar solo almacenes activos
+          const activeWarehouses = list.filter((w: any) => w.activo !== false);
+          setWarehouseOptions(activeWarehouses.map((w: any) => ({ id: w.id, name: w.nombre })));
+          console.log('[NuevoProductoModal] Warehouses loaded:', activeWarehouses.length);
         }
       } catch (e) {
-        console.warn('No se pudieron cargar almacenes, usando fallback');
+        console.error('[NuevoProductoModal] Error loading warehouses:', e);
+        console.warn('[NuevoProductoModal] Usando fallback warehouses');
       }
     })();
     return () => { mounted = false; };
@@ -169,6 +193,13 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
         setErrors(prev => ({ ...prev, initialStock: 'El stock debe ser entero ≥ 0' }));
       }
     }
+
+    if (name === 'minStock' && value) {
+      const minStock = Number(value);
+      if (isNaN(minStock) || minStock < 0 || !Number.isInteger(minStock)) {
+        setErrors(prev => ({ ...prev, minStock: 'El stock mínimo debe ser entero ≥ 0' }));
+      }
+    }
   };
 
   const validateForm = (): boolean => {
@@ -198,6 +229,13 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
 
     if (!formData.unit.trim()) newErrors.unit = 'La unidad es requerida';
 
+    if (formData.minStock.trim()) {
+      const minStock = Number(formData.minStock);
+      if (isNaN(minStock) || minStock < 0 || !Number.isInteger(minStock)) {
+        newErrors.minStock = 'Stock mínimo inválido';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -209,6 +247,8 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
 
     try {
       const initial = parseInt(formData.initialStock || '0');
+      const minStock = formData.minStock.trim() ? parseInt(formData.minStock) : undefined;
+      
       const payload = {
         codigo: formData.productCode,
         nombre: formData.productName,
@@ -216,6 +256,7 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
         precioVenta: parseFloat(formData.price),
         estado: true,
         unidadMedida: formData.unit.toLowerCase(),
+        minStock: minStock,
         stockInitial: initial > 0 ? { warehouseId: formData.warehouseId, cantidad: initial } : undefined,
       };
 
@@ -299,6 +340,20 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
             ))}
           </select>
           {errors.warehouseId && <span className="error">{errors.warehouseId}</span>}
+        </FormGroup>
+
+        <FormGroup>
+          <label htmlFor="minStock">Stock Mínimo</label>
+          <input 
+            id="minStock" 
+            name="minStock" 
+            type="number" 
+            min="0" 
+            value={formData.minStock} 
+            onChange={handleInputChange}
+            placeholder="Opcional: alertas de stock bajo"
+          />
+          {errors.minStock && <span className="error">{errors.minStock}</span>}
         </FormGroup>
       </FormGrid>
       <Actions>

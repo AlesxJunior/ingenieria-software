@@ -78,6 +78,7 @@ export interface AjusteBody {
   cantidadAjuste: number; // puede ser positivo o negativo
   tipoAjuste?: 'INCREMENT' | 'DECREMENT';
   adjustmentReason?: 'MermaDanio' | 'MermaRotura' | 'DevolucionCliente' | 'ErrorConteo' | 'OtroRazon';
+  reasonId?: string; // Nuevo: ID del motivo de movimiento desde MovementReason
   observaciones?: string;
 }
 
@@ -228,7 +229,12 @@ export const inventoryService = {
             : { createdAt: 'desc' },
         skip,
         take: pageSize,
-        include: { product: true, warehouse: true, user: true },
+        include: { 
+          product: true, 
+          warehouse: true, 
+          user: true,
+          movementReason: true // Incluir el motivo de movimiento
+        },
       }),
     ]);
 
@@ -243,7 +249,7 @@ export const inventoryService = {
       cantidad: m.quantity,
       stockAntes: m.stockBefore,
       stockDespues: m.stockAfter,
-      motivo: m.reason ?? undefined,
+      motivo: (m as any).movementReason?.nombre || m.reason || undefined, // Priorizar nombre del motivo
       usuario: (m as any).user?.username ?? undefined,
       documentoReferencia: m.documentRef ?? null,
     }));
@@ -264,6 +270,7 @@ export const inventoryService = {
     cantidadAjuste: number;
     adjustmentDirection: 'INCREMENT' | 'DECREMENT';
     adjustmentReason?: 'MermaDanio' | 'MermaRotura' | 'DevolucionCliente' | 'ErrorConteo' | 'OtroRazon';
+    reasonId?: string; // Nuevo: ID del motivo de movimiento
     observaciones?: string;
   }, userId?: string) {
     const cantidad = Number(body.cantidadAjuste);
@@ -309,7 +316,8 @@ export const inventoryService = {
           quantity: delta, // Corregido: usar delta en lugar de cantidad para reflejar el cambio real
           stockBefore: stockBefore,
           stockAfter: stockAfter,
-          reason: body.adjustmentReason ?? 'OtroRazon',
+          reason: body.reasonId ? '' : (body.adjustmentReason ?? 'OtroRazon'), // Si hay reasonId, reason vacío
+          reasonId: body.reasonId ?? null, // Nuevo: guardar el ID del motivo
           userId,
           documentRef: null,
         },
@@ -348,6 +356,7 @@ export const inventoryService = {
         cantidadAjuste: absCantidad,
         adjustmentDirection: direction,
         adjustmentReason: body.adjustmentReason ?? (body.tipoAjuste as any) ?? 'OtroRazon',
+        reasonId: body.reasonId, // Pasar el reasonId
         observaciones: body.observaciones,
       },
       userId,
@@ -363,6 +372,14 @@ export const inventoryService = {
     // Validar almacén
     const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
     if (!warehouse) throw new Error('Warehouse no encontrado');
+
+    // Buscar motivo de entrada por compra
+    const purchaseReason = await prisma.movementReason.findFirst({
+      where: { 
+        codigo: 'ENT-COMPRA',
+        activo: true
+      }
+    });
 
     const now = new Date();
 
@@ -408,6 +425,7 @@ export const inventoryService = {
             stockBefore,
             stockAfter,
             reason: `Compra ${purchaseId}`,
+            reasonId: purchaseReason?.id ?? null, // Vincular con motivo ENT-COMPRA
             documentRef: purchaseId,
             userId,
             createdAt: now,

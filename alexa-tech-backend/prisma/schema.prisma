@@ -200,8 +200,8 @@ enum VoucherType {
 // Enum para forma de pago
 enum PaymentMethod {
   Efectivo
-  Credito_30
-  Credito_60
+  Tarjeta
+  Transferencia
 }
 
 model Purchase {
@@ -266,6 +266,22 @@ enum AdjustmentReason {
   OtroRazon
 }
 
+model MovementReason {
+  id                  String       @id @default(cuid())
+  tipo                MovementType @map("type")
+  codigo              String       @unique
+  nombre              String
+  descripcion         String?
+  activo              Boolean      @default(true)
+  requiereDocumento   Boolean      @default(false) @map("requiresDocument")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  inventoryMovements  InventoryMovement[]
+
+  @@map("movement_reasons")
+}
+
 model Warehouse {
   id         String   @id @default(cuid())
   codigo     String   @unique
@@ -300,21 +316,23 @@ model StockByWarehouse {
 }
 
 model InventoryMovement {
-  id            String   @id @default(cuid())
-  productId     String
-  warehouseId   String
-  type          String   @map("tipo")
-  quantity      Int      @map("cantidad")
-  stockBefore   Int      @map("stockAntes")
-  stockAfter    Int      @map("stockDespues")
-  reason        String   @map("motivo")
-  documentRef   String?  @map("documentoReferencia")
-  userId        String?  @map("usuarioId")
-  createdAt     DateTime @default(now())
+  id              String          @id @default(cuid())
+  productId       String
+  warehouseId     String
+  type            String          @map("tipo")
+  quantity        Int             @map("cantidad")
+  stockBefore     Int             @map("stockAntes")
+  stockAfter      Int             @map("stockDespues")
+  reason          String          @map("motivo") // Mantenemos compatibilidad con datos existentes
+  reasonId        String?         @map("reasonId") // Nueva relación opcional
+  documentRef     String?         @map("documentoReferencia")
+  userId          String?         @map("usuarioId")
+  createdAt       DateTime        @default(now())
 
-  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse       Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  movementReason  MovementReason? @relation(fields: [reasonId], references: [id], onDelete: SetNull)
 
   @@map("inventory_movements")
 }

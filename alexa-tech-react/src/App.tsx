@@ -31,6 +31,8 @@ const AuditoriaLogs = lazy(() => import('./pages/AuditoriaLogs'));
 const ListaCompras = lazy(() => import('./pages/ListaCompras'));
 const ListadoStock = lazy(() => import('./pages/Inventario/ListadoStock'));
 const Kardex = lazy(() => import('./pages/Inventario/Kardex'));
+const ListaAlmacenes = lazy(() => import('./pages/Inventario/ListaAlmacenes'));
+const ListaMotivosMovimiento = lazy(() => import('./pages/Inventario/ListaMotivosMovimiento'));
 
 // Componente interno para manejar el modal
 const AppContent = () => {
@@ -164,6 +166,16 @@ function App() {
                   <Route path="/inventario/kardex" element={
                     <ProtectedRoute requiredPermission="inventory.read">
                       <Kardex />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/inventario/almacenes" element={
+                    <ProtectedRoute requiredPermission="inventory.read">
+                      <ListaAlmacenes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/inventario/motivos" element={
+                    <ProtectedRoute requiredPermission="inventory.read">
+                      <ListaMotivosMovimiento />
                     </ProtectedRoute>
                   } />
                 </Routes>

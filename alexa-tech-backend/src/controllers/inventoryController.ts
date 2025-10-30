@@ -84,6 +84,7 @@ export const InventoryController = {
         cantidadAjuste: cantidad,
         tipoAjuste: body.tipoAjuste ?? undefined,
         adjustmentReason: body.adjustmentReason ?? undefined,
+        reasonId: body.reasonId ?? undefined, // Nuevo: ID del motivo de movimiento
         observaciones: body.observaciones ?? undefined,
       },
       userId,

@@ -141,6 +141,9 @@ const NuevaCompraModal: React.FC<NuevaCompraModalProps> = ({ onClose, purchase }
   const [failedFields, setFailedFields] = useState<string[]>([]);
   const [proveedorId, setProveedorId] = useState(purchase?.proveedorId || '');
   const [almacenId, setAlmacenId] = useState(purchase?.almacenId || '');
+  const [warehouseOptions, setWarehouseOptions] = useState<{ id: string; name: string }[]>(
+    WAREHOUSE_SELECT_OPTIONS.map(o => ({ id: o.value, name: o.label }))
+  );
   const todayIso = new Date().toISOString().slice(0, 10);
   const [fechaEmision, setFechaEmision] = useState(purchase?.fechaEmision?.slice(0,10) || todayIso);
   const [tipoComprobante, setTipoComprobante] = useState(purchase?.tipoComprobante || '');
@@ -154,6 +157,45 @@ const NuevaCompraModal: React.FC<NuevaCompraModalProps> = ({ onClose, purchase }
     cantidad: String(it.cantidad),
     precioUnitario: String(it.precioUnitario)
   })) : [{ productoId: '', cantidad: '1', precioUnitario: '0' }]);
+
+  // Cargar almacenes desde la API
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await apiService.getWarehouses();
+        console.log('[NuevaCompraModal] Warehouses full response:', resp);
+        console.log('[NuevaCompraModal] Warehouses resp.data:', resp.data);
+        
+        // La respuesta puede venir de varias formas según el ResponseHelper del backend
+        const respData = resp.data as any;
+        let list: any[] = [];
+        
+        if (respData?.data?.rows) {
+          list = respData.data.rows;
+        } else if (respData?.rows) {
+          list = respData.rows;
+        } else if (respData?.warehouses) {
+          list = respData.warehouses;
+        } else if (Array.isArray(respData)) {
+          list = respData;
+        }
+        
+        console.log('[NuevaCompraModal] Parsed warehouse list:', list);
+        
+        if (Array.isArray(list) && list.length > 0 && mounted) {
+          // Filtrar solo almacenes activos
+          const activeWarehouses = list.filter((w: any) => w.activo !== false);
+          setWarehouseOptions(activeWarehouses.map((w: any) => ({ id: w.id, name: w.nombre })));
+          console.log('[NuevaCompraModal] Warehouses loaded:', activeWarehouses.length);
+        }
+      } catch (e) {
+        console.error('[NuevaCompraModal] Error loading warehouses:', e);
+        console.warn('[NuevaCompraModal] Usando fallback warehouses');
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // Estados y refs para el buscador/autocomplete de productos
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,9 +239,8 @@ const NuevaCompraModal: React.FC<NuevaCompraModalProps> = ({ onClose, purchase }
       if (!Number.isFinite(c) || c <= 0) errs[`items.${idx}.cantidad`] = 'Cantidad debe ser > 0';
       const p = Number(it.precioUnitario);
       if (!Number.isFinite(p) || p <= 0) errs[`items.${idx}.precioUnitario`] = 'Precio debe ser > 0';
-      if (product && Number.isFinite(c) && c > product.currentStock) {
-        errs[`items.${idx}.cantidad`] = `Cantidad no puede superar stock disponible (${product.currentStock})`;
-      }
+      // REMOVIDO: Validación incorrecta de stock en compras
+      // Las compras AUMENTAN el stock, no lo consumen
     });
     const d = Number(descuento);
     if (!Number.isFinite(d) || d < 0) errs.descuento = 'Descuento debe ser ≥ 0';
@@ -260,17 +301,15 @@ const NuevaCompraModal: React.FC<NuevaCompraModalProps> = ({ onClose, purchase }
   const handleItemChange = (index: number, field: keyof ItemForm, value: string) => {
     if (field !== 'cantidad') return; // Solo cantidad es editable
     const nextItems = items.map((it, i) => i === index ? { ...it, cantidad: value } : it);
-    const nextItem = nextItems[index];
-    const product = products.find(p => p.productCode === nextItem.productoId);
     setItems(nextItems);
     setErrors(prev => {
       const next = { ...prev };
       const c = Number(value);
       if (!Number.isFinite(c) || c <= 0) {
         next[`items.${index}.cantidad`] = 'Cantidad debe ser > 0';
-      } else if (product && Number.isFinite(c) && c > product.currentStock) {
-        next[`items.${index}.cantidad`] = `Cantidad no puede superar stock disponible (${product.currentStock})`;
       } else {
+        // REMOVIDO: Validación incorrecta de stock en compras
+        // Las compras AUMENTAN el stock, no lo consumen
         delete next[`items.${index}.cantidad`];
       }
       return next;
@@ -458,8 +497,8 @@ const NuevaCompraModal: React.FC<NuevaCompraModalProps> = ({ onClose, purchase }
           <label htmlFor="almacenId">Almacén *</label>
           <select id="almacenId" value={almacenId} onChange={e => setAlmacenId(e.target.value)}>
             <option value="">Selecciona almacén</option>
-            {WAREHOUSE_SELECT_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {warehouseOptions.map(opt => (
+              <option key={opt.id} value={opt.id}>{opt.name}</option>
             ))}
           </select>
           {errors.almacenId && <span className="error">{errors.almacenId}</span>}

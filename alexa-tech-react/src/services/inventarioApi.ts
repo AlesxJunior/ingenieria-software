@@ -99,10 +99,11 @@ class InventarioApiService {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.order) params.append('order', filters.order);
 
-      const response: AxiosResponse<{ rows: StockItem[]; total: number; page: number; limit: number }> = 
+      const response: AxiosResponse<{ success: boolean; data: { rows: StockItem[]; total: number; page: number; limit: number } }> = 
         await this.api.get(`/inventario/stock?${params.toString()}`);
 
-      const { rows, total, page, limit } = response.data;
+      // El backend envuelve la respuesta en { success, data, message }
+      const { rows, total, page, limit } = response.data.data;
       
       const mapped: StockResponse = {
         data: rows,
@@ -140,18 +141,20 @@ class InventarioApiService {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.order) params.append('order', filters.order);
 
-      const response: AxiosResponse<{ data: MovimientoKardex[]; total: number; page: number; pageSize: number }> = 
+      const response: AxiosResponse<{ success: boolean; data: { rows: MovimientoKardex[]; total: number; page: number; limit: number } }> = 
         await this.api.get(`/inventario/kardex?${params.toString()}`);
 
-      const { data, total, page, pageSize } = response.data;
+      // El backend envuelve la respuesta en { success, data, message }
+      // Y dentro de data está { rows, total, page, limit } (no data/pageSize)
+      const { rows, total, page, limit } = response.data.data;
       
       const mapped: KardexResponse = {
-        data,
+        data: rows,
         pagination: {
           total,
           page,
-          limit: pageSize, // Mapear pageSize a limit para consistencia
-          pages: Math.ceil(total / pageSize)
+          limit,
+          pages: Math.ceil(total / limit) || 1
         }
       };
       console.log('getKardex response:', mapped);
@@ -186,9 +189,10 @@ class InventarioApiService {
    */
   async searchProducts(query: string): Promise<{ id: string; codigo: string; nombre: string }[]> {
     try {
-      const response: AxiosResponse<{ data: { id: string; codigo: string; nombre: string }[] }> = 
+      const response: AxiosResponse<{ success: boolean; data: { id: string; codigo: string; nombre: string }[] }> = 
         await this.api.get(`/productos/search?q=${encodeURIComponent(query)}`);
 
+      // El backend envuelve la respuesta en { success, data, message }
       return response.data.data || [];
     } catch (error) {
       console.error('Error searching products:', error);
@@ -202,10 +206,17 @@ class InventarioApiService {
    */
   async getAlertas(): Promise<{ stockBajo: StockItem[]; stockCritico: StockItem[] }> {
     try {
-      const response: AxiosResponse<{ stockBajo: StockItem[]; stockCritico: StockItem[] }> = 
+      const response: AxiosResponse<{ success: boolean; data: { rows: StockItem[]; total: number } }> = 
         await this.api.get('/inventario/alertas');
 
-      return response.data;
+      // El backend envuelve la respuesta en { success, data, message }
+      // Nota: Las alertas actualmente devuelven un array plano en 'rows'
+      // Necesitamos separar entre bajo y crítico en el frontend o actualizar el backend
+      const alertas = response.data.data.rows || [];
+      const stockBajo = alertas.filter(item => item.estado === 'BAJO');
+      const stockCritico = alertas.filter(item => item.estado === 'CRITICO');
+
+      return { stockBajo, stockCritico };
     } catch (error: any) {
       console.error('Error fetching alerts:', error);
       const message = error?.response?.data?.message || error?.message || 'Error al cargar alertas';

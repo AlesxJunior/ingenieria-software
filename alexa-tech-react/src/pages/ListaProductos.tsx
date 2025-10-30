@@ -483,6 +483,7 @@ const ListaProductos: React.FC = () => {
               <th>Categoría</th>
               <th>Precio</th>
               <th>Stock</th>
+              <th>Stock Mín.</th>
               <th>Estado</th>
               <th>Unidad</th>
               <th>Acciones</th>
@@ -497,6 +498,7 @@ const ListaProductos: React.FC = () => {
                   <td>{product.category}</td>
                   <td>{formatPrice(product.price)}</td>
                   <td>{product.initialStock}</td>
+                  <td>{product.minStock ?? '-'}</td>
                   <td>
                     <ActiveBadge $active={!!product.isActive}>
                       {product.isActive ? 'Activo' : 'Inactivo'}
@@ -521,7 +523,7 @@ const ListaProductos: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <EmptyState>
                     {searchTerm ? 
                       'No se encontraron productos que coincidan con la búsqueda.' : 
@@ -558,6 +560,12 @@ const ListaProductos: React.FC = () => {
                     <MobileCardLabel>Stock</MobileCardLabel>
                     <MobileCardValue>{product.initialStock}</MobileCardValue>
                   </MobileCardField>
+                  
+                  <MobileCardField>
+                    <MobileCardLabel>Stock Mín.</MobileCardLabel>
+                    <MobileCardValue>{product.minStock ?? '-'}</MobileCardValue>
+                  </MobileCardField>
+                  
                   <MobileCardField>
                     <MobileCardLabel>Estado</MobileCardLabel>
                     <MobileCardValue>

@@ -83,6 +83,7 @@ interface EditProductFormData {
   price: string;
   currentStock: string;
   unit: string;
+  minStock: string;
 }
 
 interface EditarProductoModalProps {
@@ -102,7 +103,8 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     category: product.category || '',
     price: product.price?.toString() || '',
     currentStock: product.currentStock?.toString() || '0',
-    unit: product.unit || ''
+    unit: product.unit || '',
+    minStock: product.minStock?.toString() || ''
   });
 
   // Opciones dinámicas combinadas con listas por defecto
@@ -145,6 +147,13 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
         setErrors(prev => ({ ...prev, price: 'El precio debe ser mayor a 0' }));
       }
     }
+
+    if (name === 'minStock' && value) {
+      const minStock = Number(value);
+      if (isNaN(minStock) || minStock < 0 || !Number.isInteger(minStock)) {
+        setErrors(prev => ({ ...prev, minStock: 'El stock mínimo debe ser entero ≥ 0' }));
+      }
+    }
   };
 
   const validateForm = (): boolean => {
@@ -162,6 +171,13 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
 
     if (!formData.unit.trim()) newErrors.unit = 'La unidad es requerida';
 
+    if (formData.minStock.trim()) {
+      const minStock = Number(formData.minStock);
+      if (isNaN(minStock) || minStock < 0 || !Number.isInteger(minStock)) {
+        newErrors.minStock = 'Stock mínimo inválido';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -172,12 +188,15 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     setIsSubmitting(true);
 
     try {
+      const minStock = formData.minStock.trim() ? parseInt(formData.minStock) : undefined;
+      
       const payload = {
         nombre: formData.productName,
         categoria: formData.category,
         precioVenta: parseFloat(formData.price),
         estado: product.isActive ?? true,
         unidadMedida: formData.unit.toLowerCase(),
+        minStock: minStock,
       };
 
       const response = await apiService.updateProductByCodigo(product.productCode, payload);
@@ -247,6 +266,20 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
             ))}
           </select>
           {errors.unit && <span className="error">{errors.unit}</span>}
+        </FormGroup>
+
+        <FormGroup>
+          <label htmlFor="minStock">Stock Mínimo</label>
+          <input 
+            id="minStock" 
+            name="minStock" 
+            type="number" 
+            min="0" 
+            value={formData.minStock} 
+            onChange={handleInputChange}
+            placeholder="Opcional: alertas de stock bajo"
+          />
+          {errors.minStock && <span className="error">{errors.minStock}</span>}
         </FormGroup>
       </FormGrid>
       <Actions>

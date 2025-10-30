@@ -6,7 +6,7 @@ export interface StockItem {
   almacen: string;
   warehouseId: string;
   cantidad: number;
-  stockMinimo: number;
+  stockMinimo: number | null;
   estado: 'NORMAL' | 'BAJO' | 'CRITICO';
   updatedAt: string;
 }
@@ -74,7 +74,8 @@ export interface AjusteData {
   productId: string;
   warehouseId: string;
   cantidadAjuste: number;
-  adjustmentReason?: string;
+  adjustmentReason?: string; // Deprecado: mantener para compatibilidad
+  reasonId?: string; // Nuevo: ID del motivo de movimiento
   observaciones?: string;
 }
 

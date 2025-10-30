@@ -96,16 +96,6 @@ const StockCell = styled.div`
   color: #6c757d;
 `;
 
-const DocumentLink = styled.a`
-  color: #3498db;
-  text-decoration: none;
-  font-size: 0.9rem;
-  
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
 const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
@@ -393,7 +383,6 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
                 <Th>Stock Después</Th>
                 <Th>Motivo</Th>
                 <Th>Usuario</Th>
-                <Th>Documento</Th>
               </tr>
             </thead>
             <tbody>
@@ -447,7 +436,6 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
               <Th>Stock Después</Th>
               <Th>Motivo</Th>
               <Th>Usuario</Th>
-              <Th>Documento</Th>
             </tr>
           </thead>
           <tbody>
@@ -485,19 +473,6 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
                   </div>
                 </Td>
                 <Td>{movimiento.usuario}</Td>
-                <Td>
-                  {movimiento.documentoReferencia ? (
-                    <DocumentLink 
-                      href={`#/documento/${movimiento.documentoReferencia}`}
-                      title="Ver documento"
-                      data-testid="kardex-doc-link"
-                    >
-                      {movimiento.documentoReferencia}
-                    </DocumentLink>
-                  ) : (
-                    <span style={{ color: '#6c757d', fontSize: '0.9rem' }}>-</span>
-                  )}
-                </Td>
               </Tr>
             ))}
           </tbody>

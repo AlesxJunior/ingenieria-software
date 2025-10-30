@@ -14,6 +14,7 @@ export interface Product {
   price: number;
   initialStock: number;
   currentStock: number;
+  minStock?: number;
   status: 'disponible' | 'agotado' | 'proximamente';
   unit: string;
   isActive: boolean;
@@ -61,6 +62,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           price: p.precioVenta,
           initialStock: p.stock,
           currentStock: p.stock,
+          minStock: p.minStock ?? undefined,
           status: (typeof p.stock === 'number' && p.stock > 0) ? 'disponible' : 'agotado',
           unit: p.unidadMedida,
           isActive: !!p.estado,

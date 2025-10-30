@@ -4,7 +4,6 @@ import Layout from '../../components/Layout';
 import FiltersStock from '../../components/Inventario/FiltersStock';
 import TablaStock from '../../components/Inventario/TablaStock';
 import ModalAjuste from '../../components/Inventario/ModalAjuste';
-import AuthDiagnostic from '../../components/Inventario/AuthDiagnostic';
 import { useInventarioWithDebounce } from '../../hooks/useInventario';
 import type { StockFilters, StockItem, AjusteFormData } from '../../types/inventario';
 
@@ -77,7 +76,8 @@ const ListadoStock: React.FC = () => {
       productId: selectedStock.productId,
       warehouseId: selectedStock.warehouseId ?? filters.almacenId ?? 'WH-PRINCIPAL',
       cantidadAjuste: form.cantidadAjuste,
-      adjustmentReason: form.adjustmentReason,
+      reasonId: form.reasonId, // Enviar el ID del motivo
+      adjustmentReason: form.adjustmentReason, // Mantener para compatibilidad
       observaciones: form.observaciones || '',
     });
     handleCloseAjuste();
@@ -85,8 +85,6 @@ const ListadoStock: React.FC = () => {
 
   return (
     <Layout title="Stock">
-      <AuthDiagnostic />
-      
       {error && (
         <ErrorBanner>
           {error}

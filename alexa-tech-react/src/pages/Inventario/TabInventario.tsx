@@ -32,8 +32,9 @@ const TabInventario: React.FC = () => {
   return (
     <Layout title="Inventario">
       <Tabs>
-        <TabLink to="/inventario/stock">Stock</TabLink>
-        <TabLink to="/inventario/kardex">Kardex</TabLink>
+        <TabLink to="/inventario/stock">📦 Stock</TabLink>
+        <TabLink to="/inventario/kardex">📋 Kardex</TabLink>
+        <TabLink to="/inventario/almacenes">🏪 Almacenes</TabLink>
       </Tabs>
       <Outlet />
     </Layout>

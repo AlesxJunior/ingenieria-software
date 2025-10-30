@@ -30,6 +30,7 @@ export const ProductController = {
           precioVenta: Number(req.body.precioVenta),
           estado: req.body.estado ?? true,
           unidadMedida: req.body.unidadMedida,
+          minStock: req.body.minStock !== undefined ? Number(req.body.minStock) : undefined,
           stockInitial: req.body.stockInitial
             ? {
                 warehouseId: req.body.stockInitial.warehouseId,
@@ -149,6 +150,7 @@ export const ProductController = {
               : undefined,
           estado: req.body.estado,
           unidadMedida: req.body.unidadMedida,
+          minStock: req.body.minStock !== undefined ? Number(req.body.minStock) : undefined,
         },
         userId,
       );

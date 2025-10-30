@@ -324,9 +324,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/inventario/stock') || isActive('/inventario/kardex')}>
+          <NavItem $isActive={isActive('/inventario/stock') || isActive('/inventario/kardex') || isActive('/inventario/almacenes') || isActive('/inventario/motivos')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('inventario'); }}>
-              <i className="fas fa-box-open"></i>
+              <i className="fas fa-boxes"></i>
               <span>Inventario</span>
             </a>
             <SubMenu $isOpen={openMenus.inventario}>
@@ -338,6 +338,16 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               <SubMenuItem $isActive={isActive('/inventario/kardex')}>
                 <Link to="/inventario/kardex" onClick={handleItemClick}>
                   <h3>Kardex</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/inventario/almacenes')}>
+                <Link to="/inventario/almacenes" onClick={handleItemClick}>
+                  <h3>Almacenes</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/inventario/motivos')}>
+                <Link to="/inventario/motivos" onClick={handleItemClick}>
+                  <h3>Motivos de Movimiento</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Modal from '../Modal';
 import type { StockItem, AjusteFormData } from '../../types/inventario';
-import { ADJUSTMENT_REASONS } from '../../types/inventario';
 import { getWarehouseLabel } from '../../constants/warehouses';
+import { movementReasonsApi } from '../../services/movementReasonsApi';
+import type { MovementReason } from '../../services/movementReasonsApi';
 
 const Form = styled.form`
   display: flex;
@@ -202,6 +203,31 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [motivosAjuste, setMotivosAjuste] = useState<MovementReason[]>([]);
+  const [loadingMotivos, setLoadingMotivos] = useState(false);
+
+  // Cargar motivos de ajuste desde la API
+  useEffect(() => {
+    const fetchMotivos = async () => {
+      try {
+        setLoadingMotivos(true);
+        const motivos = await movementReasonsApi.getMovementReasons({ 
+          tipo: 'AJUSTE',
+          activo: true 
+        });
+        setMotivosAjuste(motivos);
+      } catch (error) {
+        console.error('Error al cargar motivos de ajuste:', error);
+        // Si falla, no bloqueamos el formulario
+      } finally {
+        setLoadingMotivos(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchMotivos();
+    }
+  }, [isOpen]);
 
   // Inicializar formulario cuando se abre el modal
   useEffect(() => {
@@ -261,7 +287,13 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      // Enviar el reasonId en lugar de adjustmentReason
+      const submitData = {
+        ...formData,
+        reasonId: formData.adjustmentReason, // El valor ahora es el ID del motivo
+        adjustmentReason: undefined // Limpiamos el campo legacy
+      };
+      await onSubmit(submitData);
       onClose();
     } catch (error) {
       console.error('Error creating adjustment:', error);
@@ -332,10 +364,15 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
             onChange={(e) => handleInputChange('adjustmentReason', e.target.value)}
             $hasError={!!errors.adjustmentReason}
             data-testid="ajuste-select-motivo"
+            disabled={loadingMotivos}
           >
-            <option value="">Seleccione un motivo</option>
-            {ADJUSTMENT_REASONS.map(r => (
-              <option key={r} value={r}>{r}</option>
+            <option value="">
+              {loadingMotivos ? 'Cargando motivos...' : 'Seleccione un motivo'}
+            </option>
+            {motivosAjuste.map(motivo => (
+              <option key={motivo.id} value={motivo.id}>
+                {motivo.codigo} - {motivo.nombre}
+              </option>
             ))}
           </Select>
           {errors.adjustmentReason && (

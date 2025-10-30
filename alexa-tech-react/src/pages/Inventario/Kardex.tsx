@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import Layout from '../../components/Layout';
 import FiltersKardex from '../../components/Inventario/FiltersKardex';
 import TablaKardex from '../../components/Inventario/TablaKardex';
-import AuthDiagnostic from '../../components/Inventario/AuthDiagnostic';
 import { useInventarioWithDebounce } from '../../hooks/useInventario';
 import type { KardexFilters } from '../../types/inventario';
 
@@ -98,15 +97,6 @@ const SecondaryButton = styled.button`
   }
 `;
 
-const ErrorBanner = styled.div`
-  background: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-`;
-
 const EmptyState = styled.div`
   background: #f1f3f5;
   color: #6c757d;
@@ -140,54 +130,44 @@ const Kardex: React.FC = () => {
   // Renderizar estado de error mejorado
   if (error) {
     return (
-      <Container>
-        <Header>
-          <Title>Kardex de Inventario</Title>
-        </Header>
-        
-        <ErrorContainer>
-          <ErrorIcon>⚠️</ErrorIcon>
-          <ErrorTitle>Error al cargar los datos</ErrorTitle>
-          <ErrorMessage>{error}</ErrorMessage>
-          <ErrorActions>
-            <RetryButton onClick={() => {
-              clearError();
-              debouncedFetchKardex(filters, 0);
-            }}>
-              Reintentar
-            </RetryButton>
-            <SecondaryButton onClick={() => {
-              clearError();
-              setFilters({
-                page: 1,
-                pageSize: 20,
-                sortBy: 'fecha',
-                order: 'desc',
-                warehouseId: 'WH-PRINCIPAL',
-                productCode: '',
-                movementType: '',
-                startDate: '',
-                endDate: ''
-              });
-            }}>
-              Limpiar filtros
-            </SecondaryButton>
-          </ErrorActions>
-        </ErrorContainer>
-      </Container>
+      <Layout title="Kardex">
+        <Container>
+          <Header>
+            <Title>Kardex de Inventario</Title>
+          </Header>
+          
+          <ErrorContainer>
+            <ErrorIcon>⚠️</ErrorIcon>
+            <ErrorTitle>Error al cargar los datos</ErrorTitle>
+            <ErrorMessage>{error}</ErrorMessage>
+            <ErrorActions>
+              <RetryButton onClick={() => {
+                clearError();
+                debouncedFetchKardex(filters, 0);
+              }}>
+                Reintentar
+              </RetryButton>
+              <SecondaryButton onClick={() => {
+                clearError();
+                setFilters({
+                  page: 1,
+                  pageSize: 20,
+                  sortBy: 'fecha',
+                  order: 'desc',
+                  warehouseId: 'WH-PRINCIPAL'
+                });
+              }}>
+                Limpiar filtros
+              </SecondaryButton>
+            </ErrorActions>
+          </ErrorContainer>
+        </Container>
+      </Layout>
     );
   }
 
   return (
     <Layout title="Kardex">
-      <AuthDiagnostic />
-      
-      {error && (
-        <ErrorBanner>
-          {error}
-          <button style={{ marginLeft: '1rem' }} onClick={clearError}>Cerrar</button>
-        </ErrorBanner>
-      )}
 
       <FiltersKardex onFilterChange={handleFilterChange} loading={loading} defaultWarehouseId="WH-PRINCIPAL" />
 

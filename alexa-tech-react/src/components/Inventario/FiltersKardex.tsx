@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import type { KardexFilters } from '../../types/inventario';
 import { WAREHOUSE_OPTIONS } from '../../constants/warehouses';
 import { inventarioApi } from '../../services/inventarioApi';
+import { apiService } from '../../utils/api';
 
 const FiltersContainer = styled.div`
   background: white;
@@ -177,6 +178,51 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
     order: 'desc'
   });
 
+  // Estado para almacenes dinámicos
+  const [warehouseOptions, setWarehouseOptions] = useState<{ value: string; label: string }[]>(
+    WAREHOUSE_OPTIONS // Fallback inicial
+  );
+
+  // Cargar almacenes desde la API
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await apiService.getWarehouses();
+        console.log('[FiltersKardex] Warehouses full response:', resp);
+        console.log('[FiltersKardex] Warehouses resp.data:', resp.data);
+        
+        const respData = resp.data as any;
+        let list: any[] = [];
+        
+        if (respData?.data?.rows) {
+          list = respData.data.rows;
+        } else if (respData?.rows) {
+          list = respData.rows;
+        } else if (respData?.warehouses) {
+          list = respData.warehouses;
+        } else if (Array.isArray(respData)) {
+          list = respData;
+        }
+        
+        console.log('[FiltersKardex] Parsed warehouse list:', list);
+        
+        if (Array.isArray(list) && list.length > 0 && mounted) {
+          const activeWarehouses = list.filter((w: any) => w.activo !== false);
+          setWarehouseOptions(activeWarehouses.map((w: any) => ({ 
+            value: w.id, 
+            label: w.nombre 
+          })));
+          console.log('[FiltersKardex] Warehouses loaded:', activeWarehouses.length);
+        }
+      } catch (e) {
+        console.error('[FiltersKardex] Error loading warehouses:', e);
+        console.warn('[FiltersKardex] Usando fallback warehouses');
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
   // Prefill almacén por defecto si no está seleccionado
   useEffect(() => {
     if (!filters.warehouseId) {
@@ -347,7 +393,7 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
             data-testid="kardex-filter-warehouse"
           >
             <option value="">Seleccionar almacén</option>
-            {WAREHOUSE_OPTIONS.map(warehouse => (
+            {warehouseOptions.map(warehouse => (
               <option key={warehouse.value} value={warehouse.value}>
                 {warehouse.label}
               </option>

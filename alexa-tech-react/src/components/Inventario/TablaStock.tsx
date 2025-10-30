@@ -317,7 +317,7 @@ const TablaStock: React.FC<TablaStockProps> = ({
                   {item.cantidad.toLocaleString()}
                 </QuantityCell>
               </Td>
-              <Td>{item.stockMinimo.toLocaleString()}</Td>
+              <Td>{item.stockMinimo != null ? item.stockMinimo.toLocaleString() : 'N/A'}</Td>
               <Td>
                 <StatusBadge $status={item.estado} data-testid={`stock-status-${item.estado.toLowerCase()}`}>
                   {getStatusLabel(item.estado)}
