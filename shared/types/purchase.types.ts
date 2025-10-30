@@ -1,22 +1,31 @@
 // Tipos relacionados con compras y órdenes de compra
 
-export enum PurchaseStatus {
-  Pendiente = 'Pendiente',
-  Recibida = 'Recibida',
-  Cancelada = 'Cancelada'
-}
+// Estado de compra - const object en vez de enum para compatibilidad
+export const PurchaseStatus = {
+  Pendiente: 'Pendiente',
+  Recibida: 'Recibida',
+  Cancelada: 'Cancelada'
+} as const;
 
-export enum PaymentMethod {
-  Efectivo = 'Efectivo',
-  Tarjeta = 'Tarjeta',
-  Transferencia = 'Transferencia'
-}
+export type PurchaseStatus = typeof PurchaseStatus[keyof typeof PurchaseStatus];
 
-export enum VoucherType {
-  Factura = 'Factura',
-  Boleta = 'Boleta',
-  GuiaRemision = 'GuiaRemision'
-}
+// Método de pago - const object en vez de enum para compatibilidad
+export const PaymentMethod = {
+  Efectivo: 'Efectivo',
+  Tarjeta: 'Tarjeta',
+  Transferencia: 'Transferencia'
+} as const;
+
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+
+// Tipo de comprobante - const object en vez de enum para compatibilidad
+export const VoucherType = {
+  Factura: 'Factura',
+  Boleta: 'Boleta',
+  GuiaRemision: 'GuiaRemision'
+} as const;
+
+export type VoucherType = typeof VoucherType[keyof typeof VoucherType];
 
 export interface Purchase {
   id: string;

@@ -330,19 +330,6 @@ const TextArea = styled.textarea`
   }
 `;
 
-const CheckboxContainer = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-`;
-
-const Checkbox = styled.input`
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-`;
-
 const HelpText = styled.small`
   color: #6c757d;
   font-size: 0.875rem;

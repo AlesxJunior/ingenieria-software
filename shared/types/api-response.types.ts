@@ -1,6 +1,6 @@
 // Tipos relacionados con respuestas de API
 
-import { ValidationError } from './validation.types';
+import type { ValidationError } from './validation.types';
 
 export interface ApiResponse<T = any> {
   success: boolean;

@@ -1,6 +1,6 @@
 // Clase de validación reutilizable
 
-import { ValidationError, ValidationResult } from '../types';
+import type { ValidationError, ValidationResult } from '../types';
 
 export class Validator {
   private errors: ValidationError[] = [];

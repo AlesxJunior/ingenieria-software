@@ -1,6 +1,6 @@
 // Reglas de validación reutilizables
 
-import { ValidationResult } from '../types';
+import type { ValidationResult } from '../types';
 import { Validator } from './validators';
 
 export const validatePassword = (password: string): ValidationResult => {

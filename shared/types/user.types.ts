@@ -1,5 +1,14 @@
 // Tipos relacionados con usuarios y autenticación
 
+// Roles de usuario - const object en vez de enum para compatibilidad
+export const UserRole = {
+  ADMIN: 'ADMIN',
+  MODERATOR: 'MODERATOR',
+  USER: 'USER'
+} as const;
+
+export type UserRole = typeof UserRole[keyof typeof UserRole];
+
 export interface User {
   id: string;
   email: string;
@@ -10,12 +19,6 @@ export interface User {
   lastAccess: Date | null;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR',
-  USER = 'USER'
 }
 
 export interface CreateUserDTO {

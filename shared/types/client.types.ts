@@ -1,17 +1,23 @@
 // Tipos relacionados con clientes y proveedores (entidades comerciales)
 
-export enum TipoEntidad {
-  Cliente = 'Cliente',
-  Proveedor = 'Proveedor',
-  Ambos = 'Ambos'
-}
+// Tipo de entidad - const object en vez de enum para compatibilidad
+export const TipoEntidad = {
+  Cliente: 'Cliente',
+  Proveedor: 'Proveedor',
+  Ambos: 'Ambos'
+} as const;
 
-export enum TipoDocumento {
-  DNI = 'DNI',
-  RUC = 'RUC',
-  CE = 'CE',
-  Pasaporte = 'Pasaporte'
-}
+export type TipoEntidad = typeof TipoEntidad[keyof typeof TipoEntidad];
+
+// Tipo de documento - const object en vez de enum para compatibilidad
+export const TipoDocumento = {
+  DNI: 'DNI',
+  RUC: 'RUC',
+  CE: 'CE',
+  Pasaporte: 'Pasaporte'
+} as const;
+
+export type TipoDocumento = typeof TipoDocumento[keyof typeof TipoDocumento];
 
 export interface Client {
   id: string;

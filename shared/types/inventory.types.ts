@@ -19,11 +19,14 @@ export interface StockByWarehouse {
   lastUpdated: Date;
 }
 
-export enum MovementType {
-  ENTRADA = 'ENTRADA',
-  SALIDA = 'SALIDA',
-  AJUSTE = 'AJUSTE'
-}
+// Tipo de movimiento - const object en vez de enum para compatibilidad
+export const MovementType = {
+  ENTRADA: 'ENTRADA',
+  SALIDA: 'SALIDA',
+  AJUSTE: 'AJUSTE'
+} as const;
+
+export type MovementType = typeof MovementType[keyof typeof MovementType];
 
 export interface MovementReason {
   id: string;
