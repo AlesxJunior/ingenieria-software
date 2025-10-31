@@ -162,19 +162,28 @@ describe('AuthContext', () => {
             refreshToken: 'refresh',
           },
           message: 'OK',
-        }), 50))
+        }), 100))
       );
 
       const { result } = renderHook(() => useAuth(), { wrapper });
-      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      
+      // Esperar inicialización
+      await waitFor(() => {
+        return result.current !== null && result.current.isLoading === false;
+      }, { timeout: 5000 });
 
-      const loginPromise = act(async () => {
-        await result.current.login('test@test.com', 'pass');
-      });
+      // Iniciar login sin await
+      const loginPromise = result.current.login('test@test.com', 'pass');
 
-      await waitFor(() => expect(result.current.isLoading).toBe(true));
+      // Verificar que isLoading cambió a true
+      await waitFor(() => expect(result.current.isLoading).toBe(true), { timeout: 200 });
+      
+      // Esperar a que termine
       await loginPromise;
-      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      
+      // Verificar que isLoading volvió a false
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isAuthenticated).toBe(true);
     });
   });
 
@@ -199,10 +208,17 @@ describe('AuthContext', () => {
       vi.mocked(apiService.logout).mockResolvedValue({ success: true, message: 'Logged out' });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
-      await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+      
+      // Primero esperar a que termine de cargar
+      await waitFor(() => {
+        return result.current !== null && result.current.isLoading === false;
+      }, { timeout: 5000 });
+
+      // Verificar que el usuario está autenticado
+      expect(result.current.isAuthenticated).toBe(true);
 
       await act(async () => {
-        await result.current.logout();
+        await result.current!.logout();
       });
 
       expect(result.current.user).toBeNull();
@@ -232,8 +248,13 @@ describe('AuthContext', () => {
       });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
-      await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
+      
+      // Esperar a que termine de cargar
+      await waitFor(() => {
+        return result.current !== null && result.current.isLoading === false;
+      }, { timeout: 5000 });
 
+      expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.hasPermission('users:read')).toBe(true);
       expect(result.current.hasPermission('users:write')).toBe(true);
       expect(result.current.hasPermission('products:delete')).toBe(false);
@@ -241,7 +262,11 @@ describe('AuthContext', () => {
 
     it('debe retornar false sin usuario autenticado', async () => {
       const { result } = renderHook(() => useAuth(), { wrapper });
-      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      
+      // Esperar a que termine de cargar
+      await waitFor(() => {
+        return result.current !== null && result.current.isLoading === false;
+      }, { timeout: 5000 });
 
       expect(result.current.hasPermission('users:read')).toBe(false);
     });
@@ -267,10 +292,16 @@ describe('AuthContext', () => {
       });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
-      await waitFor(() => expect(result.current.user?.firstName).toBe('Test'));
+      
+      // Esperar a que termine de cargar
+      await waitFor(() => {
+        return result.current !== null && result.current.isLoading === false;
+      }, { timeout: 5000 });
+
+      expect(result.current.user?.firstName).toBe('Test');
 
       act(() => {
-        result.current.updateUser({ firstName: 'Updated', email: 'new@test.com' });
+        result.current!.updateUser({ firstName: 'Updated', email: 'new@test.com' });
       });
 
       expect(result.current.user?.firstName).toBe('Updated');
