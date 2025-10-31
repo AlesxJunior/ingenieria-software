@@ -1,40 +1,55 @@
 import { Router } from 'express';
+// Importar módulos migrados
 import { authRoutes } from '../modules/auth';
-import userRoutes from './userRoutes';
-import entidadRoutes from './entidadRoutes';
-import inventoryRoutes from './inventoryRoutes';
+import { usersRoutes } from '../modules/users';
+import { productsRoutes } from '../modules/products';
+import { inventoryRoutes } from '../modules/inventory';
+import { purchasesRoutes } from '../modules/purchases';
+import { clientsRoutes } from '../modules/clients';
+import { warehousesRoutes } from '../modules/warehouses';
+// Rutas que aún no se han migrado a módulos
 import auditRoutes from './auditRoutes';
-import productRoutes from './productRoutes';
-import purchaseRoutes from './purchaseRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
-import warehouseRoutes from './warehouseRoutes';
 import movementReasonRoutes from './movementReasonRoutes';
 
 const router = Router();
 
-// Rutas de autenticación (módulo auth migrado)
+// ==========================================
+// MÓDULOS MIGRADOS (estructura modular)
+// ==========================================
+
+// Rutas de autenticación
 router.use('/auth', authRoutes);
 
 // Rutas de usuarios
-router.use('/users', userRoutes);
+router.use('/users', usersRoutes);
 
-// Rutas de entidades comerciales
-router.use('/entidades', entidadRoutes);
+// Rutas de entidades comerciales (clientes y proveedores)
+router.use('/entidades', clientsRoutes);
 
 // Rutas de productos
-router.use('/productos', productRoutes);
+router.use('/productos', productsRoutes);
 
 // Rutas de compras
-router.use('/compras', purchaseRoutes);
+router.use('/compras', purchasesRoutes);
 // Alias en inglés para compatibilidad Frontend
-router.use('/purchases', purchaseRoutes);
-
-// Rutas de ubigeo
-router.use('/ubigeo', ubigeoRoutes);
+router.use('/purchases', purchasesRoutes);
 
 // Rutas de almacenes
-router.use('/warehouses', warehouseRoutes);
-router.use('/almacenes', warehouseRoutes); // Alias en español
+router.use('/warehouses', warehousesRoutes);
+router.use('/almacenes', warehousesRoutes); // Alias en español
+
+// Rutas de inventario
+router.use('/inventario', inventoryRoutes);
+// Alias en inglés para compatibilidad Frontend
+router.use('/inventory', inventoryRoutes);
+
+// ==========================================
+// RUTAS PENDIENTES DE MIGRACIÓN
+// ==========================================
+
+// Rutas de ubigeo (módulo de soporte)
+router.use('/ubigeo', ubigeoRoutes);
 
 // Rutas de motivos de movimiento
 router.use('/movement-reasons', movementReasonRoutes);
@@ -42,10 +57,6 @@ router.use('/motivos-movimiento', movementReasonRoutes); // Alias en español
 
 // Rutas de auditoría
 router.use('/audit', auditRoutes);
-// Rutas de inventario
-router.use('/inventario', inventoryRoutes);
-// Alias en inglés para compatibilidad Frontend
-router.use('/inventory', inventoryRoutes);
 
 // Ruta de salud general de la API
 router.get('/health', (req, res) => {
