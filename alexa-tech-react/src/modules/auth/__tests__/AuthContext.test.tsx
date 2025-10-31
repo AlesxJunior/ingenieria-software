@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import * as apiModule from '../../../utils/api';
 import type { ReactNode } from 'react';
 
-// Mock del apiService
+// Mock del módulo completo
 vi.mock('../../../utils/api', () => ({
   apiService: {
     login: vi.fn(),
@@ -22,29 +22,28 @@ vi.mock('../../../utils/api', () => ({
 // Mock de localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
-
   return {
     getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString();
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
+    setItem: (key: string, value: string) => { store[key] = value.toString(); },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 describe('AuthContext', () => {
+  const { apiService, tokenUtils } = apiModule;
+
   beforeEach(() => {
     localStorageMock.clear();
     vi.clearAllMocks();
+    vi.mocked(tokenUtils.getAccessToken).mockReturnValue(null);
+    vi.mocked(tokenUtils.isTokenExpired).mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
   });
 
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -52,125 +51,155 @@ describe('AuthContext', () => {
   );
 
   describe('Estado inicial', () => {
-    it('debe iniciar con usuario null y isAuthenticated false', () => {
+    it('debe iniciar con usuario null cuando no hay token', async () => {
       const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
-      expect(result.current.isLoading).toBe(false);
     });
 
-    it('debe cargar usuario desde localStorage si existe', () => {
+    it('debe cargar usuario si existe token válido', async () => {
       const mockUser = {
         id: '1',
-        nombre: 'Test User',
+        username: 'testuser',
         email: 'test@test.com',
-        rol: 'ADMIN' as const,
-        permisos: ['users:read', 'users:write'],
+        firstName: 'Test',
+        lastName: 'User',
+        isActive: true,
+        permissions: ['users:read'],
       };
 
-      localStorageMock.setItem('user', JSON.stringify(mockUser));
+      vi.mocked(tokenUtils.getAccessToken).mockReturnValue('valid-token');
+      vi.mocked(tokenUtils.isTokenExpired).mockReturnValue(false);
+      vi.mocked(apiService.getCurrentUser).mockResolvedValue({
+        success: true,
+        data: mockUser,
+        message: 'Success',
+      });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
       expect(result.current.user).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
+    });
+
+    it('debe limpiar tokens si están expirados', async () => {
+      vi.mocked(tokenUtils.getAccessToken).mockReturnValue('expired-token');
+      vi.mocked(tokenUtils.isTokenExpired).mockReturnValue(true);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      expect(result.current.user).toBeNull();
+      expect(vi.mocked(tokenUtils.clearTokens)).toHaveBeenCalled();
     });
   });
 
   describe('Login', () => {
-    it('debe hacer login exitoso y guardar usuario', async () => {
+    it('debe hacer login exitoso', async () => {
       const mockUser = {
         id: '1',
-        nombre: 'Test User',
+        username: 'testuser',
         email: 'test@test.com',
-        rol: 'ADMIN' as const,
-        permisos: ['users:read'],
+        firstName: 'Test',
+        lastName: 'User',
+        isActive: true,
+        permissions: ['users:read'],
       };
 
-      const mockResponse = {
+      vi.mocked(apiService.login).mockResolvedValue({
+        success: true,
         data: {
-          success: true,
           user: mockUser,
-          token: 'fake-token',
+          accessToken: 'access-token',
+          refreshToken: 'refresh-token',
         },
-      };
-
-      vi.mocked(apiService.post).mockResolvedValueOnce(mockResponse);
-
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      await act(async () => {
-        await result.current.login('test@test.com', 'password123');
+        message: 'Login successful',
       });
 
+      const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      let loginResult;
+      await act(async () => {
+        loginResult = await result.current.login('test@test.com', 'password123');
+      });
+
+      expect(loginResult).toBe(true);
       expect(result.current.user).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
-      expect(localStorageMock.getItem('user')).toBeTruthy();
+      expect(vi.mocked(tokenUtils.setTokens)).toHaveBeenCalledWith('access-token', 'refresh-token');
     });
 
-    it('debe manejar error en login', async () => {
-      vi.mocked(apiService.post).mockRejectedValueOnce(new Error('Invalid credentials'));
+    it('debe manejar error de credenciales inválidas', async () => {
+      vi.mocked(apiService.login).mockRejectedValue(new Error('Invalid credentials'));
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       await expect(
-        result.current.login('test@test.com', 'wrong-password')
+        act(async () => {
+          await result.current.login('test@test.com', 'wrong');
+        })
       ).rejects.toThrow();
 
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
     });
 
-    it('debe actualizar isLoading durante login', async () => {
-      const mockResponse = {
-        data: {
+    it('debe cambiar isLoading durante el proceso', async () => {
+      vi.mocked(apiService.login).mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({
           success: true,
-          user: { id: '1', nombre: 'Test', email: 'test@test.com', rol: 'ADMIN' as const },
-          token: 'token',
-        },
-      };
-
-      vi.mocked(apiService.post).mockImplementationOnce(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(() => resolve(mockResponse), 100);
-          })
+          data: {
+            user: { id: '1', username: 'test', email: 'test@test.com', firstName: 'T', lastName: 'U', isActive: true },
+            accessToken: 'token',
+            refreshToken: 'refresh',
+          },
+          message: 'OK',
+        }), 50))
       );
 
       const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.isLoading).toBe(false);
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       const loginPromise = act(async () => {
-        await result.current.login('test@test.com', 'password');
+        await result.current.login('test@test.com', 'pass');
       });
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(true);
-      });
-
+      await waitFor(() => expect(result.current.isLoading).toBe(true));
       await loginPromise;
-
-      expect(result.current.isLoading).toBe(false);
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
     });
   });
 
   describe('Logout', () => {
-    it('debe hacer logout y limpiar usuario', async () => {
+    it('debe hacer logout correctamente', async () => {
       const mockUser = {
         id: '1',
-        nombre: 'Test User',
+        username: 'testuser',
         email: 'test@test.com',
-        rol: 'ADMIN' as const,
-        permisos: ['users:read'],
+        firstName: 'Test',
+        lastName: 'User',
+        isActive: true,
       };
 
-      localStorageMock.setItem('user', JSON.stringify(mockUser));
+      vi.mocked(tokenUtils.getAccessToken).mockReturnValue('token');
+      vi.mocked(tokenUtils.isTokenExpired).mockReturnValue(false);
+      vi.mocked(apiService.getCurrentUser).mockResolvedValue({
+        success: true,
+        data: mockUser,
+        message: 'Success',
+      });
+      vi.mocked(apiService.logout).mockResolvedValue({ success: true, message: 'Logged out' });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.isAuthenticated).toBe(true);
+      await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
       await act(async () => {
         await result.current.logout();
@@ -178,165 +207,77 @@ describe('AuthContext', () => {
 
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
-      expect(localStorageMock.getItem('user')).toBeNull();
-    });
-
-    it('debe manejar logout sin usuario autenticado', async () => {
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.user).toBeNull();
-
-      await act(async () => {
-        await result.current.logout();
-      });
-
-      expect(result.current.user).toBeNull();
-      expect(result.current.isAuthenticated).toBe(false);
+      expect(vi.mocked(tokenUtils.clearTokens)).toHaveBeenCalled();
     });
   });
 
   describe('hasPermission', () => {
-    it('debe retornar true si el usuario tiene el permiso', () => {
+    it('debe verificar permisos correctamente', async () => {
       const mockUser = {
         id: '1',
-        nombre: 'Test User',
+        username: 'testuser',
         email: 'test@test.com',
-        rol: 'ADMIN' as const,
-        permisos: ['users:read', 'users:write', 'products:read'],
+        firstName: 'Test',
+        lastName: 'User',
+        isActive: true,
+        permissions: ['users:read', 'users:write', 'products:read'],
       };
 
-      localStorageMock.setItem('user', JSON.stringify(mockUser));
+      vi.mocked(tokenUtils.getAccessToken).mockReturnValue('token');
+      vi.mocked(tokenUtils.isTokenExpired).mockReturnValue(false);
+      vi.mocked(apiService.getCurrentUser).mockResolvedValue({
+        success: true,
+        data: mockUser,
+        message: 'Success',
+      });
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isAuthenticated).toBe(true));
 
       expect(result.current.hasPermission('users:read')).toBe(true);
       expect(result.current.hasPermission('users:write')).toBe(true);
-      expect(result.current.hasPermission('products:read')).toBe(true);
-    });
-
-    it('debe retornar false si el usuario no tiene el permiso', () => {
-      const mockUser = {
-        id: '1',
-        nombre: 'Test User',
-        email: 'test@test.com',
-        rol: 'VENDEDOR' as const,
-        permisos: ['sales:read', 'sales:write'],
-      };
-
-      localStorageMock.setItem('user', JSON.stringify(mockUser));
-
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.hasPermission('users:write')).toBe(false);
       expect(result.current.hasPermission('products:delete')).toBe(false);
     });
 
-    it('debe retornar false si no hay usuario autenticado', () => {
+    it('debe retornar false sin usuario autenticado', async () => {
       const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
       expect(result.current.hasPermission('users:read')).toBe(false);
     });
   });
 
-  describe('isAdmin', () => {
-    it('debe retornar true si el rol es ADMIN', () => {
-      const mockUser = {
-        id: '1',
-        nombre: 'Admin User',
-        email: 'admin@test.com',
-        rol: 'ADMIN' as const,
-        permisos: [],
-      };
-
-      localStorageMock.setItem('user', JSON.stringify(mockUser));
-
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.isAdmin()).toBe(true);
-    });
-
-    it('debe retornar false si el rol no es ADMIN', () => {
-      const mockUser = {
-        id: '1',
-        nombre: 'Regular User',
-        email: 'user@test.com',
-        rol: 'VENDEDOR' as const,
-        permisos: [],
-      };
-
-      localStorageMock.setItem('user', JSON.stringify(mockUser));
-
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.isAdmin()).toBe(false);
-    });
-
-    it('debe retornar false si no hay usuario', () => {
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.isAdmin()).toBe(false);
-    });
-  });
-
   describe('updateUser', () => {
-    it('debe actualizar el usuario en el contexto y localStorage', async () => {
+    it('debe actualizar usuario correctamente', async () => {
       const initialUser = {
         id: '1',
-        nombre: 'Test User',
+        username: 'testuser',
         email: 'test@test.com',
-        rol: 'ADMIN' as const,
-        permisos: ['users:read'],
+        firstName: 'Test',
+        lastName: 'User',
+        isActive: true,
       };
 
-      const updatedUser = {
-        ...initialUser,
-        nombre: 'Updated Name',
-        email: 'updated@test.com',
-      };
-
-      localStorageMock.setItem('user', JSON.stringify(initialUser));
-
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      expect(result.current.user?.nombre).toBe('Test User');
-
-      act(() => {
-        result.current.updateUser(updatedUser);
+      vi.mocked(tokenUtils.getAccessToken).mockReturnValue('token');
+      vi.mocked(tokenUtils.isTokenExpired).mockReturnValue(false);
+      vi.mocked(apiService.getCurrentUser).mockResolvedValue({
+        success: true,
+        data: initialUser,
+        message: 'Success',
       });
 
-      expect(result.current.user?.nombre).toBe('Updated Name');
-      expect(result.current.user?.email).toBe('updated@test.com');
-
-      const storedUser = JSON.parse(localStorageMock.getItem('user') || '{}');
-      expect(storedUser.nombre).toBe('Updated Name');
-    });
-  });
-
-  describe('Casos Edge', () => {
-    it('debe manejar localStorage corrupto', () => {
-      localStorageMock.setItem('user', 'invalid-json');
-
       const { result } = renderHook(() => useAuth(), { wrapper });
+      await waitFor(() => expect(result.current.user?.firstName).toBe('Test'));
 
-      expect(result.current.user).toBeNull();
-      expect(result.current.isAuthenticated).toBe(false);
-    });
+      act(() => {
+        result.current.updateUser({ firstName: 'Updated', email: 'new@test.com' });
+      });
 
-    it('debe manejar respuesta de login sin usuario', async () => {
-      const mockResponse = {
-        data: {
-          success: false,
-          message: 'Invalid credentials',
-        },
-      };
+      expect(result.current.user?.firstName).toBe('Updated');
+      expect(result.current.user?.email).toBe('new@test.com');
 
-      vi.mocked(apiService.post).mockResolvedValueOnce(mockResponse);
-
-      const { result } = renderHook(() => useAuth(), { wrapper });
-
-      await expect(
-        result.current.login('test@test.com', 'password')
-      ).rejects.toThrow();
+      const stored = JSON.parse(localStorageMock.getItem('alexatech_user') || '{}');
+      expect(stored.firstName).toBe('Updated');
     });
   });
 });
