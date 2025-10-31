@@ -10,6 +10,12 @@
 - [Diagrama Visual](./architecture/restructure-diagram.md) - Diagramas visuales de la estructura
 - [Progreso](./architecture/restructure-progress.md) - Estado actual del progreso de reestructuración
 
+### Fases Completadas
+- ✅ [Fase 1: Preparación](./architecture/restructure-progress.md#fase-1-preparación-día-1-2) - Backup, inventarios, estructura base
+- ✅ [Fase 2: Código Compartido](./architecture/restructure-progress.md#fase-2-código-compartido-día-3-6) - Paquete shared con tipos y constantes
+- ✅ [Fase 3: Documentación](./FASE_3_COMPLETADA.md) - Organización de 16 documentos
+- ✅ [Fase 4: Backend Modular](./FASE_4_COMPLETADA.md) - 8 módulos funcionales migrados
+
 ---
 
 ## 🔌 API
