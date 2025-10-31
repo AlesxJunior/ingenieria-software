@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { ClientController } from '../controllers/entidadController';
-import { authenticate, requireSupervisor } from '../middleware/auth';
-import { rateLimiter } from '../middleware/rateLimiter';
+import { ClientController } from './clients.controller';
+import { authenticate, requireSupervisor } from '../../middleware/auth';
+import { rateLimiter } from '../../middleware/rateLimiter';
 
 const router = Router();
 

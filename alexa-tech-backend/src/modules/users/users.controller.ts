@@ -1,19 +1,19 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../types';
-import { userService } from '../services/userService';
+import { AuthenticatedRequest } from '../../types';
+import { userService } from '../../services/userService';
 import {
   validateUserCreate,
   validateUserUpdate,
   validateUserStatusUpdate,
-} from '../utils/validation';
+} from '../../utils/validation';
 import {
   sendSuccess,
   sendValidationError,
   sendNotFound,
   sendForbidden,
-} from '../utils/response';
-import { asyncHandler } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
+} from '../../utils/response';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { logger } from '../../utils/logger';
 
 export class UserController {
   // GET /users - Obtener todos los usuarios (con filtros y paginación)

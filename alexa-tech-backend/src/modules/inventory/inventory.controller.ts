@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../types';
-import { ResponseHelper } from '../utils/response';
-import { inventoryService } from '../services/inventoryService';
-import { asyncHandler } from '../middleware/errorHandler';
+import { AuthenticatedRequest } from '../../types';
+import { ResponseHelper } from '../../utils/response';
+import { inventoryService } from '../../services/inventoryService';
+import { asyncHandler } from '../../middleware/errorHandler';
 
 export const InventoryController = {
   // GET /stock - paginado y filtrado

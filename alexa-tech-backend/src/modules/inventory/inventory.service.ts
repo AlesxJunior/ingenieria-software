@@ -1,4 +1,4 @@
-import { prisma } from '../config/database';
+import { prisma } from '../../config/database';
 import { Prisma } from '@prisma/client';
 
 export type StockEstado = 'CRITICO' | 'BAJO' | 'NORMAL';

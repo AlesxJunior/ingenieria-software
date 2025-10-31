@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../middleware/auth';
-import { rateLimiter, generalRateLimit } from '../middleware/rateLimiter';
-import InventoryController from '../controllers/inventoryController';
+import { authenticate, requirePermission } from '../../middleware/auth';
+import { rateLimiter, generalRateLimit } from '../../middleware/rateLimiter';
+import { InventoryController } from './inventory.controller';
 
 const router = Router();
 

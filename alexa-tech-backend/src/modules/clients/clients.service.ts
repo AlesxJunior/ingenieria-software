@@ -1,6 +1,6 @@
 import { Client, TipoEntidad, Prisma } from '@prisma/client';
-import { AuditService } from './auditService';
-import { prisma } from '../config/database';
+import { AuditService } from '../../services/auditService';
+import { prisma } from '../../config/database';
 
 // Utilidades de validación/sanitización de documentos
 const onlyDigits = (str: string = '') => str.replace(/\D+/g, '');

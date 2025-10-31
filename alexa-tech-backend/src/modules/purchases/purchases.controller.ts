@@ -1,15 +1,15 @@
 import { Response } from 'express';
-import { ResponseHelper } from '../utils/response';
+import { ResponseHelper } from '../../utils/response';
 import {
   validatePurchaseCreate,
   validatePurchaseUpdate,
   validatePurchaseStatusUpdate,
   validatePurchaseQueryFilters,
-} from '../utils/validation';
-import { purchaseService } from '../services/purchaseService';
-import { AuthenticatedRequest } from '../types';
-import { inventoryService } from '../services/inventoryService';
-import { productService } from '../services/productService';
+} from '../../utils/validation';
+import { purchaseService } from '../../services/purchaseService';
+import { AuthenticatedRequest } from '../../types';
+import { inventoryService } from '../../services/inventoryService';
+import { productService } from '../../services/productService';
 
 // Métodos de pago permitidos actualizados
 const VALID_PAYMENT_METHODS = ['Efectivo', 'Tarjeta', 'Transferencia'];

@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { UserController } from '../controllers/userController';
+import { UserController } from './users.controller';
 import {
   authenticate,
   requireAdmin,
   requireSupervisor,
   requirePermission,
-} from '../middleware/auth';
-import { rateLimiter } from '../middleware/rateLimiter';
+} from '../../middleware/auth';
+import { rateLimiter } from '../../middleware/rateLimiter';
 
 const router = Router();
 

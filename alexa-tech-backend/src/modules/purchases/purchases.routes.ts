@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { authenticate, requireSupervisor } from '../middleware/auth';
-import PurchaseController from '../controllers/purchaseController';
+import { authenticate, requireSupervisor } from '../../middleware/auth';
+import { PurchaseController } from './purchases.controller';
 
 const router = Router();
 

@@ -1,14 +1,14 @@
-import { prisma } from '../config/database';
+import { prisma } from '../../config/database';
 import {
   Purchase,
   PurchaseCreateInput,
   PurchaseUpdateInput,
   PurchaseStatusUpdateInput,
-} from '../types';
-import { clientService } from './entidadService';
-import { productService } from './productService';
-import { AuditService } from './auditService';
-import { inventoryService } from './inventoryService';
+} from '../../types';
+import { clientService } from '../../services/entidadService';
+import { productService } from '../../services/productService';
+import { AuditService } from '../../services/auditService';
+import { inventoryService } from '../../services/inventoryService';
 
 const genCodigoOrden = (): string => {
   const now = new Date();

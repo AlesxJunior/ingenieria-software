@@ -1,5 +1,5 @@
-import { prisma } from '../config/database';
-import { ProductCreateInput, ProductUpdateInput } from '../types';
+import { prisma } from '../../config/database';
+import { ProductCreateInput, ProductUpdateInput } from '../../types';
 
 export const productService = {
   async create(data: ProductCreateInput, userId?: string) {

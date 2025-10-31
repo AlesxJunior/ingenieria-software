@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { prisma } from '../config/database';
-import { ResponseHelper } from '../utils/response';
-import { AuthenticatedRequest } from '../types';
-import { asyncHandler } from '../middleware/errorHandler';
+import { prisma } from '../../config/database';
+import { ResponseHelper } from '../../utils/response';
+import { AuthenticatedRequest } from '../../types';
+import { asyncHandler } from '../../middleware/errorHandler';
 
 export const WarehouseController = {
   // GET /almacenes - Listar todos los almacenes

@@ -1,9 +1,9 @@
 import { User } from '@prisma/client';
-import { prisma } from '../config/database';
-import { UserCreateInput, UserUpdateInput } from '../types';
+import { prisma } from '../../config/database';
+import { UserCreateInput, UserUpdateInput } from '../../types';
 import * as bcrypt from 'bcrypt';
-import { config } from '../config';
-import { logger } from '../utils/logger';
+import { config } from '../../config';
+import { logger } from '../../utils/logger';
 
 export class UserService {
   // Crear un nuevo usuario

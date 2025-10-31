@@ -1,13 +1,13 @@
 import { Response } from 'express';
-import { ResponseHelper } from '../utils/response';
+import { ResponseHelper } from '../../utils/response';
 import {
   validateProductCreate,
   validateProductUpdate,
   validateProductStatusUpdate,
   validateProductQueryFilters,
-} from '../utils/validation';
-import { productService } from '../services/productService';
-import { AuthenticatedRequest } from '../types';
+} from '../../utils/validation';
+import { productService } from '../../services/productService';
+import { AuthenticatedRequest } from '../../types';
 
 
 export const ProductController = {

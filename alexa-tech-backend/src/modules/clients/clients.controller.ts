@@ -1,12 +1,12 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../types';
+import { AuthenticatedRequest } from '../../types';
 import {
   clientService,
   CreateClientData,
   UpdateClientData,
   ClientFilters,
-} from '../services/entidadService';
-import { userService } from '../services/userService';
+} from '../../services/entidadService';
+import { userService } from '../../services/userService';
 import {
   sendSuccess,
   sendValidationError,
@@ -14,10 +14,10 @@ import {
   sendForbidden,
   sendUnauthorized,
   sendError,
-} from '../utils/response';
-import { asyncHandler } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
-import { PermissionUtils } from '../utils/permissions';
+} from '../../utils/response';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { logger } from '../../utils/logger';
+import { PermissionUtils } from '../../utils/permissions';
 
 // Validaciones para clientes
 const validateClientCreate = (

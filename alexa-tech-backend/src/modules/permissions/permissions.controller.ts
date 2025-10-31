@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
-import { PermissionUtils } from '../utils/permissions';
-import { sendSuccess, sendValidationError } from '../utils/response';
-import { asyncHandler } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
-import { userService } from '../services/userService';
+import { AuthenticatedRequest } from '../../types';
+import { PermissionUtils } from '../../utils/permissions';
+import { sendSuccess, sendValidationError } from '../../utils/response';
+import { asyncHandler } from '../../middleware/errorHandler';
+import { logger } from '../../utils/logger';
+import { userService } from '../../services/userService';
 
 export class PermissionController {
   // GET /permissions - Obtener todos los permisos disponibles
