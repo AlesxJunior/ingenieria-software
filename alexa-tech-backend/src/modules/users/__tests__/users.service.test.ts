@@ -1,11 +1,11 @@
 import { PrismaClient, User } from '@prisma/client';
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
-import { userService } from './userService';
-import { prisma } from '../config/database';
+import { userService } from '../users.service';
+import { prisma } from '../../../config/database';
 import * as bcrypt from 'bcrypt';
-import { config } from '../config'; // Import config
+import { config } from '../../../config'; // Import config
 
-jest.mock('../config/database', () => ({
+jest.mock('../../../config/database', () => ({
   __esModule: true,
   prisma: mockDeep<PrismaClient>(),
 }));

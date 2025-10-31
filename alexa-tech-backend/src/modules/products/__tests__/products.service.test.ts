@@ -1,11 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 import { Decimal } from '@prisma/client/runtime/library';
-import productService from './productService';
-import { prisma } from '../config/database';
+import productService from '../products.service';
+import { prisma } from '../../../config/database';
 
 // Mock the database module directly in the test file
-jest.mock('../config/database', () => ({
+jest.mock('../../../config/database', () => ({
   __esModule: true,
   prisma: mockDeep<PrismaClient>(),
 }));
