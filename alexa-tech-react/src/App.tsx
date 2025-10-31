@@ -1,38 +1,38 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { GlobalStyles } from './styles/GlobalStyles';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './modules/auth/context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ModalProvider, useModal } from './context/ModalContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './modules/auth/components/ProtectedRoute';
 import NotificationContainer from './components/NotificationContainer';
 import Modal from './components/Modal';
 import LoadingSpinner from './components/LoadingSpinner';
-import { InventoryProvider } from './context/InventoryContext';
+import { InventoryProvider } from './modules/inventory/context/InventoryContext';
 
-// Lazy loading de páginas
-const Login = lazy(() => import('./pages/Login'));
+// Lazy loading de páginas desde módulos
+const Login = lazy(() => import('./modules/auth/pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const GestionCaja = lazy(() => import('./pages/GestionCaja'));
-const ListaEntidades = lazy(() => import('./pages/ListaEntidades'));
-const ListaProductos = lazy(() => import('./pages/ListaProductos'));
-const EditarProducto = lazy(() => import('./pages/EditarProducto'));
-const EditarEntidad = lazy(() => import('./pages/EditarEntidad'));
-const RegistroEntidad = lazy(() => import('./pages/RegistroEntidad'));
-const AperturaCaja = lazy(() => import('./pages/AperturaCaja'));
-const RealizarVenta = lazy(() => import('./pages/RealizarVenta'));
-const ListaVentas = lazy(() => import('./pages/ListaVentas'));
-const ListaUsuarios = lazy(() => import('./pages/ListaUsuarios'));
-const CrearUsuario = lazy(() => import('./pages/CrearUsuario'));
-const EditarUsuario = lazy(() => import('./pages/EditarUsuario'));
-const PerfilUsuario = lazy(() => import('./pages/PerfilUsuario'));
+const GestionCaja = lazy(() => import('./modules/sales/pages/GestionCaja'));
+const ListaEntidades = lazy(() => import('./modules/clients/pages/ListaEntidades'));
+const ListaProductos = lazy(() => import('./modules/products/pages/ListaProductos'));
+const EditarProducto = lazy(() => import('./modules/products/pages/EditarProducto'));
+const EditarEntidad = lazy(() => import('./modules/clients/pages/EditarEntidad'));
+const RegistroEntidad = lazy(() => import('./modules/clients/pages/RegistroEntidad'));
+const AperturaCaja = lazy(() => import('./modules/sales/pages/AperturaCaja'));
+const RealizarVenta = lazy(() => import('./modules/sales/pages/RealizarVenta'));
+const ListaVentas = lazy(() => import('./modules/sales/pages/ListaVentas'));
+const ListaUsuarios = lazy(() => import('./modules/users/pages/ListaUsuarios'));
+const CrearUsuario = lazy(() => import('./modules/users/pages/CrearUsuario'));
+const EditarUsuario = lazy(() => import('./modules/users/pages/EditarUsuario'));
+const PerfilUsuario = lazy(() => import('./modules/users/pages/PerfilUsuario'));
 const AuditoriaLogs = lazy(() => import('./pages/AuditoriaLogs'));
-const ListaCompras = lazy(() => import('./pages/ListaCompras'));
-const ListadoStock = lazy(() => import('./pages/Inventario/ListadoStock'));
-const Kardex = lazy(() => import('./pages/Inventario/Kardex'));
-const ListaAlmacenes = lazy(() => import('./pages/Inventario/ListaAlmacenes'));
-const ListaMotivosMovimiento = lazy(() => import('./pages/Inventario/ListaMotivosMovimiento'));
+const ListaCompras = lazy(() => import('./modules/purchases/pages/ListaCompras'));
+const ListadoStock = lazy(() => import('./modules/inventory/pages/Inventario/ListadoStock'));
+const Kardex = lazy(() => import('./modules/inventory/pages/Inventario/Kardex'));
+const ListaAlmacenes = lazy(() => import('./modules/inventory/pages/Inventario/ListaAlmacenes'));
+const ListaMotivosMovimiento = lazy(() => import('./modules/inventory/pages/Inventario/ListaMotivosMovimiento'));
 
 // Componente interno para manejar el modal
 const AppContent = () => {

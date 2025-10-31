@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
-import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
-import { apiService } from '../utils/api';
+import Layout from '../../../components/Layout';
+import { useAuth } from '../../auth/context/AuthContext';
+import { useNotification } from '../../../context/NotificationContext';
+import { apiService } from '../../../utils/api';
 import NuevoUsuarioModal from '../components/NuevoUsuarioModal';
 import EditarUsuarioModal from '../components/EditarUsuarioModal';
 

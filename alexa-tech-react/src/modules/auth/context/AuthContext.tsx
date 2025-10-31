@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { apiService, tokenUtils } from '../utils/api';
+import { apiService, tokenUtils } from '../../../utils/api';
 
 interface User {
   id: string;

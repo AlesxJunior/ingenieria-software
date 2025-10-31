@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useNotification } from '../context/NotificationContext';
-import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
-import PasswordRequirements from './PasswordRequirements';
+import { useNotification } from '../../../context/NotificationContext';
+import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../../../utils/validation';
+import PasswordRequirements from '../../../components/PasswordRequirements';
 
 interface Permission {
   id: string;
