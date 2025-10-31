@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import type { MovimientoKardex, PaginationData } from '../../types/inventario';
-import { getWarehouseLabel } from '../../constants/warehouses';
+import type { MovimientoKardex, PaginationData } from '../../../../types/inventario';
+import { getWarehouseLabel } from '../../../../constants/warehouses';
 
 const TableContainer = styled.div`
   background: white;

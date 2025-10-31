@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useAuth } from '../../context/AuthContext';
-import { tokenUtils } from '../../utils/api';
+import { useAuth } from '../../../auth/context/AuthContext';
+import { tokenUtils } from '../../../../utils/api';
 
 const DiagnosticContainer = styled.div`
   background: #f8f9fa;

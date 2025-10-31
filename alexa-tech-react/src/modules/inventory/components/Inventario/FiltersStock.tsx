@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import type { StockFilters } from '../../types/inventario';
-import { WAREHOUSE_OPTIONS } from '../../constants/warehouses';
-import { apiService } from '../../utils/api';
+import type { StockFilters } from '../../../../types/inventario';
+import { WAREHOUSE_OPTIONS } from '../../../../constants/warehouses';
+import { apiService } from '../../../../utils/api';
 
 const FiltersContainer = styled.div`
   background: white;

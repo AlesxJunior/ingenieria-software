@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import Modal from '../Modal';
-import type { StockItem, AjusteFormData } from '../../types/inventario';
-import { getWarehouseLabel } from '../../constants/warehouses';
+import Modal from '../../../../components/Modal';
+import type { StockItem, AjusteFormData } from '../../../../types/inventario';
+import { getWarehouseLabel } from '../../../../constants/warehouses';
 import { movementReasonsApi } from '../../services/movementReasonsApi';
 import type { MovementReason } from '../../services/movementReasonsApi';
 

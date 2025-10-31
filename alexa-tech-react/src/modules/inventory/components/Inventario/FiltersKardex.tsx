@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import type { KardexFilters } from '../../types/inventario';
-import { WAREHOUSE_OPTIONS } from '../../constants/warehouses';
+import type { KardexFilters } from '../../../../types/inventario';
+import { WAREHOUSE_OPTIONS } from '../../../../constants/warehouses';
 import { inventarioApi } from '../../services/inventarioApi';
-import { apiService } from '../../utils/api';
+import { apiService } from '../../../../utils/api';
 
 const FiltersContainer = styled.div`
   background: white;
