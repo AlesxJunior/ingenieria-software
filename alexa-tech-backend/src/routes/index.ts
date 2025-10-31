@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import authRoutes from './authRoutes';
+import { authRoutes } from '../modules/auth';
 import userRoutes from './userRoutes';
 import entidadRoutes from './entidadRoutes';
 import inventoryRoutes from './inventoryRoutes';
@@ -12,7 +12,7 @@ import movementReasonRoutes from './movementReasonRoutes';
 
 const router = Router();
 
-// Rutas de autenticación
+// Rutas de autenticación (módulo auth migrado)
 router.use('/auth', authRoutes);
 
 // Rutas de usuarios
