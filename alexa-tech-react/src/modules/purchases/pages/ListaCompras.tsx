@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
-import { useClients } from '../context/ClientContext';
-import { useNotification } from '../context/NotificationContext';
-import { useModal } from '../context/ModalContext';
+import Layout from '../../../components/Layout';
+import { useClients } from '../../clients/context/ClientContext';
+import { useNotification } from '../../../context/NotificationContext';
+import { useModal } from '../../../context/ModalContext';
 import NuevaCompraModal from '../components/NuevaCompraModal';
-import { apiService } from '../utils/api';
+import { apiService } from '../../../utils/api';
 
-import { getWarehouseLabel } from '../constants/warehouses';
+import { getWarehouseLabel } from '../../../constants/warehouses';
 import DetalleCompraModal from '../components/DetalleCompraModal';
-import CambiarEstadoModal from '../components/CambiarEstadoModal';
+import CambiarEstadoModal from '../../../components/CambiarEstadoModal';
 
 const TableContainer = styled.div`
   background: white;

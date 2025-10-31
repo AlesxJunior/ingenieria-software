@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
-import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../../auth/context/AuthContext';
+import { useNotification } from '../../../context/NotificationContext';
 
 const Container = styled.div`
   max-width: 600px;

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useProducts } from '../context/ProductContext';
-import { useNotification } from '../context/NotificationContext';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
-import { apiService } from '../utils/api';
+import { useNotification } from '../../../context/NotificationContext';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../../../utils/productOptions';
+import { apiService } from '../../../utils/api';
 
 const FormContainer = styled.div`
   background-color: #fff;

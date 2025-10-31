@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { useClients } from '../context/ClientContext';
-import { useNotification } from '../context/NotificationContext';
-import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../constants/warehouses';
-import { apiService } from '../utils/api';
-import { useProducts, type Product } from '../context/ProductContext';
+import { useClients } from '../../clients/context/ClientContext';
+import { useNotification } from '../../../context/NotificationContext';
+import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../../../constants/warehouses';
+import { apiService } from '../../../utils/api';
+import { useProducts, type Product } from '../../products/context/ProductContext';
 
 const Form = styled.form`
   display: flex;

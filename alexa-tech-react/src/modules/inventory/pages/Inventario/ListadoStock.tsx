@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import Layout from '../../components/Layout';
+import Layout from '../../../../components/Layout';
 import FiltersStock from '../../components/Inventario/FiltersStock';
 import TablaStock from '../../components/Inventario/TablaStock';
 import ModalAjuste from '../../components/Inventario/ModalAjuste';
 import { useInventarioWithDebounce } from '../../hooks/useInventario';
-import type { StockFilters, StockItem, AjusteFormData } from '../../types/inventario';
+import type { StockFilters, StockItem, AjusteFormData } from '../../../../types/inventario';
 
 const ErrorBanner = styled.div`
   background: #f8d7da;

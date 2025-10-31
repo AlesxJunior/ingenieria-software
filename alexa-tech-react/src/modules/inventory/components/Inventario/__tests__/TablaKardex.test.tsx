@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TablaKardex from '../TablaKardex';
-import type { MovimientoKardex, PaginationData } from '../../../types/inventario';
+import type { MovimientoKardex, PaginationData } from '../../../../../types/inventario';
 
 describe('TablaKardex', () => {
   const mockOnPageChange = vi.fn();

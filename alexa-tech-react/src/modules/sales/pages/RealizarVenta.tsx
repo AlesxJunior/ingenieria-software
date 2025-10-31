@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
-import { useProducts, type Product } from '../context/ProductContext';
-import { useClients, type Client } from '../context/ClientContext';
+import Layout from '../../../components/Layout';
+import { useProducts, type Product } from '../../products/context/ProductContext';
+import { useClients, type Client } from '../../clients/context/ClientContext';
 import { useSales, type SaleItem } from '../context/SalesContext';
-import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../../auth/context/AuthContext';
+import { useNotification } from '../../../context/NotificationContext';
 
 const Container = styled.div`
   display: grid;

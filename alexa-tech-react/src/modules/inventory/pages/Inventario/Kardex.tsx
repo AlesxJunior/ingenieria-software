@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import Layout from '../../components/Layout';
+import Layout from '../../../../components/Layout';
 import FiltersKardex from '../../components/Inventario/FiltersKardex';
 import TablaKardex from '../../components/Inventario/TablaKardex';
 import { useInventarioWithDebounce } from '../../hooks/useInventario';
-import type { KardexFilters } from '../../types/inventario';
+import type { KardexFilters } from '../../../../types/inventario';
 
 const Container = styled.div`
   padding: 1rem;

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { apiService } from '../utils/api';
-import { useNotification } from '../context/NotificationContext';
-import { getWarehouseLabel } from '../constants/warehouses';
-import { useClients } from '../context/ClientContext';
+import { apiService } from '../../../utils/api';
+import { useNotification } from '../../../context/NotificationContext';
+import { getWarehouseLabel } from '../../../constants/warehouses';
+import { useClients } from '../../clients/context/ClientContext';
 
 const Container = styled.div`
   display: flex;

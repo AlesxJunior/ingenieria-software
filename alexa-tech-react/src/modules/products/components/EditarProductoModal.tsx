@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import { useProducts, type Product } from '../context/ProductContext';
-import { useNotification } from '../context/NotificationContext';
-import { apiService } from '../utils/api';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
+import { useNotification } from '../../../context/NotificationContext';
+import { apiService } from '../../../utils/api';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../../../utils/productOptions';
 
 const FormGrid = styled.div`
   display: grid;

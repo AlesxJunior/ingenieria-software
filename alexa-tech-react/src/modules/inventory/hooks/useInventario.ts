@@ -1,7 +1,7 @@
 import { useContext, useCallback, useRef } from 'react';
 import InventoryContext from '../context/InventoryContext';
 import type { InventoryContextType } from '../context/InventoryContext';
-import type { StockFilters, KardexFilters } from '../types/inventario';
+import type { StockFilters, KardexFilters } from '../../../types/inventario';
 
 // Hook personalizado para usar el contexto de inventario
 export const useInventario = (): InventoryContextType => {

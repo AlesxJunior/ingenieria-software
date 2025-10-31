@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useProducts } from '../context/ProductContext';
-import { useNotification } from '../context/NotificationContext';
-import { apiService } from '../utils/api';
-import { media } from '../styles/breakpoints';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
-import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../constants/warehouses';
+import { useNotification } from '../../../context/NotificationContext';
+import { apiService } from '../../../utils/api';
+import { media } from '../../../styles/breakpoints';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../../../utils/productOptions';
+import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../../../constants/warehouses';
 
 const FormContainer = styled.div`
   background: white;

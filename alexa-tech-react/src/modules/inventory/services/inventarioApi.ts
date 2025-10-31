@@ -8,7 +8,7 @@ import type {
   AjusteData,
   StockItem,
   MovimientoKardex
-} from '../types/inventario';
+} from '../../../types/inventario';
 
 // Configuración dinámica de la API
 const getApiBaseUrl = (): string => {

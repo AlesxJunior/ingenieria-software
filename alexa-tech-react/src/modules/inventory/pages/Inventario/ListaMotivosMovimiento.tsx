@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import Layout from '../../components/Layout';
+import Layout from '../../../../components/Layout';
 import {
   movementReasonsApi,
   type MovementReason,

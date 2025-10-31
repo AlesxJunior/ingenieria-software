@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import FiltersKardex from '../FiltersKardex';
 import { inventarioApi } from '../../../services/inventarioApi';
-import type { KardexFilters } from '../../../types/inventario';
+import type { KardexFilters } from '../../../../../types/inventario';
 
 // Mock del servicio de inventario
 vi.mock('../../../services/inventarioApi', () => ({

@@ -8,9 +8,9 @@ import type {
   KardexFilters, 
   AjusteData,
   StockStats
-} from '../types/inventario';
+} from '../../../types/inventario';
 import { inventarioApi } from '../services/inventarioApi';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../../auth/context/AuthContext';
 
 export interface InventoryContextType {
   // Estado
