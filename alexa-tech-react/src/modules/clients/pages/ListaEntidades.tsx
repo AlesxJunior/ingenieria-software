@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useClients } from '../context/ClientContext';
-import { useUI } from '../context/UIContext';
+import { useUI } from '../../../context/UIContext';
 import NuevaEntidadModal from '../components/NuevaEntidadModal';
 import EditarEntidadModal from '../components/EditarEntidadModal';
-import { media } from '../styles/breakpoints';
+import { media } from '../../../styles/breakpoints';
 import UbigeoSelector from '../components/UbigeoSelector';
 
 const TableContainer = styled.div`

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
-import Layout from '../components/Layout';
-import { useNotification } from '../context/NotificationContext';
+import Layout from '../../../components/Layout';
+import { useNotification } from '../../../context/NotificationContext';
 
 interface UserFormData {
   username: string;

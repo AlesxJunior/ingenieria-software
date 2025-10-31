@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useClients } from '../context/ClientContext';
 import UbigeoSelector from '../components/UbigeoSelector';
 

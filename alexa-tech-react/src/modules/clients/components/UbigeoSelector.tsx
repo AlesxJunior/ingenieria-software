@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { apiService } from '../utils/api';
-import type { ApiResponse } from '../utils/api';
+import { apiService } from '../../../utils/api';
+import type { ApiResponse } from '../../../utils/api';
 
 interface Departamento { id: string; nombre: string; }
 interface Provincia { id: string; nombre: string; departamentoId: string; }

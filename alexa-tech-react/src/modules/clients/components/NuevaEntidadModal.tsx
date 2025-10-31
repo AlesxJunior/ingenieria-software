@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useNotification } from '../context/NotificationContext';
+import { useNotification } from '../../../context/NotificationContext';
 import { useClients } from '../context/ClientContext';
 import UbigeoSelector from './UbigeoSelector';
 

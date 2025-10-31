@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import { useProducts } from '../context/ProductContext';
-import { useNotification } from '../context/NotificationContext';
-import { apiService } from '../utils/api';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
-import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../constants/warehouses';
+import { useNotification } from '../../../context/NotificationContext';
+import { apiService } from '../../../utils/api';
+import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../../../utils/productOptions';
+import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../../../constants/warehouses';
 
 const FormGrid = styled.div`
   display: grid;

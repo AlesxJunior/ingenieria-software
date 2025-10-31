@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { apiService } from '../utils/api';
-import { useNotification } from '../context/NotificationContext';
+import { apiService } from '../../../utils/api';
+import { useNotification } from '../../../context/NotificationContext';
 
 const Container = styled.div`
   display: flex;

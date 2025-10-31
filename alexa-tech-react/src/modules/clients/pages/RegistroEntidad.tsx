@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useClients } from '../context/ClientContext';
-import { useNotification } from '../context/NotificationContext';
-import { media } from '../styles/breakpoints';
+import { useNotification } from '../../../context/NotificationContext';
+import { media } from '../../../styles/breakpoints';
 import UbigeoSelector from '../components/UbigeoSelector';
 
 const FormContainer = styled.div`

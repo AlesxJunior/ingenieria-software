@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNotification } from '../context/NotificationContext';
+import { useNotification } from '../../../context/NotificationContext';
 import UbigeoSelector from './UbigeoSelector';
 
 interface Client {

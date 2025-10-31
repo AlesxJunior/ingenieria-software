@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useProducts, type Product } from '../context/ProductContext';
-import { useNotification } from '../context/NotificationContext';
-import { useModal } from '../context/ModalContext';
+import { useNotification } from '../../../context/NotificationContext';
+import { useModal } from '../../../context/ModalContext';
 import NuevoProductoModal from '../components/NuevoProductoModal';
 import EditarProductoModal from '../components/EditarProductoModal';
-import { apiService } from '../utils/api';
-import { media } from '../styles/breakpoints';
+import { apiService } from '../../../utils/api';
+import { media } from '../../../styles/breakpoints';
 
 const TableContainer = styled.div`
   background: white;

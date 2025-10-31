@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
+import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
-import { useClients } from '../context/ClientContext';
+import { useClients } from '../../clients/context/ClientContext';
 
 
 const Container = styled.div`

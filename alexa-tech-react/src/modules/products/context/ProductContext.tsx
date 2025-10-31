@@ -1,9 +1,9 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { apiService } from '../utils/api';
-import { useUI } from './UIContext';
-import { useNotification } from './NotificationContext';
+import { apiService } from '../../../utils/api';
+import { useUI } from '../../../context/UIContext';
+import { useNotification } from '../../../context/NotificationContext';
 
 // Definición de la interfaz Product (movida desde AppContext)
 export interface Product {

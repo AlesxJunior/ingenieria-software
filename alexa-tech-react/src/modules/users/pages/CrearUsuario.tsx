@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
-import { useNotification } from '../context/NotificationContext';
-import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
-import PasswordRequirements from '../components/PasswordRequirements';
-import { apiService } from '../utils/api';
+import Layout from '../../../components/Layout';
+import { useNotification } from '../../../context/NotificationContext';
+import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../../../utils/validation';
+import PasswordRequirements from '../../../components/PasswordRequirements';
+import { apiService } from '../../../utils/api';
 
 interface UserFormData {
   username: string;

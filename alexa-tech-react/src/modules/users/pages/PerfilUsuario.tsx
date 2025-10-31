@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import Layout from '../components/Layout';
-import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
-import { validatePasswordWithConfirmation } from '../utils/validation';
-import PasswordRequirements from '../components/PasswordRequirements';
-import { apiService } from '../utils/api';
+import Layout from '../../../components/Layout';
+import { useAuth } from '../../auth/context/AuthContext';
+import { useNotification } from '../../../context/NotificationContext';
+import { validatePasswordWithConfirmation } from '../../../utils/validation';
+import PasswordRequirements from '../../../components/PasswordRequirements';
+import { apiService } from '../../../utils/api';
 
 interface ProfileFormData {
   fullName: string;
