@@ -293,9 +293,12 @@ describe('AuthContext', () => {
 
       const { result } = renderHook(() => useAuth(), { wrapper });
       
-      // Esperar a que termine de cargar
+      // Esperar a que termine de cargar Y que el usuario esté cargado
       await waitFor(() => {
-        return result.current !== null && result.current.isLoading === false;
+        return result.current !== null && 
+               result.current.isLoading === false &&
+               result.current.user !== null &&
+               result.current.user.firstName === 'Test';
       }, { timeout: 5000 });
 
       expect(result.current.user?.firstName).toBe('Test');

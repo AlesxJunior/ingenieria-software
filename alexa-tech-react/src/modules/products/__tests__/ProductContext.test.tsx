@@ -39,9 +39,20 @@ describe('ProductContext', () => {
   );
 
   describe('Estado inicial', () => {
-    it('debe iniciar con array vacío de productos', () => {
+    it('debe iniciar con array vacío de productos', async () => {
+      // Mock para la carga inicial automática
+      vi.mocked(apiService.getProducts).mockResolvedValue({
+        success: true,
+        data: { products: [], total: 0, filters: {} },
+        message: 'Success',
+      });
+
       const { result } = renderHook(() => useProducts(), { wrapper });
-      expect(result.current.products).toEqual([]);
+      
+      // Esperar a que termine la carga inicial
+      await waitFor(() => {
+        expect(result.current.products).toEqual([]);
+      });
     });
   });
 
@@ -72,13 +83,24 @@ describe('ProductContext', () => {
         },
       ];
 
-      vi.mocked(apiService.getProducts).mockResolvedValue({
-        success: true,
-        data: { products: mockProducts },
-        message: 'Success',
-      });
+      // Primera llamada: carga inicial automática (devuelve vacío)
+      // Segunda llamada: loadProducts manual (devuelve productos)
+      vi.mocked(apiService.getProducts)
+        .mockResolvedValueOnce({
+          success: true,
+          data: { products: [], total: 0, filters: {} },
+          message: 'Success',
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          data: { products: mockProducts, total: 2, filters: {} },
+          message: 'Success',
+        });
 
       const { result } = renderHook(() => useProducts(), { wrapper });
+
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products).toEqual([]));
 
       await act(async () => {
         await result.current.loadProducts();
@@ -91,13 +113,22 @@ describe('ProductContext', () => {
     });
 
     it('debe cargar productos con filtros', async () => {
-      vi.mocked(apiService.getProducts).mockResolvedValue({
-        success: true,
-        data: { products: [], total: 0, filters: {} },
-        message: 'Success',
-      });
+      vi.mocked(apiService.getProducts)
+        .mockResolvedValueOnce({
+          success: true,
+          data: { products: [], total: 0, filters: {} },
+          message: 'Success',
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          data: { products: [], total: 0, filters: {} },
+          message: 'Success',
+        });
 
       const { result } = renderHook(() => useProducts(), { wrapper });
+
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products).toEqual([]));
 
       await act(async () => {
         await result.current.loadProducts({
@@ -118,9 +149,18 @@ describe('ProductContext', () => {
     });
 
     it('debe manejar error al cargar productos', async () => {
-      vi.mocked(apiService.getProducts).mockRejectedValue(new Error('Network error'));
+      vi.mocked(apiService.getProducts)
+        .mockResolvedValueOnce({
+          success: true,
+          data: { products: [], total: 0, filters: {} },
+          message: 'Success',
+        })
+        .mockRejectedValueOnce(new Error('Network error'));
 
       const { result } = renderHook(() => useProducts(), { wrapper });
+
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products).toEqual([]));
 
       await act(async () => {
         await result.current.loadProducts();
@@ -133,9 +173,18 @@ describe('ProductContext', () => {
       const abortError = new Error('Request aborted');
       (abortError as any).name = 'AbortError';
       
-      vi.mocked(apiService.getProducts).mockRejectedValue(abortError);
+      vi.mocked(apiService.getProducts)
+        .mockResolvedValueOnce({
+          success: true,
+          data: { products: [], total: 0, filters: {} },
+          message: 'Success',
+        })
+        .mockRejectedValueOnce(abortError);
 
       const { result } = renderHook(() => useProducts(), { wrapper });
+
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products).toEqual([]));
 
       await act(async () => {
         await result.current.loadProducts();
@@ -168,9 +217,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products.length).toBeGreaterThan(0));
 
       const product = result.current.getProductById('P001');
       expect(product).toBeDefined();
@@ -186,9 +234,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products).toEqual([]));
 
       const product = result.current.getProductById('P999');
       expect(product).toBeUndefined();
@@ -211,15 +258,14 @@ describe('ProductContext', () => {
 
       vi.mocked(apiService.getProducts).mockResolvedValue({
         success: true,
-        data: { products: mockProducts },
+        data: { products: mockProducts, total: 1, filters: {} },
         message: 'Success',
       });
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products.length).toBeGreaterThan(0));
 
       const initialCount = result.current.products.length;
 
@@ -266,9 +312,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products.length).toBeGreaterThan(0));
 
       const productId = result.current.products[0].id;
 
@@ -293,9 +338,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products).toEqual([]));
 
       act(() => {
         result.current.updateProduct('P999', { productName: 'Test' });
@@ -336,9 +380,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products.length).toBe(2));
 
       const initialCount = result.current.products.length;
       const productToDelete = result.current.products[0].id;
@@ -375,9 +418,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products.length).toBeGreaterThan(0));
 
       const product = result.current.products[0];
       expect(product.id).toBe('P001');
@@ -411,9 +453,8 @@ describe('ProductContext', () => {
 
       const { result } = renderHook(() => useProducts(), { wrapper });
 
-      await act(async () => {
-        await result.current.loadProducts();
-      });
+      // Esperar la carga inicial
+      await waitFor(() => expect(result.current.products.length).toBeGreaterThan(0));
 
       expect(result.current.products[0].status).toBe('agotado');
     });
