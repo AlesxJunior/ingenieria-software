@@ -15,7 +15,10 @@ const mockInventoryContextValue: InventoryContextType = {
   alertas: { stockBajo: [], stockCritico: [] },
   loading: false,
   error: null,
-  pagination: null,
+  pagination: {
+    stock: null,
+    kardex: null
+  },
   fetchStock: mockFetchStock,
   fetchKardex: mockFetchKardex,
   crearAjuste: vi.fn(),
@@ -177,7 +180,7 @@ describe('useInventarioWithDebounce', () => {
       const { result } = renderHook(() => useInventarioWithDebounce(), { wrapper });
 
       act(() => {
-        result.current.debouncedFetchKardex({ warehouseId: 'wh-1', tipo: 'ENTRADA' }, 800);
+        result.current.debouncedFetchKardex({ warehouseId: 'wh-1', tipoMovimiento: 'ENTRADA' }, 800);
       });
 
       act(() => {
