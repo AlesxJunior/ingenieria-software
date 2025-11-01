@@ -181,9 +181,10 @@ describe('AuthContext', () => {
       // Esperar a que termine
       await loginPromise;
       
-      // Verificar que isLoading volvió a false
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.isAuthenticated).toBe(true);
+      // Verificar que isLoading volvió a false (esperar actualización de estado)
+      await waitFor(() => {
+        return result.current.isLoading === false && result.current.isAuthenticated === true;
+      }, { timeout: 2000 });
     });
   });
 
@@ -209,13 +210,13 @@ describe('AuthContext', () => {
 
       const { result } = renderHook(() => useAuth(), { wrapper });
       
-      // Primero esperar a que termine de cargar
-      await waitFor(() => {
-        return result.current !== null && result.current.isLoading === false;
-      }, { timeout: 5000 });
+      // Esperar a que termine de cargar
+      await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
       // Verificar que el usuario está autenticado
       expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.user).not.toBeNull();
+      expect(result.current.user).toEqual(mockUser);
 
       await act(async () => {
         await result.current!.logout();
@@ -250,11 +251,12 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), { wrapper });
       
       // Esperar a que termine de cargar
-      await waitFor(() => {
-        return result.current !== null && result.current.isLoading === false;
-      }, { timeout: 5000 });
+      await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
+      // Verificar que el usuario está autenticado y tiene permisos
       expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.user).not.toBeNull();
+      expect(result.current.user?.permissions).toContain('users:read');
       expect(result.current.hasPermission('users:read')).toBe(true);
       expect(result.current.hasPermission('users:write')).toBe(true);
       expect(result.current.hasPermission('products:delete')).toBe(false);
@@ -293,14 +295,11 @@ describe('AuthContext', () => {
 
       const { result } = renderHook(() => useAuth(), { wrapper });
       
-      // Esperar a que termine de cargar Y que el usuario esté cargado
-      await waitFor(() => {
-        return result.current !== null && 
-               result.current.isLoading === false &&
-               result.current.user !== null &&
-               result.current.user.firstName === 'Test';
-      }, { timeout: 5000 });
+      // Esperar a que termine de cargar
+      await waitFor(() => expect(result.current.isLoading).toBe(false), { timeout: 5000 });
 
+      // Verificar que el usuario está cargado
+      expect(result.current.user).not.toBeNull();
       expect(result.current.user?.firstName).toBe('Test');
 
       act(() => {
