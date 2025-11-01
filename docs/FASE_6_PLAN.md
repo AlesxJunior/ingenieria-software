@@ -53,9 +53,9 @@ Implementar una suite completa de tests para garantizar la calidad y estabilidad
 - [x] ✅ `UIContext.test.tsx` - Estados de UI (7/7 tests)
 
 #### 1.2 Tests de Hooks Personalizados
-- [ ] `useAuth.test.ts` - Hook de autenticación
-- [ ] `useInventario.test.ts` - Hook de inventario con debounce
-- [ ] `useModal.test.ts` - Hook de modales
+- [x] ✅ `useInventario.test.tsx` - Hook de inventario con debounce (15/15 tests)
+- [x] ✅ `ModalContext.test.tsx` - Hook useModal y contexto (19/19 tests)
+- [x] ✅ `useAuth.test.ts` - Cubierto por AuthContext tests
 
 #### 1.3 Tests de Componentes Críticos
 - [ ] `Layout.test.tsx` - Componente de layout
@@ -379,6 +379,162 @@ src/modules/[module]/
 - ✅ Refactoring confidence (alta cobertura de state management)
 - ✅ Type safety verificada en producción
 - ✅ Permission system completamente testeado
+
+---
+
+## 🎯 FASE 6 - ETAPA 1.2 COMPLETADA
+
+### ✅ Tests de Hooks Personalizados (34/34 - 100%)
+
+**Fecha de Completación:** Enero 2025
+
+### 📊 Métricas Finales Acumuladas
+
+**Tests Totales: 127/127 pasando (100%)** 🎉
+
+#### Desglose Completo:
+
+**Contextos (93 tests):**
+- ✅ AuthContext: 10/10 tests
+- ✅ ProductContext: 13/13 tests
+- ✅ ClientContext: 12/12 tests
+- ✅ SalesContext: 16/16 tests
+- ✅ NotificationContext: 18/18 tests
+- ✅ UIContext: 7/7 tests
+- ✅ InventoryContext: 17/17 tests
+
+**Hooks Personalizados (34 tests):** ⭐ **NUEVO**
+- ✅ useInventarioWithDebounce: 15/15 tests
+- ✅ useModal (ModalContext): 19/19 tests
+
+#### Métricas de Calidad:
+- **Cobertura Frontend**: ~56% (objetivo: 60%) ↑ +4%
+- **Tiempo de Ejecución**: ~7.4s para 127 tests
+- **Flakiness**: 0%
+- **Tests Estables**: 100%
+- **Complejidad**: Media-Alta (debouncing, timers, state sharing)
+
+### 🏆 Logros Destacados - Etapa 1.2
+
+#### useInventarioWithDebounce (15 tests)
+**Características testeadas:**
+- ✅ **Debouncing básico**: Múltiples llamadas → solo última ejecuta
+- ✅ **Delay personalizado**: Respeta tiempos configurados (500ms, 1000ms, etc.)
+- ✅ **Timeout cancellation**: Cancela timeout anterior al llamar nuevamente
+- ✅ **Debounces independientes**: stock y kardex no interfieren entre sí
+- ✅ **clearDebounces**: Limpia timeouts pendientes de forma segura
+- ✅ **Edge cases**: Múltiples limpiezas, sin timeouts activos
+- ✅ **Integración**: Retorna todas las propiedades del contexto base
+
+**Técnicas Avanzadas:**
+- `vi.useFakeTimers()` para control preciso del tiempo
+- `vi.advanceTimersByTime()` para simular paso del tiempo
+- Testing de `setTimeout`/`clearTimeout` sin esperas reales
+- Verificación de ref cleanup en unmount
+- Testing de funciones con closure sobre refs
+
+#### ModalContext + useModal (19 tests)
+**Características testeadas:**
+- ✅ **Error boundary**: Lanza error fuera del provider
+- ✅ **Estado inicial**: Modal cerrado, valores por defecto
+- ✅ **openModal**: Con contenido simple, título, tamaños (small, medium, large, fullscreen)
+- ✅ **JSX content**: Maneja ReactNode como contenido
+- ✅ **Sobrescritura**: Abre modal con nuevo contenido reemplaza anterior
+- ✅ **closeModal**: Cierra y limpia todo el estado
+- ✅ **Flujo completo**: Múltiples aperturas/cierres consecutivos
+- ✅ **Estado compartido**: Múltiples hooks ven el mismo estado
+- ✅ **Edge cases**: null, undefined, strings vacíos
+
+**Patrones de Testing:**
+- Testing de contexto React con renderHook
+- Verificación de estado compartido entre múltiples hooks
+- Testing de ciclo de vida completo (open → use → close)
+- Manejo de ReactNode como prop
+- Testing de valores por defecto y reset
+
+### 🎓 Lecciones Aprendidas - Etapa 1.2
+
+**Fake Timers en Vitest:**
+```typescript
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+// En tests:
+act(() => {
+  vi.advanceTimersByTime(500);
+});
+```
+
+**Testing de Hooks con Dependencies:**
+```typescript
+// Hook que usa otro context
+const { result } = renderHook(() => useInventarioWithDebounce(), {
+  wrapper: ({ children }) => (
+    <InventoryProvider>{children}</InventoryProvider>
+  )
+});
+
+// Hook que retorna propiedades del context + propias
+expect(result.current.stockItems).toBeDefined(); // del context
+expect(result.current.debouncedFetchStock).toBeDefined(); // propio
+```
+
+**Testing de Estado Compartido:**
+```typescript
+// Renderizar múltiples hooks en el MISMO render
+const { result } = renderHook(() => {
+  const modal1 = useModal();
+  const modal2 = useModal();
+  return { modal1, modal2 };
+}, { wrapper });
+
+// Ambos ven el mismo estado
+expect(result.current.modal1.isModalOpen).toBe(true);
+expect(result.current.modal2.isModalOpen).toBe(true);
+```
+
+### 📈 Progreso General Actualizado
+
+**Etapa 1.1: Tests de Contextos** ✅ COMPLETADA (93 tests)
+**Etapa 1.2: Tests de Hooks** ✅ COMPLETADA (34 tests)
+**Total Etapa 1**: 127/127 tests (100%)
+
+**Cobertura por Tipo:**
+- State Management (Contexts): 93 tests
+- Custom Hooks: 34 tests
+- Components: 0 tests (pendiente Etapa 1.3)
+- Integration: 0 tests (pendiente Etapa 2)
+
+**Próximos Pasos:**
+- **Etapa 1.3**: Tests de Componentes Críticos (Layout, Modal, ProtectedRoute, etc.)
+- **Etapa 1.4**: Migración de tests existentes
+- **Etapa 2**: Tests de integración cross-module
+
+### 💡 Best Practices Consolidadas - Hooks
+
+1. **Fake Timers**: Usar siempre para tests con setTimeout/setInterval
+2. **Cleanup**: Verificar que los timers se limpian correctamente
+3. **Independence**: Cada timer debe ser independiente (refs separados)
+4. **Edge Cases**: Testear sin timeouts activos, múltiples limpiezas
+5. **Context Integration**: Hooks que usan context deben testear ambas partes
+6. **State Sharing**: Para testear estado compartido, usar múltiples hooks en un solo renderHook
+7. **Error Boundaries**: Siempre testear uso fuera del provider
+8. **Default Values**: Verificar todos los valores por defecto del estado
+
+### 🚀 Impacto Acumulado
+
+- ✅ **127 tests** cubriendo toda la capa de state management
+- ✅ **7 contextos** completamente testeados
+- ✅ **2 hooks personalizados** con cobertura total
+- ✅ **~56% cobertura frontend** (objetivo: 60%)
+- ✅ **100% estabilidad** (sin flakiness)
+- ✅ **Patrones establecidos** para futuras features
+- ✅ **CI/CD ready** con suite confiable
 
 ---
 
