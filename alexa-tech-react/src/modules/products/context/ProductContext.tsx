@@ -114,7 +114,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   useEffect(() => {
     loadProducts();
-  }, [loadProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo cargar al montar el componente
 
   return (
     <ProductContext.Provider value={{ products, loadProducts, addProduct, updateProduct, deleteProduct, getProductById }}>
