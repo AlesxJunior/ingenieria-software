@@ -162,7 +162,8 @@ export const ClientProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   useEffect(() => {
     loadClients();
-  }, [loadClients]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo cargar al montar el componente
 
   return (
     <ClientContext.Provider value={{ clients, clientsPagination, loadClients, addClient, updateClient, deleteClient, reactivateClient, getClientById }}>
