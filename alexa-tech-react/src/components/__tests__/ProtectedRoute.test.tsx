@@ -101,7 +101,8 @@ describe('ProtectedRoute', () => {
         hasPermission,
         user: { id: '1', nombre: 'Test User', email: 'test@example.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -119,7 +120,8 @@ describe('ProtectedRoute', () => {
         hasPermission,
         user: { id: '1', nombre: 'Test User', email: 'test@example.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -137,7 +139,8 @@ describe('ProtectedRoute', () => {
         hasPermission,
         user: { id: '1', nombre: 'Test User', email: 'test@example.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -159,7 +162,8 @@ describe('ProtectedRoute', () => {
         hasPermission,
         user: { id: '1', nombre: 'Test User', email: 'test@example.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -183,7 +187,8 @@ describe('ProtectedRoute', () => {
         hasPermission,
         user: { id: '1', nombre: 'Test User', email: 'test@example.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -202,7 +207,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(() => true),
         user: { id: '1', nombre: 'Test User', email: 'test@example.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -221,7 +227,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(() => false),
         user: null,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -240,7 +247,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(),
         user: null,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -260,7 +268,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(() => true),
         user: { id: '1', nombre: 'Test', email: 'test@test.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -282,7 +291,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(() => true),
         user: { id: '1', nombre: 'Test', email: 'test@test.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -312,7 +322,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(() => true),
         user: { id: '1', nombre: 'Test', email: 'test@test.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -331,7 +342,8 @@ describe('ProtectedRoute', () => {
         hasPermission,
         user: { id: '1', nombre: 'Test', email: 'test@test.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
@@ -348,7 +360,8 @@ describe('ProtectedRoute', () => {
         hasPermission: vi.fn(() => true),
         user: { id: '1', nombre: 'Test', email: 'test@test.com' } as any,
         login: vi.fn(),
-        logout: vi.fn(),
+        logout: vi.fn()
+,
         updateUser: vi.fn()
       });
 
