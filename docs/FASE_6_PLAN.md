@@ -1023,4 +1023,90 @@ test(backend): Expand Products and Purchases testing - +48 tests
 
 ---
 
+## 🎯 SESIÓN - NOVIEMBRE 2, 2025 (Continuación - Parte 3)
+
+### ⚠️ Intento: Tests de Integración para entidadController
+
+**Objetivo:** Crear tests de integración HTTP para el controlador más grande (912 líneas, 3.01% coverage)
+
+**Enfoque Intentado:**
+- Crear tests de integración usando supertest
+- Testear 8 endpoints principales:
+  - POST /api/entidades (crear cliente/proveedor)
+  - GET /api/entidades (listar con filtros)
+  - GET /api/entidades/:id (obtener por ID)
+  - PUT /api/entidades/:id (actualizar)
+  - GET /api/entidades/search/email/:email
+  - GET /api/entidades/search/document/:numeroDocumento
+  - POST /api/entidades/:id/reactivate
+  - GET /api/entidades/stats
+
+**Tests Creados:** 26 tests en total
+
+**Problemas Encontrados:**
+
+1. **Foreign Key Constraints:**
+   ```
+   Foreign key constraint violated on the (not available)
+   Error en prisma.client.create()
+   ```
+   - Los Client requieren relaciones con Departamento, Provincia, Distrito
+   - Estas tablas de ubicación deben existir antes de crear clientes
+   - No hay fixtures o seeds para datos de prueba
+
+2. **Schema Mismatches (resueltos pero revelaron problema mayor):**
+   - ❌ Inicialmente usó `estado:` pero el modelo Client usa `isActive`
+   - ❌ Intentó usar `userId:` que no existe en el schema
+   - ✅ Corregido con PowerShell replace commands
+
+3. **Middleware Requirements:**
+   - ✅ requireSupervisor necesita permisos: 'users.update', 'reports.sales'
+   - ✅ Agregado correctamente a createAdminUser()
+
+**Resultado:** 4/26 tests pasando, 22/26 fallando por foreign keys
+
+### 💡 Lecciones Aprendidas
+
+**Tests de Integración vs Unit Tests:**
+- Los tests de integración HTTP necesitan:
+  1. Base de datos con fixtures completos (ubigeo, tipos, etc.)
+  2. Relaciones y constraints correctamente poblados
+  3. Más setup y teardown que tests unitarios
+
+**Estrategia Correcta para Entidades:**
+1. **Opción A - Fixtures:** Crear seed data para departamentos/provincias/distritos
+2. **Opción B - Unit Tests:** Testear entidadService directamente (como Products/Purchases)
+3. **Opción C - Mocks Completos:** Mockear todas las relaciones de Prisma
+
+**Por Qué Falló Este Intento:**
+- Los tests de Auth, Products, Purchases funcionaron porque sus modelos son más simples
+- Client tiene 3 foreign keys obligatorias (ubicación geográfica)
+- Sin fixtures de ubigeo, es imposible crear instancias válidas
+- Integration tests necesitan más infraestructura que unit tests
+
+### 📋 Recomendaciones para Siguiente Sesión
+
+**Para entidadController (912 líneas):**
+1. ✅ **Mejor enfoque:** Tests unitarios de `entidadService` (como hicimos con Products/Purchases)
+2. ⚠️ **Si se necesitan integration tests:** Crear fixtures de ubigeo primero
+3. 📝 **Alternativa:** Tests de controller mockeando el service completamente
+
+**Próximos Pasos Sugeridos:**
+1. ✅ userController integration tests (502 líneas) - modelo más simple, sin foreign keys complejas
+2. ✅ productController integration tests (193 líneas) - ya tiene service 100% cubierto
+3. ✅ purchaseController integration tests (319 líneas) - ya tiene service 95.87% cubierto
+4. ⚠️ entidadService unit tests - evitar problemas de foreign keys
+5. 🔧 Crear fixtures/seeds de ubigeo para futuros integration tests
+
+### 📊 Estado Final - Parte 3
+
+**Tests Backend:** 399 tests (100% passing) ✅  
+**Coverage Backend:** 48.76% (sin cambios - intento abandonado correctamente)  
+**Progreso hacia 70%:** 69.66%
+
+**Archivos Modificados:** 0 (test fallido eliminado)  
+**Commits:** Ninguno (documentación de aprendizaje solamente)
+
+---
+
 
