@@ -1,24 +1,26 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { http, HttpResponse } from 'msw';
+import { server } from '../../../../__tests__/mocks/server';
+import { mockUsers } from '../../../../__tests__/mocks/handlers';
 import { AuthProvider, useAuth } from '../../../auth/context/AuthContext';
 import { NotificationProvider } from '../../../../context/NotificationContext';
-import { apiService, tokenUtils } from '../../../../utils/api';
+import { tokenUtils } from '../../../../utils/api';
 
-// Mock de los servicios necesarios
-vi.mock('../../../../utils/api', () => ({
-  apiService: {
-    getCurrentUser: vi.fn(),
-    login: vi.fn(),
-    logout: vi.fn(),
-  },
-  tokenUtils: {
-    getAccessToken: vi.fn(),
-    isTokenExpired: vi.fn(),
-    setTokens: vi.fn(),
-    clearTokens: vi.fn(),
-  },
-}));
+// Solo necesitamos mockear tokenUtils (MSW maneja las llamadas HTTP)
+vi.mock('../../../../utils/api', async () => {
+  const actual = await vi.importActual('../../../../utils/api');
+  return {
+    ...actual,
+    tokenUtils: {
+      getAccessToken: vi.fn(),
+      isTokenExpired: vi.fn(),
+      setTokens: vi.fn(),
+      clearTokens: vi.fn(),
+    },
+  };
+});
 
 // Componente de prueba que consume AuthContext
 const TestAuthComponent = () => {
@@ -37,10 +39,10 @@ const TestAuthComponent = () => {
         </div>
       )}
       <div data-testid="has-users-permission">
-        {hasPermission('users:read').toString()}
+        {hasPermission('users.read').toString()}
       </div>
       <div data-testid="has-admin-permission">
-        {hasPermission('admin:access').toString()}
+        {hasPermission('dashboard.read').toString()}
       </div>
     </div>
   );
@@ -50,11 +52,11 @@ describe('Integration: Users Module → Auth Context', () => {
   const mockUser = {
     id: '1',
     username: 'admin',
-    email: 'admin@test.com',
+    email: 'admin@example.com',
     firstName: 'Admin',
     lastName: 'User',
     isActive: true,
-    permissions: ['users:read', 'users:write', 'admin:access'],
+    permissions: ['users.read', 'users.write', 'users.create', 'dashboard.read'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -63,7 +65,7 @@ describe('Integration: Users Module → Auth Context', () => {
     ...mockUser,
     id: '2',
     username: 'viewer',
-    email: 'viewer@test.com',
+    email: 'viewer@example.com',
     firstName: 'Viewer',
     lastName: 'User',
     permissions: [],
@@ -75,23 +77,6 @@ describe('Integration: Users Module → Auth Context', () => {
     (tokenUtils.isTokenExpired as ReturnType<typeof vi.fn>).mockReturnValue(false);
     (tokenUtils.setTokens as ReturnType<typeof vi.fn>).mockImplementation(() => {});
     (tokenUtils.clearTokens as ReturnType<typeof vi.fn>).mockImplementation(() => {});
-    
-    // Mock apiService
-    (apiService.getCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      success: true,
-      data: mockUser,
-    });
-    
-    (apiService.login as ReturnType<typeof vi.fn>).mockResolvedValue({
-      success: true,
-      data: {
-        user: mockUser,
-        accessToken: 'mock-access-token',
-        refreshToken: 'mock-refresh-token',
-      },
-    });
-    
-    (apiService.logout as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
 
     // Mock localStorage
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => {
@@ -102,20 +87,6 @@ describe('Integration: Users Module → Auth Context', () => {
 
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {});
-
-    // Mock fetch (por si acaso)
-    global.fetch = vi.fn((url) => {
-      if (typeof url === 'string' && url.includes('/api/auth/me')) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUser),
-        } as Response);
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({}),
-      } as Response);
-    });
   });
 
   afterEach(() => {
@@ -143,7 +114,7 @@ describe('Integration: Users Module → Auth Context', () => {
       });
 
       expect(screen.getByTestId('user-name')).toHaveTextContent('Admin User');
-      expect(screen.getByTestId('user-email')).toHaveTextContent('admin@test.com');
+      expect(screen.getByTestId('user-email')).toHaveTextContent('admin@example.com');
       expect(screen.getByTestId('user-active')).toHaveTextContent('Active');
     });
 
@@ -170,10 +141,15 @@ describe('Integration: Users Module → Auth Context', () => {
     });
 
     it('debe retornar false para permisos que el usuario no tiene', async () => {
-      (apiService.getCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        success: true,
-        data: mockUserWithoutPermissions,
-      });
+      // Override MSW handler para devolver usuario sin permisos
+      server.use(
+        http.get('http://localhost:3001/api/auth/me', () => {
+          return HttpResponse.json({
+            success: true,
+            data: mockUserWithoutPermissions,
+          });
+        })
+      );
 
       renderWithProviders(<TestAuthComponent />);
 
@@ -187,10 +163,18 @@ describe('Integration: Users Module → Auth Context', () => {
 
   describe('Manejo de errores de autenticación', () => {
     it('debe manejar error al verificar usuario con el backend', async () => {
-      (apiService.getCurrentUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-        success: false,
-        message: 'Unauthorized',
-      });
+      // Override MSW handler para devolver error
+      server.use(
+        http.get('http://localhost:3001/api/auth/me', () => {
+          return HttpResponse.json(
+            {
+              success: false,
+              message: 'Unauthorized',
+            },
+            { status: 401 }
+          );
+        })
+      );
 
       renderWithProviders(<TestAuthComponent />);
 
@@ -201,7 +185,12 @@ describe('Integration: Users Module → Auth Context', () => {
     });
 
     it('debe manejar error de red al verificar usuario', async () => {
-      (apiService.getCurrentUser as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
+      // Override MSW handler para simular error de red
+      server.use(
+        http.get('http://localhost:3001/api/auth/me', () => {
+          return HttpResponse.error();
+        })
+      );
 
       renderWithProviders(<TestAuthComponent />);
 
