@@ -124,7 +124,7 @@ describe('InventoryService', () => {
 
       // Assert
       expect(result).toHaveLength(1);
-      expect(result[0].codigo).toBe('PROD001');
+      expect(result[0]?.codigo).toBe('PROD001');
       expect(prismaMock.stockByWarehouse.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -179,7 +179,7 @@ describe('InventoryService', () => {
       const result = await inventoryService.getStock({});
 
       // Assert
-      expect(result[0].estado).toBe('NORMAL');
+      expect(result[0]?.estado).toBe('NORMAL');
     });
 
     it('should calculate BAJO estado when stock is below minimum', async () => {
@@ -195,7 +195,7 @@ describe('InventoryService', () => {
       const result = await inventoryService.getStock({});
 
       // Assert
-      expect(result[0].estado).toBe('BAJO');
+      expect(result[0]?.estado).toBe('BAJO');
     });
 
     it('should calculate CRITICO estado when stock is at 50% or below minimum', async () => {
@@ -211,7 +211,7 @@ describe('InventoryService', () => {
       const result = await inventoryService.getStock({});
 
       // Assert
-      expect(result[0].estado).toBe('CRITICO');
+      expect(result[0]?.estado).toBe('CRITICO');
     });
   });
 
@@ -865,7 +865,7 @@ describe('InventoryService', () => {
       const result = await inventoryService.getAlertas();
 
       // Assert
-      expect(result[0].tipoAlerta).toBe('CRITICO');
+      expect(result[0]?.tipoAlerta).toBe('CRITICO');
     });
 
     it('should return BAJO alert when stock is below minimum but above 50%', async () => {
@@ -883,7 +883,7 @@ describe('InventoryService', () => {
       const result = await inventoryService.getAlertas();
 
       // Assert
-      expect(result[0].tipoAlerta).toBe('BAJO');
+      expect(result[0]?.tipoAlerta).toBe('BAJO');
     });
 
     it('should not return alerts for normal stock', async () => {
@@ -906,11 +906,16 @@ describe('InventoryService', () => {
 
     it('should limit results to 100 items', async () => {
       // Arrange
+      const baseProduct = mockStockData[0]?.product || {
+        codigo: 'PROD000',
+        nombre: 'Producto Base',
+        minStock: 20,
+      };
       const manyAlerts = Array.from({ length: 150 }, (_, i) => ({
         ...mockStockData[0],
         productId: `prod-${i}`,
         product: {
-          ...mockStockData[0].product,
+          ...baseProduct,
           codigo: `PROD${i}`,
         },
       }));
