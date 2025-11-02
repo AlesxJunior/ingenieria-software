@@ -238,7 +238,7 @@ export function logInventoryRequest(
   res: Response,
   next: NextFunction
 ): void {
-  const requestId = generateRequestId();
+  const requestId = req.headers['x-request-id'] as string || generateRequestId();
   req.headers['x-request-id'] = requestId;
   
   const startTime = Date.now();
