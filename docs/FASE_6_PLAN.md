@@ -861,4 +861,166 @@ expect(result.current.modal2.isModalOpen).toBe(true);
 
 ---
 
+## 🎯 SESIÓN - NOVIEMBRE 2, 2025 (Continuación)
+
+### ✅ Expansión de Products & Purchases Testing (+48 tests)
+
+**Fecha de Completación:** Noviembre 2, 2025
+
+### 📊 Módulos Expandidos
+
+#### Products Service (34 tests totales, +28 nuevos)
+**Coverage Logrado:**
+- Statements: 24% → **100%** (+76%) 🎯
+- Branches: → **97.87%**
+- Functions: → **100%** ✅
+- Lines: → **100%** ✅
+
+**Funciones Testeadas:**
+- **create** (5 tests): stock inicial en warehouse, sin stock, con minStock, estado por defecto, sin userId
+- **updateByCodigo** (5 tests): actualización de name/price, category, minStock, unidadMedida, verificación que stock no se actualiza directamente
+- **updateStatusByCodigo** (3 tests): activar, desactivar, sin userId
+- **list** (13 tests): todos los filtros, categoria, estado (true/false), unidadMedida, búsqueda por query (q), minPrecio/maxPrecio (individual y rango), minStock/maxStock (individual y rango), filtros combinados
+- **findByCodigo** (2 tests): encontrado, null cuando no existe
+
+**Técnicas Implementadas:**
+- ✅ Filtrado completo con múltiples combinaciones
+- ✅ Testing de valores por defecto (estado: true)
+- ✅ Testing de operaciones de stock en warehouse
+- ✅ Verificación de integridad (stock no se actualiza directamente)
+- ✅ Edge cases de búsqueda y paginación
+
+#### Purchases Service (25 tests totales, +20 nuevos)
+**Coverage Logrado:**
+- Statements: 38% → **95.87%** (+57.87%) 🎯
+- Branches: → **77.23%**
+- Functions: → **84.21%**
+- Lines: → **98.78%** ✅
+
+**Funciones Testeadas:**
+- **create** (6 tests): validación de proveedor (existe, tipo Proveedor/Ambos), manejo de duplicado codigo con timestamp, cálculo de subtotal con múltiples items, campos opcionales (fechaEntregaEstimada, observaciones, tipoComprobante, formaPago)
+- **list** (6 tests): sin filtros, filtro por proveedorId, almacenId, estado individualmente, búsqueda por query (codigo e items), filtrado por rango de fechas
+- **getById** (2 tests): retorna purchase con items, retorna null si no existe
+- **update** (3 tests): actualizar purchase pendiente con nuevos items y recálculo, prevenir actualización de órdenes no pendientes, throw si no existe
+- **updateStatus** (2 tests): transición Pendiente → En Tránsito, throw si purchase no existe
+- **delete** (1 test): throw si purchase no existe
+
+**Técnicas Implementadas:**
+- ✅ Mock de $transaction con arrays y callbacks
+- ✅ Mock de purchaseItem.deleteMany para cascading operations
+- ✅ Testing de business rules (solo pending pueden actualizarse)
+- ✅ Validación de tipos de entidad (Proveedor vs Cliente vs Ambos)
+- ✅ Cálculo automático de subtotales
+- ✅ Búsqueda cross-table (codigo + items)
+- ✅ Manejo de códigos duplicados con timestamp
+
+**Fix Técnico Importante:**
+```typescript
+// Mock de $transaction flexible
+prismaMock.$transaction.mockImplementation(async (operations: any) => {
+  if (Array.isArray(operations)) {
+    // Para arrays de operaciones (update con deleteMany)
+    return [{}, updatedPurchase];
+  }
+  // Para callbacks (create con transacciones)
+  return operations(txMocks);
+});
+```
+
+### 📈 Impacto Total Sesión (Continuación)
+
+**Tests Backend:**
+- Inicio de sesión continuada: 351 tests
+- Final: **399 tests** (+48 tests)
+- Incremento: **+13.7%**
+
+**Coverage Global Backend:**
+- Inicio: 47.91%
+- Final: **48.76%** (+0.85%)
+- Branches: 34.42% → **36.63%** (+2.21%)
+- Functions: 60.29% → **62.03%** (+1.74%)
+- Lines: 48.20% → **48.86%** (+0.66%)
+
+**Progreso hacia Meta 70%:**
+- Completado: **48.76%**
+- Faltante: **21.24%**
+- Progreso: **69.66% hacia la meta**
+
+**Pass Rate:** 399/399 (100%) ✅ (3 skipped)
+
+**Tiempo de Ejecución:** ~4.81s para 399 tests
+
+### 🏆 Distribución de Coverage por Módulo
+
+**Excelente (90%+):**
+- ✅ Warehouses: 100%
+- ✅ Permissions: 100%
+- ✅ **Products: 100%** ⭐ (+76% esta sesión!)
+- ✅ **Purchases: 95.87%** ⭐ (+58% esta sesión!)
+- ✅ Inventory: 94.73%
+- ✅ Auth: 91.75%
+
+**Muy Bueno (80-89%):**
+- ✅ Clients: 84.05%
+- ✅ JWT Utils: 83.67%
+- ✅ Auth Service: 83.17%
+
+**Bueno (70-79%):**
+- ✅ Users: 79.61%
+
+**Requiere Atención (<70%):**
+- 🟡 Sales Routes: ~5%
+
+### 💡 Lecciones Aprendidas - Sesión Continuada
+
+**Mock Patterns Avanzados:**
+1. `$transaction` debe manejar AMBOS patterns: arrays Y callbacks
+2. `purchaseItem.deleteMany` debe mockearse explícitamente para updates
+3. Mock completo previene errores de "Cannot read properties of undefined"
+
+**Testing de Business Logic:**
+1. Testear reglas de negocio explícitamente (solo pending pueden actualizarse)
+2. Validar tipos de entidad antes de operaciones
+3. Verificar cálculos automáticos (subtotal = suma de items)
+
+**Filtros Complejos:**
+1. 13 tests para list() previenen regresiones en query building
+2. Testear filtros individuales Y combinados
+3. Incluir edge cases (sin filtros, filtros vacíos, strings vacíos)
+
+**Código Duplicado:**
+1. Testear manejo de duplicados con timestamp suffix
+2. Verificar que find retry funciona correctamente
+
+### 🚀 Commits
+
+**Commit:** `cbe3c5e`  
+**Branch:** `refactor/project-restructure`  
+**Files Changed:** 2 files, +1303 insertions
+
+**Commit Message:**
+```
+test(backend): Expand Products and Purchases testing - +48 tests
+
+- Products Service: 6 → 34 tests (+28 new tests)
+- Purchases Service: 5 → 25 tests (+20 new tests)
+- Coverage: 47.91% → 48.76% (+0.85%)
+- Total Tests: 351 → 399 (+48 tests, 100% passing)
+```
+
+### 📊 Resumen Acumulado de Ambas Sesiones
+
+**Total Tests Backend:** 254 → 399 (+145 tests, +57%)  
+**Coverage Backend:** 39.78% → 48.76% (+8.98%)
+
+**Sesión 1 (Noviembre 2):**
+- Clients: +39 tests (2 → 41, coverage 10.29% → 84.05%)
+- JWT & Auth: +58 tests (coverage ~20% → ~85%)
+
+**Sesión 2 (Noviembre 2 - Continuación):**
+- Products: +28 tests (6 → 34, coverage 24% → 100%)
+- Purchases: +20 tests (5 → 25, coverage 38% → 95.87%)
+
+---
+
 
