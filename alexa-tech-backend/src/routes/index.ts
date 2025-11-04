@@ -29,6 +29,8 @@ router.use('/entidades', clientsRoutes);
 
 // Rutas de productos
 router.use('/productos', productsRoutes);
+// Alias en inglés para compatibilidad
+router.use('/products', productsRoutes);
 
 // Rutas de compras
 router.use('/compras', purchasesRoutes);

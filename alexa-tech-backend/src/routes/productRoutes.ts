@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authenticate, requireSupervisor } from '../middleware/auth';
+import { authenticate, requirePermission } from '../middleware/auth';
 import ProductController from '../controllers/productController';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación y permisos de supervisor
-router.use(authenticate, requireSupervisor);
+// Todas las rutas requieren autenticación y permisos de productos
+router.use(authenticate, requirePermission('products.read', 'products.update'));
 
 // RF-15: Registrar producto nuevo
 router.post('/', ProductController.create);
