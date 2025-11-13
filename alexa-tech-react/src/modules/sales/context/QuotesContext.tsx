@@ -234,7 +234,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (response.success) {
         showNotification('success', 'Éxito', 'Cotización creada exitosamente');
-        await fetchQuotes(); // Recargar lista
+        // ✅ NO recargar automáticamente - el usuario puede hacer clic en "Buscar"
+        // La cotización aparece cuando el usuario vaya a la página de Cotizaciones
         return response.data;
       }
 
@@ -285,7 +286,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (response.success) {
         showNotification('success', 'Éxito', 'Cotización actualizada exitosamente');
-        await fetchQuotes();
+        // ✅ Actualizar el estado local en lugar de recargar
+        setQuotes(quotes.map(q => q.id === id ? { ...q, ...data } : q));
         return response.data;
       }
 
@@ -313,7 +315,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (response.success) {
         showNotification('success', 'Éxito', 'Cotización eliminada exitosamente');
-        await fetchQuotes();
+        // ✅ Eliminar del estado local
+        setQuotes(quotes.filter(q => q.id !== id));
       } else {
         throw new Error(response.data.message || 'Error al eliminar cotización');
       }
@@ -341,7 +344,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (response.success) {
         showNotification('success', 'Éxito', 'Cotización aprobada exitosamente');
-        await fetchQuotes();
+        // ✅ Actualizar el estado local
+        setQuotes(quotes.map(q => q.id === id ? { ...q, estado: 'Aceptada' as QuoteStatus } : q));
         return response.data;
       }
 
@@ -370,7 +374,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (response.success) {
         showNotification('info', 'Información', 'Cotización rechazada');
-        await fetchQuotes();
+        // ✅ Actualizar el estado local
+        setQuotes(quotes.map(q => q.id === id ? { ...q, estado: 'Rechazada' as QuoteStatus, motivoRechazo: motivoRechazo || null } : q));
         return response.data;
       }
 
@@ -399,7 +404,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (response.success) {
         showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
-        await fetchQuotes();
+        // ✅ Actualizar el estado local
+        setQuotes(quotes.map(q => q.id === data.quoteId ? { ...q, estado: 'Convertida' as QuoteStatus } : q));
         return response.data;
       }
 
@@ -426,11 +432,11 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
    */
   const applyFilters = useCallback((newFilters: QuoteFilters) => {
     setFiltersState(newFilters);
-    // Necesitamos esperar un tick para que los filtros se actualicen
+    // ✅ Llamar directamente a fetchQuotes sin dependencias
     setTimeout(() => {
       fetchQuotes();
     }, 0);
-  }, [fetchQuotes]);
+  }, []); // ⚠️ Sin dependencias - fetchQuotes es estable
 
   const value: QuotesContextType = {
     quotes,
