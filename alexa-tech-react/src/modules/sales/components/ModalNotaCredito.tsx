@@ -372,8 +372,8 @@ export const ModalNotaCredito: React.FC<ModalNotaCreditoProps> = ({ sale, onClos
 
       {/* ✅ NUEVO: Modal de selección de método de pago */}
       {showPaymentModal && (
-        <PaymentModalOverlay>
-          <PaymentModalContent>
+        <PaymentModalOverlay onClick={(e) => e.stopPropagation()}>
+          <PaymentModalContent onClick={(e) => e.stopPropagation()}>
             <h3>💰 ¿Cómo desea procesar el crédito?</h3>
             
             <InfoBox>
