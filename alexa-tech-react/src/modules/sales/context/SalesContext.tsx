@@ -383,8 +383,9 @@ export const SalesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         queryParams.append('userId', filters.userId);
       }
       
-      const sessions = await fetchAPI(`/cash-sessions?${queryParams.toString()}`);
-      return sessions;
+      const response = await fetchAPI(`/cash-sessions?${queryParams.toString()}`);
+      // Backend devuelve { success: true, data: [...] }
+      return response.data || response || [];
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar historial de sesiones';
       setError(message);
@@ -402,8 +403,9 @@ export const SalesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setLoading(true);
       setError(null);
       
-      const session = await fetchAPI(`/cash-sessions/${sessionId}`);
-      return session;
+      const response = await fetchAPI(`/cash-sessions/${sessionId}`);
+      // Backend devuelve { success: true, data: {...} }
+      return response.data || response;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar detalle de sesión';
       setError(message);

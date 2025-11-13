@@ -39,10 +39,12 @@ const HistorialCaja: React.FC = () => {
       };
       
       const data = await getClosedSessions(filterParams);
-      setSessions(data);
+      // Asegurar que data sea un array
+      setSessions(Array.isArray(data) ? data : []);
     } catch (error) {
       showNotification('error', 'Error', 'No se pudieron cargar las sesiones cerradas');
       console.error('Error loading closed sessions:', error);
+      setSessions([]); // Resetear a array vacío en caso de error
     }
   };
 
@@ -62,7 +64,11 @@ const HistorialCaja: React.FC = () => {
     });
     // Recargar sin filtros
     setTimeout(() => {
-      getClosedSessions({}).then(data => setSessions(data));
+      getClosedSessions({}).then(data => {
+        setSessions(Array.isArray(data) ? data : []);
+      }).catch(() => {
+        setSessions([]);
+      });
     }, 0);
   };
 
