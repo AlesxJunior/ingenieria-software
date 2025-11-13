@@ -695,10 +695,21 @@ export const SalesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
       
-      // Limpiar después de un tiempo
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      // Abrir PDF en iframe oculto y mostrar ventana de impresión directamente
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      
+      iframe.onload = () => {
+        iframe.contentWindow?.print();
+        // Limpiar después de un tiempo
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+          window.URL.revokeObjectURL(url);
+        }, 1000);
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al previsualizar factura';
       setError(message);

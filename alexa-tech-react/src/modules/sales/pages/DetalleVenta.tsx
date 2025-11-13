@@ -423,7 +423,7 @@ const DetalleVenta: React.FC = () => {
     }
   };
 
-  const downloadCreditNotePDF = async (creditNoteId: string) => {
+  const printCreditNote = async (creditNoteId: string) => {
     try {
       setIsProcessing(true);
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -443,18 +443,25 @@ const DetalleVenta: React.FC = () => {
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `nota-credito-${creditNoteId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      
+      // Abrir PDF en iframe oculto y mostrar ventana de impresión
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      
+      iframe.onload = () => {
+        iframe.contentWindow?.print();
+        // Limpiar después de un tiempo
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+          window.URL.revokeObjectURL(url);
+        }, 1000);
+      };
 
-      addNotification('success', 'PDF Descargado', 'Nota de crédito descargada correctamente');
+      addNotification('success', 'Imprimiendo', 'Ventana de impresión abierta');
     } catch (error: any) {
-      addNotification('error', 'Error al Descargar', error.message || 'No se pudo descargar el PDF');
+      addNotification('error', 'Error al Imprimir', error.message || 'No se pudo imprimir la nota de crédito');
     } finally {
       setIsProcessing(false);
     }
@@ -792,10 +799,10 @@ const DetalleVenta: React.FC = () => {
                   )}
                   <div style={{ marginLeft: 'auto' }}>
                     <IconButton 
-                      onClick={() => downloadCreditNotePDF(nc.id)}
+                      onClick={() => printCreditNote(nc.id)}
                       disabled={isProcessing}
                     >
-                      📥 Descargar PDF
+                      🖨️ Imprimir NC
                     </IconButton>
                   </div>
                 </div>

@@ -755,21 +755,44 @@ const GestionCaja: React.FC = () => {
               />
 
               <label htmlFor="movement-motivo">Motivo</label>
-              <input
-                type="text"
+              <select
                 id="movement-motivo"
                 value={movementMotivo}
                 onChange={(e) => setMovementMotivo(e.target.value)}
-                placeholder="Ej: Pago de proveedor, Depósito bancario, etc."
                 required
-              />
+              >
+                <option value="">-- Selecciona un motivo --</option>
+                {movementType === 'INGRESO' ? (
+                  <>
+                    <option value="Depósito bancario">Depósito bancario</option>
+                    <option value="Fondo de caja chica">Fondo de caja chica</option>
+                    <option value="Devolución de préstamo">Devolución de préstamo</option>
+                    <option value="Reembolso">Reembolso</option>
+                    <option value="Ingreso por servicio">Ingreso por servicio</option>
+                    <option value="Corrección de arqueo">Corrección de arqueo</option>
+                    <option value="Otros ingresos">Otros ingresos</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Pago a proveedor">Pago a proveedor</option>
+                    <option value="Gastos operativos">Gastos operativos</option>
+                    <option value="Retiro de propietario">Retiro de propietario</option>
+                    <option value="Pago de servicios">Pago de servicios (luz, agua, internet)</option>
+                    <option value="Compra de suministros">Compra de suministros</option>
+                    <option value="Préstamo al personal">Préstamo al personal</option>
+                    <option value="Depósito al banco">Depósito al banco</option>
+                    <option value="Corrección de arqueo">Corrección de arqueo</option>
+                    <option value="Otros egresos">Otros egresos</option>
+                  </>
+                )}
+              </select>
 
               <label htmlFor="movement-descripcion">Descripción (opcional)</label>
               <textarea
                 id="movement-descripcion"
                 value={movementDescripcion}
                 onChange={(e) => setMovementDescripcion(e.target.value)}
-                placeholder="Detalles adicionales..."
+                placeholder="Detalles adicionales del movimiento..."
               />
 
               <ModalActions>
