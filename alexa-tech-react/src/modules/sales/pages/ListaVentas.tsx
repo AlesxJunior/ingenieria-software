@@ -544,9 +544,9 @@ const ListaVentas: React.FC = () => {
     try {
       setIsProcessing(true);
       await previewInvoice(saleId);
-      addNotification('success', 'PDF Generado', 'Vista previa abierta en nueva pestaña');
+      addNotification('success', 'Imprimiendo', 'Ventana de impresión abierta');
     } catch (error: any) {
-      addNotification('error', 'Error PDF', error.message || 'No se pudo generar la vista previa');
+      addNotification('error', 'Error al Imprimir', error.message || 'No se pudo imprimir el comprobante');
     } finally {
       setIsProcessing(false);
     }

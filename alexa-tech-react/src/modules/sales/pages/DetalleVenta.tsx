@@ -426,10 +426,10 @@ const DetalleVenta: React.FC = () => {
   const printCreditNote = async (creditNoteId: string) => {
     try {
       setIsProcessing(true);
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
       const token = localStorage.getItem('token');
 
-      const response = await fetch(`${API_URL}/api/credit-notes/${creditNoteId}/pdf`, {
+      const response = await fetch(`${API_URL}/credit-notes/${creditNoteId}/pdf`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
