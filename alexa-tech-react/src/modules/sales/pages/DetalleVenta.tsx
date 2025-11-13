@@ -5,6 +5,7 @@ import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { ModalNotaCredito } from '../components/ModalNotaCredito';
+import { tokenUtils } from '../../../utils/api';
 
 // ✅ Helper para obtener el nombre del motivo de NC (simplificado a 2 motivos)
 const getCreditNoteReasonLabel = (reason: string): string => {
@@ -427,7 +428,7 @@ const DetalleVenta: React.FC = () => {
     try {
       setIsProcessing(true);
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('token');
+      const token = tokenUtils.getAccessToken();
 
       const response = await fetch(`${API_URL}/credit-notes/${creditNoteId}/pdf`, {
         method: 'GET',
@@ -437,27 +438,47 @@ const DetalleVenta: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        if (response.status === 401) {
+          throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+        }
+        const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
         throw new Error(errorData.message || 'Error al generar PDF');
       }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
-      // Abrir PDF en iframe oculto y mostrar ventana de impresión
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      
-      iframe.onload = () => {
-        iframe.contentWindow?.print();
-        // Limpiar después de un tiempo
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          window.URL.revokeObjectURL(url);
-        }, 1000);
-      };
+      // Abrir en nueva ventana y ejecutar impresión
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+          // No cerrar la ventana automáticamente para que el usuario pueda revisar
+        };
+      } else {
+        // Fallback: iframe si el popup está bloqueado
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        
+        iframe.onload = () => {
+          try {
+            iframe.contentWindow?.print();
+          } catch (e) {
+            console.error('Error al imprimir:', e);
+          }
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            window.URL.revokeObjectURL(url);
+          }, 1000);
+        };
+      }
 
       addNotification('success', 'Imprimiendo', 'Ventana de impresión abierta');
     } catch (error: any) {

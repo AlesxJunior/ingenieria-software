@@ -696,20 +696,36 @@ export const SalesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
-      // Abrir PDF en iframe oculto y mostrar ventana de impresión directamente
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      
-      iframe.onload = () => {
-        iframe.contentWindow?.print();
-        // Limpiar después de un tiempo
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-          window.URL.revokeObjectURL(url);
-        }, 1000);
-      };
+      // Abrir en nueva ventana y ejecutar impresión
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      } else {
+        // Fallback: iframe si el popup está bloqueado
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        
+        iframe.onload = () => {
+          try {
+            iframe.contentWindow?.print();
+          } catch (e) {
+            console.error('Error al imprimir:', e);
+          }
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            window.URL.revokeObjectURL(url);
+          }, 1000);
+        };
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al previsualizar factura';
       setError(message);
