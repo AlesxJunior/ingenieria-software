@@ -467,21 +467,26 @@ const Cotizaciones: React.FC = () => {
     cashSessionId: ''
   });
 
-  // Cargar datos al montar
+  // Cargar datos al montar SOLO UNA VEZ
   useEffect(() => {
     fetchQuotes();
     fetchCashSessions();
-  }, [fetchQuotes, fetchCashSessions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ⚠️ Array vacío = solo se ejecuta al montar
 
   // Aplicar filtros
   const handleApplyFilters = () => {
-    setFilters({
+    const newFilters = {
       estado: localFilters.estado === 'Todas' ? undefined : localFilters.estado,
       fechaDesde: localFilters.fechaDesde || undefined,
       fechaHasta: localFilters.fechaHasta || undefined,
       search: localFilters.search || undefined
-    });
-    fetchQuotes();
+    };
+    setFilters(newFilters);
+    // Esperar un momento para que los filtros se actualicen en el contexto
+    setTimeout(() => {
+      fetchQuotes();
+    }, 100);
   };
 
   // Limpiar filtros
@@ -493,7 +498,10 @@ const Cotizaciones: React.FC = () => {
       search: ''
     });
     setFilters({});
-    fetchQuotes();
+    // Esperar un momento para que los filtros se actualicen en el contexto
+    setTimeout(() => {
+      fetchQuotes();
+    }, 100);
   };
 
   // Ver detalle

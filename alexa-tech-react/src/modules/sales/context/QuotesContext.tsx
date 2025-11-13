@@ -185,11 +185,12 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         method: 'GET'
       });
 
-      if (response.data.success) {
-        setQuotes(response.data.data || []);
+      // Backend devuelve: { success: true, data: [...] }
+      if (response.success) {
+        setQuotes(response.data || []);
         
         // Calcular estadísticas
-        const data = response.data.data || [];
+        const data = response.data || [];
         setStats({
           totalQuotes: data.length,
           pendientes: data.filter((q: Quote) => q.estado === 'Pendiente').length,
@@ -203,10 +204,21 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al obtener cotizaciones:', error);
       showNotification('error', 'Error', 'No se pudieron cargar las cotizaciones');
+      // Establecer arrays vacíos en caso de error para evitar bucles
+      setQuotes([]);
+      setStats({
+        totalQuotes: 0,
+        pendientes: 0,
+        aceptadas: 0,
+        convertidas: 0,
+        rechazadas: 0,
+        vencidas: 0,
+        canceladas: 0
+      });
     } finally {
       setLoading(false);
     }
-  }, [filters, showNotification]);
+  }, [showNotification]); // ❗ SOLO showNotification como dependencia
 
   /**
    * Crear una nueva cotización
@@ -220,10 +232,10 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         body: JSON.stringify(data)
       });
 
-      if (response.data.success) {
+      if (response.success) {
         showNotification('success', 'Éxito', 'Cotización creada exitosamente');
         await fetchQuotes(); // Recargar lista
-        return response.data.data;
+        return response.data;
       }
 
       throw new Error(response.data.message || 'Error al crear cotización');
@@ -246,8 +258,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         method: 'GET'
       });
 
-      if (response.data.success) {
-        return response.data.data;
+      if (response.success) {
+        return response.data;
       }
 
       throw new Error(response.data.message || 'Error al obtener cotización');
@@ -271,10 +283,10 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         body: JSON.stringify(data)
       });
 
-      if (response.data.success) {
+      if (response.success) {
         showNotification('success', 'Éxito', 'Cotización actualizada exitosamente');
         await fetchQuotes();
-        return response.data.data;
+        return response.data;
       }
 
       throw new Error(response.data.message || 'Error al actualizar cotización');
@@ -299,7 +311,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         method: 'DELETE'
       });
 
-      if (response.data.success) {
+      if (response.success) {
         showNotification('success', 'Éxito', 'Cotización eliminada exitosamente');
         await fetchQuotes();
       } else {
@@ -327,10 +339,10 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         body: JSON.stringify({})
       });
 
-      if (response.data.success) {
+      if (response.success) {
         showNotification('success', 'Éxito', 'Cotización aprobada exitosamente');
         await fetchQuotes();
-        return response.data.data;
+        return response.data;
       }
 
       throw new Error(response.data.message || 'Error al aprobar cotización');
@@ -356,10 +368,10 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         body: JSON.stringify({ motivoRechazo })
       });
 
-      if (response.data.success) {
+      if (response.success) {
         showNotification('info', 'Información', 'Cotización rechazada');
         await fetchQuotes();
-        return response.data.data;
+        return response.data;
       }
 
       throw new Error(response.data.message || 'Error al rechazar cotización');
@@ -385,10 +397,10 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         body: JSON.stringify(data)
       });
 
-      if (response.data.success) {
+      if (response.success) {
         showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
         await fetchQuotes();
-        return response.data.data;
+        return response.data;
       }
 
       throw new Error(response.data.message || 'Error al convertir cotización');
@@ -414,8 +426,11 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
    */
   const applyFilters = useCallback((newFilters: QuoteFilters) => {
     setFiltersState(newFilters);
-    // fetchQuotes se ejecutará automáticamente cuando cambien los filtros
-  }, []);
+    // Necesitamos esperar un tick para que los filtros se actualicen
+    setTimeout(() => {
+      fetchQuotes();
+    }, 0);
+  }, [fetchQuotes]);
 
   const value: QuotesContextType = {
     quotes,
