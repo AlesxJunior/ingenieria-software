@@ -11,6 +11,7 @@ import Modal from './components/Modal';
 import LoadingSpinner from './components/LoadingSpinner';
 import { InventoryProvider } from './modules/inventory/context/InventoryContext';
 import { SalesProvider } from './modules/sales/context/SalesContext';
+import { QuotesProvider } from './modules/sales/context/QuotesContext';
 import { ProductProvider } from './modules/products/context/ProductContext';
 import { ClientProvider } from './modules/clients/context/ClientContext';
 
@@ -26,6 +27,7 @@ const RegistroEntidad = lazy(() => import('./modules/clients/pages/RegistroEntid
 const RealizarVenta = lazy(() => import('./modules/sales/pages/RealizarVenta'));
 const ListaVentas = lazy(() => import('./modules/sales/pages/ListaVentas'));
 const DetalleVenta = lazy(() => import('./modules/sales/pages/DetalleVenta'));
+const Cotizaciones = lazy(() => import('./modules/sales/pages/Cotizaciones'));
 const ListaUsuarios = lazy(() => import('./modules/users/pages/ListaUsuarios'));
 const CrearUsuario = lazy(() => import('./modules/users/pages/CrearUsuario'));
 const EditarUsuario = lazy(() => import('./modules/users/pages/EditarUsuario'));
@@ -66,7 +68,8 @@ function App() {
             <ClientProvider>
               <ProductProvider>
                 <SalesProvider>
-                  <InventoryProvider>
+                  <QuotesProvider>
+                    <InventoryProvider>
                     <Router>
                       <AppContent />
                       <Suspense fallback={<LoadingSpinner />}>
@@ -132,6 +135,11 @@ function App() {
                         <DetalleVenta />
                       </ProtectedRoute>
                     } />
+                    <Route path="/ventas/cotizaciones" element={
+                      <ProtectedRoute requiredPermission="sales.create">
+                        <Cotizaciones />
+                      </ProtectedRoute>
+                    } />
                     <Route path="/usuarios" element={
                         <ProtectedRoute requiredPermission="users.read">
                           <ListaUsuarios />
@@ -188,9 +196,10 @@ function App() {
                 </Suspense>
               </Router>
             </InventoryProvider>
-          </SalesProvider>
-        </ProductProvider>
-      </ClientProvider>
+          </QuotesProvider>
+        </SalesProvider>
+      </ProductProvider>
+    </ClientProvider>
           </ModalProvider>
         </NotificationProvider>
       </AppProvider>

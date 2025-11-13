@@ -585,6 +585,9 @@ model Quote {
   items        QuoteItem[]
   salesConverted Sale[]      @relation("QuoteConvertedToSale")
 
+  @@index([estado])
+  @@index([fechaEmision])
+  @@index([clienteId])
   @@map("quotes")
 }
 
