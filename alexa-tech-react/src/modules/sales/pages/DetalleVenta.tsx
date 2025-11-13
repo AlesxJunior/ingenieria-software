@@ -517,7 +517,7 @@ const DetalleVenta: React.FC = () => {
   const total = Number(sale.total) || 0;
   
   // ✅ Calcular monto de NC desde sale.creditNotes (getById no tiene montoNotaCredito)
-  const montoNC = sale.creditNotes?.reduce((sum, nc) => sum + Number(nc.total), 0) || 0;
+  const montoNC = sale.creditNotes?.reduce((sum: number, nc: any) => sum + Number(nc.total), 0) || 0;
   const montoEfectivo = total - montoNC;
 
   return (
