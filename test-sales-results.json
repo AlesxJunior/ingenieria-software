@@ -1,0 +1,165 @@
+{
+  "fecha": "2025-11-13T09:46:23.395Z",
+  "total": 26,
+  "passed": 12,
+  "failed": 14,
+  "percentage": 46.15,
+  "resultados": [
+    {
+      "testName": "Autenticación",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.202Z"
+    },
+    {
+      "testName": "Test 1.0: Obtener caja registradora",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.212Z"
+    },
+    {
+      "testName": "Test 1.1: Verificar estado inicial",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.233Z"
+    },
+    {
+      "testName": "Test 1.2: Abrir sesión de caja",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.258Z"
+    },
+    {
+      "testName": "Test 1.3: Registrar ingreso adicional",
+      "passed": false,
+      "details": "Ruta no encontrada: POST /api/cash-movements",
+      "timestamp": "2025-11-13T09:46:23.264Z"
+    },
+    {
+      "testName": "Test 1.4: Registrar egreso",
+      "passed": false,
+      "details": "Ruta no encontrada: POST /api/cash-movements",
+      "timestamp": "2025-11-13T09:46:23.267Z"
+    },
+    {
+      "testName": "Test 1.5: Consultar totales",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.273Z"
+    },
+    {
+      "testName": "Test 2.1: Crear venta en efectivo",
+      "passed": false,
+      "details": "Errores de validación",
+      "timestamp": "2025-11-13T09:46:23.280Z"
+    },
+    {
+      "testName": "Test 2.2: Confirmar pago",
+      "passed": false,
+      "details": "Ruta no encontrada: PATCH /api/sales/null/confirm-payment",
+      "timestamp": "2025-11-13T09:46:23.284Z"
+    },
+    {
+      "testName": "Test 2.3: Venta con transferencia",
+      "passed": false,
+      "details": "Errores de validación",
+      "timestamp": "2025-11-13T09:46:23.289Z"
+    },
+    {
+      "testName": "Test 3.1: Crear cotización",
+      "passed": false,
+      "details": "Faltan datos requeridos: clienteId, almacenId",
+      "timestamp": "2025-11-13T09:46:23.294Z"
+    },
+    {
+      "testName": "Test 3.2: Aprobar cotización",
+      "passed": false,
+      "details": "Ruta no encontrada: PATCH /api/quotes/null/approve",
+      "timestamp": "2025-11-13T09:46:23.298Z"
+    },
+    {
+      "testName": "Test 3.3: Rechazar cotización",
+      "passed": false,
+      "details": "Faltan datos requeridos: clienteId, almacenId",
+      "timestamp": "2025-11-13T09:46:23.303Z"
+    },
+    {
+      "testName": "Test 3.4: Convertir a venta",
+      "passed": false,
+      "details": "Ruta no encontrada: POST /api/quotes/null/convert-to-sale",
+      "timestamp": "2025-11-13T09:46:23.307Z"
+    },
+    {
+      "testName": "Test 3.5: Listar cotizaciones",
+      "passed": false,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.314Z"
+    },
+    {
+      "testName": "Test 4.1: Listar ventas",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.329Z"
+    },
+    {
+      "testName": "Test 4.2: Detalle de venta",
+      "passed": false,
+      "details": "Venta no encontrada",
+      "timestamp": "2025-11-13T09:46:23.335Z"
+    },
+    {
+      "testName": "Test 4.3: Filtrar por estado",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.345Z"
+    },
+    {
+      "testName": "Test 5.1: Crear NC parcial",
+      "passed": false,
+      "details": "Venta no encontrada",
+      "timestamp": "2025-11-13T09:46:23.350Z"
+    },
+    {
+      "testName": "Test 5.2: Verificar NC en venta",
+      "passed": false,
+      "details": "Venta no encontrada",
+      "timestamp": "2025-11-13T09:46:23.356Z"
+    },
+    {
+      "testName": "Test 6.1: Consultar totales pre-cierre",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.361Z"
+    },
+    {
+      "testName": "Test 6.2: Cerrar caja",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.369Z"
+    },
+    {
+      "testName": "Test 7.1: Listar sesiones cerradas",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.375Z"
+    },
+    {
+      "testName": "Test 7.2: Filtrar por fechas",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.382Z"
+    },
+    {
+      "testName": "Test 7.3: Detalle de sesión",
+      "passed": true,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.388Z"
+    },
+    {
+      "testName": "Test 7.4: Movimientos de sesión",
+      "passed": false,
+      "details": "",
+      "timestamp": "2025-11-13T09:46:23.394Z"
+    }
+  ]
+}
