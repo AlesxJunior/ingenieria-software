@@ -5,7 +5,9 @@ import Layout from '../../../components/Layout';
 import { useProducts, type Product } from '../../products/context/ProductContext';
 import { useClients, type Client } from '../../clients/context/ClientContext';
 import { useSales, type CreateSaleInput } from '../context/SalesContext';
+import { useQuotes } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
+import { useAuth } from '../../../context/AuthContext';
 import { tokenUtils } from '../../../utils/api';
 
 // 🎨 DISEÑO SIGUIENDO EL BOCETO HTML
@@ -697,10 +699,12 @@ const RealizarVenta: React.FC = () => {
     activeCashSession,
     createSale,
     confirmPayment, // 🆕
-    createQuote,
+    createQuote: createQuoteOld,
     downloadInvoice,
     loading: salesLoading,
   } = useSales();
+  const { createQuote } = useQuotes();
+  const { user } = useAuth();
   const { addNotification } = useNotification();
 
   // Estados
@@ -1121,14 +1125,14 @@ const RealizarVenta: React.FC = () => {
       return;
     }
 
-    // 🆕 Confirmación antes de cotizar
+    // Confirmación antes de cotizar
     const total = calculateTotal();
     const confirmed = window.confirm(
       `¿Guardar como cotización?\n\n` +
       `Productos: ${cart.length}\n` +
       `Total: S/ ${total.toFixed(2)}\n` +
-      `Cliente: ${selectedClientData ? (selectedClientData.tipoDocumento === 'RUC' ? selectedClientData.razonSocial : `${selectedClientData.nombres} ${selectedClientData.apellidos}`) : 'Sin cliente'}\n\n` +
-      `La cotización tendrá validez de 7 días.`
+      `Cliente: ${selectedClientData ? (selectedClientData.tipoDocumento === 'RUC' ? selectedClientData.razonSocial : `${selectedClientData.nombres} ${selectedClientData.apellidos}`) : 'Cliente General'}\n\n` +
+      `La cotización tendrá validez de 15 días.`
     );
 
     if (!confirmed) {
@@ -1138,33 +1142,38 @@ const RealizarVenta: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const quoteData: CreateSaleInput = {
-        cashSessionId: activeCashSession?.id, // 🆕 Dejar undefined si no hay sesión
+      // Calcular totales
+      const subtotal = cart.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0);
+      const igv = subtotal * 0.18;
+      const totalAmount = subtotal + igv;
+
+      const quoteData = {
         clienteId: selectedClient || undefined,
         almacenId: selectedWarehouse,
-        tipoComprobante,
-        formaPago,
+        usuarioId: user?.id || '',
+        diasValidez: 15,
+        observaciones: '',
         items: cart.map(item => ({
           productId: item.productId,
           nombreProducto: item.nombreProducto,
-          cantidad: Number(item.cantidad), // 🔧 Asegurar que sea número
-          precioUnitario: Number(item.precioUnitario) // 🔧 Asegurar que sea número
-        })),
-        observaciones: ''
+          cantidad: Number(item.cantidad),
+          precioUnitario: Number(item.precioUnitario),
+          subtotal: Number((item.cantidad * item.precioUnitario).toFixed(2))
+        }))
       };
-
-      // 🐛 Debug: ver qué estamos enviando
-      console.log('📤 Datos de cotización a enviar:', JSON.stringify(quoteData, null, 2));
 
       await createQuote(quoteData);
       
       addNotification(
         'success',
         'Cotización Guardada',
-        'La cotización se creó exitosamente con validez de 7 días'
+        `La cotización se creó exitosamente con validez de 15 días. Puedes verla en Ventas → Cotizaciones`
       );
 
       clearCart();
+
+      // Opcional: Redirigir a la página de cotizaciones
+      // navigate('/ventas/cotizaciones');
 
     } catch (error: any) {
       addNotification('error', 'Error', error.message || 'Error al crear la cotización');
