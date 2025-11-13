@@ -7,10 +7,16 @@ import { inventoryRoutes } from '../modules/inventory';
 import { purchasesRoutes } from '../modules/purchases';
 import { clientsRoutes } from '../modules/clients';
 import { warehousesRoutes } from '../modules/warehouses';
+import salesRoutes from '../modules/sales/sales.routes';
+import cashRegisterRoutes from '../modules/sales/cash-register.routes';
+import cashSessionRoutes from '../modules/sales/cash-session.routes';
 // Rutas que aún no se han migrado a módulos
 import auditRoutes from './auditRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
 import movementReasonRoutes from './movementReasonRoutes';
+import cashMovementRoutes from './cashMovementRoutes';
+import quoteRoutes from './quoteRoutes';
+import creditNoteRoutes from './creditNoteRoutes';
 
 const router = Router();
 
@@ -45,6 +51,31 @@ router.use('/almacenes', warehousesRoutes); // Alias en español
 router.use('/inventario', inventoryRoutes);
 // Alias en inglés para compatibilidad Frontend
 router.use('/inventory', inventoryRoutes);
+
+// Rutas de ventas
+router.use('/ventas', salesRoutes);
+// Alias en inglés para compatibilidad Frontend
+router.use('/sales', salesRoutes);
+
+// Rutas de cajas registradoras
+router.use('/cash-registers', cashRegisterRoutes);
+router.use('/cajas-registradoras', cashRegisterRoutes); // Alias en español
+
+// Rutas de sesiones de caja
+router.use('/cash-sessions', cashSessionRoutes);
+router.use('/sesiones-caja', cashSessionRoutes); // Alias en español
+
+// Rutas de movimientos de caja (ingresos/egresos)
+router.use('/cash-movements', cashMovementRoutes);
+router.use('/movimientos-caja', cashMovementRoutes); // Alias en español
+
+// Rutas de cotizaciones
+router.use('/quotes', quoteRoutes);
+router.use('/cotizaciones', quoteRoutes); // Alias en español
+
+// Rutas de notas de crédito
+router.use('/credit-notes', creditNoteRoutes);
+router.use('/notas-credito', creditNoteRoutes); // Alias en español
 
 // ==========================================
 // RUTAS PENDIENTES DE MIGRACIÓN
@@ -90,6 +121,19 @@ router.get('/', (req, res) => {
         productos: '/api/productos',
         compras: '/api/compras',
         purchases: '/api/purchases',
+        ventas: '/api/ventas',
+        sales: '/api/sales',
+        invoices: '/api/sales/:id/invoice/{download|preview}',
+        cashRegisters: '/api/cash-registers',
+        cajasRegistradoras: '/api/cajas-registradoras',
+        cashSessions: '/api/cash-sessions',
+        sesionesCaja: '/api/sesiones-caja',
+        cashMovements: '/api/cash-movements',
+        movimientosCaja: '/api/movimientos-caja',
+        quotes: '/api/quotes',
+        cotizaciones: '/api/cotizaciones',
+        creditNotes: '/api/credit-notes',
+        notasCredito: '/api/notas-credito',
         warehouses: '/api/warehouses',
         almacenes: '/api/almacenes',
         movementReasons: '/api/movement-reasons',

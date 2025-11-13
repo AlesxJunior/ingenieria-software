@@ -55,7 +55,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       const response = await apiService.getProducts(filters, { signal });
       if (response.success && response.data) {
         const mapped = response.data.products.map((p: any) => ({
-          id: p.codigo || p.id || p._id || String(Date.now()),
+          id: p.id || p._id || p.codigo || String(Date.now()), // ✅ Usar p.id primero (PRD-XXX)
           productCode: p.codigo,
           productName: p.nombre,
           category: p.categoria,

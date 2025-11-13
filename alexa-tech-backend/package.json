@@ -38,6 +38,7 @@
   "dependencies": {
     "@alexa-tech/shared": "file:../shared",
     "@prisma/client": "^6.16.2",
+    "@types/pdfkit": "^0.17.3",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -47,6 +48,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",
+    "node-fetch": "^2.7.0",
+    "pdfkit": "^0.17.2",
     "prisma": "^6.16.2"
   },
   "devDependencies": {

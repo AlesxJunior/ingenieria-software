@@ -276,35 +276,28 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/ventas/apertura-caja') || isActive('/ventas/gestion-caja') || isActive('/ventas/realizar') || isActive('/ventas/lista') || isActive('/gestion-caja')}>
+          <NavItem $isActive={isActive('/gestion-caja') || isActive('/ventas/realizar') || isActive('/ventas/lista')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('ventas'); }}>
-              <i className="fas fa-chart-pie"></i>
+              <i className="fas fa-cash-register"></i>
               <span>Ventas</span>
             </a>
             <SubMenu $isOpen={openMenus.ventas}>
-              <SubMenuItem $isActive={isActive('/ventas/apertura-caja')}>
-                <Link to="/ventas/apertura-caja" onClick={handleItemClick}>
-                  <h3>Apertura de caja</h3>
-                </Link>
-              </SubMenuItem>
-              <SubMenuItem $isActive={isActive('/ventas/gestion-caja')}>
-                <Link to="/ventas/gestion-caja" onClick={handleItemClick}>
-                  <h3>Gestión Caja</h3>
+              <SubMenuItem $isActive={isActive('/gestion-caja')}>
+                <Link to="/gestion-caja" onClick={handleItemClick}>
+                  <i className="fas fa-box-open"></i>
+                  <h3>Gestión de Caja</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/realizar')}>
                 <Link to="/ventas/realizar" onClick={handleItemClick}>
+                  <i className="fas fa-shopping-cart"></i>
                   <h3>Realizar Venta</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/lista')}>
                 <Link to="/ventas/lista" onClick={handleItemClick}>
-                  <h3>Lista de Ventas</h3>
-                </Link>
-              </SubMenuItem>
-              <SubMenuItem $isActive={isActive('/gestion-caja')}>
-                <Link to="/gestion-caja" onClick={handleItemClick}>
-                  <h3>Gestión de Caja</h3>
+                  <i className="fas fa-list-alt"></i>
+                  <h3>Historial de Ventas</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>

@@ -447,6 +447,99 @@ export const inventoryService = {
     return movimientosCreados;
   },
 
+  async applySaleSalida(saleId: string, items: Array<{ productId: string; cantidad: number }>, warehouseId: string, userId?: string) {
+    if (!saleId) throw new Error('saleId es requerido');
+    if (!warehouseId) throw new Error('warehouseId es requerido');
+    if (!items || !Array.isArray(items) || items.length === 0) throw new Error('items es requerido');
+
+    // Validar almacén
+    const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+    if (!warehouse) throw new Error('Warehouse no encontrado');
+
+    // Buscar motivo de salida por venta
+    const saleReason = await prisma.movementReason.findFirst({
+      where: { 
+        codigo: 'SAL-VENTA',
+        activo: true
+      }
+    });
+
+    const now = new Date();
+
+    const movimientosCreados: Array<{
+      id: string;
+      productId: string;
+      cantidad: number;
+      stockAntes: number;
+      stockDespues: number;
+    }> = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const it of items) {
+        const product = await tx.product.findUnique({ where: { id: it.productId } });
+        if (!product) throw new Error('Producto no encontrado');
+        if (product.trackInventory === false) continue; // saltar si no lleva inventario
+
+        const existing = await tx.stockByWarehouse.findUnique({
+          where: { productId_warehouseId: { productId: it.productId, warehouseId } },
+        });
+        const stockBefore = existing?.quantity ?? 0;
+        const stockAfter = stockBefore - Number(it.cantidad);
+
+        if (stockAfter < 0) {
+          throw new Error(`Stock insuficiente para producto ${product.nombre}. Stock actual: ${stockBefore}, Requerido: ${it.cantidad}`);
+        }
+
+        await tx.stockByWarehouse.upsert({
+          where: { productId_warehouseId: { productId: it.productId, warehouseId } },
+          update: { quantity: stockAfter, updatedAt: now },
+          create: {
+            productId: it.productId,
+            warehouseId,
+            quantity: stockAfter,
+            minStock: existing?.minStock ?? product.minStock ?? undefined,
+            createdAt: now,
+            updatedAt: now,
+          },
+        });
+
+        const movement = await tx.inventoryMovement.create({
+          data: {
+            productId: it.productId,
+            warehouseId,
+            type: 'SALIDA',
+            quantity: Number(it.cantidad),
+            stockBefore,
+            stockAfter,
+            reason: `Venta ${saleId}`,
+            reasonId: saleReason?.id ?? null,
+            documentRef: saleId,
+            userId,
+            createdAt: now,
+          },
+        });
+
+        movimientosCreados.push({ 
+          id: movement.id, 
+          productId: it.productId, 
+          cantidad: Number(it.cantidad), 
+          stockAntes: stockBefore, 
+          stockDespues: stockAfter 
+        });
+      }
+
+      // Recalcular stock global por cada producto tocado
+      const productIds = Array.from(new Set(items.map((i) => i.productId)));
+      for (const pid of productIds) {
+        const agg = await tx.stockByWarehouse.aggregate({ where: { productId: pid }, _sum: { quantity: true } });
+        const total = agg._sum.quantity ?? 0;
+        await tx.product.update({ where: { id: pid }, data: { stock: total, updatedAt: now } });
+      }
+    }, { isolationLevel: 'Serializable' as any });
+
+    return movimientosCreados;
+  },
+
   async getAlertas(): Promise<Array<{ productId: string; codigo: string; nombre: string; almacen: string; cantidad: number; stockMinimo: number; tipoAlerta: 'CRITICO' | 'BAJO'; }>> {
     const records = await prisma.stockByWarehouse.findMany({
       include: { product: true, warehouse: true },

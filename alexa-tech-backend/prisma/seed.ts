@@ -1,5 +1,6 @@
 import { PrismaClient, TipoEntidad } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { seedCashRegisters } from './seedCashRegisters';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,10 @@ const ADMIN_PERMISSIONS = [
   'inventory.read', 'inventory.update',
   // Compras
   'purchases.create', 'purchases.read', 'purchases.update', 'purchases.delete',
+  // Cajas Registradoras
+  'cash-registers.create', 'cash-registers.read', 'cash-registers.update', 'cash-registers.delete',
+  // Sesiones de Caja
+  'cash-sessions.create', 'cash-sessions.read', 'cash-sessions.update', 'cash-sessions.delete',
   // Facturación
   'invoicing.create', 'invoicing.read', 'invoicing.update', 'invoicing.delete',
   // Configuración
@@ -42,6 +47,10 @@ const SUPERVISOR_PERMISSIONS = [
   'inventory.read', 'inventory.update',
   // Compras
   'purchases.create', 'purchases.read', 'purchases.update',
+  // Cajas Registradoras
+  'cash-registers.read', 'cash-registers.update',
+  // Sesiones de Caja
+  'cash-sessions.create', 'cash-sessions.read', 'cash-sessions.update',
   // Facturación
   'invoicing.create', 'invoicing.read', 'invoicing.update',
   // Configuración (solo lectura)
@@ -243,29 +252,63 @@ async function main() {
   console.log('📦 Creando productos de prueba...');
   const nowIso = new Date().toISOString();
   const sampleProducts = [
-    { id: 'PRD-LP-001', codigo: 'LP-001', nombre: 'Laptop Pro', descripcion: 'Potente laptop para profesionales', categoria: 'Laptops', precioVenta: 1499.99, stock: 50, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
-    { id: 'PRD-SM-002', codigo: 'SM-002', nombre: 'Smartphone X', descripcion: 'Teléfono inteligente de última generación', categoria: 'Smartphones', precioVenta: 899.99, stock: 120, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén B' },
-    { id: 'PRD-MN-003', codigo: 'MN-003', nombre: 'Monitor UltraWide', descripcion: 'Monitor curvo de 34 pulgadas', categoria: 'Monitores', precioVenta: 599.99, stock: 80, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
-    { id: 'PRD-KB-004', codigo: 'KB-004', nombre: 'Teclado Mecánico RGB', descripcion: 'Teclado para gaming con iluminación personalizable', categoria: 'Periféricos', precioVenta: 129.99, stock: 200, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén C' },
-    { id: 'PRD-MS-005', codigo: 'MS-005', nombre: 'Mouse Inalámbrico Ergonómico', descripcion: 'Mouse diseñado para máxima comodidad', categoria: 'Periféricos', precioVenta: 49.99, stock: 300, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén C' },
-    { id: 'PRD-WC-006', codigo: 'WC-006', nombre: 'Webcam HD 1080p', descripcion: 'Webcam con resolución Full HD para videollamadas', categoria: 'Accesorios', precioVenta: 69.99, stock: 150, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén B' },
-    { id: 'PRD-HD-007', codigo: 'HD-007', nombre: 'Disco Duro Externo 2TB', descripcion: 'Almacenamiento portátil de alta capacidad', categoria: 'Almacenamiento', precioVenta: 89.99, stock: 100, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
-    { id: 'PRD-LS-008', codigo: 'LS-008', nombre: 'Soporte para Laptop', descripcion: 'Soporte ergonómico de aluminio para laptops', categoria: 'Accesorios', precioVenta: 39.99, stock: 250, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén C' },
-    { id: 'PRD-HB-009', codigo: 'HB-009', nombre: 'Hub USB-C 7 en 1', descripcion: 'Concentrador con múltiples puertos para conectividad', categoria: 'Accesorios', precioVenta: 59.99, stock: 180, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén B' },
-    { id: 'PRD-EA-010', codigo: 'EA-010', nombre: 'Auriculares Inalámbricos TWS', descripcion: 'Auriculares con cancelación de ruido y alta fidelidad', categoria: 'Audio', precioVenta: 199.99, stock: 90, estado: true, unidadMedida: 'Unidad', ubicacion: 'Almacén A' },
+    { id: 'PRD-LP-001', codigo: 'LP-001', nombre: 'Laptop Pro', descripcion: 'Potente laptop para profesionales', categoria: 'Laptops', precioVenta: 1499.99, stock: 50, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-SM-002', codigo: 'SM-002', nombre: 'Smartphone X', descripcion: 'Teléfono inteligente de última generación', categoria: 'Smartphones', precioVenta: 899.99, stock: 120, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-MN-003', codigo: 'MN-003', nombre: 'Monitor UltraWide', descripcion: 'Monitor curvo de 34 pulgadas', categoria: 'Monitores', precioVenta: 599.99, stock: 80, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-KB-004', codigo: 'KB-004', nombre: 'Teclado Mecánico RGB', descripcion: 'Teclado para gaming con iluminación personalizable', categoria: 'Periféricos', precioVenta: 129.99, stock: 200, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-MS-005', codigo: 'MS-005', nombre: 'Mouse Inalámbrico Ergonómico', descripcion: 'Mouse diseñado para máxima comodidad', categoria: 'Periféricos', precioVenta: 49.99, stock: 300, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-WC-006', codigo: 'WC-006', nombre: 'Webcam HD 1080p', descripcion: 'Webcam con resolución Full HD para videollamadas', categoria: 'Accesorios', precioVenta: 69.99, stock: 150, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-HD-007', codigo: 'HD-007', nombre: 'Disco Duro Externo 2TB', descripcion: 'Almacenamiento portátil de alta capacidad', categoria: 'Almacenamiento', precioVenta: 89.99, stock: 100, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-LS-008', codigo: 'LS-008', nombre: 'Soporte para Laptop', descripcion: 'Soporte ergonómico de aluminio para laptops', categoria: 'Accesorios', precioVenta: 39.99, stock: 250, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-HB-009', codigo: 'HB-009', nombre: 'Hub USB-C 7 en 1', descripcion: 'Concentrador con múltiples puertos para conectividad', categoria: 'Accesorios', precioVenta: 59.99, stock: 180, estado: true, unidadMedida: 'Unidad' },
+    { id: 'PRD-EA-010', codigo: 'EA-010', nombre: 'Auriculares Inalámbricos TWS', descripcion: 'Auriculares con cancelación de ruido y alta fidelidad', categoria: 'Audio', precioVenta: 199.99, stock: 90, estado: true, unidadMedida: 'Unidad' },
   ];
   let createdCount = 0;
   for (const p of sampleProducts) {
     const sql = `
       INSERT INTO "public"."products"
-      ("id","codigo","nombre","descripcion","categoria","precioVenta","stock","estado","unidadMedida","ubicacion","usuarioCreacion","usuarioActualizacion","createdAt","updatedAt")
-      VALUES ('${p.id}','${p.codigo}','${p.nombre}',${p.descripcion ? `'${p.descripcion.replace(/'/g, "''")}'` : 'NULL'},'${p.categoria}',${p.precioVenta},${p.stock},${p.estado ? 'true' : 'false'},'${p.unidadMedida}',${p.ubicacion ? `'${p.ubicacion.replace(/'/g, "''")}'` : 'NULL'},'${admin.id}',NULL,'${nowIso}','${nowIso}')
+      ("id","codigo","nombre","descripcion","categoria","precioVenta","stock","estado","unidadMedida","usuarioCreacion","usuarioActualizacion","createdAt","updatedAt")
+      VALUES ('${p.id}','${p.codigo}','${p.nombre}',${p.descripcion ? `'${p.descripcion.replace(/'/g, "''")}'` : 'NULL'},'${p.categoria}',${p.precioVenta},${p.stock},${p.estado ? 'true' : 'false'},'${p.unidadMedida}','${admin.id}',NULL,'${nowIso}','${nowIso}')
       ON CONFLICT ("codigo") DO NOTHING;
     `;
     const result = await prisma.$executeRawUnsafe(sql);
     if (typeof result === 'number' && result > 0) createdCount += result;
   }
   console.log(`   Productos insertados (raw): ${createdCount} (puede incluir 0 si ya existían).`);
+
+  // Poblar stock por almacén para los productos
+  console.log('📦 Poblando stock en almacenes...');
+  const productsToPopulate = sampleProducts;
+  const warehousesToPopulate = [principalWarehouse.id, secundarioWarehouse.id];
+  
+  let stockCount = 0;
+  for (const warehouse of warehousesToPopulate) {
+    for (const product of productsToPopulate) {
+      const stockAmount = Math.floor(product.stock / 2); // Dividir stock entre almacenes
+      
+      // Verificar si ya existe
+      const existing = await prisma.stockByWarehouse.findFirst({
+        where: {
+          AND: [
+            { warehouseId: warehouse },
+            { productId: product.id },
+          ],
+        },
+      });
+
+      if (!existing) {
+        await prisma.stockByWarehouse.create({
+          data: {
+            warehouseId: warehouse,
+            productId: product.id,
+            quantity: stockAmount,
+          },
+        });
+        stockCount++;
+      }
+    }
+  }
+  console.log(`   Stock poblado: ${stockCount} registros nuevos en StockByWarehouse.`);
 
   // Crear entidades comerciales de prueba (usando ubigeo)
   console.log('🏢 Creando entidades comerciales de prueba...');
@@ -408,7 +451,11 @@ async function main() {
   });
   console.log(`   ${entities.count} entidades comerciales creadas.`);
 
-  console.log('✅ Seed completado exitosamente - Sistema basado en permisos + Ubigeo Perú');
+  // Seed de cajas registradoras
+  console.log('\n3. Poblando cajas registradoras...');
+  await seedCashRegisters();
+
+  console.log('\n✅ Seed completado exitosamente - Sistema basado en permisos + Ubigeo Perú');
 }
 
 main()

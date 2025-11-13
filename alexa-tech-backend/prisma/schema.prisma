@@ -36,6 +36,10 @@ model User {
   clientsUpdated  Client[]  @relation("ClientUpdatedBy")
   purchaseOrders  Purchase[] @relation("PurchaseCreatedBy")
   inventoryMovements InventoryMovement[]
+  cashSessions    CashSession[] @relation("CashSessionUser")
+  cashMovements   CashMovement[] @relation("CashMovementUser")
+  sales           Sale[] @relation("SaleCreatedBy")
+  quotes          Quote[] @relation("QuoteCreatedBy")
 
   @@map("users")
 }
@@ -148,6 +152,10 @@ model Client {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Relaciones inversas
+  sales            Sale[]   @relation("SaleClient")
+  quotes           Quote[]  @relation("QuoteClient")
+
   @@map("commercial_entities")
 }
 
@@ -172,6 +180,9 @@ model Product {
 
   // Relación con items de compra
   purchaseItems       PurchaseItem[] @relation("PurchaseItemProduct")
+
+  // Relación con items de venta
+  saleItems           SaleItem[]     @relation("SaleItemProduct")
 
   // Relaciones de inventario
   stockByWarehouses   StockByWarehouse[]
@@ -202,6 +213,76 @@ enum PaymentMethod {
   Efectivo
   Tarjeta
   Transferencia
+}
+
+// Enums para Ventas
+enum SaleType {
+  Venta
+  NotaCredito
+}
+
+enum SaleStatus {
+  Pendiente   // Venta registrada, esperando confirmación de pago
+  Completada  // Pago verificado y completado (puede tener NC después)
+  Cancelada   // Cliente no concretó la venta (timeout o cancelación manual)
+}
+
+// ✅ SIMPLIFICADO A 2 MOTIVOS: NC = Devolución física de productos
+// Otros casos (errores de datos/precios) se manejan con edición directa o anulación
+enum CreditNoteReason {
+  DevolucionTotal      // Cliente devuelve TODOS los productos físicamente
+  DevolucionParcial    // Cliente devuelve ALGUNOS productos físicamente
+}
+
+// ✅ NUEVO: Estados de las Notas de Crédito
+enum CreditNoteStatus {
+  Pendiente              // Vale no usado (crédito a favor del cliente)
+  Reembolsada            // Ya se devolvió el dinero
+  PendientePagoBancario  // Esperando transferencia bancaria
+  Aplicada               // Usada en otra venta (FUTURO)
+  Cancelada              // Anulada
+}
+
+// ✅ NUEVO: Métodos de procesamiento de NC
+enum CreditNotePaymentMethod {
+  Efectivo        // Reembolso en efectivo
+  Transferencia   // Transferencia bancaria
+  Vale            // Crédito a favor (pendiente de aplicar)
+}
+
+enum SalePaymentMethod {
+  Efectivo
+  Tarjeta
+  Transferencia
+  Yape
+  Plin
+}
+
+enum SaleVoucherType {
+  Boleta
+  Factura
+  NotaVenta
+}
+
+enum CashRegisterStatus {
+  Abierta
+  Cerrada
+}
+
+// Enums para Movimientos de Caja
+enum CashMovementType {
+  INGRESO
+  EGRESO
+}
+
+// Enums para Cotizaciones
+enum QuoteStatus {
+  Pendiente
+  Aceptada
+  Convertida
+  Rechazada
+  Vencida
+  Cancelada
 }
 
 model Purchase {
@@ -336,3 +417,190 @@ model InventoryMovement {
 
   @@map("inventory_movements")
 }
+
+// ============================================
+// MÓDULO DE VENTAS
+// ============================================
+
+model CashRegister {
+  id          String   @id @default(cuid())
+  codigo      String   @unique
+  nombre      String
+  ubicacion   String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  cashSessions CashSession[]
+
+  @@map("cash_registers")
+}
+
+model CashSession {
+  id                String              @id @default(cuid())
+  cashRegisterId    String
+  userId            String
+  fechaApertura     DateTime            @default(now())
+  fechaCierre       DateTime?
+  montoApertura     Decimal             @default(0)
+  montoCierre       Decimal?
+  totalVentas       Decimal             @default(0)
+  diferencia        Decimal?
+  estado            CashRegisterStatus  @default(Abierta)
+  observaciones     String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relaciones
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  user         User         @relation("CashSessionUser", fields: [userId], references: [id], onDelete: Cascade)
+  sales        Sale[]
+  movements    CashMovement[]
+
+  @@map("cash_sessions")
+}
+
+model Sale {
+  id                  String              @id @default(cuid())
+  codigoVenta         String              @unique
+  tipo                SaleType            @default(Venta)
+  cashSessionId       String?
+  clienteId           String?
+  almacenId           String
+  usuarioId           String
+  fechaEmision        DateTime            @default(now())
+  tipoComprobante     SaleVoucherType     @default(Boleta)
+  formaPago           SalePaymentMethod   @default(Efectivo)
+  subtotal            Decimal             @default(0)
+  igv                 Decimal             @default(0)
+  total               Decimal             @default(0)
+  estado              SaleStatus          @default(Pendiente)
+  observaciones       String?
+  
+  // Campos para tracking de pago
+  montoRecibido       Decimal             @default(0)
+  montoCambio         Decimal             @default(0)
+  referenciaPago      String?             // Número de operación/voucher/código QR
+  fechaPago           DateTime?           // Fecha de confirmación del pago
+  
+  // Campos para Notas de Crédito
+  saleOriginId        String?
+  creditNoteReason    CreditNoteReason?
+  creditNoteDescription String?
+  
+  // ✅ NUEVOS: Estado y método de procesamiento de NC
+  creditNoteStatus        CreditNoteStatus?
+  creditNotePaymentMethod CreditNotePaymentMethod?
+  creditNoteRefundDate    DateTime?
+  cashMovementId          String?
+  
+  // Campo para rastrear origen de cotización
+  quoteOriginId       String?
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  // Relaciones
+  cashSession  CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  cliente      Client?       @relation("SaleClient", fields: [clienteId], references: [id], onDelete: SetNull)
+  usuario      User          @relation("SaleCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
+  items        SaleItem[]
+  
+  // Relación para Notas de Crédito
+  saleOrigin   Sale?         @relation("CreditNotes", fields: [saleOriginId], references: [id], onDelete: Restrict)
+  creditNotes  Sale[]        @relation("CreditNotes")
+  
+  // ✅ NUEVO: Relación con movimiento de caja (si NC es reembolsada en efectivo)
+  cashMovement CashMovement? @relation("CreditNoteCashMovement", fields: [cashMovementId], references: [id], onDelete: SetNull)
+  
+  // Relación con cotización
+  quoteOrigin  Quote?        @relation("QuoteConvertedToSale", fields: [quoteOriginId], references: [id], onDelete: SetNull)
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id             String   @id @default(cuid())
+  saleId         String
+  productId      String
+  nombreProducto String
+  cantidad       Int
+  precioUnitario Decimal
+  subtotal       Decimal
+  createdAt      DateTime @default(now())
+
+  // Relaciones
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation("SaleItemProduct", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("sale_items")
+}
+
+// Modelo para Movimientos de Caja
+model CashMovement {
+  id              String            @id @default(cuid())
+  cashSessionId   String
+  tipo            CashMovementType
+  monto           Decimal
+  motivo          String
+  descripcion     String?
+  usuarioId       String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relaciones
+  cashSession  CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  usuario      User        @relation("CashMovementUser", fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  // ✅ NUEVO: Relación inversa con NC que tienen reembolso
+  creditNote   Sale[]      @relation("CreditNoteCashMovement")
+
+  @@map("cash_movements")
+}
+
+// Modelo para Cotizaciones
+model Quote {
+  id                  String         @id @default(cuid())
+  codigoCotizacion    String         @unique
+  clienteId           String?
+  almacenId           String
+  usuarioId           String
+  fechaEmision        DateTime       @default(now())
+  fechaVencimiento    DateTime
+  diasValidez         Int            @default(15)
+  subtotal            Decimal        @default(0)
+  igv                 Decimal        @default(0)
+  total               Decimal        @default(0)
+  estado              QuoteStatus    @default(Pendiente)
+  observaciones       String?
+  motivoRechazo       String?
+  intentosConversion  Int            @default(0)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  // Relaciones
+  cliente      Client?       @relation("QuoteClient", fields: [clienteId], references: [id], onDelete: SetNull)
+  usuario      User          @relation("QuoteCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
+  items        QuoteItem[]
+  salesConverted Sale[]      @relation("QuoteConvertedToSale")
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id             String   @id @default(cuid())
+  quoteId        String
+  productId      String
+  nombreProducto String
+  cantidad       Int
+  precioUnitario Decimal
+  subtotal       Decimal
+  createdAt      DateTime @default(now())
+
+  // Relaciones
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@map("quote_items")
+}
+

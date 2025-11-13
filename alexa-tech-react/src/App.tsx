@@ -10,6 +10,9 @@ import NotificationContainer from './components/NotificationContainer';
 import Modal from './components/Modal';
 import LoadingSpinner from './components/LoadingSpinner';
 import { InventoryProvider } from './modules/inventory/context/InventoryContext';
+import { SalesProvider } from './modules/sales/context/SalesContext';
+import { ProductProvider } from './modules/products/context/ProductContext';
+import { ClientProvider } from './modules/clients/context/ClientContext';
 
 // Lazy loading de páginas desde módulos
 const Login = lazy(() => import('./modules/auth/pages/Login'));
@@ -20,9 +23,9 @@ const ListaProductos = lazy(() => import('./modules/products/pages/ListaProducto
 const EditarProducto = lazy(() => import('./modules/products/pages/EditarProducto'));
 const EditarEntidad = lazy(() => import('./modules/clients/pages/EditarEntidad'));
 const RegistroEntidad = lazy(() => import('./modules/clients/pages/RegistroEntidad'));
-const AperturaCaja = lazy(() => import('./modules/sales/pages/AperturaCaja'));
 const RealizarVenta = lazy(() => import('./modules/sales/pages/RealizarVenta'));
 const ListaVentas = lazy(() => import('./modules/sales/pages/ListaVentas'));
+const DetalleVenta = lazy(() => import('./modules/sales/pages/DetalleVenta'));
 const ListaUsuarios = lazy(() => import('./modules/users/pages/ListaUsuarios'));
 const CrearUsuario = lazy(() => import('./modules/users/pages/CrearUsuario'));
 const EditarUsuario = lazy(() => import('./modules/users/pages/EditarUsuario'));
@@ -60,11 +63,14 @@ function App() {
       <AppProvider>
         <NotificationProvider>
           <ModalProvider>
-            <InventoryProvider>
-              <Router>
-                <AppContent />
-                <Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
+            <ClientProvider>
+              <ProductProvider>
+                <SalesProvider>
+                  <InventoryProvider>
+                    <Router>
+                      <AppContent />
+                      <Suspense fallback={<LoadingSpinner />}>
+                        <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/login" element={<Login />} />
                   <Route 
@@ -111,11 +117,6 @@ function App() {
                       <RegistroEntidad />
                     </ProtectedRoute>
                   } />
-                  <Route path="/ventas/apertura-caja" element={
-                    <ProtectedRoute requiredPermission="sales.create">
-                      <AperturaCaja />
-                    </ProtectedRoute>
-                  } />
                   <Route path="/ventas/realizar" element={
                       <ProtectedRoute requiredPermission="sales.create">
                         <RealizarVenta />
@@ -124,6 +125,11 @@ function App() {
                     <Route path="/ventas/lista" element={
                       <ProtectedRoute requiredPermission="sales.read">
                         <ListaVentas />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/ventas/detalle/:id" element={
+                      <ProtectedRoute requiredPermission="sales.read">
+                        <DetalleVenta />
                       </ProtectedRoute>
                     } />
                     <Route path="/usuarios" element={
@@ -182,6 +188,9 @@ function App() {
                 </Suspense>
               </Router>
             </InventoryProvider>
+          </SalesProvider>
+        </ProductProvider>
+      </ClientProvider>
           </ModalProvider>
         </NotificationProvider>
       </AppProvider>
