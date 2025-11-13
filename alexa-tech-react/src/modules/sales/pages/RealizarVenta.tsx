@@ -699,7 +699,6 @@ const RealizarVenta: React.FC = () => {
     activeCashSession,
     createSale,
     confirmPayment, // 🆕
-    createQuote: createQuoteOld,
     downloadInvoice,
     loading: salesLoading,
   } = useSales();
@@ -1142,11 +1141,6 @@ const RealizarVenta: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // Calcular totales
-      const subtotal = cart.reduce((sum, item) => sum + (item.cantidad * item.precioUnitario), 0);
-      const igv = subtotal * 0.18;
-      const totalAmount = subtotal + igv;
-
       const quoteData = {
         clienteId: selectedClient || undefined,
         almacenId: selectedWarehouse,

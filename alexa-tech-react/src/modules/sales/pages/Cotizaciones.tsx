@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
-import { useQuotes, Quote, QuoteStatus } from '../context/QuotesContext';
+import { useQuotes } from '../context/QuotesContext';
+import type { Quote, QuoteStatus } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
-import { useCash } from '../context/CashContext';
+import { useSales } from '../context/SalesContext';
 import { useAuth } from '../../../context/AuthContext';
 
 const Container = styled.div`
@@ -443,8 +444,8 @@ const FormGroup = styled.div`
 `;
 
 const Cotizaciones: React.FC = () => {
-  const { quotes, loading, filters, stats, fetchQuotes, deleteQuote, approveQuote, rejectQuote, convertToSale, setFilters } = useQuotes();
-  const { cashSessions, fetchCashSessions } = useCash();
+  const { quotes, loading, stats, fetchQuotes, deleteQuote, approveQuote, rejectQuote, convertToSale, setFilters } = useQuotes();
+  const { cashSessions, loadCashSessions: fetchCashSessions } = useSales();
   const { showNotification } = useNotification();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -504,9 +505,9 @@ const Cotizaciones: React.FC = () => {
   // Abrir modal de conversión
   const handleOpenConvertModal = (quote: Quote) => {
     // Validar que haya sesión de caja abierta
-    const openSession = cashSessions.find(session => session.estado === 'Abierta');
+    const openSession = cashSessions.find((session: any) => session.estado === 'Abierta');
     if (!openSession) {
-      showNotification('Debe abrir una sesión de caja primero', 'warning');
+      showNotification('warning', 'Advertencia', 'Debe abrir una sesión de caja primero');
       return;
     }
 
@@ -532,7 +533,7 @@ const Cotizaciones: React.FC = () => {
       });
 
       setShowConvertModal(false);
-      showNotification('Cotización convertida a venta exitosamente', 'success');
+      showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
       
       // Redirigir al detalle de la venta creada
       if (result.sale) {
@@ -596,7 +597,7 @@ const Cotizaciones: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Cotizaciones">
       <Container>
         <Header>
           <Title>📝 Cotizaciones</Title>
@@ -951,9 +952,9 @@ const Cotizaciones: React.FC = () => {
                     value={convertData.cashSessionId}
                     onChange={(e) => setConvertData({ ...convertData, cashSessionId: e.target.value })}
                   >
-                    {cashSessions.filter(s => s.estado === 'Abierta').map((session) => (
+                    {cashSessions.filter((s: any) => s.estado === 'Abierta').map((session: any) => (
                       <option key={session.id} value={session.id}>
-                        {session.cashRegister?.nombre || 'Caja'} - {session.usuario?.firstName} {session.usuario?.lastName}
+                        {session.cashRegister?.nombre || 'Caja'} - Abierta
                       </option>
                     ))}
                   </Select>

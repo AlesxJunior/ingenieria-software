@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { api, tokenUtils } from '../../../utils/api';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { tokenUtils } from '../../../utils/api';
 import { useNotification } from '../../../context/NotificationContext';
+
+const API_URL = 'http://localhost:3001/api';
 
 // Tipos
 export type QuoteStatus = 'Pendiente' | 'Aceptada' | 'Convertida' | 'Rechazada' | 'Vencida' | 'Cancelada';
@@ -129,13 +132,33 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const { showNotification } = useNotification();
 
+  // Helper function para hacer fetch con autenticación
+  const fetchAPI = async (endpoint: string, options?: RequestInit) => {
+    const token = tokenUtils.getAccessToken();
+    
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+      throw new Error(errorData.message || `Error ${response.status}`);
+    }
+
+    return response.json();
+  };
+
   /**
    * Obtener todas las cotizaciones con filtros
    */
   const fetchQuotes = useCallback(async () => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
       
       // Construir query params
       const params = new URLSearchParams();
@@ -158,10 +181,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         params.append('search', filters.search);
       }
 
-      const response = await api.get(`/quotes?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes?${params.toString()}`, {
+        method: 'GET'
       });
 
       if (response.data.success) {
@@ -181,7 +202,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       }
     } catch (error: any) {
       console.error('Error al obtener cotizaciones:', error);
-      showNotification('Error al cargar cotizaciones', 'error');
+      showNotification('error', 'Error', 'No se pudieron cargar las cotizaciones');
     } finally {
       setLoading(false);
     }
@@ -193,16 +214,14 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const createQuote = useCallback(async (data: CreateQuoteInput): Promise<Quote> => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
 
-      const response = await api.post('/quotes', data, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI('/quotes', {
+        method: 'POST',
+        body: JSON.stringify(data)
       });
 
       if (response.data.success) {
-        showNotification('Cotización creada exitosamente', 'success');
+        showNotification('success', 'Éxito', 'Cotización creada exitosamente');
         await fetchQuotes(); // Recargar lista
         return response.data.data;
       }
@@ -211,7 +230,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al crear cotización:', error);
       const errorMessage = error.response?.data?.message || 'Error al crear cotización';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -223,12 +242,8 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
    */
   const getQuoteById = useCallback(async (id: string): Promise<Quote> => {
     try {
-      const token = tokenUtils.getAccessToken();
-
-      const response = await api.get(`/quotes/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes/${id}`, {
+        method: 'GET'
       });
 
       if (response.data.success) {
@@ -239,7 +254,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al obtener cotización:', error);
       const errorMessage = error.response?.data?.message || 'Error al obtener cotización';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     }
   }, [showNotification]);
@@ -250,16 +265,14 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const updateQuote = useCallback(async (id: string, data: Partial<Quote>): Promise<Quote> => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
 
-      const response = await api.put(`/quotes/${id}`, data, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
       });
 
       if (response.data.success) {
-        showNotification('Cotización actualizada exitosamente', 'success');
+        showNotification('success', 'Éxito', 'Cotización actualizada exitosamente');
         await fetchQuotes();
         return response.data.data;
       }
@@ -268,7 +281,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al actualizar cotización:', error);
       const errorMessage = error.response?.data?.message || 'Error al actualizar cotización';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -281,16 +294,13 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const deleteQuote = useCallback(async (id: string): Promise<void> => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
 
-      const response = await api.delete(`/quotes/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes/${id}`, {
+        method: 'DELETE'
       });
 
       if (response.data.success) {
-        showNotification('Cotización eliminada exitosamente', 'success');
+        showNotification('success', 'Éxito', 'Cotización eliminada exitosamente');
         await fetchQuotes();
       } else {
         throw new Error(response.data.message || 'Error al eliminar cotización');
@@ -298,7 +308,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al eliminar cotización:', error);
       const errorMessage = error.response?.data?.message || 'No se puede eliminar una cotización convertida a venta';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -311,16 +321,14 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const approveQuote = useCallback(async (id: string): Promise<Quote> => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
 
-      const response = await api.post(`/quotes/${id}/approve`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes/${id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({})
       });
 
       if (response.data.success) {
-        showNotification('Cotización aprobada exitosamente', 'success');
+        showNotification('success', 'Éxito', 'Cotización aprobada exitosamente');
         await fetchQuotes();
         return response.data.data;
       }
@@ -329,7 +337,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al aprobar cotización:', error);
       const errorMessage = error.response?.data?.message || 'Error al aprobar cotización';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -342,16 +350,14 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const rejectQuote = useCallback(async (id: string, motivoRechazo?: string): Promise<Quote> => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
 
-      const response = await api.post(`/quotes/${id}/reject`, { motivoRechazo }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ motivoRechazo })
       });
 
       if (response.data.success) {
-        showNotification('Cotización rechazada', 'info');
+        showNotification('info', 'Información', 'Cotización rechazada');
         await fetchQuotes();
         return response.data.data;
       }
@@ -360,7 +366,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al rechazar cotización:', error);
       const errorMessage = error.response?.data?.message || 'Error al rechazar cotización';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -373,16 +379,14 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const convertToSale = useCallback(async (data: ConvertToSaleInput): Promise<any> => {
     try {
       setLoading(true);
-      const token = tokenUtils.getAccessToken();
 
-      const response = await api.post(`/quotes/${data.quoteId}/convert-to-sale`, data, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetchAPI(`/quotes/${data.quoteId}/convert-to-sale`, {
+        method: 'POST',
+        body: JSON.stringify(data)
       });
 
       if (response.data.success) {
-        showNotification('Cotización convertida a venta exitosamente', 'success');
+        showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
         await fetchQuotes();
         return response.data.data;
       }
@@ -391,7 +395,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } catch (error: any) {
       console.error('Error al convertir cotización:', error);
       const errorMessage = error.response?.data?.message || 'Error al convertir cotización a venta';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
       setLoading(false);
