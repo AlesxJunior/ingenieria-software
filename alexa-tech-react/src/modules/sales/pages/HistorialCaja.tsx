@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
 import type { CashSession } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
@@ -39,12 +40,11 @@ const HistorialCaja: React.FC = () => {
       };
       
       const data = await getClosedSessions(filterParams);
-      // Asegurar que data sea un array
       setSessions(Array.isArray(data) ? data : []);
     } catch (error) {
       showNotification('error', 'Error', 'No se pudieron cargar las sesiones cerradas');
       console.error('Error loading closed sessions:', error);
-      setSessions([]); // Resetear a array vacío en caso de error
+      setSessions([]);
     }
   };
 
@@ -62,7 +62,6 @@ const HistorialCaja: React.FC = () => {
       fechaFin: '',
       userId: '',
     });
-    // Recargar sin filtros
     setTimeout(() => {
       getClosedSessions({}).then(data => {
         setSessions(Array.isArray(data) ? data : []);
@@ -106,130 +105,133 @@ const HistorialCaja: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Header>
-        <Title>Historial de Arqueos de Caja</Title>
-      </Header>
+    <Layout title="Historial de Caja">
+      <Container>
+        <Header>
+          <Title>Historial de Arqueos de Caja</Title>
+        </Header>
 
-      {/* Filtros */}
-      <FilterCard>
-        <CardTitle>Filtros de Búsqueda</CardTitle>
-        <FilterGrid>
-          <FormGroup>
-            <Label htmlFor="fechaInicio">Fecha Desde</Label>
-            <Input
-              type="date"
-              id="fechaInicio"
-              value={filters.fechaInicio}
-              onChange={(e) => handleFilterChange('fechaInicio', e.target.value)}
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <Label htmlFor="fechaFin">Fecha Hasta</Label>
-            <Input
-              type="date"
-              id="fechaFin"
-              value={filters.fechaFin}
-              onChange={(e) => handleFilterChange('fechaFin', e.target.value)}
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <Label htmlFor="userId">Usuario</Label>
-            <Input
-              type="text"
-              id="userId"
-              placeholder="ID del usuario"
-              value={filters.userId}
-              onChange={(e) => handleFilterChange('userId', e.target.value)}
-            />
-          </FormGroup>
-          
-          <ButtonGroup>
-            <Button onClick={handleSearch} disabled={loading}>
-              <span className="material-icons-outlined">search</span>
-              Buscar
-            </Button>
-            <Button variant="secondary" onClick={handleClearFilters} disabled={loading}>
-              <span className="material-icons-outlined">clear</span>
-              Limpiar
-            </Button>
-          </ButtonGroup>
-        </FilterGrid>
-      </FilterCard>
+        {/* Filtros */}
+        <FiltersContainer>
+          <FiltersTitle>Filtros de Búsqueda</FiltersTitle>
+          <FiltersGrid>
+            <FilterGroup>
+              <Label htmlFor="fechaInicio">Fecha Desde</Label>
+              <DateInput
+                type="date"
+                id="fechaInicio"
+                value={filters.fechaInicio}
+                onChange={(e) => handleFilterChange('fechaInicio', e.target.value)}
+              />
+            </FilterGroup>
+            
+            <FilterGroup>
+              <Label htmlFor="fechaFin">Fecha Hasta</Label>
+              <DateInput
+                type="date"
+                id="fechaFin"
+                value={filters.fechaFin}
+                onChange={(e) => handleFilterChange('fechaFin', e.target.value)}
+              />
+            </FilterGroup>
+            
+            <FilterGroup>
+              <Label htmlFor="userId">Usuario</Label>
+              <Input
+                type="text"
+                id="userId"
+                placeholder="ID del usuario"
+                value={filters.userId}
+                onChange={(e) => handleFilterChange('userId', e.target.value)}
+              />
+            </FilterGroup>
+            
+            <ButtonGroup>
+              <Button onClick={handleSearch} disabled={loading}>
+                <i className="fas fa-search"></i>
+                Buscar
+              </Button>
+              <ButtonSecondary onClick={handleClearFilters} disabled={loading}>
+                <i className="fas fa-times"></i>
+                Limpiar
+              </ButtonSecondary>
+            </ButtonGroup>
+          </FiltersGrid>
+        </FiltersContainer>
 
-      {/* Tabla de Historial */}
-      <TableCard>
-        <CardTitle>Historial de Cierres</CardTitle>
-        
-        {loading ? (
-          <LoadingContainer>
-            <LoadingSpinner />
-            <p>Cargando sesiones...</p>
-          </LoadingContainer>
-        ) : sessions.length === 0 ? (
-          <EmptyState>
-            <span className="material-icons-outlined">inbox</span>
-            <p>No se encontraron sesiones cerradas</p>
-          </EmptyState>
-        ) : (
-          <TableContainer>
-            <Table>
-              <thead>
-                <tr>
-                  <Th>Fecha Cierre</Th>
-                  <Th>Usuario</Th>
-                  <Th>Caja</Th>
-                  <Th>M. Apertura</Th>
-                  <Th>Total Ventas</Th>
-                  <Th>M. Cierre</Th>
-                  <Th>Diferencia</Th>
-                  <Th>Acciones</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session) => (
-                  <Tr key={session.id}>
-                    <Td>{formatDate(session.fechaCierre || session.updatedAt)}</Td>
-                    <Td>{session.userId}</Td>
-                    <Td>{session.cashRegister?.nombre || session.cashRegisterId}</Td>
-                    <Td>{formatCurrency(session.montoApertura)}</Td>
-                    <Td>{formatCurrency(session.totalVentas)}</Td>
-                    <Td><strong>{formatCurrency(session.montoCierre || 0)}</strong></Td>
-                    <Td className={getDifferenceClass(session.diferencia)}>
-                      {getDifferenceText(session.diferencia)}
-                    </Td>
-                    <Td>
-                      <ActionButton onClick={() => handleViewDetails(session)} title="Ver detalles">
-                        <span className="material-icons-outlined">visibility</span>
-                      </ActionButton>
-                    </Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </Table>
-          </TableContainer>
+        {/* Tabla de Historial */}
+        <TableCard>
+          <CardTitle>Historial de Cierres ({sessions.length})</CardTitle>
+          
+          {loading ? (
+            <LoadingContainer>
+              <LoadingSpinner />
+              <p>Cargando sesiones...</p>
+            </LoadingContainer>
+          ) : sessions.length === 0 ? (
+            <EmptyState>
+              <i className="fas fa-inbox" style={{ fontSize: '4rem' }}></i>
+              <p>No se encontraron sesiones cerradas</p>
+              <small>Intenta ajustar los filtros o verifica que haya sesiones cerradas</small>
+            </EmptyState>
+          ) : (
+            <>
+              <TableContainer>
+                <Table>
+                  <thead>
+                    <tr>
+                      <Th>Fecha Cierre</Th>
+                      <Th>Usuario</Th>
+                      <Th>Caja</Th>
+                      <Th>M. Apertura</Th>
+                      <Th>Total Ventas</Th>
+                      <Th>M. Cierre</Th>
+                      <Th>Diferencia</Th>
+                      <Th>Acciones</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.map((session) => (
+                      <Tr key={session.id}>
+                        <Td>{formatDate(session.fechaCierre || session.updatedAt)}</Td>
+                        <Td>{session.userId}</Td>
+                        <Td>{session.cashRegister?.nombre || session.cashRegisterId}</Td>
+                        <Td>{formatCurrency(session.montoApertura)}</Td>
+                        <Td className="sales">{formatCurrency(session.totalVentas)}</Td>
+                        <Td><strong>{formatCurrency(session.montoCierre || 0)}</strong></Td>
+                        <Td className={getDifferenceClass(session.diferencia)}>
+                          <strong>{getDifferenceText(session.diferencia)}</strong>
+                        </Td>
+                        <Td>
+                          <ActionButton onClick={() => handleViewDetails(session)} title="Ver detalles">
+                            <i className="fas fa-eye"></i>
+                          </ActionButton>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </TableContainer>
+              
+              <PaginationFooter>
+                Mostrando {sessions.length} sesión{sessions.length !== 1 ? 'es' : ''}
+              </PaginationFooter>
+            </>
+          )}
+        </TableCard>
+
+        {/* Modal de Detalles */}
+        {showDetailModal && selectedSession && (
+          <SessionDetailModal
+            sessionId={selectedSession.id}
+            onClose={() => {
+              setShowDetailModal(false);
+              setSelectedSession(null);
+            }}
+          />
         )}
-        
-        {!loading && sessions.length > 0 && (
-          <PaginationFooter>
-            Mostrando {sessions.length} sesión{sessions.length !== 1 ? 'es' : ''}
-          </PaginationFooter>
-        )}
-      </TableCard>
-
-      {/* Modal de Detalles */}
-      {showDetailModal && selectedSession && (
-        <SessionDetailModal
-          sessionId={selectedSession.id}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedSession(null);
-          }}
-        />
-      )}
-    </Container>
+      </Container>
+    </Layout>
   );
 };
 
@@ -238,73 +240,84 @@ export default HistorialCaja;
 // ==================== STYLED COMPONENTS ====================
 
 const Container = styled.div`
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 1rem;
 `;
 
 const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 `;
 
 const Title = styled.h1`
+  color: #2c3e50;
+  margin: 0;
   font-size: 2rem;
-  color: #1a1a1a;
   font-weight: 600;
 `;
 
-const FilterCard = styled.div`
+const FiltersContainer = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
-const TableCard = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+const FiltersTitle = styled.h3`
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+  font-size: 1.25rem;
 `;
 
-const CardTitle = styled.h3`
-  font-size: 1.125rem;
-  color: #1a1a1a;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-`;
-
-const FilterGrid = styled.div`
+const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   align-items: end;
 `;
 
-const FormGroup = styled.div`
+const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 `;
 
 const Label = styled.label`
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  color: #34495e;
   font-weight: 500;
-  color: #4a4a4a;
 `;
 
 const Input = styled.input`
-  padding: 0.625rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+`;
+
+const DateInput = styled.input`
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
   }
 `;
 
@@ -313,22 +326,25 @@ const ButtonGroup = styled.div`
   gap: 0.5rem;
 `;
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
+const Button = styled.button`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #3498db;
+  color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  border-radius: 8px;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  background: ${props => props.variant === 'secondary' ? '#6b7280' : '#3b82f6'};
-  color: white;
+  transition: all 0.3s ease;
 
   &:hover:not(:disabled) {
-    background: ${props => props.variant === 'secondary' ? '#4b5563' : '#2563eb'};
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
   }
 
   &:disabled {
@@ -336,53 +352,90 @@ const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
     cursor: not-allowed;
   }
 
-  .material-icons-outlined {
-    font-size: 1.125rem;
+  i {
+    font-size: 1rem;
   }
+`;
+
+const ButtonSecondary = styled(Button)`
+  background: #95a5a6;
+
+  &:hover:not(:disabled) {
+    background: #7f8c8d;
+    box-shadow: 0 4px 8px rgba(149, 165, 166, 0.3);
+  }
+`;
+
+const TableCard = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  overflow: hidden;
+`;
+
+const CardTitle = styled.h3`
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  font-size: 1.25rem;
 `;
 
 const TableContainer = styled.div`
   overflow-x: auto;
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 1000px;
 `;
 
 const Th = styled.th`
   text-align: left;
-  padding: 0.75rem;
+  padding: 1rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4a4a4a;
-  border-bottom: 2px solid #e5e7eb;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e1e8ed;
+  background: #f8f9fa;
 `;
 
 const Tr = styled.tr`
+  transition: background 0.2s;
+
   &:hover {
-    background: #f9fafb;
+    background: #f8f9fa;
   }
 `;
 
 const Td = styled.td`
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #e1e8ed;
+
+  &.sales {
+    color: #3498db;
+    font-weight: 600;
+  }
 
   &.surplus {
-    color: #10b981;
+    color: #27ae60;
     font-weight: 600;
   }
 
   &.shortage {
-    color: #ef4444;
+    color: #e74c3c;
     font-weight: 600;
   }
 
   &.zero {
-    color: #6b7280;
+    color: #95a5a6;
   }
 `;
 
@@ -390,30 +443,30 @@ const ActionButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.375rem;
+  padding: 0.5rem;
   border: none;
-  border-radius: 4px;
-  background: #e5e7eb;
-  color: #4b5563;
+  border-radius: 6px;
+  background: #3498db;
+  color: white;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #d1d5db;
-    color: #1f2937;
+    background: #2980b9;
+    transform: scale(1.1);
   }
 
-  .material-icons-outlined {
-    font-size: 1.25rem;
+  i {
+    font-size: 1rem;
   }
 `;
 
 const PaginationFooter = styled.div`
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e1e8ed;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #7f8c8d;
   text-align: center;
 `;
 
@@ -422,16 +475,16 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
+  padding: 4rem 2rem;
   gap: 1rem;
-  color: #6b7280;
+  color: #7f8c8d;
 `;
 
 const LoadingSpinner = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #3b82f6;
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e1e8ed;
+  border-top-color: #3498db;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 
@@ -447,16 +500,24 @@ const EmptyState = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem;
+  padding: 4rem 2rem;
   gap: 1rem;
-  color: #9ca3af;
+  color: #95a5a6;
+  text-align: center;
 
-  .material-icons-outlined {
-    font-size: 4rem;
+  i {
+    color: #bdc3c7;
   }
 
   p {
-    font-size: 1rem;
+    font-size: 1.25rem;
+    font-weight: 500;
     margin: 0;
+    color: #7f8c8d;
+  }
+
+  small {
+    font-size: 0.875rem;
+    color: #95a5a6;
   }
 `;
