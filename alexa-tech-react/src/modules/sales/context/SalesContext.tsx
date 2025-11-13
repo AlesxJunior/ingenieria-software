@@ -183,6 +183,10 @@ interface SalesContextType {
   closeCashSession: (sessionId: string, montoCierre: number, observaciones?: string) => Promise<CashSession>;
   loadCashSessions: () => Promise<void>;
   
+  // 🆕 Cash Session History (Historial de Caja)
+  getClosedSessions: (filters?: { fechaInicio?: string; fechaFin?: string; userId?: string }) => Promise<CashSession[]>;
+  getSessionById: (sessionId: string) => Promise<CashSession>;
+  
   // Cash Movements (NUEVO)
   cashMovements: CashMovement[];
   cashSummary: CashSummary | null;
@@ -344,6 +348,64 @@ export const SalesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return closedSession;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cerrar sesión de caja';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==================== CASH SESSION HISTORY (HISTORIAL DE CAJA) ====================
+  
+  /**
+   * Obtener sesiones cerradas con filtros opcionales
+   */
+  const getClosedSessions = async (filters?: { 
+    fechaInicio?: string; 
+    fechaFin?: string; 
+    userId?: string;
+  }): Promise<CashSession[]> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Construir query string
+      const queryParams = new URLSearchParams();
+      queryParams.append('estado', 'Cerrada'); // Solo sesiones cerradas
+      
+      if (filters?.fechaInicio) {
+        queryParams.append('fechaInicio', filters.fechaInicio);
+      }
+      if (filters?.fechaFin) {
+        queryParams.append('fechaFin', filters.fechaFin);
+      }
+      if (filters?.userId) {
+        queryParams.append('userId', filters.userId);
+      }
+      
+      const sessions = await fetchAPI(`/cash-sessions?${queryParams.toString()}`);
+      return sessions;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar historial de sesiones';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Obtener detalle completo de una sesión por ID
+   */
+  const getSessionById = async (sessionId: string): Promise<CashSession> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const session = await fetchAPI(`/cash-sessions/${sessionId}`);
+      return session;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar detalle de sesión';
       setError(message);
       throw err;
     } finally {
@@ -782,6 +844,8 @@ export const SalesProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         openCashSession,
         closeCashSession,
         loadCashSessions,
+        getClosedSessions, // 🆕
+        getSessionById, // 🆕
         cashMovements,
         cashSummary,
         createCashMovement,

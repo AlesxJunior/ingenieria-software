@@ -179,7 +179,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
     if (pathname.includes('/lista-entidades') || pathname.includes('/registrar-entidad')) {
       return 'entidades_comerciales';
     }
-    if (pathname.includes('/ventas') || pathname.includes('/gestion-caja')) {
+    if (pathname.includes('/ventas') || pathname.includes('/gestion-caja') || pathname.includes('/historial-caja')) {
       return 'ventas';
     }
     if (pathname.includes('/lista-productos')) {
@@ -276,7 +276,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/gestion-caja') || isActive('/ventas/realizar') || isActive('/ventas/lista') || isActive('/ventas/cotizaciones')}>
+          <NavItem $isActive={isActive('/gestion-caja') || isActive('/historial-caja') || isActive('/ventas/realizar') || isActive('/ventas/lista') || isActive('/ventas/cotizaciones')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('ventas'); }}>
               <i className="fas fa-cash-register"></i>
               <span>Ventas</span>
@@ -286,6 +286,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
                 <Link to="/gestion-caja" onClick={handleItemClick}>
                   <i className="fas fa-box-open"></i>
                   <h3>Gestión de Caja</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/historial-caja')}>
+                <Link to="/historial-caja" onClick={handleItemClick}>
+                  <i className="fas fa-history"></i>
+                  <h3>Historial de Caja</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/realizar')}>

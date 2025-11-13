@@ -19,6 +19,7 @@ import { ClientProvider } from './modules/clients/context/ClientContext';
 const Login = lazy(() => import('./modules/auth/pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const GestionCaja = lazy(() => import('./modules/sales/pages/GestionCaja'));
+const HistorialCaja = lazy(() => import('./modules/sales/pages/HistorialCaja'));
 const ListaEntidades = lazy(() => import('./modules/clients/pages/ListaEntidades'));
 const ListaProductos = lazy(() => import('./modules/products/pages/ListaProductos'));
 const EditarProducto = lazy(() => import('./modules/products/pages/EditarProducto'));
@@ -89,6 +90,14 @@ function App() {
                     element={
                       <ProtectedRoute requiredPermission="configuration.read">
                         <GestionCaja />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/historial-caja" 
+                    element={
+                      <ProtectedRoute requiredPermission="cash-sessions.read">
+                        <HistorialCaja />
                       </ProtectedRoute>
                     } 
                   />
