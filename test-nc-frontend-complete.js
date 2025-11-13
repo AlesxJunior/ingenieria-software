@@ -72,7 +72,13 @@ async function test0_setup() {
     log('✅ Login exitoso', 'green');
 
     // Obtener cajas
-    const { data: cajas } = await makeRequest('/cash-registers');
+    const { data: cajasResponse } = await makeRequest('/cash-registers');
+    const cajas = Array.isArray(cajasResponse) ? cajasResponse : (cajasResponse.data || []);
+    
+    if (!cajas || cajas.length === 0) {
+      throw new Error('No se encontraron cajas registradoras');
+    }
+    
     cashRegisterId = cajas[0].id;
     log(`✅ Caja obtenida: ${cajas[0].nombre}`, 'green');
 
