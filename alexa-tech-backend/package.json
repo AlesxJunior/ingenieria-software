@@ -14,6 +14,8 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "db:seed": "ts-node prisma/seed.ts",
+    "db:seed-roles": "ts-node --compiler-options {\\\"lib\\\":[\\\"ES2020\\\",\\\"dom\\\"],\\\"types\\\":[\\\"node\\\"]} prisma/seed-roles.ts",
+    "test:rbac": "node scripts/test-rbac-system.js",
     "test:clients": "node scripts/test-clients-module.js",
     "test:users": "npx prisma migrate reset --force && node scripts/test-users-module.js",
     "test:productos": "node scripts/test-products-module.js",
