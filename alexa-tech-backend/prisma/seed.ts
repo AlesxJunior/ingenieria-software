@@ -4,93 +4,162 @@ import { seedCashRegisters } from './seedCashRegisters';
 
 const prisma = new PrismaClient();
 
-// Definir permisos para cada tipo de usuario
+// ============================================================================
+// PERMISOS DEL SISTEMA - ACTUALIZADOS (Nov 2025)
+// ============================================================================
+// Permisos consolidados eliminando redundancias y alineados con el código
+// - Eliminados: commercial_entities.* (reemplazados por clients.*)
+// - Eliminados: configuration.* (reemplazado por system.settings)
+// - Eliminados: invoicing.* (módulo no implementado)
+// - Eliminados: permisos no usados (cash-sessions.delete, users.delete, etc.)
+
 const ADMIN_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
+  
   // Usuarios
-  'users.create', 'users.read', 'users.update', 'users.delete',
-  // Entidades Comerciales
-  'commercial_entities.create', 'commercial_entities.read', 'commercial_entities.update',
+  'users.create',
+  'users.read',
+  'users.update',
+  
+  // Clientes/Entidades Comerciales
+  'clients.create',
+  'clients.read',
+  'clients.update',
+  'clients.delete',
+  
   // Ventas
-  'sales.create', 'sales.read', 'sales.update', 'sales.delete',
+  'sales.create',
+  'sales.read',
+  'sales.update',
+  'sales.delete',
+  
   // Productos
-  'products.create', 'products.read', 'products.update', 'products.delete',
+  'products.create',
+  'products.read',
+  'products.update',
+  'products.delete',
+  
   // Inventario
-  'inventory.read', 'inventory.update',
+  'inventory.read',
+  'inventory.update',
+  
   // Compras
-  'purchases.create', 'purchases.read', 'purchases.update', 'purchases.delete',
+  'purchases.create',
+  'purchases.read',
+  'purchases.update',
+  'purchases.delete',
+  
   // Cajas Registradoras
-  'cash-registers.create', 'cash-registers.read', 'cash-registers.update', 'cash-registers.delete',
+  'cash-registers.create',
+  'cash-registers.read',
+  'cash-registers.update',
+  'cash-registers.delete',
+  
   // Sesiones de Caja
-  'cash-sessions.create', 'cash-sessions.read', 'cash-sessions.update', 'cash-sessions.delete',
-  // Facturación
-  'invoicing.create', 'invoicing.read', 'invoicing.update', 'invoicing.delete',
-  // Configuración
-  'configuration.read', 'configuration.update',
+  'cash-sessions.create',
+  'cash-sessions.read',
+  'cash-sessions.update',
+  
+  // Configuración del Sistema
+  'system.settings',
+  
   // Reportes
-  'reports.sales', 'reports.users', 'reports.inventory', 'reports.financial'
+  'reports.sales',
+  'reports.inventory',
+  'reports.financial',
 ];
 
 const SUPERVISOR_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
+  
   // Usuarios (solo lectura)
   'users.read',
-  // Entidades Comerciales
-  'commercial_entities.create', 'commercial_entities.read', 'commercial_entities.update',
+  
+  // Clientes/Entidades Comerciales
+  'clients.create',
+  'clients.read',
+  'clients.update',
+  
   // Ventas
-  'sales.create', 'sales.read', 'sales.update',
+  'sales.create',
+  'sales.read',
+  'sales.update',
+  
   // Productos
-  'products.create', 'products.read', 'products.update',
+  'products.create',
+  'products.read',
+  'products.update',
+  
   // Inventario
-  'inventory.read', 'inventory.update',
+  'inventory.read',
+  'inventory.update',
+  
   // Compras
-  'purchases.create', 'purchases.read', 'purchases.update',
+  'purchases.create',
+  'purchases.read',
+  'purchases.update',
+  
   // Cajas Registradoras
-  'cash-registers.read', 'cash-registers.update',
+  'cash-registers.read',
+  'cash-registers.update',
+  
   // Sesiones de Caja
-  'cash-sessions.create', 'cash-sessions.read', 'cash-sessions.update',
-  // Facturación
-  'invoicing.create', 'invoicing.read', 'invoicing.update',
-  // Configuración (solo lectura)
-  'configuration.read',
+  'cash-sessions.create',
+  'cash-sessions.read',
+  'cash-sessions.update',
+  
   // Reportes
-  'reports.sales', 'reports.inventory', 'reports.financial'
+  'reports.sales',
+  'reports.inventory',
+  'reports.financial',
 ];
 
 const VENDEDOR_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
-  // Entidades Comerciales
-  'commercial_entities.create', 'commercial_entities.read', 'commercial_entities.update',
+  
+  // Clientes/Entidades Comerciales
+  'clients.create',
+  'clients.read',
+  'clients.update',
+  
   // Ventas
-  'sales.create', 'sales.read',
+  'sales.create',
+  'sales.read',
+  
   // Productos (solo lectura)
   'products.read',
+  
   // Inventario (solo lectura)
   'inventory.read',
-  // Facturación
-  'invoicing.create', 'invoicing.read',
+  
   // Reportes básicos
-  'reports.sales'
+  'reports.sales',
 ];
 
 const CAJERO_PERMISSIONS = [
   // Dashboard
   'dashboard.read',
-  // Usuarios (solo lectura)
-  'users.read',
-  // Entidades Comerciales (solo lectura)
-  'commercial_entities.read',
+  
+  // Clientes (solo lectura)
+  'clients.read',
+  
   // Ventas
-  'sales.create', 'sales.read',
+  'sales.create',
+  'sales.read',
+  
   // Productos (solo lectura)
   'products.read',
+  
   // Inventario (solo lectura)
   'inventory.read',
-  // Facturación
-  'invoicing.create', 'invoicing.read'
+  
+  // Sesiones de Caja
+  'cash-sessions.create',
+  'cash-sessions.read',
+  'cash-sessions.update',
 ];
 
 async function main() {

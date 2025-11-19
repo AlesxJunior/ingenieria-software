@@ -14,44 +14,70 @@ enum TipoEntidad {
   Ambos
 }
 
-model User {
-  id          String    @id @default(cuid())
-  email       String    @unique
-  username    String    @unique
-  password    String
-  firstName   String
-  lastName    String
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lastAccess  DateTime?
-  permissions String[]  @default([])
+// ============================================
+// MÓDULO DE ROLES Y PERMISOS (RBAC)
+// ============================================
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // Nombre único del rol (ej: "Admin", "Vendedor")
+  description String? // Descripción del propósito del rol
+  permissions String[] @default([]) // Array de permisos asignados al rol
+  isActive    Boolean  @default(true) // Permite desactivar roles sin eliminarlos
+  isSystem    Boolean  @default(false) // Roles del sistema no se pueden eliminar (Admin, Supervisor, etc.)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relaciones
-  auditLogs   AuditLog[]
-  userActivities UserActivity[]
-  productsCreated Product[] @relation("ProductCreatedBy")
-  productsUpdated Product[] @relation("ProductUpdatedBy")
-  clientsCreated  Client[]  @relation("ClientCreatedBy")
-  clientsUpdated  Client[]  @relation("ClientUpdatedBy")
-  purchaseOrders  Purchase[] @relation("PurchaseCreatedBy")
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  username   String    @unique
+  password   String
+  firstName  String
+  lastName   String
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  lastAccess DateTime?
+
+  // RBAC: Relación con Role
+  roleId String? // ID del rol asignado (nullable para migración)
+  role   Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  // DEPRECADO: Mantener temporalmente para migración
+  permissions String[] @default([]) // ⚠️ DEPRECADO: Usar role.permissions en su lugar
+
+  // Relaciones
+  auditLogs          AuditLog[]
+  userActivities     UserActivity[]
+  productsCreated    Product[]           @relation("ProductCreatedBy")
+  productsUpdated    Product[]           @relation("ProductUpdatedBy")
+  clientsCreated     Client[]            @relation("ClientCreatedBy")
+  clientsUpdated     Client[]            @relation("ClientUpdatedBy")
+  purchaseOrders     Purchase[]          @relation("PurchaseCreatedBy")
   inventoryMovements InventoryMovement[]
-  cashSessions    CashSession[] @relation("CashSessionUser")
-  cashMovements   CashMovement[] @relation("CashMovementUser")
-  sales           Sale[] @relation("SaleCreatedBy")
-  quotes          Quote[] @relation("QuoteCreatedBy")
+  cashSessions       CashSession[]       @relation("CashSessionUser")
+  cashMovements      CashMovement[]      @relation("CashMovementUser")
+  sales              Sale[]              @relation("SaleCreatedBy")
+  quotes             Quote[]             @relation("QuoteCreatedBy")
 
   @@map("users")
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String   // LOGIN, CREATE_USER, UPDATE_USER, DELETE_USER, etc.
-  userId    String?  // Usuario que realizó la acción
-  targetId  String?  // ID del recurso afectado
-  details   String?  // Detalles adicionales de la acción
-  ipAddress String?  // Dirección IP del usuario
-  userAgent String?  // User agent del navegador
+  action    String // LOGIN, CREATE_USER, UPDATE_USER, DELETE_USER, etc.
+  userId    String? // Usuario que realizó la acción
+  targetId  String? // ID del recurso afectado
+  details   String? // Detalles adicionales de la acción
+  ipAddress String? // Dirección IP del usuario
+  userAgent String? // User agent del navegador
   createdAt DateTime @default(now())
 
   // Relación con usuario
@@ -62,11 +88,11 @@ model AuditLog {
 
 model UserActivity {
   id        String   @id @default(cuid())
-  userId    String   // Usuario que realizó la actividad
-  action    String   // Tipo de actividad
-  details   String?  // Detalles de la actividad
-  ipAddress String?  // Dirección IP
-  userAgent String?  // User agent del navegador
+  userId    String // Usuario que realizó la actividad
+  action    String // Tipo de actividad
+  details   String? // Detalles de la actividad
+  ipAddress String? // Dirección IP
+  userAgent String? // User agent del navegador
   createdAt DateTime @default(now())
 
   // Relación con usuario
@@ -77,17 +103,17 @@ model UserActivity {
 
 model SystemEvent {
   id        String   @id @default(cuid())
-  type      String   // SYSTEM_START, DATABASE_BACKUP, ERROR, etc.
-  details   String?  // Detalles del evento
-  metadata  Json?    // Metadatos adicionales en formato JSON
+  type      String // SYSTEM_START, DATABASE_BACKUP, ERROR, etc.
+  details   String? // Detalles del evento
+  metadata  Json? // Metadatos adicionales en formato JSON
   createdAt DateTime @default(now())
 
   @@map("system_events")
 }
 
 model Departamento {
-  id       String   @id
-  nombre   String
+  id         String      @id
+  nombre     String
   provincias Provincia[]
   clients    Client[]
 
@@ -95,101 +121,104 @@ model Departamento {
 }
 
 model Provincia {
-  id              String   @id
-  nombre          String
-  departamentoId  String
-  departamento    Departamento @relation(fields: [departamentoId], references: [id])
-  distritos       Distrito[]
-  clients         Client[]
+  id             String       @id
+  nombre         String
+  departamentoId String
+  departamento   Departamento @relation(fields: [departamentoId], references: [id])
+  distritos      Distrito[]
+  clients        Client[]
 
   @@map("provinces")
 }
 
 model Distrito {
-  id           String   @id
-  nombre       String
-  provinciaId  String
-  provincia    Provincia @relation(fields: [provinciaId], references: [id])
-  clients      Client[]
+  id          String    @id
+  nombre      String
+  provinciaId String
+  provincia   Provincia @relation(fields: [provinciaId], references: [id])
+  clients     Client[]
 
   @@map("districts")
 }
 
 model Client {
-  id               String   @id @default(cuid())
+  id              String      @id @default(cuid())
   // Tipo de entidad comercial (Cliente, Proveedor o Ambos)
-  tipoEntidad      TipoEntidad @default(Cliente)
-  tipoDocumento    String   // DNI, RUC, CE, Pasaporte
-  numeroDocumento  String   @unique // Número de documento único
-  
+  tipoEntidad     TipoEntidad @default(Cliente)
+  tipoDocumento   String // DNI, RUC, CE, Pasaporte
+  numeroDocumento String      @unique // Número de documento único
+
   // Campos para DNI y CE (Personas Naturales)
-  nombres          String?  // Nombres (solo para DNI/CE/Pasaporte)
-  apellidos        String?  // Apellidos (solo para DNI/CE/Pasaporte)
-  
+  nombres   String? // Nombres (solo para DNI/CE/Pasaporte)
+  apellidos String? // Apellidos (solo para DNI/CE/Pasaporte)
+
   // Campos para RUC (Personas Jurídicas)
-  razonSocial      String?  // Razón Social (solo para RUC)
-  
+  razonSocial String? // Razón Social (solo para RUC)
+
   // Campos comunes
-  email            String   @unique // Email único del cliente
-  telefono         String   // Teléfono de contacto
-  direccion        String   // Dirección
+  email     String @unique // Email único del cliente
+  telefono  String // Teléfono de contacto
+  direccion String // Dirección
 
   // Ubicación (Perú)
-  departamentoId   String
-  provinciaId      String
-  distritoId       String
-  departamento     Departamento @relation(fields: [departamentoId], references: [id])
-  provincia        Provincia    @relation(fields: [provinciaId], references: [id])
-  distrito         Distrito     @relation(fields: [distritoId], references: [id])
-  
+  departamentoId String
+  provinciaId    String
+  distritoId     String
+  departamento   Departamento @relation(fields: [departamentoId], references: [id])
+  provincia      Provincia    @relation(fields: [provinciaId], references: [id])
+  distrito       Distrito     @relation(fields: [distritoId], references: [id])
+
   // Auditoría de creación/actualización
   usuarioCreacion      String?
   usuarioActualizacion String?
-  createdBy            User?    @relation("ClientCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
-  updatedBy            User?    @relation("ClientUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
+  createdBy            User?   @relation("ClientCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
+  updatedBy            User?   @relation("ClientUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
 
-  isActive         Boolean  @default(true) // Soft delete
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isActive  Boolean  @default(true) // Soft delete
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones inversas
-  sales            Sale[]   @relation("SaleClient")
-  quotes           Quote[]  @relation("QuoteClient")
+  sales  Sale[]  @relation("SaleClient")
+  quotes Quote[] @relation("QuoteClient")
 
   @@map("commercial_entities")
 }
 
 model Product {
-  id                 String   @id @default(cuid())
-  codigo             String   @unique
-  nombre             String
-  descripcion        String?
-  categoria          String
-  precioVenta        Decimal
-  stock              Int      @default(0)
-  minStock           Int?
-  trackInventory     Boolean  @default(true)
-  estado             Boolean  @default(true) // Activo/Inactivo (soft delete)
-  unidadMedida       String
+  id             String  @id @default(cuid())
+  codigo         String  @unique
+  nombre         String
+  descripcion    String?
+  categoria      String
+  precioVenta    Decimal
+  stock          Int     @default(0)
+  minStock       Int?
+  trackInventory Boolean @default(true)
+  estado         Boolean @default(true) // Activo/Inactivo (soft delete)
+  unidadMedida   String
 
   // Auditoría de creación/actualización
   usuarioCreacion      String?
   usuarioActualizacion String?
-  createdBy            User?    @relation("ProductCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
-  updatedBy            User?    @relation("ProductUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
+  createdBy            User?   @relation("ProductCreatedBy", fields: [usuarioCreacion], references: [id], onDelete: SetNull)
+  updatedBy            User?   @relation("ProductUpdatedBy", fields: [usuarioActualizacion], references: [id], onDelete: SetNull)
 
   // Relación con items de compra
-  purchaseItems       PurchaseItem[] @relation("PurchaseItemProduct")
+  purchaseItems PurchaseItem[] @relation("PurchaseItemProduct")
 
   // Relación con items de venta
-  saleItems           SaleItem[]     @relation("SaleItemProduct")
+  saleItems SaleItem[] @relation("SaleItemProduct")
+
+  // Relación con items de cotización
+  quoteItems QuoteItem[]
 
   // Relaciones de inventario
-  stockByWarehouses   StockByWarehouse[]
-  inventoryMovements  InventoryMovement[]
+  stockByWarehouses  StockByWarehouse[]
+  inventoryMovements InventoryMovement[]
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("products")
 }
@@ -222,32 +251,32 @@ enum SaleType {
 }
 
 enum SaleStatus {
-  Pendiente   // Venta registrada, esperando confirmación de pago
-  Completada  // Pago verificado y completado (puede tener NC después)
-  Cancelada   // Cliente no concretó la venta (timeout o cancelación manual)
+  Pendiente // Venta registrada, esperando confirmación de pago
+  Completada // Pago verificado y completado (puede tener NC después)
+  Cancelada // Cliente no concretó la venta (timeout o cancelación manual)
 }
 
 // ✅ SIMPLIFICADO A 2 MOTIVOS: NC = Devolución física de productos
 // Otros casos (errores de datos/precios) se manejan con edición directa o anulación
 enum CreditNoteReason {
-  DevolucionTotal      // Cliente devuelve TODOS los productos físicamente
-  DevolucionParcial    // Cliente devuelve ALGUNOS productos físicamente
+  DevolucionTotal // Cliente devuelve TODOS los productos físicamente
+  DevolucionParcial // Cliente devuelve ALGUNOS productos físicamente
 }
 
 // ✅ NUEVO: Estados de las Notas de Crédito
 enum CreditNoteStatus {
-  Pendiente              // Vale no usado (crédito a favor del cliente)
-  Reembolsada            // Ya se devolvió el dinero
-  PendientePagoBancario  // Esperando transferencia bancaria
-  Aplicada               // Usada en otra venta (FUTURO)
-  Cancelada              // Anulada
+  Pendiente // Vale no usado (crédito a favor del cliente)
+  Reembolsada // Ya se devolvió el dinero
+  PendientePagoBancario // Esperando transferencia bancaria
+  Aplicada // Usada en otra venta (FUTURO)
+  Cancelada // Anulada
 }
 
 // ✅ NUEVO: Métodos de procesamiento de NC
 enum CreditNotePaymentMethod {
-  Efectivo        // Reembolso en efectivo
-  Transferencia   // Transferencia bancaria
-  Vale            // Crédito a favor (pendiente de aplicar)
+  Efectivo // Reembolso en efectivo
+  Transferencia // Transferencia bancaria
+  Vale // Crédito a favor (pendiente de aplicar)
 }
 
 enum SalePaymentMethod {
@@ -286,38 +315,38 @@ enum QuoteStatus {
 }
 
 model Purchase {
-  id                  String          @id @default(cuid())
-  codigoOrden         String          @unique
-  proveedorId         String
-  almacenId           String
-  fechaEmision        DateTime
+  id                   String         @id @default(cuid())
+  codigoOrden          String         @unique
+  proveedorId          String
+  almacenId            String
+  fechaEmision         DateTime
   fechaEntregaEstimada DateTime?
-  tipoComprobante     VoucherType?
-  formaPago           PaymentMethod?
-  subtotal            Decimal         @default(0)
-  descuento           Decimal         @default(0)
-  total               Decimal         @default(0)
-  estado              PurchaseStatus  @default(Pendiente)
-  observaciones       String?
+  tipoComprobante      VoucherType?
+  formaPago            PaymentMethod?
+  subtotal             Decimal        @default(0)
+  descuento            Decimal        @default(0)
+  total                Decimal        @default(0)
+  estado               PurchaseStatus @default(Pendiente)
+  observaciones        String?
 
-  usuarioId           String?
-  usuario             User?           @relation("PurchaseCreatedBy", fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioId String?
+  usuario   User?   @relation("PurchaseCreatedBy", fields: [usuarioId], references: [id], onDelete: SetNull)
 
-  items               PurchaseItem[]
+  items PurchaseItem[]
 
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("purchase_orders")
 }
 
 model PurchaseItem {
-  id             String   @id @default(cuid())
-  purchaseId     String
-  purchase       Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
-  productCodigo  String
-  product        Product  @relation("PurchaseItemProduct", fields: [productCodigo], references: [codigo], onDelete: SetNull)
+  productCodigo String
+  product       Product @relation("PurchaseItemProduct", fields: [productCodigo], references: [codigo], onDelete: SetNull)
 
   nombreProducto String?
   cantidad       Int
@@ -348,72 +377,72 @@ enum AdjustmentReason {
 }
 
 model MovementReason {
-  id                  String       @id @default(cuid())
-  tipo                MovementType @map("type")
-  codigo              String       @unique
-  nombre              String
-  descripcion         String?
-  activo              Boolean      @default(true)
-  requiereDocumento   Boolean      @default(false) @map("requiresDocument")
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  id                String       @id @default(cuid())
+  tipo              MovementType @map("type")
+  codigo            String       @unique
+  nombre            String
+  descripcion       String?
+  activo            Boolean      @default(true)
+  requiereDocumento Boolean      @default(false) @map("requiresDocument")
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-  inventoryMovements  InventoryMovement[]
+  inventoryMovements InventoryMovement[]
 
   @@map("movement_reasons")
 }
 
 model Warehouse {
-  id         String   @id @default(cuid())
-  codigo     String   @unique
-  nombre     String
-  ubicacion  String?
-  capacidad  Int?
-  activo     Boolean  @default(true) @map("isActive")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  codigo    String   @unique
+  nombre    String
+  ubicacion String?
+  capacidad Int?
+  activo    Boolean  @default(true) @map("isActive")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones de inventario
-  stockByWarehouses   StockByWarehouse[]
-  inventoryMovements  InventoryMovement[]
+  stockByWarehouses  StockByWarehouse[]
+  inventoryMovements InventoryMovement[]
 
   @@map("warehouses")
 }
 
 model StockByWarehouse {
-  id           String   @id @default(cuid())
-  productId    String
-  warehouseId  String
-  quantity     Int      @default(0) @map("cantidad")
-  minStock     Int?                     @map("stockMinimo")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  productId   String
+  warehouseId String
+  quantity    Int      @default(0) @map("cantidad")
+  minStock    Int?     @map("stockMinimo")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
 
   @@unique([productId, warehouseId])
   @@map("stock_by_warehouse")
 }
 
 model InventoryMovement {
-  id              String          @id @default(cuid())
-  productId       String
-  warehouseId     String
-  type            String          @map("tipo")
-  quantity        Int             @map("cantidad")
-  stockBefore     Int             @map("stockAntes")
-  stockAfter      Int             @map("stockDespues")
-  reason          String          @map("motivo") // Mantenemos compatibilidad con datos existentes
-  reasonId        String?         @map("reasonId") // Nueva relación opcional
-  documentRef     String?         @map("documentoReferencia")
-  userId          String?         @map("usuarioId")
-  createdAt       DateTime        @default(now())
+  id          String   @id @default(cuid())
+  productId   String
+  warehouseId String
+  type        String   @map("tipo")
+  quantity    Int      @map("cantidad")
+  stockBefore Int      @map("stockAntes")
+  stockAfter  Int      @map("stockDespues")
+  reason      String   @map("motivo") // Mantenemos compatibilidad con datos existentes
+  reasonId    String?  @map("reasonId") // Nueva relación opcional
+  documentRef String?  @map("documentoReferencia")
+  userId      String?  @map("usuarioId")
+  createdAt   DateTime @default(now())
 
-  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  warehouse       Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  movementReason  MovementReason? @relation(fields: [reasonId], references: [id], onDelete: SetNull)
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse      Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  movementReason MovementReason? @relation(fields: [reasonId], references: [id], onDelete: SetNull)
 
   @@map("inventory_movements")
 }
@@ -423,13 +452,13 @@ model InventoryMovement {
 // ============================================
 
 model CashRegister {
-  id          String   @id @default(cuid())
-  codigo      String   @unique
-  nombre      String
-  ubicacion   String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  codigo    String   @unique
+  nombre    String
+  ubicacion String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
   cashSessions CashSession[]
@@ -438,23 +467,23 @@ model CashRegister {
 }
 
 model CashSession {
-  id                String              @id @default(cuid())
-  cashRegisterId    String
-  userId            String
-  fechaApertura     DateTime            @default(now())
-  fechaCierre       DateTime?
-  montoApertura     Decimal             @default(0)
-  montoCierre       Decimal?
-  totalVentas       Decimal             @default(0)
-  diferencia        Decimal?
-  estado            CashRegisterStatus  @default(Abierta)
-  observaciones     String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  id             String             @id @default(cuid())
+  cashRegisterId String
+  userId         String
+  fechaApertura  DateTime           @default(now())
+  fechaCierre    DateTime?
+  montoApertura  Decimal            @default(0)
+  montoCierre    Decimal?
+  totalVentas    Decimal            @default(0)
+  diferencia     Decimal?
+  estado         CashRegisterStatus @default(Abierta)
+  observaciones  String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   // Relaciones
-  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
-  user         User         @relation("CashSessionUser", fields: [userId], references: [id], onDelete: Cascade)
+  cashRegister CashRegister   @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  user         User           @relation("CashSessionUser", fields: [userId], references: [id], onDelete: Cascade)
   sales        Sale[]
   movements    CashMovement[]
 
@@ -462,60 +491,60 @@ model CashSession {
 }
 
 model Sale {
-  id                  String              @id @default(cuid())
-  codigoVenta         String              @unique
-  tipo                SaleType            @default(Venta)
-  cashSessionId       String?
-  clienteId           String?
-  almacenId           String
-  usuarioId           String
-  fechaEmision        DateTime            @default(now())
-  tipoComprobante     SaleVoucherType     @default(Boleta)
-  formaPago           SalePaymentMethod   @default(Efectivo)
-  subtotal            Decimal             @default(0)
-  igv                 Decimal             @default(0)
-  total               Decimal             @default(0)
-  estado              SaleStatus          @default(Pendiente)
-  observaciones       String?
-  
+  id              String            @id @default(cuid())
+  codigoVenta     String            @unique
+  tipo            SaleType          @default(Venta)
+  cashSessionId   String?
+  clienteId       String?
+  almacenId       String
+  usuarioId       String
+  fechaEmision    DateTime          @default(now())
+  tipoComprobante SaleVoucherType   @default(Boleta)
+  formaPago       SalePaymentMethod @default(Efectivo)
+  subtotal        Decimal           @default(0)
+  igv             Decimal           @default(0)
+  total           Decimal           @default(0)
+  estado          SaleStatus        @default(Pendiente)
+  observaciones   String?
+
   // Campos para tracking de pago
-  montoRecibido       Decimal             @default(0)
-  montoCambio         Decimal             @default(0)
-  referenciaPago      String?             // Número de operación/voucher/código QR
-  fechaPago           DateTime?           // Fecha de confirmación del pago
-  
+  montoRecibido  Decimal   @default(0)
+  montoCambio    Decimal   @default(0)
+  referenciaPago String? // Número de operación/voucher/código QR
+  fechaPago      DateTime? // Fecha de confirmación del pago
+
   // Campos para Notas de Crédito
-  saleOriginId        String?
-  creditNoteReason    CreditNoteReason?
+  saleOriginId          String?
+  creditNoteReason      CreditNoteReason?
   creditNoteDescription String?
-  
+
   // ✅ NUEVOS: Estado y método de procesamiento de NC
   creditNoteStatus        CreditNoteStatus?
   creditNotePaymentMethod CreditNotePaymentMethod?
   creditNoteRefundDate    DateTime?
   cashMovementId          String?
-  
+
   // Campo para rastrear origen de cotización
-  quoteOriginId       String?
-  
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  quoteOriginId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
-  cashSession  CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
-  cliente      Client?       @relation("SaleClient", fields: [clienteId], references: [id], onDelete: SetNull)
-  usuario      User          @relation("SaleCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
-  items        SaleItem[]
-  
+  cashSession CashSession? @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  cliente     Client?      @relation("SaleClient", fields: [clienteId], references: [id], onDelete: SetNull)
+  usuario     User         @relation("SaleCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
+  items       SaleItem[]
+
   // Relación para Notas de Crédito
-  saleOrigin   Sale?         @relation("CreditNotes", fields: [saleOriginId], references: [id], onDelete: Restrict)
-  creditNotes  Sale[]        @relation("CreditNotes")
-  
+  saleOrigin  Sale?  @relation("CreditNotes", fields: [saleOriginId], references: [id], onDelete: Restrict)
+  creditNotes Sale[] @relation("CreditNotes")
+
   // ✅ NUEVO: Relación con movimiento de caja (si NC es reembolsada en efectivo)
   cashMovement CashMovement? @relation("CreditNoteCashMovement", fields: [cashMovementId], references: [id], onDelete: SetNull)
-  
+
   // Relación con cotización
-  quoteOrigin  Quote?        @relation("QuoteConvertedToSale", fields: [quoteOriginId], references: [id], onDelete: SetNull)
+  quoteOrigin Quote? @relation("QuoteConvertedToSale", fields: [quoteOriginId], references: [id], onDelete: SetNull)
 
   @@map("sales")
 }
@@ -539,50 +568,50 @@ model SaleItem {
 
 // Modelo para Movimientos de Caja
 model CashMovement {
-  id              String            @id @default(cuid())
-  cashSessionId   String
-  tipo            CashMovementType
-  monto           Decimal
-  motivo          String
-  descripcion     String?
-  usuarioId       String
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id            String           @id @default(cuid())
+  cashSessionId String
+  tipo          CashMovementType
+  monto         Decimal
+  motivo        String
+  descripcion   String?
+  usuarioId     String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   // Relaciones
-  cashSession  CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
-  usuario      User        @relation("CashMovementUser", fields: [usuarioId], references: [id], onDelete: Cascade)
-  
+  cashSession CashSession @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  usuario     User        @relation("CashMovementUser", fields: [usuarioId], references: [id], onDelete: Cascade)
+
   // ✅ NUEVO: Relación inversa con NC que tienen reembolso
-  creditNote   Sale[]      @relation("CreditNoteCashMovement")
+  creditNote Sale[] @relation("CreditNoteCashMovement")
 
   @@map("cash_movements")
 }
 
 // Modelo para Cotizaciones
 model Quote {
-  id                  String         @id @default(cuid())
-  codigoCotizacion    String         @unique
-  clienteId           String?
-  almacenId           String
-  usuarioId           String
-  fechaEmision        DateTime       @default(now())
-  fechaVencimiento    DateTime
-  diasValidez         Int            @default(15)
-  subtotal            Decimal        @default(0)
-  igv                 Decimal        @default(0)
-  total               Decimal        @default(0)
-  estado              QuoteStatus    @default(Pendiente)
-  observaciones       String?
-  motivoRechazo       String?
-  intentosConversion  Int            @default(0)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  id                 String      @id @default(cuid())
+  codigoCotizacion   String      @unique
+  clienteId          String?
+  almacenId          String
+  usuarioId          String
+  fechaEmision       DateTime    @default(now())
+  fechaVencimiento   DateTime
+  diasValidez        Int         @default(15)
+  subtotal           Decimal     @default(0)
+  igv                Decimal     @default(0)
+  total              Decimal     @default(0)
+  estado             QuoteStatus @default(Pendiente)
+  observaciones      String?
+  motivoRechazo      String?
+  intentosConversion Int         @default(0)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   // Relaciones
-  cliente      Client?       @relation("QuoteClient", fields: [clienteId], references: [id], onDelete: SetNull)
-  usuario      User          @relation("QuoteCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
-  items        QuoteItem[]
+  cliente        Client?     @relation("QuoteClient", fields: [clienteId], references: [id], onDelete: SetNull)
+  usuario        User        @relation("QuoteCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
+  items          QuoteItem[]
   salesConverted Sale[]      @relation("QuoteConvertedToSale")
 
   @@index([estado])
@@ -602,8 +631,71 @@ model QuoteItem {
   createdAt      DateTime @default(now())
 
   // Relaciones
-  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@map("quote_items")
 }
 
+// Modelo para Configuración de la Empresa
+model Company {
+  id              String   @id @default(cuid())
+  ruc             String   @unique
+  razonSocial     String
+  nombreComercial String
+  direccion       String
+  telefono        String
+  email           String
+  website         String?
+  logo            String?
+  igvActivo       Boolean  @default(true)
+  igvPorcentaje   Decimal  @default(18)
+  moneda          String   @default("PEN")
+  pais            String   @default("Perú")
+  departamento    String   @default("")
+  provincia       String   @default("")
+  distrito        String   @default("")
+  codigoPostal    String?
+  sunatUsuario    String?
+  sunatClave      String?
+  sunatServidor   String   @default("homologacion") // produccion o homologacion
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("company")
+}
+
+// Modelo para Tipos de Comprobantes
+model ComprobanteType {
+  id             String   @id @default(cuid())
+  codigo         String   @unique
+  nombre         String
+  descripcion    String?
+  tipo           String // factura, boleta, nota-credito, nota-debito
+  serie          String
+  numeroActual   Int      @default(1)
+  numeroInicio   Int      @default(1)
+  numeroFin      Int      @default(99999)
+  activo         Boolean  @default(true)
+  predeterminado Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("comprobante_types")
+}
+
+// Modelo para Métodos de Pago (Configuración)
+model PaymentMethodConfig {
+  id                 String   @id @default(cuid())
+  codigo             String   @unique
+  nombre             String
+  descripcion        String?
+  tipo               String // Efectivo, Tarjeta, Transferencia, etc.
+  activo             Boolean  @default(true)
+  predeterminado     Boolean  @default(false)
+  requiereReferencia Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("payment_method_config")
+}
