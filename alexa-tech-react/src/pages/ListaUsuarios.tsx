@@ -9,6 +9,15 @@ import EditarUsuarioModal from '../components/EditarUsuarioModal';
 
 // Interfaces extendidas para usuarios
 
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isActive: boolean;
+  isSystem: boolean;
+}
+
 interface ExtendedUser {
   id: string;
   username: string;
@@ -20,6 +29,8 @@ interface ExtendedUser {
   createdAt: string;
   updatedAt: string;
   permissions?: string[];
+  roleId?: string | null;
+  role?: Role | null;
 }
 
 interface UserFormData {
@@ -28,6 +39,7 @@ interface UserFormData {
   firstName: string;
   lastName: string;
   isActive: boolean;
+  roleId?: string | null;
   permissions?: string[];
 }
 
@@ -327,6 +339,26 @@ const EmptyIcon = styled.div`
   margin-bottom: 1rem;
 `;
 
+const RoleBadge = styled.span`
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: #e3f2fd;
+  color: #1976d2;
+`;
+
+const NoRoleBadge = styled.span`
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: #fff3cd;
+  color: #856404;
+`;
+
 
 
 const ListaUsuarios: React.FC = () => {
@@ -356,6 +388,10 @@ const ListaUsuarios: React.FC = () => {
         search: searchTerm || undefined,
         status: statusFilter || undefined
       });
+      
+      console.log('🔍 DEBUG: API Response:', response);
+      console.log('🔍 DEBUG: Users data:', response.data?.users);
+      console.log('🔍 DEBUG: First user:', response.data?.users[0]);
       
       setUsers(response.data?.users || []);
       setTotalUsers(response.data?.pagination?.totalUsers || 0);
@@ -429,7 +465,7 @@ const ListaUsuarios: React.FC = () => {
         if (userData.firstName) backendUserData.firstName = userData.firstName;
         if (userData.lastName) backendUserData.lastName = userData.lastName;
         if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-        if (userData.permissions) backendUserData.permissions = userData.permissions;
+        if (userData.roleId !== undefined) backendUserData.roleId = userData.roleId;
 
         
         await apiService.updateUser(selectedUser.id, backendUserData);
@@ -470,7 +506,7 @@ const ListaUsuarios: React.FC = () => {
       if (userData.firstName) backendUserData.firstName = userData.firstName;
       if (userData.lastName) backendUserData.lastName = userData.lastName;
       if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-      if (userData.permissions) backendUserData.permissions = userData.permissions;
+      if (userData.roleId !== undefined) backendUserData.roleId = userData.roleId;
 
       
       const resp = await apiService.createUser(backendUserData);
@@ -570,6 +606,7 @@ const ListaUsuarios: React.FC = () => {
               <TableHeader>
                 <tr>
                   <TableHeaderCell>Usuario</TableHeaderCell>
+                  <TableHeaderCell>Rol</TableHeaderCell>
                   <TableHeaderCell>Estado</TableHeaderCell>
                   <TableHeaderCell>Último Acceso</TableHeaderCell>
                   <TableHeaderCell>Acciones</TableHeaderCell>
@@ -589,6 +626,13 @@ const ListaUsuarios: React.FC = () => {
                           <UserName>@{user.username}</UserName>
                         </div>
                       </UserInfo>
+                    </TableCell>
+                    <TableCell>
+                      {user.role ? (
+                        <RoleBadge>{user.role.name}</RoleBadge>
+                      ) : (
+                        <NoRoleBadge>Sin rol asignado</NoRoleBadge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={user.isActive ? 'activo' : 'inactivo'}>

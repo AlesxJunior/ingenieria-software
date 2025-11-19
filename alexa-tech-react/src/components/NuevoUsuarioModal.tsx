@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
 import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../utils/validation';
 import PasswordRequirements from './PasswordRequirements';
+import { apiService } from '../utils/api';
 
-interface Permission {
+interface Role {
   id: string;
   name: string;
   description: string;
-  module: string;
-  submodule?: string;
+  isActive: boolean;
+  isSystem: boolean;
 }
 
 interface UserFormData {
@@ -20,7 +21,7 @@ interface UserFormData {
   password: string;
   confirmPassword: string;
   isActive: boolean;
-  permissions: string[];
+  roleId: string | null;
 }
 
 interface FormErrors {
@@ -64,24 +65,30 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
   },
   
   
-  // MÓDULO: ENTIDADES COMERCIALES
+  // MÓDULO: CLIENTES
   {
-    id: 'commercial_entities.create',
-    name: 'Crear Entidades Comerciales',
-    description: 'Registrar nuevas entidades comerciales en el sistema',
-    module: 'ENTIDADES COMERCIALES'
+    id: 'clients.create',
+    name: 'Crear Clientes',
+    description: 'Registrar nuevos clientes en el sistema',
+    module: 'CLIENTES'
   },
   {
-    id: 'commercial_entities.read',
-    name: 'Ver Entidades Comerciales',
-    description: 'Ver la lista de entidades comerciales del sistema',
-    module: 'ENTIDADES COMERCIALES'
+    id: 'clients.read',
+    name: 'Ver Clientes',
+    description: 'Ver la lista de clientes del sistema',
+    module: 'CLIENTES'
   },
   {
-    id: 'commercial_entities.update',
-    name: 'Actualizar Entidades Comerciales',
-    description: 'Modificar información de entidades comerciales existentes',
-    module: 'ENTIDADES COMERCIALES'
+    id: 'clients.update',
+    name: 'Actualizar Clientes',
+    description: 'Modificar información de clientes existentes',
+    module: 'CLIENTES'
+  },
+  {
+    id: 'clients.delete',
+    name: 'Eliminar Clientes',
+    description: 'Eliminar clientes del sistema',
+    module: 'CLIENTES'
   },
   
   // MÓDULO: VENTAS
@@ -204,15 +211,9 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
   
   // MÓDULO: CONFIGURACIÓN
   {
-    id: 'configuration.read',
-    name: 'Ver Configuración',
-    description: 'Acceder a la configuración del sistema',
-    module: 'CONFIGURACIÓN'
-  },
-  {
-    id: 'configuration.update',
-    name: 'Actualizar Configuración',
-    description: 'Modificar configuraciones del sistema',
+    id: 'system.settings',
+    name: 'Configuración del Sistema',
+    description: 'Acceder y modificar configuraciones del sistema',
     module: 'CONFIGURACIÓN'
   },
   
@@ -221,12 +222,6 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
     id: 'reports.sales',
     name: 'Reportes de Ventas',
     description: 'Ver reportes y estadísticas de ventas',
-    module: 'REPORTES'
-  },
-  {
-    id: 'reports.users',
-    name: 'Auditoría de Usuarios',
-    description: 'Ver registros de actividad y auditoría de usuarios',
     module: 'REPORTES'
   },
   {
@@ -470,6 +465,8 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
     email: '',
@@ -478,8 +475,30 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
     password: '',
     confirmPassword: '',
     isActive: true,
-    permissions: []
+    roleId: null
   });
+
+  // Cargar roles disponibles
+  useEffect(() => {
+    const loadRoles = async () => {
+      try {
+        setLoadingRoles(true);
+        const response = await apiService.get<{ data: Role[] }>('/roles');
+        const data = response.data as any;
+        const rolesData = data?.data || data || [];
+        // Filtrar solo roles activos
+        setRoles(rolesData.filter((r: Role) => r.isActive));
+      } catch (error) {
+        console.error('Error cargando roles:', error);
+      } finally {
+        setLoadingRoles(false);
+      }
+    };
+
+    if (isOpen) {
+      loadRoles();
+    }
+  }, [isOpen]);
 
 
 
@@ -546,30 +565,6 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
     }
   };
 
-
-
-  const handlePermissionChange = (permissionId: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: checked 
-        ? [...prev.permissions, permissionId]
-        : prev.permissions.filter(id => id !== permissionId)
-    }));
-  };
-
-  const handleSelectAllPermissions = (module: string, select: boolean) => {
-    const modulePermissions = AVAILABLE_PERMISSIONS
-      .filter(p => p.module === module)
-      .map(p => p.id);
-    
-    setFormData(prev => ({
-      ...prev,
-      permissions: select
-        ? [...new Set([...prev.permissions, ...modulePermissions])]
-        : prev.permissions.filter(id => !modulePermissions.includes(id))
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -594,7 +589,7 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
         password: '',
         confirmPassword: '',
         isActive: true,
-        permissions: []
+        roleId: null
       });
       
       setErrors({});
@@ -729,51 +724,31 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
             </Label>
           </FormGroup>
 
-          <PermissionsSection>
-            <PermissionsTitle>Permisos del Usuario</PermissionsTitle>
-            {Object.entries(
-              AVAILABLE_PERMISSIONS.reduce((acc, permission) => {
-                if (!acc[permission.module]) {
-                  acc[permission.module] = [];
-                }
-                acc[permission.module].push(permission);
-                return acc;
-              }, {} as Record<string, Permission[]>)
-            ).map(([module, permissions]) => {
-              const modulePermissionIds = permissions.map(p => p.id);
-              const allSelected = modulePermissionIds.every(id => formData.permissions.includes(id));
-              
-              return (
-                <ModuleGroup key={module}>
-                  <ModuleHeader>
-                    <ModuleName>{module}</ModuleName>
-                    <SelectAllButton
-                      type="button"
-                      onClick={() => handleSelectAllPermissions(module, !allSelected)}
-                    >
-                      {allSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
-                    </SelectAllButton>
-                  </ModuleHeader>
-                  <PermissionsList>
-                    {permissions.map(permission => (
-                      <PermissionItem key={permission.id}>
-                        <PermissionCheckbox
-                          type="checkbox"
-                          id={permission.id}
-                          checked={formData.permissions.includes(permission.id)}
-                          onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
-                        />
-                        <PermissionInfo>
-                          <PermissionName>{permission.name}</PermissionName>
-                          <PermissionDescription>{permission.description}</PermissionDescription>
-                        </PermissionInfo>
-                      </PermissionItem>
-                    ))}
-                  </PermissionsList>
-                </ModuleGroup>
-              );
-            })}
-          </PermissionsSection>
+          <FormGroup>
+            <Label htmlFor="roleId">
+              Rol del Usuario
+            </Label>
+            <Select
+              id="roleId"
+              name="roleId"
+              value={formData.roleId || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, roleId: e.target.value || null }))}
+              $hasError={!!errors.roleId}
+              disabled={loadingRoles}
+            >
+              <option value="">Sin rol asignado</option>
+              {roles.map(role => (
+                <option key={role.id} value={role.id}>
+                  {role.name} {role.isSystem ? '(Sistema)' : ''}
+                </option>
+              ))}
+            </Select>
+            {errors.roleId && <ErrorText>{errors.roleId}</ErrorText>}
+            {loadingRoles && <ErrorText style={{ color: '#95a5a6' }}>Cargando roles...</ErrorText>}
+            <ErrorText style={{ color: '#7f8c8d', fontSize: '0.85rem' }}>
+              Los permisos del usuario se asignan a través del rol seleccionado
+            </ErrorText>
+          </FormGroup>
 
 
 

@@ -170,7 +170,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
 
   // Función para determinar qué módulo debe estar abierto según la ruta actual
   const getActiveModule = (pathname: string) => {
-    if (pathname.includes('/usuarios')) {
+    if (pathname.includes('/usuarios') || pathname.includes('/roles')) {
       return 'usuarios';
     }
     if (pathname.includes('/auditoria')) {
@@ -190,6 +190,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
     }
     if (pathname.includes('/inventario')) {
       return 'inventario';
+    }
+    if (pathname.includes('/configuracion')) {
+      return 'configuracion';
+    }
+    if (pathname.includes('/reportes')) {
+      return 'reportes';
     }
     return null;
   };
@@ -248,7 +254,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </Link>
           </NavItem>
 
-          <NavItem $isActive={isActive('/usuarios') || isActive('/usuarios/crear')}>
+          <NavItem $isActive={isActive('/usuarios') || isActive('/usuarios/crear') || isActive('/roles')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('usuarios'); }}>
               <i className="fas fa-user-friends"></i>
               <span>Usuarios</span>
@@ -257,6 +263,11 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               <SubMenuItem $isActive={isActive('/usuarios')}>
                 <Link to="/usuarios" onClick={handleItemClick}>
                   <h3>Lista de Usuarios</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/roles')}>
+                <Link to="/roles" onClick={handleItemClick}>
+                  <h3>Roles y Permisos</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>
@@ -284,31 +295,26 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             <SubMenu $isOpen={openMenus.ventas}>
               <SubMenuItem $isActive={isActive('/gestion-caja')}>
                 <Link to="/gestion-caja" onClick={handleItemClick}>
-                  <i className="fas fa-box-open"></i>
                   <h3>Gestión de Caja</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/historial-caja')}>
                 <Link to="/historial-caja" onClick={handleItemClick}>
-                  <i className="fas fa-history"></i>
                   <h3>Historial de Caja</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/realizar')}>
                 <Link to="/ventas/realizar" onClick={handleItemClick}>
-                  <i className="fas fa-shopping-cart"></i>
                   <h3>Realizar Venta</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/lista')}>
                 <Link to="/ventas/lista" onClick={handleItemClick}>
-                  <i className="fas fa-list-alt"></i>
                   <h3>Historial de Ventas</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/cotizaciones')}>
                 <Link to="/ventas/cotizaciones" onClick={handleItemClick}>
-                  <i className="fas fa-file-invoice"></i>
                   <h3>Cotizaciones</h3>
                 </Link>
               </SubMenuItem>
@@ -372,25 +378,64 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/facturacion')}>
-            <Link to="/facturacion" onClick={handleItemClick}>
-              <i className="fas fa-file-invoice"></i>
-              <span>Facturación</span>
-            </Link>
-          </NavItem>
+          
 
-          <NavItem $isActive={isActive('/configuracion')}>
-            <Link to="/configuracion" onClick={handleItemClick}>
+          <NavItem $isActive={isActive('/configuracion/mi-perfil') || isActive('/configuracion/empresa') || isActive('/configuracion/comprobantes') || isActive('/configuracion/metodos-pago')}>
+            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('configuracion'); }}>
               <i className="fas fa-cogs"></i>
               <span>Configuración</span>
-            </Link>
+            </a>
+            <SubMenu $isOpen={openMenus.configuracion}>
+              <SubMenuItem $isActive={isActive('/configuracion/mi-perfil')}>
+                <Link to="/configuracion/mi-perfil" onClick={handleItemClick}>
+                  <h3>Mi Perfil</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/configuracion/empresa')}>
+                <Link to="/configuracion/empresa" onClick={handleItemClick}>
+                  <h3>Empresa</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/configuracion/comprobantes')}>
+                <Link to="/configuracion/comprobantes" onClick={handleItemClick}>
+                  <h3>Comprobantes</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/configuracion/metodos-pago')}>
+                <Link to="/configuracion/metodos-pago" onClick={handleItemClick}>
+                  <h3>Métodos de Pago</h3>
+                </Link>
+              </SubMenuItem>
+            </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/reportes')}>
-            <Link to="/reportes" onClick={handleItemClick}>
+          <NavItem $isActive={isActive('/reportes/ventas') || isActive('/reportes/compras') || isActive('/reportes/inventario') || isActive('/reportes/caja')}>
+            <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('reportes'); }}>
               <i className="fas fa-chart-bar"></i>
               <span>Reportes</span>
-            </Link>
+            </a>
+            <SubMenu $isOpen={openMenus.reportes}>
+              <SubMenuItem $isActive={isActive('/reportes/ventas')}>
+                <Link to="/reportes/ventas" onClick={handleItemClick}>
+                  <h3>Ventas</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/reportes/compras')}>
+                <Link to="/reportes/compras" onClick={handleItemClick}>
+                  <h3>Compras</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/reportes/inventario')}>
+                <Link to="/reportes/inventario" onClick={handleItemClick}>
+                  <h3>Inventario</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/reportes/caja')}>
+                <Link to="/reportes/caja" onClick={handleItemClick}>
+                  <h3>Caja</h3>
+                </Link>
+              </SubMenuItem>
+            </SubMenu>
           </NavItem>
 
           <NavItem $isActive={isActive('/auditoria')}>

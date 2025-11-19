@@ -10,6 +10,7 @@ import NotificationContainer from './components/NotificationContainer';
 import Modal from './components/Modal';
 import LoadingSpinner from './components/LoadingSpinner';
 import { InventoryProvider } from './modules/inventory/context/InventoryContext';
+import { ConfiguracionProvider } from './modules/configuracion/context/ConfiguracionContext';
 import { SalesProvider } from './modules/sales/context/SalesContext';
 import { QuotesProvider } from './modules/sales/context/QuotesContext';
 import { ProductProvider } from './modules/products/context/ProductContext';
@@ -33,12 +34,25 @@ const ListaUsuarios = lazy(() => import('./modules/users/pages/ListaUsuarios'));
 const CrearUsuario = lazy(() => import('./modules/users/pages/CrearUsuario'));
 const EditarUsuario = lazy(() => import('./modules/users/pages/EditarUsuario'));
 const PerfilUsuario = lazy(() => import('./modules/users/pages/PerfilUsuario'));
+const ListaRoles = lazy(() => import('./pages/ListaRoles'));
 const AuditoriaLogs = lazy(() => import('./pages/AuditoriaLogs'));
 const ListaCompras = lazy(() => import('./modules/purchases/pages/ListaCompras'));
 const ListadoStock = lazy(() => import('./modules/inventory/pages/Inventario/ListadoStock'));
 const Kardex = lazy(() => import('./modules/inventory/pages/Inventario/Kardex'));
 const ListaAlmacenes = lazy(() => import('./modules/inventory/pages/Inventario/ListaAlmacenes'));
 const ListaMotivosMovimiento = lazy(() => import('./modules/inventory/pages/Inventario/ListaMotivosMovimiento'));
+
+// Módulo de Configuración
+const ConfiguracionMiPerfil = lazy(() => import('./modules/configuracion/pages/MiPerfil'));
+const ConfiguracionEmpresa = lazy(() => import('./modules/configuracion/pages/Empresa'));
+const ConfiguracionComprobantes = lazy(() => import('./modules/configuracion/pages/Comprobantes'));
+const ConfiguracionMetodosPago = lazy(() => import('./modules/configuracion/pages/MetodosPago'));
+
+// Módulo de Reportes
+const ReportesVentas = lazy(() => import('./modules/reportes/pages/ReporteVentas'));
+const ReportesCompras = lazy(() => import('./modules/reportes/pages/ReporteCompras'));
+const ReportesInventario = lazy(() => import('./modules/reportes/pages/ReporteInventario'));
+const ReportesCaja = lazy(() => import('./modules/reportes/pages/ReporteCaja'));
 
 // Componente interno para manejar el modal
 const AppContent = () => {
@@ -71,6 +85,7 @@ function App() {
                 <SalesProvider>
                   <QuotesProvider>
                     <InventoryProvider>
+                    <ConfiguracionProvider>
                     <Router>
                       <AppContent />
                       <Suspense fallback={<LoadingSpinner />}>
@@ -88,7 +103,7 @@ function App() {
                   <Route 
                     path="/gestion-caja" 
                     element={
-                      <ProtectedRoute requiredPermission="configuration.read">
+                      <ProtectedRoute requiredPermission="cash-sessions.create">
                         <GestionCaja />
                       </ProtectedRoute>
                     } 
@@ -104,7 +119,7 @@ function App() {
                   <Route 
                     path="/lista-entidades" 
                     element={
-                      <ProtectedRoute requiredPermission="commercial_entities.read">
+                      <ProtectedRoute requiredPermission="clients.read">
                         <ListaEntidades />
                       </ProtectedRoute>
                     } 
@@ -120,12 +135,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/editar-entidad/:id" element={
-                    <ProtectedRoute requiredPermission="commercial_entities.update">
+                    <ProtectedRoute requiredPermission="clients.update">
                       <EditarEntidad />
                     </ProtectedRoute>
                   } />
                   <Route path="/registrar-entidad" element={
-                    <ProtectedRoute requiredPermission="commercial_entities.create">
+                    <ProtectedRoute requiredPermission="clients.create">
                       <RegistroEntidad />
                     </ProtectedRoute>
                   } />
@@ -164,13 +179,18 @@ function App() {
                       <EditarUsuario />
                     </ProtectedRoute>
                   } />
+                  <Route path="/roles" element={
+                    <ProtectedRoute requiredPermission="users.read">
+                      <ListaRoles />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/perfil" element={
                     <ProtectedRoute>
                       <PerfilUsuario />
                     </ProtectedRoute>
                   } />
                   <Route path="/auditoria" element={
-                    <ProtectedRoute requiredPermission="reports.users">
+                    <ProtectedRoute requiredPermission="system.settings">
                       <AuditoriaLogs />
                     </ProtectedRoute>
                   } />
@@ -201,9 +221,54 @@ function App() {
                       <ListaMotivosMovimiento />
                     </ProtectedRoute>
                   } />
+
+                  {/* Módulo de Configuración */}
+                  <Route path="/configuracion/mi-perfil" element={
+                    <ProtectedRoute>
+                      <ConfiguracionMiPerfil />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/configuracion/empresa" element={
+                    <ProtectedRoute requiredPermission="system.settings">
+                      <ConfiguracionEmpresa />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/configuracion/comprobantes" element={
+                    <ProtectedRoute requiredPermission="system.settings">
+                      <ConfiguracionComprobantes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/configuracion/metodos-pago" element={
+                    <ProtectedRoute requiredPermission="system.settings">
+                      <ConfiguracionMetodosPago />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Módulo de Reportes */}
+                  <Route path="/reportes/ventas" element={
+                    <ProtectedRoute requiredPermission="reports.sales">
+                      <ReportesVentas />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/reportes/compras" element={
+                    <ProtectedRoute requiredPermission="reports.inventory">
+                      <ReportesCompras />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/reportes/inventario" element={
+                    <ProtectedRoute requiredPermission="reports.inventory">
+                      <ReportesInventario />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/reportes/caja" element={
+                    <ProtectedRoute requiredPermission="reports.financial">
+                      <ReportesCaja />
+                    </ProtectedRoute>
+                  } />
                 </Routes>
                 </Suspense>
               </Router>
+            </ConfiguracionProvider>
             </InventoryProvider>
           </QuotesProvider>
         </SalesProvider>

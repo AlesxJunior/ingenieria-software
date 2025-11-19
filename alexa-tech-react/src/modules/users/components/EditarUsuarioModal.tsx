@@ -78,24 +78,30 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
   },
   
   
-  // MÓDULO: ENTIDADES COMERCIALES
+  // MÓDULO: CLIENTES
   {
-    id: 'commercial_entities.create',
-    name: 'Crear Entidades Comerciales',
-    description: 'Registrar nuevas entidades comerciales en el sistema',
-    module: 'ENTIDADES COMERCIALES'
+    id: 'clients.create',
+    name: 'Crear Clientes',
+    description: 'Registrar nuevos clientes en el sistema',
+    module: 'CLIENTES'
   },
   {
-    id: 'commercial_entities.read',
-    name: 'Ver Entidades Comerciales',
-    description: 'Ver la lista de entidades comerciales del sistema',
-    module: 'ENTIDADES COMERCIALES'
+    id: 'clients.read',
+    name: 'Ver Clientes',
+    description: 'Ver la lista de clientes del sistema',
+    module: 'CLIENTES'
   },
   {
-    id: 'commercial_entities.update',
-    name: 'Actualizar Entidades Comerciales',
-    description: 'Modificar información de entidades comerciales',
-    module: 'ENTIDADES COMERCIALES'
+    id: 'clients.update',
+    name: 'Actualizar Clientes',
+    description: 'Modificar información de clientes',
+    module: 'CLIENTES'
+  },
+  {
+    id: 'clients.delete',
+    name: 'Eliminar Clientes',
+    description: 'Eliminar clientes del sistema',
+    module: 'CLIENTES'
   },
   
   // MÓDULO: VENTAS
@@ -218,15 +224,9 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
   
   // MÓDULO: CONFIGURACIÓN
   {
-    id: 'configuration.read',
-    name: 'Ver Configuración',
-    description: 'Acceder a la configuración del sistema',
-    module: 'CONFIGURACIÓN'
-  },
-  {
-    id: 'configuration.update',
-    name: 'Actualizar Configuración',
-    description: 'Modificar configuraciones del sistema',
+    id: 'system.settings',
+    name: 'Configuración del Sistema',
+    description: 'Acceder y modificar configuraciones del sistema',
     module: 'CONFIGURACIÓN'
   },
   
@@ -235,12 +235,6 @@ const AVAILABLE_PERMISSIONS: Permission[] = [
     id: 'reports.sales',
     name: 'Reportes de Ventas',
     description: 'Generar y ver reportes de ventas',
-    module: 'REPORTES'
-  },
-  {
-    id: 'reports.users',
-    name: 'Reportes de Usuarios',
-    description: 'Generar y ver reportes de usuarios',
     module: 'REPORTES'
   },
   {
