@@ -239,31 +239,80 @@ const ReporteInventario: React.FC = () => {
   const handleExportar = () => {
     if (!reporteData) return;
 
+    const fecha = new Date().toLocaleDateString('es-PE');
+    const hora = new Date().toLocaleTimeString('es-PE');
+    
     const csvLines = [
-      'REPORTE DE INVENTARIO',
+      '=================================================================',
+      '                  REPORTE DE INVENTARIO                          ',
+      '=================================================================',
+      `Fecha de Generación:,${fecha},${hora}`,
+      `Almacén Filtrado:,${almacenId || 'Todos los almacenes'}`,
       '',
-      'RESUMEN',
-      `Valor Total Inventario,${formatCurrency(reporteData.valorTotalInventario)}`,
+      '=================================================================',
+      '                    RESUMEN GENERAL                              ',
+      '=================================================================',
+      'Indicador,Valor',
+      `Valor Total del Inventario,${formatCurrency(reporteData.valorTotalInventario)}`,
+      `Total de Almacenes,${(reporteData.stockPorAlmacen || []).length}`,
+      `Productos en Alerta,${(reporteData.productosEnAlerta || []).length}`,
       '',
-      'STOCK POR ALMACEN',
-      'Almacén,Cantidad Total,Valor Total',
-      ...reporteData.stockPorAlmacen.map((a: any) =>
-        `${a.almacen},${a._sum.cantidad},${formatCurrency(a._sum.valor)}`
+      '=================================================================',
+      '                  STOCK POR ALMACÉN                              ',
+      '=================================================================',
+      'Almacén,Cantidad Total de Productos,Valor Total del Stock',
+      ...(reporteData.stockPorAlmacen || []).map((a: any) =>
+        `${a.almacen || 'Sin nombre'},${a._sum?.cantidad || 0},${formatCurrency(a._sum?.valor)}`
       ),
       '',
-      'PRODUCTOS MAS ROTACION',
-      'Producto,Cantidad Movimientos',
-      ...reporteData.productosMasRotacion.map((p: any) =>
-        `${p.nombreProducto},${p.cantidadMovimientos}`
-      )
+      '=================================================================',
+      '               VALOR POR CATEGORÍA                               ',
+      '=================================================================',
+      'Categoría,Valor Total,Participación %',
+      ...(reporteData.valorPorCategoria || []).map((c: any) => {
+        const porcentaje = reporteData.valorTotalInventario > 0 
+          ? (c.valorTotal / reporteData.valorTotalInventario * 100).toFixed(2)
+          : '0.00';
+        return `${c.categoria || 'Sin categoría'},${formatCurrency(c.valorTotal)},${porcentaje}%`;
+      }),
+      '',
+      '=================================================================',
+      '          PRODUCTOS CON MAYOR ROTACIÓN                          ',
+      '=================================================================',
+      'Ranking,Producto,Cantidad de Movimientos',
+      ...(reporteData.productosMasRotacion || []).map((p: any, idx: number) =>
+        `#${idx + 1},${p.nombreProducto || 'Sin nombre'},${p.cantidadMovimientos || 0}`
+      ),
+      '',
     ];
 
-    const csvContent = csvLines.join('\n');
+    // Agregar productos en alerta si existen
+    if ((reporteData.productosEnAlerta || []).length > 0) {
+      csvLines.push(
+        '=================================================================',
+        '          ⚠️ PRODUCTOS EN ALERTA (STOCK BAJO) ⚠️                ',
+        '=================================================================',
+        'Producto,Stock Actual,Stock Mínimo Requerido,Diferencia',
+        ...(reporteData.productosEnAlerta || []).map((p: any) => {
+          const diferencia = (p.stockMinimo || 0) - (p.stockActual || 0);
+          return `${p.nombreProducto || 'Sin nombre'},${p.stockActual || 0},${p.stockMinimo || 0},${diferencia}`;
+        }),
+        ''
+      );
+    }
+
+    csvLines.push(
+      '=================================================================',
+      `Reporte generado por: Sistema de Gestión AlexaTech`,
+      '================================================================='
+    );
+
+    const csvContent = '\uFEFF' + csvLines.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_inventario_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Reporte_Inventario_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };

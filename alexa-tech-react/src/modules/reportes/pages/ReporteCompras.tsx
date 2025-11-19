@@ -244,28 +244,60 @@ const ReporteCompras: React.FC = () => {
   const handleExportar = () => {
     if (!reporteData) return;
 
+    const fecha = new Date().toLocaleDateString('es-PE');
+    const hora = new Date().toLocaleTimeString('es-PE');
+    
     const csvLines = [
-      'REPORTE DE COMPRAS',
-      `Período: ${fechaInicio || 'Inicio'} a ${fechaFin || 'Hoy'}`,
+      '=================================================================',
+      '                    REPORTE DE COMPRAS                           ',
+      '=================================================================',
+      `Fecha de Generación:,${fecha},${hora}`,
+      `Período Analizado:,${fechaInicio || 'Inicio'} al ${fechaFin || 'Hoy'}`,
       '',
-      'RESUMEN',
-      `Total Compras,${formatCurrency(reporteData.resumen.totalCompras)}`,
-      `Cantidad Compras,${reporteData.resumen.cantidadCompras}`,
-      `Compra Promedio,${formatCurrency(reporteData.resumen.compraPromedio)}`,
+      '=================================================================',
+      '                    RESUMEN GENERAL                              ',
+      '=================================================================',
+      'Indicador,Valor',
+      `Total de Compras,${formatCurrency(reporteData.resumen?.totalCompras)}`,
+      `Cantidad de Compras,${reporteData.resumen?.cantidadCompras || 0}`,
+      `Compra Promedio,${formatCurrency(reporteData.resumen?.compraPromedio)}`,
+      `Compra Máxima,${formatCurrency(reporteData.resumen?.compraMayor)}`,
       '',
-      'TOP 10 PRODUCTOS COMPRADOS',
-      'Producto,Cantidad,Total',
-      ...reporteData.topProductosComprados.map((p: any) =>
-        `${p.nombreProducto},${p.cantidadComprada},${formatCurrency(p.totalComprado)}`
-      )
+      '=================================================================',
+      '                   COMPRAS POR DÍA                               ',
+      '=================================================================',
+      'Fecha,Cantidad de Compras,Total del Día',
+      ...(reporteData.comprasPorDia || []).map((c: any) => 
+        `${new Date(c.fecha).toLocaleDateString('es-PE')},${c.cantidad || 0},${formatCurrency(c.total)}`
+      ),
+      '',
+      '=================================================================',
+      '                 COMPRAS POR PROVEEDOR                           ',
+      '=================================================================',
+      'Proveedor,Cantidad de Compras,Total Comprado',
+      ...(reporteData.comprasPorProveedor || []).map((p: any) => 
+        `${p.nombreProveedor || 'Sin nombre'},${p.cantidadCompras || 0},${formatCurrency(p.totalCompras)}`
+      ),
+      '',
+      '=================================================================',
+      '            TOP 10 PRODUCTOS MÁS COMPRADOS                      ',
+      '=================================================================',
+      'Ranking,Producto,Cantidad Comprada,Total Invertido',
+      ...(reporteData.topProductosComprados || []).map((p: any, idx: number) =>
+        `#${idx + 1},${p.nombreProducto || 'Sin nombre'},${p.cantidadComprada || 0},${formatCurrency(p.totalComprado)}`
+      ),
+      '',
+      '=================================================================',
+      `Reporte generado por: Sistema de Gestión AlexaTech`,
+      '================================================================='
     ];
 
-    const csvContent = csvLines.join('\n');
+    const csvContent = '\uFEFF' + csvLines.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_compras_${fechaInicio || 'inicio'}_${fechaFin || 'fin'}.csv`;
+    a.download = `Reporte_Compras_${fechaInicio || 'completo'}_${fechaFin || new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };

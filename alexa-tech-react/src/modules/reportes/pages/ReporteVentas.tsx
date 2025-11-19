@@ -226,30 +226,77 @@ const ReporteVentas: React.FC = () => {
   const handleExportar = () => {
     if (!reporteData) return;
 
+    const fecha = new Date().toLocaleDateString('es-PE');
+    const hora = new Date().toLocaleTimeString('es-PE');
+    
     const csvLines = [
-      'REPORTE DE VENTAS',
-      `Período: ${fechaInicio} a ${fechaFin}`,
+      '=================================================================',
+      '                    REPORTE DE VENTAS                           ',
+      '=================================================================',
+      `Fecha de Generación:,${fecha},${hora}`,
+      `Período Analizado:,${fechaInicio || 'Inicio'} al ${fechaFin || 'Hoy'}`,
       '',
-      'RESUMEN',
-      `Total Ventas,${formatCurrency(reporteData.resumen.totalVentas)}`,
-      `Cantidad Ventas,${reporteData.resumen.cantidadVentas}`,
+      '=================================================================',
+      '                    RESUMEN GENERAL                              ',
+      '=================================================================',
+      'Indicador,Valor',
+      `Total de Ventas,${formatCurrency(reporteData.resumen.totalVentas)}`,
+      `Cantidad de Ventas,${reporteData.resumen.cantidadVentas}`,
       `Ticket Promedio,${formatCurrency(reporteData.resumen.ticketPromedio)}`,
-      `Venta Mayor,${formatCurrency(reporteData.resumen.ventasMayor)}`,
-      `Venta Menor,${formatCurrency(reporteData.resumen.ventasMenor)}`,
+      `Venta Máxima,${formatCurrency(reporteData.resumen.ventasMayor)}`,
+      `Venta Mínima,${formatCurrency(reporteData.resumen.ventasMenor)}`,
       '',
-      'TOP 10 PRODUCTOS',
-      'Producto,Cantidad,Total',
-      ...reporteData.topProductos.map((p: any) => 
-        `${p.nombreProducto},${p.cantidadVendida},${formatCurrency(p.totalVendido)}`
-      )
+      '=================================================================',
+      '              DISTRIBUCIÓN POR MÉTODO DE PAGO                   ',
+      '=================================================================',
+      'Método de Pago,Cantidad,Monto Total,Porcentaje',
+      ...reporteData.ventasPorMetodoPago.map((m: any) => 
+        `${m.metodoPago},${m.cantidad},${formatCurrency(m.total)},${m.porcentaje.toFixed(2)}%`
+      ),
+      '',
+      '=================================================================',
+      '                   VENTAS POR DÍA                                ',
+      '=================================================================',
+      'Fecha,Cantidad de Ventas,Total del Día',
+      ...reporteData.ventasPorDia.map((v: any) => 
+        `${formatDMY(v.fecha)},${v.cantidad},${formatCurrency(v.total)}`
+      ),
+      '',
+      '=================================================================',
+      '            TOP 10 PRODUCTOS MÁS VENDIDOS                       ',
+      '=================================================================',
+      'Ranking,Producto,Cantidad Vendida,Total Vendido',
+      ...reporteData.topProductos.map((p: any, idx: number) => 
+        `#${idx + 1},${p.nombreProducto},${p.cantidadVendida},${formatCurrency(p.totalVendido)}`
+      ),
+      '',
+      '=================================================================',
+      '                  TOP 10 MEJORES CLIENTES                        ',
+      '=================================================================',
+      'Ranking,Cliente,Cantidad de Compras,Total Gastado',
+      ...reporteData.topClientes.map((c: any, idx: number) => 
+        `#${idx + 1},${c.nombreCliente},${c.cantidadCompras},${formatCurrency(c.totalCompras)}`
+      ),
+      '',
+      '=================================================================',
+      '                 VENTAS POR VENDEDOR                             ',
+      '=================================================================',
+      'Vendedor,Cantidad de Ventas,Total Vendido',
+      ...reporteData.ventasPorVendedor.map((v: any) => 
+        `${v.nombreVendedor},${v.cantidadVentas},${formatCurrency(v.totalVentas)}`
+      ),
+      '',
+      '=================================================================',
+      `Reporte generado por: Sistema de Gestión AlexaTech`,
+      '================================================================='
     ];
 
-    const csvContent = csvLines.join('\n');
+    const csvContent = '\uFEFF' + csvLines.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_ventas_${fechaInicio}_${fechaFin}.csv`;
+    a.download = `Reporte_Ventas_${fechaInicio || 'completo'}_${fechaFin || new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
