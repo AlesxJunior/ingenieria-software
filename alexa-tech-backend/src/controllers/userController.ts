@@ -71,6 +71,8 @@ export class UserController {
               isActive: user.isActive,
               lastAccess: user.lastAccess,
               permissions: user.permissions || [],
+              roleId: user.roleId,
+              role: user.role,
               createdAt: user.createdAt,
               updatedAt: user.updatedAt,
             })),

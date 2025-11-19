@@ -2,6 +2,7 @@ import { Router } from 'express';
 // Importar módulos migrados
 import { authRoutes } from '../modules/auth';
 import { usersRoutes } from '../modules/users';
+import rolesRoutes from '../modules/roles/routes';
 import { productsRoutes } from '../modules/products';
 import { inventoryRoutes } from '../modules/inventory';
 import { purchasesRoutes } from '../modules/purchases';
@@ -10,6 +11,8 @@ import { warehousesRoutes } from '../modules/warehouses';
 import salesRoutes from '../modules/sales/sales.routes';
 import cashRegisterRoutes from '../modules/sales/cash-register.routes';
 import cashSessionRoutes from '../modules/sales/cash-session.routes';
+import configuracionRoutes from '../modules/configuracion/configuracion.routes';
+import reportesRoutes from '../modules/reportes/reportes.routes';
 // Rutas que aún no se han migrado a módulos
 import auditRoutes from './auditRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
@@ -29,6 +32,9 @@ router.use('/auth', authRoutes);
 
 // Rutas de usuarios
 router.use('/users', usersRoutes);
+
+// Rutas de roles (gestión de roles y permisos)
+router.use('/roles', rolesRoutes);
 
 // Rutas de entidades comerciales (clientes y proveedores)
 router.use('/entidades', clientsRoutes);
@@ -77,6 +83,14 @@ router.use('/cotizaciones', quoteRoutes); // Alias en español
 router.use('/credit-notes', creditNoteRoutes);
 router.use('/notas-credito', creditNoteRoutes); // Alias en español
 
+// Rutas de configuración
+router.use('/configuracion', configuracionRoutes);
+
+// Rutas de reportes
+router.use('/reportes', reportesRoutes);
+// Alias en inglés para compatibilidad Frontend
+router.use('/reports', reportesRoutes);
+
 // ==========================================
 // RUTAS PENDIENTES DE MIGRACIÓN
 // ==========================================
@@ -117,6 +131,7 @@ router.get('/', (req, res) => {
       endpoints: {
         auth: '/api/auth',
         users: '/api/users',
+        roles: '/api/roles',
         entidades: '/api/entidades',
         productos: '/api/productos',
         compras: '/api/compras',
@@ -134,6 +149,9 @@ router.get('/', (req, res) => {
         cotizaciones: '/api/cotizaciones',
         creditNotes: '/api/credit-notes',
         notasCredito: '/api/notas-credito',
+        configuracion: '/api/configuracion',
+        reportes: '/api/reportes',
+        reports: '/api/reports',
         warehouses: '/api/warehouses',
         almacenes: '/api/almacenes',
         movementReasons: '/api/movement-reasons',
