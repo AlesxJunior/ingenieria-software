@@ -3,7 +3,10 @@ import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { apiService } from '../../../utils/api';
 
-const formatCurrency = (num: number) => `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatCurrency = (num: number | undefined) => {
+  if (num === undefined || num === null || isNaN(num)) return 'S/ 0.00';
+  return `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const Container = styled.div`
   padding: 2rem;
@@ -275,11 +278,11 @@ const ReporteInventario: React.FC = () => {
               </SummaryCard>
               <SummaryCard>
                 <CardTitle>Total Almacenes</CardTitle>
-                <CardValue>{reporteData.stockPorAlmacen.length}</CardValue>
+                <CardValue>{(reporteData.stockPorAlmacen || []).length}</CardValue>
               </SummaryCard>
               <SummaryCard>
                 <CardTitle>Productos en Alerta</CardTitle>
-                <CardValue>{reporteData.productosEnAlerta.length}</CardValue>
+                <CardValue>{(reporteData.productosEnAlerta || []).length}</CardValue>
               </SummaryCard>
             </SummaryCards>
 
@@ -295,11 +298,11 @@ const ReporteInventario: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reporteData.stockPorAlmacen.map((a: any, idx: number) => (
+                    {(reporteData.stockPorAlmacen || []).map((a: any, idx: number) => (
                       <tr key={idx}>
-                        <Td>{a.almacen}</Td>
-                        <Td>{a._sum.cantidad}</Td>
-                        <Td>{formatCurrency(a._sum.valor)}</Td>
+                        <Td>{a.almacen || 'Sin nombre'}</Td>
+                        <Td>{a._sum?.cantidad || 0}</Td>
+                        <Td>{formatCurrency(a._sum?.valor)}</Td>
                       </tr>
                     ))}
                   </tbody>
@@ -318,10 +321,10 @@ const ReporteInventario: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reporteData.productosMasRotacion.map((p: any, idx: number) => (
+                    {(reporteData.productosMasRotacion || []).map((p: any, idx: number) => (
                       <tr key={idx}>
-                        <Td>{p.nombreProducto}</Td>
-                        <Td>{p.cantidadMovimientos}</Td>
+                        <Td>{p.nombreProducto || 'Sin nombre'}</Td>
+                        <Td>{p.cantidadMovimientos || 0}</Td>
                       </tr>
                     ))}
                   </tbody>
@@ -340,9 +343,9 @@ const ReporteInventario: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reporteData.valorPorCategoria.map((c: any, idx: number) => (
+                    {(reporteData.valorPorCategoria || []).map((c: any, idx: number) => (
                       <tr key={idx}>
-                        <Td>{c.categoria}</Td>
+                        <Td>{c.categoria || 'Sin categoría'}</Td>
                         <Td>{formatCurrency(c.valorTotal)}</Td>
                       </tr>
                     ))}
@@ -351,7 +354,7 @@ const ReporteInventario: React.FC = () => {
               </TableContainer>
             </Section>
 
-            {reporteData.productosEnAlerta.length > 0 && (
+            {(reporteData.productosEnAlerta || []).length > 0 && (
               <Section>
                 <SectionTitle>⚠️ Productos en Alerta (Stock Bajo)</SectionTitle>
                 <TableContainer>
@@ -364,11 +367,11 @@ const ReporteInventario: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {reporteData.productosEnAlerta.map((p: any, idx: number) => (
+                      {(reporteData.productosEnAlerta || []).map((p: any, idx: number) => (
                         <tr key={idx}>
-                          <Td>{p.nombreProducto}</Td>
-                          <Td style={{ color: '#DC2626', fontWeight: 600 }}>{p.stockActual}</Td>
-                          <Td>{p.stockMinimo}</Td>
+                          <Td>{p.nombreProducto || 'Sin nombre'}</Td>
+                          <Td style={{ color: '#DC2626', fontWeight: 600 }}>{p.stockActual || 0}</Td>
+                          <Td>{p.stockMinimo || 0}</Td>
                         </tr>
                       ))}
                     </tbody>

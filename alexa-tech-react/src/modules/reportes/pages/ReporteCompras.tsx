@@ -3,7 +3,10 @@ import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { apiService } from '../../../utils/api';
 
-const formatCurrency = (num: number) => `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const formatCurrency = (num: number | undefined) => {
+  if (num === undefined || num === null || isNaN(num)) return 'S/ 0.00';
+  return `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const formatDateInput = (d: Date) => d.toISOString().slice(0, 10);
 const formatDMY = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -279,19 +282,19 @@ const ReporteCompras: React.FC = () => {
             <SummaryCards>
               <SummaryCard>
                 <CardTitle>Total Compras</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen.totalCompras)}</CardValue>
+                <CardValue>{formatCurrency(reporteData.resumen?.totalCompras)}</CardValue>
               </SummaryCard>
               <SummaryCard>
                 <CardTitle>Cantidad de Compras</CardTitle>
-                <CardValue>{reporteData.resumen.cantidadCompras}</CardValue>
+                <CardValue>{reporteData.resumen?.cantidadCompras || 0}</CardValue>
               </SummaryCard>
               <SummaryCard>
                 <CardTitle>Compra Promedio</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen.compraPromedio)}</CardValue>
+                <CardValue>{formatCurrency(reporteData.resumen?.compraPromedio)}</CardValue>
               </SummaryCard>
               <SummaryCard>
                 <CardTitle>Compra Máxima</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen.compraMayor)}</CardValue>
+                <CardValue>{formatCurrency(reporteData.resumen?.compraMayor)}</CardValue>
               </SummaryCard>
             </SummaryCards>
 
@@ -307,10 +310,10 @@ const ReporteCompras: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reporteData.comprasPorDia.map((c: any, idx: number) => (
+                    {(reporteData.comprasPorDia || []).map((c: any, idx: number) => (
                       <tr key={idx}>
                         <Td>{new Date(c.fecha).toLocaleDateString('es-PE')}</Td>
-                        <Td>{c.cantidad}</Td>
+                        <Td>{c.cantidad || 0}</Td>
                         <Td>{formatCurrency(c.total)}</Td>
                       </tr>
                     ))}
@@ -331,10 +334,10 @@ const ReporteCompras: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reporteData.comprasPorProveedor.map((p: any, idx: number) => (
+                    {(reporteData.comprasPorProveedor || []).map((p: any, idx: number) => (
                       <tr key={idx}>
-                        <Td>{p.nombreProveedor}</Td>
-                        <Td>{p.cantidadCompras}</Td>
+                        <Td>{p.nombreProveedor || 'Sin nombre'}</Td>
+                        <Td>{p.cantidadCompras || 0}</Td>
                         <Td>{formatCurrency(p.totalCompras)}</Td>
                       </tr>
                     ))}
@@ -355,10 +358,10 @@ const ReporteCompras: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {reporteData.topProductosComprados.map((p: any, idx: number) => (
+                    {(reporteData.topProductosComprados || []).map((p: any, idx: number) => (
                       <tr key={idx}>
-                        <Td>{p.nombreProducto}</Td>
-                        <Td>{p.cantidadComprada}</Td>
+                        <Td>{p.nombreProducto || 'Sin nombre'}</Td>
+                        <Td>{p.cantidadComprada || 0}</Td>
                         <Td>{formatCurrency(p.totalComprado)}</Td>
                       </tr>
                     ))}
