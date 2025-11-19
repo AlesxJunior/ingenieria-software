@@ -233,57 +233,57 @@ const ReporteVentas: React.FC = () => {
       '=================================================================',
       '                    REPORTE DE VENTAS                           ',
       '=================================================================',
-      `Fecha de Generación:,${fecha},${hora}`,
-      `Período Analizado:,${fechaInicio || 'Inicio'} al ${fechaFin || 'Hoy'}`,
+      `Fecha de Generación:\t${fecha}\t${hora}`,
+      `Período Analizado:\t${fechaInicio || 'Todas las fechas'}\tal\t${fechaFin || 'Hoy'}`,
       '',
       '=================================================================',
       '                    RESUMEN GENERAL                              ',
       '=================================================================',
-      'Indicador,Valor',
-      `Total de Ventas,${formatCurrency(reporteData.resumen.totalVentas)}`,
-      `Cantidad de Ventas,${reporteData.resumen.cantidadVentas}`,
-      `Ticket Promedio,${formatCurrency(reporteData.resumen.ticketPromedio)}`,
-      `Venta Máxima,${formatCurrency(reporteData.resumen.ventasMayor)}`,
-      `Venta Mínima,${formatCurrency(reporteData.resumen.ventasMenor)}`,
+      'Indicador\tValor',
+      `Total de Ventas\t${formatCurrency(reporteData.resumen.totalVentas)}`,
+      `Cantidad de Ventas\t${reporteData.resumen.cantidadVentas}`,
+      `Ticket Promedio\t${formatCurrency(reporteData.resumen.ticketPromedio)}`,
+      `Venta Máxima\t${formatCurrency(reporteData.resumen.ventasMayor)}`,
+      `Venta Mínima\t${formatCurrency(reporteData.resumen.ventasMenor)}`,
       '',
       '=================================================================',
       '              DISTRIBUCIÓN POR MÉTODO DE PAGO                   ',
       '=================================================================',
-      'Método de Pago,Cantidad,Monto Total,Porcentaje',
+      'Método de Pago\tCantidad\tMonto Total\tPorcentaje',
       ...reporteData.ventasPorMetodoPago.map((m: any) => 
-        `${m.metodoPago},${m.cantidad},${formatCurrency(m.total)},${m.porcentaje.toFixed(2)}%`
+        `${m.metodoPago}\t${m.cantidad}\t${formatCurrency(m.total)}\t${m.porcentaje.toFixed(2)}%`
       ),
       '',
       '=================================================================',
       '                   VENTAS POR DÍA                                ',
       '=================================================================',
-      'Fecha,Cantidad de Ventas,Total del Día',
+      'Fecha\tCantidad de Ventas\tTotal del Día',
       ...reporteData.ventasPorDia.map((v: any) => 
-        `${formatDMY(v.fecha)},${v.cantidad},${formatCurrency(v.total)}`
+        `${formatDMY(v.fecha)}\t${v.cantidad}\t${formatCurrency(v.total)}`
       ),
       '',
       '=================================================================',
       '            TOP 10 PRODUCTOS MÁS VENDIDOS                       ',
       '=================================================================',
-      'Ranking,Producto,Cantidad Vendida,Total Vendido',
+      'Ranking\tProducto\tCantidad Vendida\tTotal Vendido',
       ...reporteData.topProductos.map((p: any, idx: number) => 
-        `#${idx + 1},${p.nombreProducto},${p.cantidadVendida},${formatCurrency(p.totalVendido)}`
+        `#${idx + 1}\t${p.nombreProducto}\t${p.cantidadVendida}\t${formatCurrency(p.totalVendido)}`
       ),
       '',
       '=================================================================',
       '                  TOP 10 MEJORES CLIENTES                        ',
       '=================================================================',
-      'Ranking,Cliente,Cantidad de Compras,Total Gastado',
+      'Ranking\tCliente\tCantidad de Compras\tTotal Gastado',
       ...reporteData.topClientes.map((c: any, idx: number) => 
-        `#${idx + 1},${c.nombreCliente},${c.cantidadCompras},${formatCurrency(c.totalCompras)}`
+        `#${idx + 1}\t${c.nombreCliente}\t${c.cantidadCompras}\t${formatCurrency(c.totalCompras)}`
       ),
       '',
       '=================================================================',
       '                 VENTAS POR VENDEDOR                             ',
       '=================================================================',
-      'Vendedor,Cantidad de Ventas,Total Vendido',
+      'Vendedor\tCantidad de Ventas\tTotal Vendido',
       ...reporteData.ventasPorVendedor.map((v: any) => 
-        `${v.nombreVendedor},${v.cantidadVentas},${formatCurrency(v.totalVentas)}`
+        `${v.nombreVendedor}\t${v.cantidadVentas}\t${formatCurrency(v.totalVentas)}`
       ),
       '',
       '=================================================================',

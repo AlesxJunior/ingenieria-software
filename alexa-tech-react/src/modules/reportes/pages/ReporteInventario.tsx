@@ -246,42 +246,42 @@ const ReporteInventario: React.FC = () => {
       '=================================================================',
       '                  REPORTE DE INVENTARIO                          ',
       '=================================================================',
-      `Fecha de Generación:,${fecha},${hora}`,
-      `Almacén Filtrado:,${almacenId || 'Todos los almacenes'}`,
+      `Fecha de Generación:\t${fecha}\t${hora}`,
+      `Almacén Filtrado:\t${almacenId || 'Todos los almacenes'}`,
       '',
       '=================================================================',
       '                    RESUMEN GENERAL                              ',
       '=================================================================',
-      'Indicador,Valor',
-      `Valor Total del Inventario,${formatCurrency(reporteData.valorTotalInventario)}`,
-      `Total de Almacenes,${(reporteData.stockPorAlmacen || []).length}`,
-      `Productos en Alerta,${(reporteData.productosEnAlerta || []).length}`,
+      'Indicador\tValor',
+      `Valor Total del Inventario\t${formatCurrency(reporteData.valorTotalInventario)}`,
+      `Total de Almacenes\t${(reporteData.stockPorAlmacen || []).length}`,
+      `Productos en Alerta\t${(reporteData.productosEnAlerta || []).length}`,
       '',
       '=================================================================',
       '                  STOCK POR ALMACÉN                              ',
       '=================================================================',
-      'Almacén,Cantidad Total de Productos,Valor Total del Stock',
+      'Almacén\tCantidad Total de Productos\tValor Total del Stock',
       ...(reporteData.stockPorAlmacen || []).map((a: any) =>
-        `${a.almacen || 'Sin nombre'},${a._sum?.cantidad || 0},${formatCurrency(a._sum?.valor)}`
+        `${a.almacen || 'Sin nombre'}\t${a._sum?.cantidad || 0}\t${formatCurrency(a._sum?.valor)}`
       ),
       '',
       '=================================================================',
       '               VALOR POR CATEGORÍA                               ',
       '=================================================================',
-      'Categoría,Valor Total,Participación %',
+      'Categoría\tValor Total\tParticipación %',
       ...(reporteData.valorPorCategoria || []).map((c: any) => {
         const porcentaje = reporteData.valorTotalInventario > 0 
           ? (c.valorTotal / reporteData.valorTotalInventario * 100).toFixed(2)
           : '0.00';
-        return `${c.categoria || 'Sin categoría'},${formatCurrency(c.valorTotal)},${porcentaje}%`;
+        return `${c.categoria || 'Sin categoría'}\t${formatCurrency(c.valorTotal)}\t${porcentaje}%`;
       }),
       '',
       '=================================================================',
       '          PRODUCTOS CON MAYOR ROTACIÓN                          ',
       '=================================================================',
-      'Ranking,Producto,Cantidad de Movimientos',
+      'Ranking\tProducto\tCantidad de Movimientos',
       ...(reporteData.productosMasRotacion || []).map((p: any, idx: number) =>
-        `#${idx + 1},${p.nombreProducto || 'Sin nombre'},${p.cantidadMovimientos || 0}`
+        `#${idx + 1}\t${p.nombreProducto || 'Sin nombre'}\t${p.cantidadMovimientos || 0}`
       ),
       '',
     ];
@@ -292,10 +292,10 @@ const ReporteInventario: React.FC = () => {
         '=================================================================',
         '          ⚠️ PRODUCTOS EN ALERTA (STOCK BAJO) ⚠️                ',
         '=================================================================',
-        'Producto,Stock Actual,Stock Mínimo Requerido,Diferencia',
+        'Producto\tStock Actual\tStock Mínimo Requerido\tDiferencia',
         ...(reporteData.productosEnAlerta || []).map((p: any) => {
           const diferencia = (p.stockMinimo || 0) - (p.stockActual || 0);
-          return `${p.nombreProducto || 'Sin nombre'},${p.stockActual || 0},${p.stockMinimo || 0},${diferencia}`;
+          return `${p.nombreProducto || 'Sin nombre'}\t${p.stockActual || 0}\t${p.stockMinimo || 0}\t${diferencia}`;
         }),
         ''
       );
@@ -312,7 +312,7 @@ const ReporteInventario: React.FC = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Reporte_Inventario_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Reporte_Inventario_${almacenId ? 'Almacen_' + almacenId : 'Todos'}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };

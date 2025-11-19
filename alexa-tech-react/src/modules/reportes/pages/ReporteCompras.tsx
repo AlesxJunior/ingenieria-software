@@ -251,40 +251,40 @@ const ReporteCompras: React.FC = () => {
       '=================================================================',
       '                    REPORTE DE COMPRAS                           ',
       '=================================================================',
-      `Fecha de Generación:,${fecha},${hora}`,
-      `Período Analizado:,${fechaInicio || 'Inicio'} al ${fechaFin || 'Hoy'}`,
+      `Fecha de Generación:\t${fecha}\t${hora}`,
+      `Período Analizado:\t${fechaInicio || 'Todas las fechas'}\tal\t${fechaFin || 'Hoy'}`,
       '',
       '=================================================================',
       '                    RESUMEN GENERAL                              ',
       '=================================================================',
-      'Indicador,Valor',
-      `Total de Compras,${formatCurrency(reporteData.resumen?.totalCompras)}`,
-      `Cantidad de Compras,${reporteData.resumen?.cantidadCompras || 0}`,
-      `Compra Promedio,${formatCurrency(reporteData.resumen?.compraPromedio)}`,
-      `Compra Máxima,${formatCurrency(reporteData.resumen?.compraMayor)}`,
+      'Indicador\tValor',
+      `Total de Compras\t${formatCurrency(reporteData.resumen?.totalCompras)}`,
+      `Cantidad de Compras\t${reporteData.resumen?.cantidadCompras || 0}`,
+      `Compra Promedio\t${formatCurrency(reporteData.resumen?.compraPromedio)}`,
+      `Compra Máxima\t${formatCurrency(reporteData.resumen?.compraMayor)}`,
       '',
       '=================================================================',
       '                   COMPRAS POR DÍA                               ',
       '=================================================================',
-      'Fecha,Cantidad de Compras,Total del Día',
+      'Fecha\tCantidad de Compras\tTotal del Día',
       ...(reporteData.comprasPorDia || []).map((c: any) => 
-        `${new Date(c.fecha).toLocaleDateString('es-PE')},${c.cantidad || 0},${formatCurrency(c.total)}`
+        `${new Date(c.fecha).toLocaleDateString('es-PE')}\t${c.cantidad || 0}\t${formatCurrency(c.total)}`
       ),
       '',
       '=================================================================',
       '                 COMPRAS POR PROVEEDOR                           ',
       '=================================================================',
-      'Proveedor,Cantidad de Compras,Total Comprado',
+      'Proveedor\tCantidad de Compras\tTotal Comprado',
       ...(reporteData.comprasPorProveedor || []).map((p: any) => 
-        `${p.nombreProveedor || 'Sin nombre'},${p.cantidadCompras || 0},${formatCurrency(p.totalCompras)}`
+        `${p.nombreProveedor || 'Sin nombre'}\t${p.cantidadCompras || 0}\t${formatCurrency(p.totalCompras)}`
       ),
       '',
       '=================================================================',
       '            TOP 10 PRODUCTOS MÁS COMPRADOS                      ',
       '=================================================================',
-      'Ranking,Producto,Cantidad Comprada,Total Invertido',
+      'Ranking\tProducto\tCantidad Comprada\tTotal Invertido',
       ...(reporteData.topProductosComprados || []).map((p: any, idx: number) =>
-        `#${idx + 1},${p.nombreProducto || 'Sin nombre'},${p.cantidadComprada || 0},${formatCurrency(p.totalComprado)}`
+        `#${idx + 1}\t${p.nombreProducto || 'Sin nombre'}\t${p.cantidadComprada || 0}\t${formatCurrency(p.totalComprado)}`
       ),
       '',
       '=================================================================',
