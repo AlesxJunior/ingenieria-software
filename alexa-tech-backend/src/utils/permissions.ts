@@ -144,9 +144,11 @@ export class PermissionUtils {
       'inventory.read',
       'inventory.update',
 
-      // Permisos de reportes
+      // Permisos de reportes (ampliados)
       'reports.sales',
+      'reports.purchases',
       'reports.inventory',
+      'reports.cash',
       'reports.users',
 
       // Permisos de caja
@@ -154,10 +156,11 @@ export class PermissionUtils {
       'cash.close',
       'cash.read',
 
-      // Permisos de sistema
+      // Permisos de sistema (ampliados)
       'system.settings',
       'system.backup',
       'system.logs',
+      'system.configuration',
     ];
   }
 

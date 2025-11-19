@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ClientController } from './clients.controller';
-import { authenticate, requireSupervisor } from '../../middleware/auth';
+import { authenticate, requirePermission } from '../../middleware/auth';
 import { rateLimiter } from '../../middleware/rateLimiter';
 
 const router = Router();
@@ -12,7 +12,7 @@ router.use(authenticate);
 // Debe ir antes de /:id para evitar conflictos de rutas
 router.get(
   '/stats',
-  requireSupervisor,
+  requirePermission('clients.read'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 requests per 15 minutes
   ClientController.getClientStats,
 );
@@ -20,7 +20,7 @@ router.get(
 // GET /entidades/search/email/:email - Buscar entidad por email
 router.get(
   '/search/email/:email',
-  requireSupervisor,
+  requirePermission('clients.read'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }), // 100 searches per 15 minutes
   ClientController.getClientByEmail,
 );
@@ -28,7 +28,7 @@ router.get(
 // GET /entidades/search/document/:numeroDocumento - Buscar entidad por documento
 router.get(
   '/search/document/:numeroDocumento',
-  requireSupervisor,
+  requirePermission('clients.read'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }), // 100 searches per 15 minutes
   ClientController.getClientByDocument,
 );
@@ -37,7 +37,7 @@ router.get(
 // Requiere permiso específico para ver entidades
 router.get(
   '/',
-  requireSupervisor,
+  requirePermission('clients.read'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 100 }), // 100 requests per 15 minutes
   ClientController.getAllClients,
 );
@@ -46,7 +46,7 @@ router.get(
 // Requiere permiso específico para ver entidades
 router.get(
   '/:id',
-  requireSupervisor,
+  requirePermission('clients.read'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 200 }), // 200 requests per 15 minutes
   ClientController.getClientById,
 );
@@ -55,7 +55,7 @@ router.get(
 // Requiere permiso específico para crear entidades
 router.post(
   '/',
-  requireSupervisor,
+  requirePermission('clients.create'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 20 }), // 20 creations per 15 minutes
   ClientController.createClient,
 );
@@ -64,7 +64,7 @@ router.post(
 // Requiere permiso específico para editar entidades
 router.put(
   '/:id',
-  requireSupervisor,
+  requirePermission('clients.update'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 updates per 15 minutes
   ClientController.updateClient,
 );
@@ -73,7 +73,7 @@ router.put(
 // Requiere permiso específico para editar entidades
 router.patch(
   '/:id',
-  requireSupervisor,
+  requirePermission('clients.update'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 50 }), // 50 updates per 15 minutes
   ClientController.patchClient,
 );
@@ -82,7 +82,7 @@ router.patch(
 // Requiere permiso específico para editar entidades
 router.post(
   '/:id/reactivate',
-  requireSupervisor,
+  requirePermission('clients.update'),
   rateLimiter({ windowMs: 15 * 60 * 1000, max: 10 }), // 10 reactivations per 15 minutes
   ClientController.reactivateClient,
 );
