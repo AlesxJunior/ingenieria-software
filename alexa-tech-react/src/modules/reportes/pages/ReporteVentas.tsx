@@ -18,6 +18,40 @@ const Header = styled.div`
   margin-bottom: 2rem;
 `;
 
+const TabsContainer = styled.div`
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
+const TabsHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 1rem 1.5rem;
+  border: none;
+  background: ${props => props.active ? 'white' : 'transparent'};
+  color: ${props => props.active ? '#2563eb' : '#6b7280'};
+  font-weight: ${props => props.active ? '600' : '500'};
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-bottom: 2px solid ${props => props.active ? '#2563eb' : 'transparent'};
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.active ? 'white' : '#f3f4f6'};
+    color: ${props => props.active ? '#2563eb' : '#1f2937'};
+  }
+`;
+
+const TabContent = styled.div`
+  padding: 1.5rem;
+`;
+
 const FiltersContainer = styled.div`
   background: white;
   padding: 1.5rem;
@@ -164,6 +198,7 @@ const ReporteVentas: React.FC = () => {
   const [fechaFin, setFechaFin] = useState(formatDateInput(new Date()));
   const [loading, setLoading] = useState(false);
   const [reporteData, setReporteData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'resumen' | 'detalles' | 'analisis'>('resumen');
 
   useEffect(() => {
     handleBuscar();
@@ -263,146 +298,218 @@ const ReporteVentas: React.FC = () => {
 
         {!loading && reporteData && (
           <>
-            <SummaryCards>
-              <SummaryCard>
-                <CardTitle>Total Ventas</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen.totalVentas)}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Cantidad de Ventas</CardTitle>
-                <CardValue>{reporteData.resumen.cantidadVentas}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Ticket Promedio</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen.ticketPromedio)}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Venta Máxima</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen.ventasMayor)}</CardValue>
-              </SummaryCard>
-            </SummaryCards>
+            <TabsContainer>
+              <TabsHeader>
+                <Tab active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
+                  📊 Resumen General
+                </Tab>
+                <Tab active={activeTab === 'detalles'} onClick={() => setActiveTab('detalles')}>
+                  📋 Detalles por Período
+                </Tab>
+                <Tab active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
+                  📈 Análisis y Rankings
+                </Tab>
+              </TabsHeader>
 
-            <Section>
-              <SectionTitle>📅 Ventas por Día</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Fecha</Th>
-                      <Th>Cantidad</Th>
-                      <Th>Total</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reporteData.ventasPorDia.map((v: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{formatDMY(v.fecha)}</Td>
-                        <Td>{v.cantidad}</Td>
-                        <Td>{formatCurrency(v.total)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+              <TabContent>
+                {activeTab === 'resumen' && (
+                  <>
+                    <SummaryCards>
+                      <SummaryCard>
+                        <CardTitle>Total Ventas</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.resumen.totalVentas)}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Cantidad de Ventas</CardTitle>
+                        <CardValue>{reporteData.resumen.cantidadVentas}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Ticket Promedio</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.resumen.ticketPromedio)}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Venta Máxima</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.resumen.ventasMayor)}</CardValue>
+                      </SummaryCard>
+                    </SummaryCards>
 
-            <Section>
-              <SectionTitle>💳 Ventas por Método de Pago</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Método</Th>
-                      <Th>Cantidad</Th>
-                      <Th>Total</Th>
-                      <Th>Porcentaje</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reporteData.ventasPorMetodoPago.map((m: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{m.metodoPago}</Td>
-                        <Td>{m.cantidad}</Td>
-                        <Td>{formatCurrency(m.total)}</Td>
-                        <Td>{m.porcentaje.toFixed(1)}%</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                    <Section>
+                      <SectionTitle>💳 Distribución por Método de Pago</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Método</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total</Th>
+                              <Th>Porcentaje</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {reporteData.ventasPorMetodoPago.map((m: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>{m.metodoPago}</Td>
+                                <Td>{m.cantidad}</Td>
+                                <Td>{formatCurrency(m.total)}</Td>
+                                <Td>
+                                  <span style={{ 
+                                    padding: '0.25rem 0.5rem', 
+                                    background: '#3b82f620', 
+                                    color: '#2563eb',
+                                    borderRadius: '0.25rem',
+                                    fontWeight: 600
+                                  }}>
+                                    {m.porcentaje.toFixed(1)}%
+                                  </span>
+                                </Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
 
-            <Section>
-              <SectionTitle>🏆 Top 10 Productos Más Vendidos</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Producto</Th>
-                      <Th>Cantidad</Th>
-                      <Th>Total Vendido</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reporteData.topProductos.map((p: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{p.nombreProducto}</Td>
-                        <Td>{p.cantidadVendida}</Td>
-                        <Td>{formatCurrency(p.totalVendido)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                {activeTab === 'detalles' && (
+                  <>
+                    <Section>
+                      <SectionTitle>📅 Ventas por Día</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Fecha</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {reporteData.ventasPorDia.map((v: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>{formatDMY(v.fecha)}</Td>
+                                <Td>{v.cantidad}</Td>
+                                <Td>{formatCurrency(v.total)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
 
-            <Section>
-              <SectionTitle>👥 Top 10 Clientes</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Cliente</Th>
-                      <Th>Cantidad Compras</Th>
-                      <Th>Total Compras</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reporteData.topClientes.map((c: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{c.nombreCliente}</Td>
-                        <Td>{c.cantidadCompras}</Td>
-                        <Td>{formatCurrency(c.totalCompras)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                    <Section>
+                      <SectionTitle>👤 Ventas por Vendedor</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Vendedor</Th>
+                              <Th>Cantidad Ventas</Th>
+                              <Th>Total Ventas</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {reporteData.ventasPorVendedor.map((v: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>{v.nombreVendedor}</Td>
+                                <Td>{v.cantidadVentas}</Td>
+                                <Td>{formatCurrency(v.totalVentas)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
 
-            <Section>
-              <SectionTitle>👤 Ventas por Vendedor</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Vendedor</Th>
-                      <Th>Cantidad Ventas</Th>
-                      <Th>Total Ventas</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reporteData.ventasPorVendedor.map((v: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{v.nombreVendedor}</Td>
-                        <Td>{v.cantidadVentas}</Td>
-                        <Td>{formatCurrency(v.totalVentas)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                {activeTab === 'analisis' && (
+                  <>
+                    <Section>
+                      <SectionTitle>🏆 Top 10 Productos Más Vendidos</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>#</Th>
+                              <Th>Producto</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total Vendido</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {reporteData.topProductos.map((p: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>
+                                  <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '1.5rem',
+                                    height: '1.5rem',
+                                    borderRadius: '50%',
+                                    background: idx < 3 ? '#f59e0b20' : '#e5e7eb',
+                                    color: idx < 3 ? '#d97706' : '#6b7280',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem'
+                                  }}>
+                                    {idx + 1}
+                                  </span>
+                                </Td>
+                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto}</Td>
+                                <Td>{p.cantidadVendida}</Td>
+                                <Td>{formatCurrency(p.totalVendido)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+
+                    <Section>
+                      <SectionTitle>👥 Top 10 Clientes</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>#</Th>
+                              <Th>Cliente</Th>
+                              <Th>Cantidad Compras</Th>
+                              <Th>Total Compras</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {reporteData.topClientes.map((c: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>
+                                  <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '1.5rem',
+                                    height: '1.5rem',
+                                    borderRadius: '50%',
+                                    background: idx < 3 ? '#10b98120' : '#e5e7eb',
+                                    color: idx < 3 ? '#059669' : '#6b7280',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem'
+                                  }}>
+                                    {idx + 1}
+                                  </span>
+                                </Td>
+                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{c.nombreCliente}</Td>
+                                <Td>{c.cantidadCompras}</Td>
+                                <Td>{formatCurrency(c.totalCompras)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
+              </TabContent>
+            </TabsContainer>
           </>
         )}
       </Container>

@@ -22,6 +22,40 @@ const Header = styled.div`
   margin-bottom: 2rem;
 `;
 
+const TabsContainer = styled.div`
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
+const TabsHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 1rem 1.5rem;
+  border: none;
+  background: ${props => props.active ? 'white' : 'transparent'};
+  color: ${props => props.active ? '#2563eb' : '#6b7280'};
+  font-weight: ${props => props.active ? '600' : '500'};
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-bottom: 2px solid ${props => props.active ? '#2563eb' : 'transparent'};
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.active ? 'white' : '#f3f4f6'};
+    color: ${props => props.active ? '#2563eb' : '#1f2937'};
+  }
+`;
+
+const TabContent = styled.div`
+  padding: 1.5rem;
+`;
+
 // Título se renderiza desde Layout
 
 const FiltersContainer = styled.div`
@@ -182,6 +216,7 @@ const ReporteCompras: React.FC = () => {
   const [fechaFin, setFechaFin] = useState('');
   const [loading, setLoading] = useState(false);
   const [reporteData, setReporteData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'resumen' | 'detalles' | 'analisis'>('resumen');
 
   useEffect(() => {
     handleBuscar();
@@ -279,96 +314,141 @@ const ReporteCompras: React.FC = () => {
 
         {!loading && reporteData && (
           <>
-            <SummaryCards>
-              <SummaryCard>
-                <CardTitle>Total Compras</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen?.totalCompras)}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Cantidad de Compras</CardTitle>
-                <CardValue>{reporteData.resumen?.cantidadCompras || 0}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Compra Promedio</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen?.compraPromedio)}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Compra Máxima</CardTitle>
-                <CardValue>{formatCurrency(reporteData.resumen?.compraMayor)}</CardValue>
-              </SummaryCard>
-            </SummaryCards>
+            <TabsContainer>
+              <TabsHeader>
+                <Tab active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
+                  📊 Resumen General
+                </Tab>
+                <Tab active={activeTab === 'detalles'} onClick={() => setActiveTab('detalles')}>
+                  📋 Detalles por Período
+                </Tab>
+                <Tab active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
+                  📈 Top Productos
+                </Tab>
+              </TabsHeader>
 
-            <Section>
-              <SectionTitle>📅 Compras por Día</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Fecha</Th>
-                      <Th>Cantidad</Th>
-                      <Th>Total</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reporteData.comprasPorDia || []).map((c: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{new Date(c.fecha).toLocaleDateString('es-PE')}</Td>
-                        <Td>{c.cantidad || 0}</Td>
-                        <Td>{formatCurrency(c.total)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+              <TabContent>
+                {activeTab === 'resumen' && (
+                  <>
+                    <SummaryCards>
+                      <SummaryCard>
+                        <CardTitle>Total Compras</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.resumen?.totalCompras)}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Cantidad de Compras</CardTitle>
+                        <CardValue>{reporteData.resumen?.cantidadCompras || 0}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Compra Promedio</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.resumen?.compraPromedio)}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Compra Máxima</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.resumen?.compraMayor)}</CardValue>
+                      </SummaryCard>
+                    </SummaryCards>
+                  </>
+                )}
 
-            <Section>
-              <SectionTitle>🏢 Compras por Proveedor</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Proveedor</Th>
-                      <Th>Cantidad</Th>
-                      <Th>Total</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reporteData.comprasPorProveedor || []).map((p: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{p.nombreProveedor || 'Sin nombre'}</Td>
-                        <Td>{p.cantidadCompras || 0}</Td>
-                        <Td>{formatCurrency(p.totalCompras)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                {activeTab === 'detalles' && (
+                  <>
+                    <Section>
+                      <SectionTitle>📅 Compras por Día</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Fecha</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.comprasPorDia || []).map((c: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>{new Date(c.fecha).toLocaleDateString('es-PE')}</Td>
+                                <Td>{c.cantidad || 0}</Td>
+                                <Td>{formatCurrency(c.total)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
 
-            <Section>
-              <SectionTitle>🏆 Top 10 Productos Más Comprados</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Producto</Th>
-                      <Th>Cantidad</Th>
-                      <Th>Total Comprado</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reporteData.topProductosComprados || []).map((p: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{p.nombreProducto || 'Sin nombre'}</Td>
-                        <Td>{p.cantidadComprada || 0}</Td>
-                        <Td>{formatCurrency(p.totalComprado)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                    <Section>
+                      <SectionTitle>🏢 Compras por Proveedor</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Proveedor</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.comprasPorProveedor || []).map((p: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>{p.nombreProveedor || 'Sin nombre'}</Td>
+                                <Td>{p.cantidadCompras || 0}</Td>
+                                <Td>{formatCurrency(p.totalCompras)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
+
+                {activeTab === 'analisis' && (
+                  <>
+                    <Section>
+                      <SectionTitle>🏆 Top 10 Productos Más Comprados</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>#</Th>
+                              <Th>Producto</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total Comprado</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.topProductosComprados || []).map((p: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>
+                                  <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '1.5rem',
+                                    height: '1.5rem',
+                                    borderRadius: '50%',
+                                    background: idx < 3 ? '#f59e0b20' : '#e5e7eb',
+                                    color: idx < 3 ? '#d97706' : '#6b7280',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem'
+                                  }}>
+                                    {idx + 1}
+                                  </span>
+                                </Td>
+                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto || 'Sin nombre'}</Td>
+                                <Td>{p.cantidadComprada || 0}</Td>
+                                <Td>{formatCurrency(p.totalComprado)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
+              </TabContent>
+            </TabsContainer>
           </>
         )}
       </Container>

@@ -19,6 +19,40 @@ const Header = styled.div`
   margin-bottom: 2rem;
 `;
 
+const TabsContainer = styled.div`
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
+const TabsHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 1rem 1.5rem;
+  border: none;
+  background: ${props => props.active ? 'white' : 'transparent'};
+  color: ${props => props.active ? '#2563eb' : '#6b7280'};
+  font-weight: ${props => props.active ? '600' : '500'};
+  font-size: 0.875rem;
+  cursor: pointer;
+  border-bottom: 2px solid ${props => props.active ? '#2563eb' : 'transparent'};
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.active ? 'white' : '#f3f4f6'};
+    color: ${props => props.active ? '#2563eb' : '#1f2937'};
+  }
+`;
+
+const TabContent = styled.div`
+  padding: 1.5rem;
+`;
+
 // Título se renderiza desde Layout
 
 const FiltersContainer = styled.div`
@@ -178,6 +212,7 @@ const ReporteInventario: React.FC = () => {
   const [almacenId, setAlmacenId] = useState('');
   const [loading, setLoading] = useState(false);
   const [reporteData, setReporteData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'resumen' | 'stock' | 'analisis'>('resumen');
 
   useEffect(() => {
     handleBuscar();
@@ -271,114 +306,178 @@ const ReporteInventario: React.FC = () => {
 
         {!loading && reporteData && (
           <>
-            <SummaryCards>
-              <SummaryCard>
-                <CardTitle>Valor Total Inventario</CardTitle>
-                <CardValue>{formatCurrency(reporteData.valorTotalInventario)}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Total Almacenes</CardTitle>
-                <CardValue>{(reporteData.stockPorAlmacen || []).length}</CardValue>
-              </SummaryCard>
-              <SummaryCard>
-                <CardTitle>Productos en Alerta</CardTitle>
-                <CardValue>{(reporteData.productosEnAlerta || []).length}</CardValue>
-              </SummaryCard>
-            </SummaryCards>
+            <TabsContainer>
+              <TabsHeader>
+                <Tab active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
+                  📊 Resumen General
+                </Tab>
+                <Tab active={activeTab === 'stock'} onClick={() => setActiveTab('stock')}>
+                  📦 Stock por Almacén
+                </Tab>
+                <Tab active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
+                  📈 Análisis de Rotación
+                </Tab>
+              </TabsHeader>
 
-            <Section>
-              <SectionTitle>📦 Stock por Almacén</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Almacén</Th>
-                      <Th>Cantidad Total</Th>
-                      <Th>Valor Total</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reporteData.stockPorAlmacen || []).map((a: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{a.almacen || 'Sin nombre'}</Td>
-                        <Td>{a._sum?.cantidad || 0}</Td>
-                        <Td>{formatCurrency(a._sum?.valor)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+              <TabContent>
+                {activeTab === 'resumen' && (
+                  <>
+                    <SummaryCards>
+                      <SummaryCard>
+                        <CardTitle>Valor Total Inventario</CardTitle>
+                        <CardValue>{formatCurrency(reporteData.valorTotalInventario)}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Total Almacenes</CardTitle>
+                        <CardValue>{(reporteData.stockPorAlmacen || []).length}</CardValue>
+                      </SummaryCard>
+                      <SummaryCard>
+                        <CardTitle>Productos en Alerta</CardTitle>
+                        <CardValue style={{ color: (reporteData.productosEnAlerta || []).length > 0 ? '#DC2626' : 'inherit' }}>
+                          {(reporteData.productosEnAlerta || []).length}
+                        </CardValue>
+                      </SummaryCard>
+                    </SummaryCards>
 
-            <Section>
-              <SectionTitle>🔄 Productos con Mayor Rotación</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Producto</Th>
-                      <Th>Cantidad de Movimientos</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reporteData.productosMasRotacion || []).map((p: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{p.nombreProducto || 'Sin nombre'}</Td>
-                        <Td>{p.cantidadMovimientos || 0}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                    <Section>
+                      <SectionTitle>📊 Valor por Categoría</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Categoría</Th>
+                              <Th>Valor Total</Th>
+                              <Th>Participación</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.valorPorCategoria || []).map((c: any, idx: number) => {
+                              const porcentaje = reporteData.valorTotalInventario > 0 
+                                ? (c.valorTotal / reporteData.valorTotalInventario * 100) 
+                                : 0;
+                              return (
+                                <tr key={idx}>
+                                  <Td>{c.categoria || 'Sin categoría'}</Td>
+                                  <Td>{formatCurrency(c.valorTotal)}</Td>
+                                  <Td>
+                                    <span style={{ 
+                                      padding: '0.25rem 0.5rem', 
+                                      background: '#3b82f620', 
+                                      color: '#2563eb',
+                                      borderRadius: '0.25rem',
+                                      fontWeight: 600
+                                    }}>
+                                      {porcentaje.toFixed(1)}%
+                                    </span>
+                                  </Td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
 
-            <Section>
-              <SectionTitle>📊 Valor por Categoría</SectionTitle>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Categoría</Th>
-                      <Th>Valor Total</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(reporteData.valorPorCategoria || []).map((c: any, idx: number) => (
-                      <tr key={idx}>
-                        <Td>{c.categoria || 'Sin categoría'}</Td>
-                        <Td>{formatCurrency(c.valorTotal)}</Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            </Section>
+                    {(reporteData.productosEnAlerta || []).length > 0 && (
+                      <Section>
+                        <SectionTitle>⚠️ Productos en Alerta (Stock Bajo)</SectionTitle>
+                        <TableContainer>
+                          <Table>
+                            <thead>
+                              <tr>
+                                <Th>Producto</Th>
+                                <Th>Stock Actual</Th>
+                                <Th>Stock Mínimo</Th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(reporteData.productosEnAlerta || []).map((p: any, idx: number) => (
+                                <tr key={idx}>
+                                  <Td>{p.nombreProducto || 'Sin nombre'}</Td>
+                                  <Td style={{ color: '#DC2626', fontWeight: 600 }}>{p.stockActual || 0}</Td>
+                                  <Td>{p.stockMinimo || 0}</Td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </Table>
+                        </TableContainer>
+                      </Section>
+                    )}
+                  </>
+                )}
 
-            {(reporteData.productosEnAlerta || []).length > 0 && (
-              <Section>
-                <SectionTitle>⚠️ Productos en Alerta (Stock Bajo)</SectionTitle>
-                <TableContainer>
-                  <Table>
-                    <thead>
-                      <tr>
-                        <Th>Producto</Th>
-                        <Th>Stock Actual</Th>
-                        <Th>Stock Mínimo</Th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(reporteData.productosEnAlerta || []).map((p: any, idx: number) => (
-                        <tr key={idx}>
-                          <Td>{p.nombreProducto || 'Sin nombre'}</Td>
-                          <Td style={{ color: '#DC2626', fontWeight: 600 }}>{p.stockActual || 0}</Td>
-                          <Td>{p.stockMinimo || 0}</Td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </TableContainer>
-              </Section>
-            )}
+                {activeTab === 'stock' && (
+                  <>
+                    <Section>
+                      <SectionTitle>📦 Stock por Almacén</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Almacén</Th>
+                              <Th>Cantidad Total</Th>
+                              <Th>Valor Total</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.stockPorAlmacen || []).map((a: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td style={{ fontWeight: 500 }}>{a.almacen || 'Sin nombre'}</Td>
+                                <Td>{a._sum?.cantidad || 0}</Td>
+                                <Td>{formatCurrency(a._sum?.valor)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
+
+                {activeTab === 'analisis' && (
+                  <>
+                    <Section>
+                      <SectionTitle>🔄 Productos con Mayor Rotación</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>#</Th>
+                              <Th>Producto</Th>
+                              <Th>Cantidad de Movimientos</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.productosMasRotacion || []).map((p: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>
+                                  <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '1.5rem',
+                                    height: '1.5rem',
+                                    borderRadius: '50%',
+                                    background: idx < 3 ? '#10b98120' : '#e5e7eb',
+                                    color: idx < 3 ? '#059669' : '#6b7280',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem'
+                                  }}>
+                                    {idx + 1}
+                                  </span>
+                                </Td>
+                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto || 'Sin nombre'}</Td>
+                                <Td>{p.cantidadMovimientos || 0}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+                  </>
+                )}
+              </TabContent>
+            </TabsContainer>
           </>
         )}
       </Container>
