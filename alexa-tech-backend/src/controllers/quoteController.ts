@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { quoteService } from '../services/quoteService';
+import { quoteInvoiceService } from '../services/quoteInvoiceService';
 import { $Enums } from '@prisma/client';
 
 export const QuoteController = {
@@ -98,10 +99,15 @@ export const QuoteController = {
 
       const result = await quoteService.getQuotes(filters);
 
-      res.json(result);
+      res.json({
+        success: true,
+        data: result.quotes,
+        pagination: result.pagination,
+      });
     } catch (error: any) {
       console.error('Error al obtener cotizaciones:', error);
       res.status(400).json({
+        success: false,
         message: error.message || 'Error al obtener las cotizaciones',
       });
     }
@@ -244,6 +250,34 @@ export const QuoteController = {
       console.error('Error al verificar cotizaciones vencidas:', error);
       res.status(400).json({
         message: error.message || 'Error al verificar cotizaciones',
+      });
+    }
+  },
+
+  /**
+   * GET /api/quotes/:id/pdf
+   * Generar PDF de cotización
+   */
+  async generateQuotePDF(req: AuthenticatedRequest, res: Response): Promise<void | Response> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({ message: 'ID de cotización es requerido' });
+      }
+
+      const pdfDoc = await quoteInvoiceService.generateQuoteInvoice(id);
+
+      // Configurar headers para descarga de PDF
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="cotizacion-${id}.pdf"`);
+
+      // Stream del PDF a la respuesta
+      pdfDoc.pipe(res);
+    } catch (error: any) {
+      console.error('Error al generar PDF de cotización:', error);
+      res.status(400).json({
+        message: error.message || 'Error al generar el PDF',
       });
     }
   },

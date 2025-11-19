@@ -135,6 +135,30 @@ class ApiService {
     return this.request<{ purchases: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET' });
   }
 
+  // ==== Ventas ====
+  async getSales(params?: {
+    estado?: 'Pendiente' | 'Completada' | 'Cancelada';
+    cashSessionId?: string;
+    clienteId?: string;
+    almacenId?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    q?: string;
+  }): Promise<ApiResponse<{ sales: any[] }>> {
+    const queryParams = new URLSearchParams();
+    if (params?.estado) queryParams.append('estado', params.estado);
+    if (params?.cashSessionId) queryParams.append('cashSessionId', params.cashSessionId);
+    if (params?.clienteId) queryParams.append('clienteId', params.clienteId);
+    if (params?.almacenId) queryParams.append('almacenId', params.almacenId);
+    if (params?.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params?.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+    if (params?.q) queryParams.append('q', params.q);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/sales?${queryString}` : '/sales';
+    return this.request<{ sales: any[] }>(endpoint, { method: 'GET' });
+  }
+
   async getPurchaseById(id: string): Promise<ApiResponse<any>> {
     return this.request(`/compras/${id}`, { method: 'GET' });
   }
@@ -256,7 +280,7 @@ class ApiService {
       if (options.body) {
         const maybeStr = typeof options.body === 'string' ? options.body : String(options.body);
         let parsed: any = maybeStr;
-        try { parsed = JSON.parse(maybeStr as string); } catch {}
+        try { parsed = JSON.parse(maybeStr as string); } catch (_err) { console.log('Body no JSON'); }
         console.log('Datos:', parsed);
       }
     } catch (e) {
@@ -289,7 +313,7 @@ class ApiService {
           localStorage.removeItem('authToken');
           localStorage.removeItem('alexatech_token');
           localStorage.removeItem('alexatech_refresh_token');
-        } catch {}
+        } catch (_err) { console.log('Error limpiando tokens'); }
         console.log('401 Unauthorized: limpiando tokens');
         // Evitar bucles de redirección: no redirigir si ya estamos en /login
         if (!window.location.pathname.includes('/login')) {
@@ -614,6 +638,37 @@ class ApiService {
   async get<T = any>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'GET',
+    });
+  }
+
+  // Método POST genérico
+  async post<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Método PUT genérico
+  async put<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Método PATCH genérico
+  async patch<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Método DELETE genérico
+  async delete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
     });
   }
 }

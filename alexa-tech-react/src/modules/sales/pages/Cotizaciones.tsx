@@ -5,8 +5,6 @@ import Layout from '../../../components/Layout';
 import { useQuotes } from '../context/QuotesContext';
 import type { Quote, QuoteStatus } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
-import { useSales } from '../context/SalesContext';
-import { useAuth } from '../../../context/AuthContext';
 
 const Container = styled.div`
   padding: 1rem;
@@ -208,7 +206,7 @@ const Td = styled.td`
   color: #2c3e50;
 `;
 
-const StatusBadge = styled.span<{ status: QuoteStatus }>`
+const StatusBadge = styled.span<{ $status: QuoteStatus }>`
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -216,15 +214,11 @@ const StatusBadge = styled.span<{ status: QuoteStatus }>`
   display: inline-block;
   
   ${props => {
-    switch (props.status) {
+    switch (props.$status) {
       case 'Pendiente':
         return 'background: #fff3cd; color: #856404;';
-      case 'Aceptada':
-        return 'background: #d4edda; color: #155724;';
       case 'Convertida':
         return 'background: #d1ecf1; color: #0c5460;';
-      case 'Rechazada':
-        return 'background: #f8d7da; color: #721c24;';
       case 'Vencida':
         return 'background: #e2e3e5; color: #383d41;';
       case 'Cancelada':
@@ -434,25 +428,19 @@ const ModalFooter = styled.div`
   gap: 1rem;
 `;
 
-// Modal para convertir a venta
-const ConvertModalContent = styled(ModalContent)`
-  max-width: 600px;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
 const Cotizaciones: React.FC = () => {
-  const { quotes, loading, stats, fetchQuotes, deleteQuote, approveQuote, rejectQuote, convertToSale, setFilters } = useQuotes();
-  const { cashSessions, loadCashSessions: fetchCashSessions } = useSales();
+  const { quotes, loading, stats, fetchQuotes, deleteQuote, setFilters } = useQuotes();
   const { showNotification } = useNotification();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   // Estados locales
-  const [localFilters, setLocalFilters] = useState({
-    estado: 'Todas' as QuoteStatus | 'Todas',
+  const [localFilters, setLocalFilters] = useState<{
+    estado: QuoteStatus | 'Todas';
+    fechaDesde: string;
+    fechaHasta: string;
+    search: string;
+  }>({
+    estado: 'Todas',
     fechaDesde: '',
     fechaHasta: '',
     search: ''
@@ -460,17 +448,10 @@ const Cotizaciones: React.FC = () => {
 
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showConvertModal, setShowConvertModal] = useState(false);
-  const [convertData, setConvertData] = useState({
-    formaPago: 'Efectivo',
-    tipoComprobante: 'Boleta',
-    cashSessionId: ''
-  });
 
   // Cargar datos al montar SOLO UNA VEZ
   useEffect(() => {
     fetchQuotes();
-    fetchCashSessions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // ⚠️ Array vacío = solo se ejecuta al montar
 
@@ -510,71 +491,6 @@ const Cotizaciones: React.FC = () => {
     setShowDetailModal(true);
   };
 
-  // Abrir modal de conversión
-  const handleOpenConvertModal = (quote: Quote) => {
-    // Validar que haya sesión de caja abierta
-    const openSession = cashSessions.find((session: any) => session.estado === 'Abierta');
-    if (!openSession) {
-      showNotification('warning', 'Advertencia', 'Debe abrir una sesión de caja primero');
-      return;
-    }
-
-    setSelectedQuote(quote);
-    setConvertData({
-      ...convertData,
-      cashSessionId: openSession.id
-    });
-    setShowConvertModal(true);
-  };
-
-  // Convertir a venta
-  const handleConvertToSale = async () => {
-    if (!selectedQuote || !user) return;
-
-    try {
-      const result = await convertToSale({
-        quoteId: selectedQuote.id,
-        userId: user.id,
-        formaPago: convertData.formaPago,
-        tipoComprobante: convertData.tipoComprobante,
-        cashSessionId: convertData.cashSessionId
-      });
-
-      setShowConvertModal(false);
-      showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
-      
-      // Redirigir al detalle de la venta creada
-      if (result.sale) {
-        navigate(`/ventas/detalle/${result.sale.id}`);
-      }
-    } catch (error) {
-      console.error('Error al convertir:', error);
-    }
-  };
-
-  // Aprobar cotización
-  const handleApprove = async (id: string) => {
-    if (window.confirm('¿Está seguro de aprobar esta cotización?')) {
-      try {
-        await approveQuote(id);
-      } catch (error) {
-        console.error('Error al aprobar:', error);
-      }
-    }
-  };
-
-  // Rechazar cotización
-  const handleReject = async (id: string) => {
-    const motivo = window.prompt('Motivo de rechazo (opcional):');
-    if (motivo !== null) {
-      try {
-        await rejectQuote(id, motivo);
-      } catch (error) {
-        console.error('Error al rechazar:', error);
-      }
-    }
-  };
-
   // Eliminar cotización
   const handleDelete = async (id: string) => {
     if (window.confirm('¿Está seguro de eliminar esta cotización? Esta acción no se puede deshacer.')) {
@@ -593,8 +509,9 @@ const Cotizaciones: React.FC = () => {
   };
 
   // Formatear moneda
-  const formatCurrency = (amount: number) => {
-    return `S/ ${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number | string) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return `S/ ${numAmount.toFixed(2)}`;
   };
 
   // Obtener nombre del cliente
@@ -621,17 +538,9 @@ const Cotizaciones: React.FC = () => {
             <StatValue color="#f39c12">{stats.pendientes}</StatValue>
             <StatLabel>Pendientes</StatLabel>
           </StatCard>
-          <StatCard color="#27ae60">
-            <StatValue color="#27ae60">{stats.aceptadas}</StatValue>
-            <StatLabel>Aprobadas</StatLabel>
-          </StatCard>
           <StatCard color="#3498db">
             <StatValue color="#3498db">{stats.convertidas}</StatValue>
             <StatLabel>Convertidas</StatLabel>
-          </StatCard>
-          <StatCard color="#e74c3c">
-            <StatValue color="#e74c3c">{stats.rechazadas}</StatValue>
-            <StatLabel>Rechazadas</StatLabel>
           </StatCard>
           <StatCard color="#95a5a6">
             <StatValue color="#95a5a6">{stats.vencidas}</StatValue>
@@ -649,11 +558,9 @@ const Cotizaciones: React.FC = () => {
                 value={localFilters.estado}
                 onChange={(e) => setLocalFilters({ ...localFilters, estado: e.target.value as QuoteStatus | 'Todas' })}
               >
-                <option value="Todas">Todas</option>
+                <option value="Todas">Todos los Estados</option>
                 <option value="Pendiente">Pendiente</option>
-                <option value="Aceptada">Aprobada</option>
                 <option value="Convertida">Convertida</option>
-                <option value="Rechazada">Rechazada</option>
                 <option value="Vencida">Vencida</option>
                 <option value="Cancelada">Cancelada</option>
               </Select>
@@ -731,7 +638,7 @@ const Cotizaciones: React.FC = () => {
                     <Td>{formatDate(quote.fechaVencimiento)}</Td>
                     <Td><strong>{formatCurrency(quote.total)}</strong></Td>
                     <Td>
-                      <StatusBadge status={quote.estado}>{quote.estado}</StatusBadge>
+                      <StatusBadge $status={quote.estado}>{quote.estado}</StatusBadge>
                     </Td>
                     <Td>
                       <ActionButtons>
@@ -742,30 +649,79 @@ const Cotizaciones: React.FC = () => {
                           👁️ Ver
                         </ActionButton>
 
-                        {(quote.estado === 'Pendiente' || quote.estado === 'Aceptada') && (
-                          <ActionButton 
-                            color="#9b59b6"
-                            onClick={() => handleOpenConvertModal(quote)}
-                          >
-                            🛒 Convertir
-                          </ActionButton>
-                        )}
+                        <ActionButton 
+                          color="#16a085"
+                          onClick={async () => {
+                            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+                            const token = localStorage.getItem('authToken') || localStorage.getItem('alexatech_token');
+                            if (!token) {
+                              showNotification('error', 'Error', 'No se encontró el token de autenticación');
+                              return;
+                            }
+                            
+                            try {
+                              showNotification('info', 'Cargando...', 'Preparando PDF para imprimir');
+                              
+                              // Descargar el PDF como blob
+                              const response = await fetch(`${API_URL}/quotes/${quote.id}/pdf?token=${encodeURIComponent(token)}`);
+                              if (!response.ok) {
+                                throw new Error('Error al obtener el PDF');
+                              }
+                              
+                              const blob = await response.blob();
+                              const blobUrl = window.URL.createObjectURL(blob);
+                              
+                              // Abrir en nueva ventana y auto-imprimir
+                              const printWindow = window.open(blobUrl, '_blank');
+                              
+                              if (printWindow) {
+                                printWindow.onload = function() {
+                                  setTimeout(() => {
+                                    printWindow.print();
+                                    // Limpiar después de un tiempo
+                                    setTimeout(() => {
+                                      window.URL.revokeObjectURL(blobUrl);
+                                    }, 1000);
+                                  }, 250);
+                                };
+                              } else {
+                                showNotification('error', 'Error', 'Por favor permite las ventanas emergentes para imprimir');
+                                window.URL.revokeObjectURL(blobUrl);
+                              }
+                            } catch (error) {
+                              console.error('Error al imprimir:', error);
+                              showNotification('error', 'Error', 'No se pudo obtener el PDF para imprimir');
+                            }
+                          }}
+                        >
+                          🖨️ Imprimir
+                        </ActionButton>
 
                         {quote.estado === 'Pendiente' && (
-                          <>
-                            <ActionButton 
-                              color="#27ae60"
-                              onClick={() => handleApprove(quote.id)}
-                            >
-                              ✅ Aprobar
-                            </ActionButton>
-                            <ActionButton 
-                              color="#e74c3c"
-                              onClick={() => handleReject(quote.id)}
-                            >
-                              ❌ Rechazar
-                            </ActionButton>
-                          </>
+                          <ActionButton 
+                            color="#9b59b6"
+                            onClick={() => {
+                              // Redirigir a Realizar Venta con los datos de la cotización
+                              navigate('/ventas/realizar', { 
+                                state: { 
+                                  fromQuote: true,
+                                  quoteId: quote.id,
+                                  quoteCode: quote.codigoCotizacion,
+                                  clienteId: quote.clienteId,
+                                  items: quote.items.map(item => ({
+                                    id: item.productId,
+                                    productId: item.productId,
+                                    productName: item.nombreProducto,
+                                    quantity: item.cantidad,
+                                    price: item.precioUnitario,
+                                    subtotal: item.subtotal
+                                  }))
+                                }
+                              });
+                            }}
+                          >
+                            🛒 Convertir a Venta
+                          </ActionButton>
                         )}
 
                         {quote.estado !== 'Convertida' && (
@@ -804,7 +760,7 @@ const Cotizaciones: React.FC = () => {
                     <DetailItem>
                       <DetailLabel>Estado</DetailLabel>
                       <DetailValue>
-                        <StatusBadge status={selectedQuote.estado}>{selectedQuote.estado}</StatusBadge>
+                        <StatusBadge $status={selectedQuote.estado}>{selectedQuote.estado}</StatusBadge>
                       </DetailValue>
                     </DetailItem>
                     <DetailItem>
@@ -902,85 +858,6 @@ const Cotizaciones: React.FC = () => {
                 </Button>
               </ModalFooter>
             </ModalContent>
-          </ModalOverlay>
-        )}
-
-        {/* Modal de conversión a venta */}
-        {showConvertModal && selectedQuote && (
-          <ModalOverlay onClick={() => setShowConvertModal(false)}>
-            <ConvertModalContent onClick={(e) => e.stopPropagation()}>
-              <ModalHeader>
-                <ModalTitle>Convertir a Venta: {selectedQuote.codigoCotizacion}</ModalTitle>
-                <CloseButton onClick={() => setShowConvertModal(false)}>×</CloseButton>
-              </ModalHeader>
-              <ModalBody>
-                <DetailSection>
-                  <DetailTitle>Resumen de Cotización</DetailTitle>
-                  <DetailGrid>
-                    <DetailItem>
-                      <DetailLabel>Cliente</DetailLabel>
-                      <DetailValue>{getClientName(selectedQuote)}</DetailValue>
-                    </DetailItem>
-                    <DetailItem>
-                      <DetailLabel>Total</DetailLabel>
-                      <DetailValue style={{ color: '#27ae60' }}>{formatCurrency(selectedQuote.total)}</DetailValue>
-                    </DetailItem>
-                  </DetailGrid>
-                </DetailSection>
-
-                <FormGroup>
-                  <Label>Método de Pago</Label>
-                  <Select
-                    value={convertData.formaPago}
-                    onChange={(e) => setConvertData({ ...convertData, formaPago: e.target.value })}
-                  >
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Transferencia">Transferencia</option>
-                    <option value="Yape">Yape</option>
-                    <option value="Plin">Plin</option>
-                  </Select>
-                </FormGroup>
-
-                <FormGroup>
-                  <Label>Tipo de Comprobante</Label>
-                  <Select
-                    value={convertData.tipoComprobante}
-                    onChange={(e) => setConvertData({ ...convertData, tipoComprobante: e.target.value })}
-                  >
-                    <option value="Boleta">Boleta</option>
-                    <option value="Factura">Factura</option>
-                    <option value="NotaVenta">Nota de Venta</option>
-                  </Select>
-                </FormGroup>
-
-                <FormGroup>
-                  <Label>Caja Registradora</Label>
-                  <Select
-                    value={convertData.cashSessionId}
-                    onChange={(e) => setConvertData({ ...convertData, cashSessionId: e.target.value })}
-                  >
-                    {cashSessions.filter((s: any) => s.estado === 'Abierta').map((session: any) => (
-                      <option key={session.id} value={session.id}>
-                        {session.cashRegister?.nombre || 'Caja'} - Abierta
-                      </option>
-                    ))}
-                  </Select>
-                </FormGroup>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={() => setShowConvertModal(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  variant="primary" 
-                  onClick={handleConvertToSale}
-                  disabled={!convertData.cashSessionId}
-                >
-                  🛒 Confirmar Conversión
-                </Button>
-              </ModalFooter>
-            </ConvertModalContent>
           </ModalOverlay>
         )}
       </Container>

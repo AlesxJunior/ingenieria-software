@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useSales } from '../context/SalesContext';
 
 // ==================== TIPOS ====================
 interface SaleItem {
@@ -64,6 +65,8 @@ const CREDIT_NOTE_REASONS = {
 
 // ==================== COMPONENTE ====================
 export const ModalNotaCredito: React.FC<ModalNotaCreditoProps> = ({ sale, onClose, onSubmit }) => {
+  const { activeCashSession } = useSales();
+  
   const [selectedReason, setSelectedReason] = useState<string>('DevolucionTotal');
   const [descripcion, setDescripcion] = useState('');
   const [itemsToReturn, setItemsToReturn] = useState<Map<string, number>>(new Map());
@@ -170,8 +173,16 @@ export const ModalNotaCredito: React.FC<ModalNotaCreditoProps> = ({ sale, onClos
         cantidad,
       }));
 
-      // TODO: Obtener cashSessionId del context o estado global
-      const cashSessionId = localStorage.getItem('currentCashSessionId') || undefined;
+      // ✅ Obtener cashSessionId del contexto
+      const cashSessionId = activeCashSession?.id;
+      
+      // Validar que hay sesión activa si el método es Efectivo
+      if (paymentMethod === 'Efectivo' && !cashSessionId) {
+        setErrorMessage('No hay sesión de caja activa. Debe abrir una caja para realizar reembolsos en efectivo.');
+        setShowPaymentModal(false);
+        setIsProcessing(false);
+        return;
+      }
 
       const payload = {
         saleId: sale.id,

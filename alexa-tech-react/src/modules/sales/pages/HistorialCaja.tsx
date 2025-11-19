@@ -194,7 +194,11 @@ const HistorialCaja: React.FC = () => {
                     {sessions.map((session) => (
                       <Tr key={session.id}>
                         <Td>{formatDate(session.fechaCierre || session.updatedAt)}</Td>
-                        <Td>{session.userId}</Td>
+                        <Td>
+                          {session.user 
+                            ? `${session.user.firstName} ${session.user.lastName}`
+                            : session.userId}
+                        </Td>
                         <Td>{session.cashRegister?.nombre || session.cashRegisterId}</Td>
                         <Td>{formatCurrency(session.montoApertura)}</Td>
                         <Td className="sales">{formatCurrency(session.totalVentas)}</Td>

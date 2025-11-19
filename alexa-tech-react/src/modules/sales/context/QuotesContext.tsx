@@ -232,17 +232,12 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         body: JSON.stringify(data)
       });
 
-      if (response.success) {
-        showNotification('success', 'Éxito', 'Cotización creada exitosamente');
-        // ✅ NO recargar automáticamente - el usuario puede hacer clic en "Buscar"
-        // La cotización aparece cuando el usuario vaya a la página de Cotizaciones
-        return response.data;
-      }
-
-      throw new Error(response.data.message || 'Error al crear cotización');
+      // Si llegamos aquí, la respuesta fue exitosa (status 200-299)
+      showNotification('success', 'Éxito', 'Cotización creada exitosamente');
+      return response.data;
     } catch (error: any) {
       console.error('Error al crear cotización:', error);
-      const errorMessage = error.response?.data?.message || 'Error al crear cotización';
+      const errorMessage = error.message || 'Error al crear cotización';
       showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {
@@ -397,22 +392,18 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       setLoading(true);
 
-      const response = await fetchAPI(`/quotes/${data.quoteId}/convert-to-sale`, {
+      const response = await fetchAPI(`/quotes/${data.quoteId}/convert`, {
         method: 'POST',
         body: JSON.stringify(data)
       });
 
-      if (response.success) {
-        showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
-        // ✅ Actualizar el estado local
-        setQuotes(quotes.map(q => q.id === data.quoteId ? { ...q, estado: 'Convertida' as QuoteStatus } : q));
-        return response.data;
-      }
-
-      throw new Error(response.data.message || 'Error al convertir cotización');
+      // ✅ Actualizar el estado local
+      await fetchQuotes();
+      showNotification('success', 'Éxito', 'Cotización convertida a venta exitosamente');
+      return response;
     } catch (error: any) {
       console.error('Error al convertir cotización:', error);
-      const errorMessage = error.response?.data?.message || 'Error al convertir cotización a venta';
+      const errorMessage = error?.message || 'Error al convertir cotización a venta';
       showNotification('error', 'Error', errorMessage);
       throw error;
     } finally {

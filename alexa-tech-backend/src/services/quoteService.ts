@@ -204,6 +204,7 @@ export class QuoteService {
         take: limit,
         orderBy: { fechaEmision: 'desc' },
         include: {
+          cliente: true,
           usuario: {
             select: {
               id: true,
@@ -231,10 +232,11 @@ export class QuoteService {
   /**
    * Obtener una cotización por ID
    */
-  async getQuoteById(quoteId: string) {
+  async getQuoteById(quoteId: string): Promise<any> {
     const quote = await prisma.quote.findUnique({
       where: { id: quoteId },
       include: {
+        cliente: true,
         usuario: {
           select: {
             id: true,
@@ -243,7 +245,11 @@ export class QuoteService {
             email: true,
           },
         },
-        items: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
       },
     });
 
@@ -258,17 +264,30 @@ export class QuoteService {
    * Generar código único de venta (V-0001, V-0002, ...)
    */
   private async generateSaleCode(): Promise<string> {
-    const lastSale = await prisma.sale.findFirst({
-      orderBy: { codigoVenta: 'desc' },
+    // Obtener todas las ventas y encontrar el número más alto
+    const sales = await prisma.sale.findMany({
+      select: { codigoVenta: true },
+      orderBy: { createdAt: 'desc' },
+      take: 1000, // Limitar para performance
     });
 
-    if (!lastSale) {
+    if (sales.length === 0) {
       return 'V-0001';
     }
 
-    const parts = lastSale.codigoVenta.split('-');
-    const lastNumber = parseInt(parts[1] || '0');
-    const newNumber = lastNumber + 1;
+    // Extraer números y encontrar el máximo
+    let maxNumber = 0;
+    for (const sale of sales) {
+      const parts = sale.codigoVenta.split('-');
+      if (parts.length === 2 && parts[0] === 'V') {
+        const num = parseInt(parts[1] || '0');
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
+        }
+      }
+    }
+
+    const newNumber = maxNumber + 1;
     return `V-${newNumber.toString().padStart(4, '0')}`;
   }
 
@@ -336,7 +355,7 @@ export class QuoteService {
         estado: $Enums.SaleStatus.Completada,
         quoteOriginId: quote.id,
         items: {
-          create: quote.items.map((item) => ({
+          create: quote.items.map((item: any) => ({
             productId: item.productId,
             nombreProducto: item.nombreProducto,
             cantidad: item.cantidad,

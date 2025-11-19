@@ -557,6 +557,18 @@ const GestionCaja: React.FC = () => {
                   <strong>{formatDate(activeCashSession.fechaApertura)}</strong>
                 </p>
                 <p>
+                  👤 Usuario: <strong>
+                    {activeCashSession.user 
+                      ? `${activeCashSession.user.firstName} ${activeCashSession.user.lastName}`
+                      : activeCashSession.userId}
+                  </strong>
+                </p>
+                <p>
+                  🏪 Caja: <strong>
+                    {activeCashSession.cashRegister?.nombre || activeCashSession.cashRegisterId}
+                  </strong>
+                </p>
+                <p>
                   💰 Monto Inicial: <strong>{formatCurrency(activeCashSession.montoApertura)}</strong>
                 </p>
                 <Button className="btn-danger" onClick={() => setShowCloseModal(true)}>

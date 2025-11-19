@@ -1,16 +1,27 @@
 import { Router } from 'express';
-import { authenticate, requirePermission } from '../middleware/auth';
+import { authenticate, requirePermission, authenticateWithQueryToken } from '../middleware/auth';
 import { rateLimiter, generalRateLimit } from '../middleware/rateLimiter';
 import { QuoteController } from '../controllers/quoteController';
 
 const router = Router();
 
-// Todas las rutas requieren autenticación
-router.use(authenticate);
-
 // Limitadores: 100 req/15min para GET, 30 req/15min para POST/PATCH/DELETE
 const readLimiter = generalRateLimit; // 100 por 15min
 const writeLimiter = rateLimiter({ windowMs: 15 * 60 * 1000, max: 30 });
+
+// ⚠️ IMPORTANTE: Esta ruta debe estar ANTES de router.use(authenticate)
+// porque usa authenticateWithQueryToken en lugar de authenticate
+// Generar PDF de cotización
+router.get(
+  '/:id/pdf',
+  readLimiter,
+  authenticateWithQueryToken,
+  requirePermission('sales.read'),
+  QuoteController.generateQuotePDF,
+);
+
+// Todas las demás rutas requieren autenticación por header
+router.use(authenticate);
 
 // Crear cotización
 router.post(

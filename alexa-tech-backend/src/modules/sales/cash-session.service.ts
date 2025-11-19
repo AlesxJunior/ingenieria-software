@@ -15,6 +15,13 @@ interface CashSession {
   observaciones?: string;
   createdAt: string;
   updatedAt: string;
+  cashRegister?: any;
+  user?: {
+    id: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 interface CashSessionOpenInput {
@@ -169,6 +176,17 @@ export const cashSessionService = {
 
     const sessions = await prisma.cashSession.findMany({
       where,
+      include: {
+        cashRegister: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
       orderBy: { fechaApertura: 'desc' },
     });
 
@@ -186,6 +204,8 @@ export const cashSessionService = {
       observaciones: s.observaciones ?? undefined,
       createdAt: s.createdAt.toISOString(),
       updatedAt: s.updatedAt.toISOString(),
+      cashRegister: s.cashRegister,
+      user: s.user,
     }));
   },
 
@@ -230,6 +250,17 @@ export const cashSessionService = {
         cashRegisterId,
         estado: 'Abierta',
       },
+      include: {
+        cashRegister: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
     });
 
     if (!session) return null;
@@ -248,6 +279,8 @@ export const cashSessionService = {
       observaciones: session.observaciones ?? undefined,
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
+      cashRegister: session.cashRegister,
+      user: session.user,
     };
   },
 };

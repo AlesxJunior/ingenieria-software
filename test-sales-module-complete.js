@@ -15,6 +15,9 @@ let saleId = null;
 let quoteId = null;
 let userId = null;
 let cashRegisterId = null; // ID de la caja registradora (string CUID)
+let productId = null; // ID de producto (CUID)
+let clientId = null; // ID de cliente (CUID)
+let warehouseId = null; // ID de almacén (CUID)
 
 // 🎨 Utilidades de consola
 const log = {
@@ -33,6 +36,81 @@ function recordTest(testName, passed, details = '') {
     log.success(`${testName} - PASÓ`);
   } else {
     log.error(`${testName} - FALLÓ: ${details}`);
+  }
+}
+
+// 🗄️ Obtener IDs reales de la base de datos
+async function fetchRealIds() {
+  log.title('🗄️  OBTENIENDO IDs REALES DE LA BASE DE DATOS');
+  
+  try {
+    // Obtener producto activo
+    log.info('Consultando productos...');
+    const productsResponse = await axios.get(`${BASE_URL}/products`);
+    const productsArray = productsResponse.data.data?.products || productsResponse.data.data || [];
+    if (productsArray.length > 0) {
+      // Buscar un producto activo
+      const activeProduct = productsArray.find(p => p.estado === true);
+      if (activeProduct) {
+        productId = activeProduct.id;
+        log.success(`Producto ID obtenido: ${productId} (${activeProduct.nombre})`);
+      } else {
+        productId = productsArray[0].id;
+        log.warning(`No hay productos activos, usando el primero: ${productId}`);
+      }
+    } else {
+      log.warning('No se encontraron productos');
+    }
+
+    // Obtener cliente activo
+    log.info('Consultando clientes...');
+    const clientsResponse = await axios.get(`${BASE_URL}/entidades`);
+    const clientsArray = clientsResponse.data.data?.clients || clientsResponse.data.data || [];
+    if (clientsArray.length > 0) {
+      // Buscar un cliente activo
+      const activeClient = clientsArray.find(c => c.tipoEntidad === 'Cliente' && c.isActive === true);
+      if (activeClient) {
+        clientId = activeClient.id;
+        const clientName = activeClient.razonSocial || `${activeClient.nombres} ${activeClient.apellidos}`;
+        log.success(`Cliente ID obtenido: ${clientId} (${clientName})`);
+      } else {
+        const anyClient = clientsArray.find(c => c.tipoEntidad === 'Cliente');
+        if (anyClient) {
+          clientId = anyClient.id;
+          const clientName = anyClient.razonSocial || `${anyClient.nombres} ${anyClient.apellidos}`;
+          log.warning(`Usando primer cliente: ${clientId} (${clientName})`);
+        }
+      }
+    } else {
+      log.warning('No se encontraron clientes');
+    }
+
+    // Obtener almacén activo
+    log.info('Consultando almacenes...');
+    const warehousesResponse = await axios.get(`${BASE_URL}/warehouses`);
+    const warehousesArray = warehousesResponse.data.data?.rows || warehousesResponse.data.data || [];
+    if (warehousesArray.length > 0) {
+      // Buscar un almacén activo
+      const activeWarehouse = warehousesArray.find(w => w.activo === true);
+      if (activeWarehouse) {
+        warehouseId = activeWarehouse.id;
+        log.success(`Almacén ID obtenido: ${warehouseId} (${activeWarehouse.nombre})`);
+      } else {
+        warehouseId = warehousesArray[0].id;
+        log.warning(`No hay almacenes activos, usando el primero: ${warehouseId}`);
+      }
+    } else {
+      log.warning('No se encontraron almacenes');
+    }
+
+    recordTest('Obtención de IDs reales', true, `Producto: ${productId}, Cliente: ${clientId}, Almacén: ${warehouseId}`);
+  } catch (error) {
+    log.error(`Error obteniendo IDs: ${error.message}`);
+    if (error.response) {
+      log.error(`Status: ${error.response.status}`);
+      log.error(`Message: ${error.response.data?.message}`);
+    }
+    recordTest('Obtención de IDs reales', false, error.message);
   }
 }
 
@@ -141,16 +219,15 @@ async function testGestionCaja() {
   // Test 1.3: Registrar ingreso adicional
   log.test('Test 1.3: Registrar ingreso adicional');
   try {
-    const response = await axios.post(`${BASE_URL}/cash-movements`, {
+    const response = await axios.post(`${BASE_URL}/cash-movements/ingreso`, {
       cashSessionId: sessionId,
-      tipo: 'INGRESO',
       monto: 50.00,
       motivo: 'Ingreso adicional',
       descripcion: 'Pago de deuda cliente - Testing'
     });
     
-    log.success(`Ingreso registrado: S/ ${response.data.data.monto}`);
-    log.info(`ID Movimiento: ${response.data.data.id}`);
+    log.success(`Ingreso registrado: S/ ${response.data.movement.monto}`);
+    log.info(`ID Movimiento: ${response.data.movement.id}`);
     recordTest('Test 1.3: Registrar ingreso adicional', true);
   } catch (error) {
     log.error(`Error: ${error.response?.data?.message || error.message}`);
@@ -160,15 +237,14 @@ async function testGestionCaja() {
   // Test 1.4: Registrar egreso
   log.test('Test 1.4: Registrar egreso');
   try {
-    const response = await axios.post(`${BASE_URL}/cash-movements`, {
+    const response = await axios.post(`${BASE_URL}/cash-movements/egreso`, {
       cashSessionId: sessionId,
-      tipo: 'EGRESO',
       monto: 30.00,
       motivo: 'Gastos operativos',
       descripcion: 'Pago delivery - Testing'
     });
     
-    log.success(`Egreso registrado: S/ ${response.data.data.monto}`);
+    log.success(`Egreso registrado: S/ ${response.data.movement.monto}`);
     recordTest('Test 1.4: Registrar egreso', true);
   } catch (error) {
     log.error(`Error: ${error.response?.data?.message || error.message}`);
@@ -196,18 +272,25 @@ async function testGestionCaja() {
 async function testRealizarVenta() {
   log.title('3️⃣  REALIZAR VENTA');
 
+  // Validar que tenemos IDs necesarios
+  if (!productId || !warehouseId) {
+    log.error('No se pueden crear ventas: faltan IDs de producto o almacén');
+    recordTest('Test 2.1: Crear venta en efectivo', false, 'IDs no disponibles');
+    recordTest('Test 2.2: Confirmar pago', false, 'IDs no disponibles');
+    return;
+  }
+
   // Test 2.1: Crear venta en efectivo
   log.test('Test 2.1: Crear venta en efectivo');
   try {
     const response = await axios.post(`${BASE_URL}/sales`, {
-      warehouseId: 1,
+      almacenId: warehouseId, // Campo esperado por backend
       tipoComprobante: 'Boleta',
       formaPago: 'Efectivo',
-      incluirIGV: true,
-      montoRecibido: 150.00,
-      detalles: [
+      incluyeIGV: true, // Campo esperado por backend
+      items: [ // Campo esperado por backend
         {
-          productoId: 1,
+          productId: productId, // ID dinámico
           cantidad: 2,
           precioUnitario: 50.00
         }
@@ -257,14 +340,14 @@ async function testRealizarVenta() {
   log.test('Test 2.3: Crear venta con transferencia');
   try {
     const response = await axios.post(`${BASE_URL}/sales`, {
-      warehouseId: 1,
+      almacenId: warehouseId, // Campo esperado
       tipoComprobante: 'Boleta',
       formaPago: 'Transferencia',
       referenciaPago: 'OP-TEST-12345',
-      incluirIGV: true,
-      detalles: [
+      incluyeIGV: true,
+      items: [
         {
-          productoId: 2,
+          productId: productId, // ID dinámico
           cantidad: 1,
           precioUnitario: 100.00
         }
@@ -284,17 +367,27 @@ async function testRealizarVenta() {
 async function testCotizaciones() {
   log.title('4️⃣  COTIZACIONES');
 
+  // Validar que tenemos IDs necesarios
+  if (!productId || !warehouseId || !clientId) {
+    log.error('No se pueden crear cotizaciones: faltan IDs de producto, almacén o cliente');
+    recordTest('Test 3.1: Crear cotización', false, 'IDs no disponibles');
+    recordTest('Test 3.2: Aprobar cotización', false, 'IDs no disponibles');
+    recordTest('Test 3.3: Rechazar cotización', false, 'IDs no disponibles');
+    recordTest('Test 3.4: Convertir cotización a venta', false, 'IDs no disponibles');
+    return;
+  }
+
   // Test 3.1: Crear cotización
   log.test('Test 3.1: Crear cotización');
   try {
     const response = await axios.post(`${BASE_URL}/quotes`, {
-      clienteId: 1,
-      warehouseId: 1,
-      validezDias: 7,
+      clienteId: clientId, // ID dinámico
+      almacenId: warehouseId, // Campo esperado por backend
+      diasValidez: 7, // Campo esperado por backend
       observaciones: 'Cotización de prueba - Testing E2E',
-      detalles: [
+      items: [ // Campo esperado por backend
         {
-          productoId: 1,
+          productId: productId, // ID dinámico
           cantidad: 3,
           precioUnitario: 200.00
         }
@@ -706,6 +799,9 @@ async function runAllTests() {
       log.error('No se pudo autenticar. Abortando pruebas.');
       return;
     }
+    
+    // Obtener IDs reales de la base de datos
+    await fetchRealIds();
     
     await testGestionCaja();
     await testRealizarVenta();

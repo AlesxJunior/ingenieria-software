@@ -28,7 +28,11 @@ export const creditNoteInvoiceService = {
     const creditNote = await prisma.sale.findUnique({
       where: { id: creditNoteId },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
         usuario: true,
         cliente: true,
         cashMovement: true,
@@ -296,7 +300,7 @@ export const creditNoteInvoiceService = {
       }
 
       // Obtener código del producto
-      const productCode = item.productCode || 'N/A';
+      const productCode = item.product?.codigo || item.productCode || item.productId || 'N/A';
 
       doc
         .text(productCode, itemCodeX, position, { width: 60 })
@@ -375,6 +379,22 @@ export const creditNoteInvoiceService = {
 
     // Información de estado
     if (data.creditNote.creditNoteStatus === 'Pendiente') {
+      // Generar código de barras simple con el código de NC
+      const barcodeY = footerY - 35;
+      const barcodeText = data.creditNote.codigoVenta;
+      
+      // Dibujar "barras" simuladas con rectángulos
+      doc.fontSize(8).font('Helvetica').text('CÓDIGO DE VALE:', 50, barcodeY, {
+        align: 'center',
+        width: 495,
+      });
+      
+      // Mostrar el código en formato grande
+      doc.fontSize(16).font('Helvetica-Bold').text(barcodeText, 50, barcodeY + 15, {
+        align: 'center',
+        width: 495,
+      });
+      
       doc
         .fontSize(9)
         .font('Helvetica-Bold')

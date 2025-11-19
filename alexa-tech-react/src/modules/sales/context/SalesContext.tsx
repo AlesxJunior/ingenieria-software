@@ -29,6 +29,12 @@ export interface CashSession {
   createdAt: string;
   updatedAt: string;
   cashRegister?: CashRegister;
+  user?: {
+    id: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export interface Sale {
