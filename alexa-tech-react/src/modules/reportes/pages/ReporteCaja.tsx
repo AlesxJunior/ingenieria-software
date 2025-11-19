@@ -329,137 +329,137 @@ const ReporteCaja: React.FC = () => {
           </ExportButton>
         </Header>
 
-      <FiltersContainer>
-        <FiltersGrid>
-          <FormGroup>
-            <Label>Fecha Inicio</Label>
-            <Input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Fecha Fin</Label>
-            <Input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Tipo de Movimiento</Label>
-            <Select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="INGRESO">Ingreso</option>
-              <option value="EGRESO">Egreso</option>
-              <option value="APERTURA">Apertura</option>
-              <option value="CIERRE">Cierre</option>
-            </Select>
-          </FormGroup>
-          <FormGroup>
-            <Label>Usuario</Label>
-            <Input
-              type="text"
-              placeholder="Buscar por usuario"
-              value={usuario}
-              onChange={(e) => setUsuario(e.target.value)}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Método de Pago</Label>
-            <Select
-              value={metodoPago}
-              onChange={(e) => setMetodoPago(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="EFECTIVO">Efectivo</option>
-              <option value="TARJETA">Tarjeta</option>
-              <option value="TRANSFERENCIA">Transferencia</option>
-              <option value="CHEQUE">Cheque</option>
-            </Select>
-          </FormGroup>
-          <FormGroup>
-            <Label>Concepto</Label>
-            <Input
-              type="text"
-              placeholder="Buscar por concepto"
-              value={concepto}
-              onChange={(e) => setConcepto(e.target.value)}
-            />
-          </FormGroup>
-        </FiltersGrid>
-        <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-          <Button onClick={handleBuscar} disabled={loading}>
-            {loading ? 'Buscando...' : 'Buscar'}
-          </Button>
-        </div>
-      </FiltersContainer>
+        <FiltersContainer>
+          <FiltersGrid>
+            <FormGroup>
+              <Label>Fecha Inicio</Label>
+              <Input
+                type="date"
+                value={fechaInicio}
+                onChange={(e) => setFechaInicio(e.target.value)}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label>Fecha Fin</Label>
+              <Input
+                type="date"
+                value={fechaFin}
+                onChange={(e) => setFechaFin(e.target.value)}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label>Tipo de Movimiento</Label>
+              <Select
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+              >
+                <option value="">Todos</option>
+                <option value="INGRESO">Ingreso</option>
+                <option value="EGRESO">Egreso</option>
+                <option value="APERTURA">Apertura</option>
+                <option value="CIERRE">Cierre</option>
+              </Select>
+            </FormGroup>
+            <FormGroup>
+              <Label>Usuario</Label>
+              <Input
+                type="text"
+                placeholder="Buscar por usuario"
+                value={usuario}
+                onChange={(e) => setUsuario(e.target.value)}
+              />
+            </FormGroup>
+            <FormGroup>
+              <Label>Método de Pago</Label>
+              <Select
+                value={metodoPago}
+                onChange={(e) => setMetodoPago(e.target.value)}
+              >
+                <option value="">Todos</option>
+                <option value="EFECTIVO">Efectivo</option>
+                <option value="TARJETA">Tarjeta</option>
+                <option value="TRANSFERENCIA">Transferencia</option>
+                <option value="CHEQUE">Cheque</option>
+              </Select>
+            </FormGroup>
+            <FormGroup>
+              <Label>Concepto</Label>
+              <Input
+                type="text"
+                placeholder="Buscar por concepto"
+                value={concepto}
+                onChange={(e) => setConcepto(e.target.value)}
+              />
+            </FormGroup>
+          </FiltersGrid>
+          <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+            <Button onClick={handleBuscar} disabled={loading}>
+              {loading ? 'Buscando...' : 'Buscar'}
+            </Button>
+          </div>
+        </FiltersContainer>
 
-      <SummaryCards>
-        <SummaryCard>
-          <CardTitle>Total Ingresos</CardTitle>
-          <CardValue>S/ {resumen.totalIngresos.toFixed(2)}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardTitle>Total Egresos</CardTitle>
-          <CardValue>S/ {resumen.totalEgresos.toFixed(2)}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardTitle>Saldo Final</CardTitle>
-          <CardValue>S/ {resumen.saldoFinal.toFixed(2)}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardTitle>Total Movimientos</CardTitle>
-          <CardValue>{resumen.totalMovimientos}</CardValue>
-        </SummaryCard>
-      </SummaryCards>
+        <SummaryCards>
+          <SummaryCard>
+            <CardTitle>Total Ingresos</CardTitle>
+            <CardValue>S/ {resumen.totalIngresos.toFixed(2)}</CardValue>
+          </SummaryCard>
+          <SummaryCard>
+            <CardTitle>Total Egresos</CardTitle>
+            <CardValue>S/ {resumen.totalEgresos.toFixed(2)}</CardValue>
+          </SummaryCard>
+          <SummaryCard>
+            <CardTitle>Saldo Final</CardTitle>
+            <CardValue>S/ {resumen.saldoFinal.toFixed(2)}</CardValue>
+          </SummaryCard>
+          <SummaryCard>
+            <CardTitle>Total Movimientos</CardTitle>
+            <CardValue>{resumen.totalMovimientos}</CardValue>
+          </SummaryCard>
+        </SummaryCards>
 
-      <TableContainer>
-        <Table>
-          <thead>
-            <tr>
-              <TableHeader>Fecha</TableHeader>
-              <TableHeader>Hora</TableHeader>
-              <TableHeader>Tipo</TableHeader>
-              <TableHeader>Concepto</TableHeader>
-              <TableHeader>Monto</TableHeader>
-              <TableHeader>Saldo</TableHeader>
-              <TableHeader>Usuario</TableHeader>
-              <TableHeader>Comprobante</TableHeader>
-              <TableHeader>Método Pago</TableHeader>
-              <TableHeader>Observaciones</TableHeader>
-            </tr>
-          </thead>
-          <tbody>
-            {movimientos.map((movimiento) => (
-              <tr key={movimiento.id}>
-                <TableCell>{formatDMY(movimiento.fecha)}</TableCell>
-                <TableCell>{movimiento.hora}</TableCell>
-                <TableCell>
-                  <TypeBadge type={movimiento.tipo}>
-                    {movimiento.tipo === 'INGRESO' ? 'Ingreso' : 
-                     movimiento.tipo === 'EGRESO' ? 'Egreso' :
-                     movimiento.tipo === 'APERTURA' ? 'Apertura' : 'Cierre'}
-                  </TypeBadge>
-                </TableCell>
-                <TableCell>{movimiento.concepto}</TableCell>
-                <TableCell style={{ color: movimiento.monto >= 0 ? '#059669' : '#DC2626' }}>
-                  S/ {movimiento.monto.toFixed(2)}
-                </TableCell>
-                <TableCell>S/ {movimiento.saldo.toFixed(2)}</TableCell>
-                <TableCell>{movimiento.usuario}</TableCell>
-                <TableCell>{movimiento.comprobante || '-'}</TableCell>
-                <TableCell>{movimiento.metodoPago}</TableCell>
-                <TableCell>{movimiento.observaciones || '-'}</TableCell>
+        <TableContainer>
+          <Table>
+            <thead>
+              <tr>
+                <TableHeader>Fecha</TableHeader>
+                <TableHeader>Hora</TableHeader>
+                <TableHeader>Tipo</TableHeader>
+                <TableHeader>Concepto</TableHeader>
+                <TableHeader>Monto</TableHeader>
+                <TableHeader>Saldo</TableHeader>
+                <TableHeader>Usuario</TableHeader>
+                <TableHeader>Comprobante</TableHeader>
+                <TableHeader>Método Pago</TableHeader>
+                <TableHeader>Observaciones</TableHeader>
               </tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableContainer>
+            </thead>
+            <tbody>
+              {movimientos.map((movimiento) => (
+                <tr key={movimiento.id}>
+                  <TableCell>{formatDMY(movimiento.fecha)}</TableCell>
+                  <TableCell>{movimiento.hora}</TableCell>
+                  <TableCell>
+                    <TypeBadge type={movimiento.tipo}>
+                      {movimiento.tipo === 'INGRESO' ? 'Ingreso' :
+                        movimiento.tipo === 'EGRESO' ? 'Egreso' :
+                          movimiento.tipo === 'APERTURA' ? 'Apertura' : 'Cierre'}
+                    </TypeBadge>
+                  </TableCell>
+                  <TableCell>{movimiento.concepto}</TableCell>
+                  <TableCell style={{ color: movimiento.monto >= 0 ? '#059669' : '#DC2626' }}>
+                    S/ {movimiento.monto.toFixed(2)}
+                  </TableCell>
+                  <TableCell>S/ {movimiento.saldo.toFixed(2)}</TableCell>
+                  <TableCell>{movimiento.usuario}</TableCell>
+                  <TableCell>{movimiento.comprobante || '-'}</TableCell>
+                  <TableCell>{movimiento.metodoPago}</TableCell>
+                  <TableCell>{movimiento.observaciones || '-'}</TableCell>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </TableContainer>
       </Container>
     </Layout>
   );

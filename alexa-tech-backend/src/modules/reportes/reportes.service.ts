@@ -50,11 +50,21 @@ class ReportesService {
     const ventasMenor = totalVentas > 0 ? Math.min(...ventas.map(v => Number(v.total))) : 0;
 
     // Ventas por día
-    const ventasPorDia = ventas.map(v => ({
-      fecha: v.fechaEmision.toISOString().split('T')[0] || '',
-      cantidad: 1,
-      total: Number(v.total),
-    }));
+    const ventasPorDiaMap = new Map<string, { cantidad: number; total: number }>();
+    ventas.forEach(v => {
+      const fecha = v.fechaEmision.toISOString().split('T')[0] || '';
+      const current = ventasPorDiaMap.get(fecha);
+      ventasPorDiaMap.set(fecha, {
+        cantidad: (current?.cantidad || 0) + 1,
+        total: (current?.total || 0) + Number(v.total)
+      });
+    });
+
+    const ventasPorDia = Array.from(ventasPorDiaMap.entries()).map(([fecha, data]) => ({
+      fecha,
+      cantidad: data.cantidad,
+      total: data.total
+    })).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
     // Ventas por método de pago
     const efectivo = ventas.filter(v => v.formaPago === 'Efectivo').reduce((s, v) => s + Number(v.total), 0);
@@ -209,11 +219,21 @@ class ReportesService {
     const compraMayor = totalCompras > 0 ? Math.max(...compras.map(c => Number(c.total))) : 0;
     const compraMenor = totalCompras > 0 ? Math.min(...compras.map(c => Number(c.total))) : 0;
 
-    const comprasPorDia = compras.map(c => ({
-      fecha: c.fechaEmision.toISOString().split('T')[0] || '',
-      cantidad: 1,
-      total: Number(c.total),
-    }));
+    const comprasPorDiaMap = new Map<string, { cantidad: number; total: number }>();
+    compras.forEach(c => {
+      const fecha = c.fechaEmision.toISOString().split('T')[0] || '';
+      const current = comprasPorDiaMap.get(fecha);
+      comprasPorDiaMap.set(fecha, {
+        cantidad: (current?.cantidad || 0) + 1,
+        total: (current?.total || 0) + Number(c.total)
+      });
+    });
+
+    const comprasPorDia = Array.from(comprasPorDiaMap.entries()).map(([fecha, data]) => ({
+      fecha,
+      cantidad: data.cantidad,
+      total: data.total
+    })).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
     // Top productos comprados
     const productosMap = new Map<string, any>();
@@ -274,33 +294,117 @@ class ReportesService {
    * REPORTE DE INVENTARIO
    */
   async getReporteInventario(filtros: ReporteFiltros): Promise<InventarioReporte> {
-    const productos = await prisma.product.findMany({ take: 100 });
+    // 1. Obtener todos los productos con sus datos básicos
+    const productos = await prisma.product.findMany({
+      select: {
+        id: true,
+        nombre: true,
+        stock: true,
+        precioVenta: true,
+        estado: true,
+        minStock: true,
+        categoria: true
+      }
+    });
+
     const totalProductos = productos.length;
-    const productosActivos = productos.filter((p: any) => p.estado).length;
+    const productosActivos = productos.filter(p => p.estado).length;
+
+    // Calcular valor total del inventario (Stock * Precio Venta)
+    // NOTA: Idealmente sería Costo, pero usamos Precio Venta por ahora
+    const valorTotalInventario = productos.reduce((sum, p) => sum + (p.stock * Number(p.precioVenta)), 0);
+
+    const productosConStock = productos.filter(p => p.stock > 0).length;
+    const productosSinStock = productos.filter(p => p.stock <= 0).length;
+    const productosEnAlerta = productos.filter(p => p.minStock && p.stock <= p.minStock).length;
+
+    // 2. Obtener stock por almacén
+    const almacenes = await prisma.warehouse.findMany({
+      include: {
+        stockByWarehouses: {
+          include: { product: true }
+        }
+      }
+    });
+
+    const stockPorAlmacen = almacenes.map(almacen => {
+      const cantidadProductos = almacen.stockByWarehouses.reduce((sum, s) => sum + s.quantity, 0);
+      const valorInventario = almacen.stockByWarehouses.reduce((sum, s) => sum + (s.quantity * Number(s.product.precioVenta)), 0);
+      const enAlerta = almacen.stockByWarehouses.filter(s => s.minStock && s.quantity <= s.minStock).length;
+
+      return {
+        almacenId: almacen.id,
+        nombreAlmacen: almacen.nombre,
+        cantidadProductos,
+        valorInventario,
+        productosEnAlerta: enAlerta
+      };
+    });
+
+    // 3. Calcular rotación (basado en ventas recientes)
+    // Top 10 productos con más movimiento en ventas
+    const ventasRecientes = await prisma.saleItem.groupBy({
+      by: ['productId'],
+      _sum: {
+        cantidad: true
+      },
+      orderBy: {
+        _sum: {
+          cantidad: 'desc'
+        }
+      },
+      take: 10
+    });
+
+    // Mapear IDs a nombres
+    const productosMasRotacion = await Promise.all(ventasRecientes.map(async (v) => {
+      const prod = productos.find(p => p.id === v.productId);
+      const stockActual = prod?.stock || 0;
+      const precioVenta = Number(prod?.precioVenta || 0);
+      return {
+        productoId: v.productId,
+        nombreProducto: prod?.nombre || 'Desconocido',
+        cantidadMovimientos: v._sum.cantidad || 0,
+        stockActual,
+        valorStock: stockActual * precioVenta
+      };
+    }));
+
+    // 4. Valor por categoría
+    const valorPorCategoriaMap = new Map<string, { cantidad: number; valor: number }>();
+    productos.forEach(p => {
+      const cat = p.categoria || 'Sin Categoría';
+      const val = p.stock * Number(p.precioVenta);
+      const current = valorPorCategoriaMap.get(cat);
+      valorPorCategoriaMap.set(cat, {
+        cantidad: (current?.cantidad || 0) + 1,
+        valor: (current?.valor || 0) + val
+      });
+    });
+
+    const totalValor = Array.from(valorPorCategoriaMap.values()).reduce((sum, v) => sum + v.valor, 0);
+    const valorPorCategoria = Array.from(valorPorCategoriaMap.entries()).map(([categoria, data]) => ({
+      categoria,
+      cantidadProductos: data.cantidad,
+      valorTotal: data.valor,
+      porcentaje: totalValor > 0 ? (data.valor / totalValor) * 100 : 0
+    })).sort((a, b) => b.valorTotal - a.valorTotal);
 
     return {
       resumen: {
         totalProductos,
         productosActivos,
         productosInactivos: totalProductos - productosActivos,
-        valorTotalInventario: 0,
-        productosConStock: productosActivos,
-        productosSinStock: 0,
-        productosEnAlerta: 0,
+        valorTotalInventario,
+        productosConStock,
+        productosSinStock,
+        productosEnAlerta,
       },
-      stockPorAlmacen: [
-        {
-          almacenId: 'ALM-001',
-          nombreAlmacen: 'Almacén Principal',
-          cantidadProductos: totalProductos,
-          valorInventario: 0,
-          productosEnAlerta: 0,
-        },
-      ],
-      productosMasRotacion: [],
-      productosEnAlerta: [],
-      valorPorCategoria: [],
-      movimientosRecientes: [],
+      stockPorAlmacen,
+      productosMasRotacion,
+      productosEnAlerta: [], // Se puede detallar si se requiere
+      valorPorCategoria,
+      movimientosRecientes: [], // Se puede implementar con InventoryMovement
     };
   }
 
@@ -316,25 +420,74 @@ class ReportesService {
       };
     }
 
+    // Obtener Ventas y Compras
     const ventas = await prisma.sale.findMany({ where: whereClause });
     const compras = await prisma.purchase.findMany({ where: whereClause });
 
-    const totalIngresos = ventas.reduce((s, v) => s + Number(v.total), 0);
-    const totalEgresos = compras.reduce((s, c) => s + Number(c.total), 0);
+    // Calcular totales
+    const totalIngresos = ventas
+      .filter(v => v.estado !== 'Cancelada')
+      .reduce((s, v) => s + Number(v.total), 0);
+
+    const totalEgresos = compras
+      .filter(c => c.estado !== 'Cancelada')
+      .reduce((s, c) => s + Number(c.total), 0);
+
     const utilidadBruta = totalIngresos - totalEgresos;
 
-    const ingresosPorDia = ventas.map(v => ({
-      fecha: v.fechaEmision.toISOString().split('T')[0] || '',
-      ventas: Number(v.total),
+    // Cuentas por cobrar/pagar
+    const ventasPorCobrar = ventas
+      .filter(v => v.estado === 'Pendiente')
+      .reduce((s, v) => s + (Number(v.total) - Number(v.montoRecibido || 0)), 0);
+
+    const comprasPorPagar = compras
+      .filter(c => c.estado === 'Pendiente')
+      .reduce((s, c) => s + Number(c.total), 0);
+
+    // Flujo por día (Ingresos vs Egresos)
+    const flujoMap = new Map<string, { ingresos: number; egresos: number }>();
+
+    ventas.forEach(v => {
+      if (v.estado === 'Cancelada') return;
+      const fecha = v.fechaEmision.toISOString().split('T')[0] || '';
+      const current = flujoMap.get(fecha);
+      flujoMap.set(fecha, {
+        ingresos: (current?.ingresos || 0) + Number(v.total),
+        egresos: current?.egresos || 0
+      });
+    });
+
+    compras.forEach(c => {
+      if (c.estado === 'Cancelada') return;
+      const fecha = c.fechaEmision.toISOString().split('T')[0] || '';
+      const current = flujoMap.get(fecha);
+      flujoMap.set(fecha, {
+        ingresos: current?.ingresos || 0,
+        egresos: (current?.egresos || 0) + Number(c.total)
+      });
+    });
+
+    const flujoEfectivo = Array.from(flujoMap.entries())
+      .map(([fecha, data]) => ({
+        fecha,
+        ingresos: data.ingresos,
+        egresos: data.egresos,
+        saldo: data.ingresos - data.egresos
+      }))
+      .sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+    const ingresosPorDia = flujoEfectivo.map(f => ({
+      fecha: f.fecha,
+      ventas: f.ingresos,
       otrosIngresos: 0,
-      total: Number(v.total),
+      total: f.ingresos
     }));
 
-    const egresosPorDia = compras.map(c => ({
-      fecha: c.fechaEmision.toISOString().split('T')[0] || '',
-      compras: Number(c.total),
+    const egresosPorDia = flujoEfectivo.map(f => ({
+      fecha: f.fecha,
+      compras: f.egresos,
       otrosEgresos: 0,
-      total: Number(c.total),
+      total: f.egresos
     }));
 
     return {
@@ -343,12 +496,12 @@ class ReportesService {
         totalEgresos,
         utilidadBruta,
         margenBruto: totalIngresos > 0 ? (utilidadBruta / totalIngresos) * 100 : 0,
-        ventasPorCobrar: 0,
-        comprasPorPagar: 0,
+        ventasPorCobrar,
+        comprasPorPagar,
       },
       ingresosPorDia,
       egresosPorDia,
-      flujoEfectivo: [],
+      flujoEfectivo,
       ingresosPorConcepto: [],
       egresosPorConcepto: [],
     };
@@ -360,42 +513,92 @@ class ReportesService {
   async getReporteCaja(filtros: ReporteFiltros): Promise<CajaReporte> {
     const whereClause: any = {};
     if (filtros.fechaInicio && filtros.fechaFin) {
-      whereClause.fechaEmision = {
+      whereClause.fechaApertura = {
         gte: new Date(filtros.fechaInicio),
         lte: new Date(filtros.fechaFin),
       };
     }
 
-    const ventas = await prisma.sale.findMany({ where: whereClause });
+    // 1. Obtener Sesiones de Caja
+    const sesiones = await prisma.cashSession.findMany({
+      where: whereClause,
+      include: {
+        cashRegister: true,
+        user: true
+      }
+    });
+
+    const cajasAbiertas = sesiones.filter(s => s.estado === 'Abierta').length;
+    const cajasCerradas = sesiones.filter(s => s.estado === 'Cerrada').length;
+
+    // 2. Obtener Movimientos de Caja (Ingresos/Egresos manuales + Ventas)
+    // Nota: Para simplificar, sumaremos las ventas del periodo
+    const ventasWhere: any = {};
+    if (filtros.fechaInicio && filtros.fechaFin) {
+      ventasWhere.fechaEmision = {
+        gte: new Date(filtros.fechaInicio),
+        lte: new Date(filtros.fechaFin),
+      };
+    }
+    const ventas = await prisma.sale.findMany({ where: ventasWhere });
 
     const efectivo = ventas.filter(v => v.formaPago === 'Efectivo').reduce((s, v) => s + Number(v.total), 0);
     const tarjeta = ventas.filter(v => v.formaPago === 'Tarjeta').reduce((s, v) => s + Number(v.total), 0);
     const transferencia = ventas.filter(v => v.formaPago === 'Transferencia').reduce((s, v) => s + Number(v.total), 0);
+    const yape = ventas.filter(v => v.formaPago === 'Yape').reduce((s, v) => s + Number(v.total), 0);
+    const plin = ventas.filter(v => v.formaPago === 'Plin').reduce((s, v) => s + Number(v.total), 0);
+
+    const totalGeneral = efectivo + tarjeta + transferencia + yape + plin;
+
+    const movimientosPorMetodo = [
+      { metodoPago: 'Efectivo', cantidadTransacciones: ventas.filter(v => v.formaPago === 'Efectivo').length, montoTotal: efectivo, porcentaje: totalGeneral > 0 ? (efectivo / totalGeneral) * 100 : 0 },
+      { metodoPago: 'Tarjeta', cantidadTransacciones: ventas.filter(v => v.formaPago === 'Tarjeta').length, montoTotal: tarjeta, porcentaje: totalGeneral > 0 ? (tarjeta / totalGeneral) * 100 : 0 },
+      { metodoPago: 'Transferencia', cantidadTransacciones: ventas.filter(v => v.formaPago === 'Transferencia').length, montoTotal: transferencia, porcentaje: totalGeneral > 0 ? (transferencia / totalGeneral) * 100 : 0 },
+      { metodoPago: 'Yape', cantidadTransacciones: ventas.filter(v => v.formaPago === 'Yape').length, montoTotal: yape, porcentaje: totalGeneral > 0 ? (yape / totalGeneral) * 100 : 0 },
+      { metodoPago: 'Plin', cantidadTransacciones: ventas.filter(v => v.formaPago === 'Plin').length, montoTotal: plin, porcentaje: totalGeneral > 0 ? (plin / totalGeneral) * 100 : 0 },
+    ].filter(m => m.montoTotal > 0);
+
+    // Ventas por hora
+    const ventasPorHoraMap = new Array(24).fill(0).map(() => ({ cantidad: 0, total: 0 }));
+    ventas.forEach(v => {
+      const hora = v.fechaEmision.getHours();
+      if (ventasPorHoraMap[hora]) {
+        ventasPorHoraMap[hora].cantidad++;
+        ventasPorHoraMap[hora].total += Number(v.total);
+      }
+    });
+
+    const ventasPorHora = ventasPorHoraMap.map((data, hora) => ({
+      hora,
+      cantidadVentas: data.cantidad,
+      montoTotal: data.total
+    }));
 
     return {
       resumen: {
-        cajasAbiertas: 0,
-        cajasCerradas: 0,
+        cajasAbiertas,
+        cajasCerradas,
         totalEfectivo: efectivo,
         totalTarjeta: tarjeta,
         totalTransferencia: transferencia,
-        totalOtros: 0,
-        totalGeneral: efectivo + tarjeta + transferencia,
+        totalOtros: yape + plin,
+        totalGeneral,
       },
-      movimientosPorCaja: [],
-      movimientosPorMetodo: [
-        {
-          metodoPago: 'Efectivo',
-          cantidadTransacciones: ventas.filter(v => v.formaPago === 'Efectivo').length,
-          montoTotal: efectivo,
-          porcentaje: 100,
-        },
-      ],
-      ventasPorHora: Array.from({ length: 24 }, (_, i) => ({
-        hora: i,
-        cantidadVentas: 0,
-        montoTotal: 0,
+      movimientosPorCaja: sesiones.map(s => ({
+        cajaId: s.cashRegisterId,
+        nombreCaja: s.cashRegister?.nombre || 'Caja',
+        usuarioId: s.userId,
+        nombreUsuario: `${s.user?.firstName || ''} ${s.user?.lastName || ''}`.trim() || 'Usuario',
+        montoApertura: Number(s.montoApertura || 0),
+        totalIngresos: Number(s.totalVentas || 0),
+        totalEgresos: 0,
+        montoCierre: Number(s.montoCierre || 0),
+        estado: s.estado,
+        fechaApertura: s.fechaApertura.toISOString(),
+        fechaCierre: s.fechaCierre?.toISOString()
       })),
+      movimientosPorMetodo,
+      ventasPorHora,
     };
   }
 

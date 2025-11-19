@@ -5,16 +5,16 @@ const getApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
+
   // Detectar automáticamente la IP del servidor basándose en la URL actual
   const currentHost = window.location.hostname;
   const apiPort = 3001;
-  
+
   // Si estamos en localhost, mantener localhost
   if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
     return `http://localhost:${apiPort}/api`;
   }
-  
+
   // Si estamos en una IP específica, usar esa misma IP para la API
   return `http://${currentHost}:${apiPort}/api`;
 };
@@ -32,6 +32,8 @@ export interface ApiResponse<T = any> {
 export interface LoginRequest {
   email: string;
   password: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface RegisterRequest {
@@ -413,7 +415,7 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/users?${queryString}` : '/users';
-    
+
     return this.request(endpoint);
   }
 
@@ -517,13 +519,13 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/entidades?${queryString}` : '/entidades';
-    
+
     return this.request(endpoint);
   }
 
   async getClientById(id: string): Promise<ApiResponse<any>> {
-     return this.request(`/entidades/${id}`);
-   }
+    return this.request(`/entidades/${id}`);
+  }
 
   // ==== Ubigeo ====
   async getDepartamentos(): Promise<ApiResponse<Array<{ id: string; nombre: string }>>> {
@@ -670,6 +672,71 @@ class ApiService {
     return this.request<T>(endpoint, {
       method: 'DELETE',
     });
+  }
+
+  // ==== REPORTES ====
+  async getReporteVentas(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+    almacenId?: string;
+    usuarioId?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+    if (params.almacenId) queryParams.append('almacenId', params.almacenId);
+    if (params.usuarioId) queryParams.append('usuarioId', params.usuarioId);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/ventas?${queryString}`);
+  }
+
+  async getReporteCompras(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/compras?${queryString}`);
+  }
+
+  async getReporteInventario(params: {
+    almacenId?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.almacenId) queryParams.append('almacenId', params.almacenId);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/inventario?${queryString}`);
+  }
+
+  async getReporteFinanciero(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/financiero?${queryString}`);
+  }
+
+  async getReporteCaja(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+    cajaId?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+    if (params.cajaId) queryParams.append('cajaId', params.cajaId);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/caja?${queryString}`);
   }
 }
 

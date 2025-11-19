@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
+import { apiService } from '../../../utils/api';
 
-const formatDMY = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const formatCurrency = (num: number) => `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const Container = styled.div`
   padding: 2rem;
@@ -10,7 +11,7 @@ const Container = styled.div`
 
 const Header = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 `;
@@ -81,14 +82,62 @@ const Button = styled.button`
   &:hover {
     background-color: #1d4ed8;
   }
+  
+  &:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
 `;
 
 const ExportButton = styled(Button)`
   background-color: #10b981;
   
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: #059669;
   }
+`;
+
+const Section = styled.div`
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const Th = styled.th`
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+`;
+
+const Td = styled.td`
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #1a1a1a;
+  border-bottom: 1px solid #e5e7eb;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
 `;
 
 const SummaryCards = styled.div`
@@ -119,201 +168,60 @@ const CardValue = styled.p`
 `;
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow-x: auto;
 `;
-
-const Table = styled.table`
-  width: 100%;
-`;
-
-const TableHeader = styled.th`
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const TableCell = styled.td`
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const StockBadge = styled.span<{ stock: number; stockMinimo: number }>`
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background-color: ${props => {
-    if (props.stock <= 0) return '#EF444420';
-    if (props.stock <= props.stockMinimo) return '#F59E0B20';
-    return '#10B98120';
-  }};
-  color: ${props => {
-    if (props.stock <= 0) return '#DC2626';
-    if (props.stock <= props.stockMinimo) return '#D97706';
-    return '#059669';
-  }};
-`;
-
-interface ProductoInventario {
-  id: string;
-  codigo: string;
-  nombre: string;
-  categoria: string;
-  unidad: string;
-  stockActual: number;
-  stockMinimo: number;
-  stockMaximo: number;
-  precioCompra: number;
-  precioVenta: number;
-  valorInventario: number;
-  ubicacion: string;
-  ultimoMovimiento: string;
-  proveedor: string;
-}
 
 const ReporteInventario: React.FC = () => {
-  const [categoria, setCategoria] = useState('');
-  const [producto, setProducto] = useState('');
-  const [ubicacion, setUbicacion] = useState('');
-  const [proveedor, setProveedor] = useState('');
-  const [stockCritico, setStockCritico] = useState(false);
-  const [productos, setProductos] = useState<ProductoInventario[]>([]);
+  const [almacenId, setAlmacenId] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Mock data - esto será reemplazado con datos reales del backend
-  const mockProductos: ProductoInventario[] = [
-    {
-      id: '1',
-      codigo: 'PROD001',
-      nombre: 'Laptop HP Pavilion',
-      categoria: 'Electrónica',
-      unidad: 'UNIDAD',
-      stockActual: 15,
-      stockMinimo: 5,
-      stockMaximo: 50,
-      precioCompra: 800,
-      precioVenta: 1200,
-      valorInventario: 12000,
-      ubicacion: 'A1-P1',
-      ultimoMovimiento: '2024-01-15',
-      proveedor: 'Tecnología S.A.C.'
-    },
-    {
-      id: '2',
-      codigo: 'PROD002',
-      nombre: 'Mouse Inalámbrico Logitech',
-      categoria: 'Accesorios',
-      unidad: 'UNIDAD',
-      stockActual: 3,
-      stockMinimo: 10,
-      stockMaximo: 100,
-      precioCompra: 25,
-      precioVenta: 45,
-      valorInventario: 135,
-      ubicacion: 'A2-P3',
-      ultimoMovimiento: '2024-01-14',
-      proveedor: 'Accesorios XYZ'
-    },
-    {
-      id: '3',
-      codigo: 'PROD003',
-      nombre: 'Teclado Mecánico RGB',
-      categoria: 'Accesorios',
-      unidad: 'UNIDAD',
-      stockActual: 25,
-      stockMinimo: 10,
-      stockMaximo: 80,
-      precioCompra: 60,
-      precioVenta: 95,
-      valorInventario: 2375,
-      ubicacion: 'A2-P4',
-      ultimoMovimiento: '2024-01-16',
-      proveedor: 'Accesorios XYZ'
-    },
-    {
-      id: '4',
-      codigo: 'PROD004',
-      nombre: 'Monitor LG 24"',
-      categoria: 'Electrónica',
-      unidad: 'UNIDAD',
-      stockActual: 0,
-      stockMinimo: 5,
-      stockMaximo: 30,
-      precioCompra: 150,
-      precioVenta: 220,
-      valorInventario: 0,
-      ubicacion: 'A1-P2',
-      ultimoMovimiento: '2024-01-10',
-      proveedor: 'Tecnología S.A.C.'
-    }
-  ];
+  const [reporteData, setReporteData] = useState<any>(null);
 
   useEffect(() => {
-    // Cargar datos iniciales
-    setProductos(mockProductos);
+    handleBuscar();
   }, []);
 
-  const handleBuscar = () => {
+  const handleBuscar = async () => {
     setLoading(true);
-    // Filtrar productos según criterios
-    let filteredProductos = mockProductos;
+    try {
+      const res = await apiService.getReporteInventario({
+        almacenId: almacenId || undefined,
+      });
 
-    if (stockCritico) {
-      filteredProductos = filteredProductos.filter(p => p.stockActual <= p.stockMinimo);
-    }
-    if (categoria) {
-      filteredProductos = filteredProductos.filter(p => p.categoria === categoria);
-    }
-    if (producto) {
-      filteredProductos = filteredProductos.filter(p => 
-        p.nombre.toLowerCase().includes(producto.toLowerCase()) ||
-        p.codigo.toLowerCase().includes(producto.toLowerCase())
-      );
-    }
-    if (ubicacion) {
-      filteredProductos = filteredProductos.filter(p => p.ubicacion.toLowerCase().includes(ubicacion.toLowerCase()));
-    }
-    if (proveedor) {
-      filteredProductos = filteredProductos.filter(p => p.proveedor.toLowerCase().includes(proveedor.toLowerCase()));
-    }
-
-    setTimeout(() => {
-      setProductos(filteredProductos);
+      if (res.success && res.data) {
+        setReporteData(res.data);
+      }
+    } catch (e) {
+      console.error('Error cargando reporte inventario', e);
+      setReporteData(null);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleExportar = () => {
-    // Exportar a Excel o PDF
-    const csvContent = [
-      ['Código', 'Producto', 'Categoría', 'Unidad', 'Stock Actual', 'Stock Mínimo', 'Stock Máximo', 'Precio Compra', 'Precio Venta', 'Valor Inventario', 'Ubicación', 'Último Movimiento', 'Proveedor'],
-      ...productos.map(p => [
-        p.codigo,
-        p.nombre,
-        p.categoria,
-        p.unidad,
-        p.stockActual,
-        p.stockMinimo,
-        p.stockMaximo,
-        p.precioCompra.toFixed(2),
-        p.precioVenta.toFixed(2),
-        p.valorInventario.toFixed(2),
-        p.ubicacion,
-        p.ultimoMovimiento,
-        p.proveedor
-      ])
-    ].map(row => row.join(',')).join('\n');
+    if (!reporteData) return;
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const csvLines = [
+      'REPORTE DE INVENTARIO',
+      '',
+      'RESUMEN',
+      `Valor Total Inventario,${formatCurrency(reporteData.valorTotalInventario)}`,
+      '',
+      'STOCK POR ALMACEN',
+      'Almacén,Cantidad Total,Valor Total',
+      ...reporteData.stockPorAlmacen.map((a: any) =>
+        `${a.almacen},${a._sum.cantidad},${formatCurrency(a._sum.valor)}`
+      ),
+      '',
+      'PRODUCTOS MAS ROTACION',
+      'Producto,Cantidad Movimientos',
+      ...reporteData.productosMasRotacion.map((p: any) =>
+        `${p.nombreProducto},${p.cantidadMovimientos}`
+      )
+    ];
+
+    const csvContent = csvLines.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -322,155 +230,154 @@ const ReporteInventario: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const calcularResumen = () => {
-    const totalProductos = productos.length;
-    const valorTotalInventario = productos.reduce((sum, p) => sum + p.valorInventario, 0);
-    const productosStockCritico = productos.filter(p => p.stockActual <= p.stockMinimo).length;
-    const productosSinStock = productos.filter(p => p.stockActual === 0).length;
-
-    return {
-      totalProductos,
-      valorTotalInventario,
-      productosStockCritico,
-      productosSinStock
-    };
-  };
-
-  const resumen = calcularResumen();
-
   return (
-    <Layout title="Reportes: Inventario / Almacén">
+    <Layout title="Reporte de Inventario">
       <Container>
         <Header>
-          <ExportButton onClick={handleExportar}>
-            Exportar Reporte
+          <div />
+          <ExportButton onClick={handleExportar} disabled={!reporteData || loading}>
+            📊 Exportar Reporte
           </ExportButton>
         </Header>
 
-      <FiltersContainer>
-        <FiltersGrid>
-          <FormGroup>
-            <Label>Categoría</Label>
-            <Select
-              value={categoria}
-              onChange={(e) => setCategoria(e.target.value)}
-            >
-              <option value="">Todas</option>
-              <option value="Electrónica">Electrónica</option>
-              <option value="Accesorios">Accesorios</option>
-              <option value="Software">Software</option>
-              <option value="Materiales">Materiales</option>
-              <option value="Equipos">Equipos</option>
-            </Select>
-          </FormGroup>
-          <FormGroup>
-            <Label>Producto o Código</Label>
-            <Input
-              type="text"
-              placeholder="Buscar por nombre o código"
-              value={producto}
-              onChange={(e) => setProducto(e.target.value)}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Ubicación</Label>
-            <Input
-              type="text"
-              placeholder="Buscar por ubicación"
-              value={ubicacion}
-              onChange={(e) => setUbicacion(e.target.value)}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>Proveedor</Label>
-            <Input
-              type="text"
-              placeholder="Buscar por proveedor"
-              value={proveedor}
-              onChange={(e) => setProveedor(e.target.value)}
-            />
-          </FormGroup>
-          <FormGroup>
-            <Label>
-              <input
-                type="checkbox"
-                checked={stockCritico}
-                onChange={(e) => setStockCritico(e.target.checked)}
-              />
-              Solo stock crítico
-            </Label>
-          </FormGroup>
-        </FiltersGrid>
-        <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-          <Button onClick={handleBuscar} disabled={loading}>
-            {loading ? 'Buscando...' : 'Buscar'}
-          </Button>
-        </div>
-      </FiltersContainer>
+        <FiltersContainer>
+          <FiltersGrid>
+            <FormGroup>
+              <Label>Almacén</Label>
+              <Select
+                value={almacenId}
+                onChange={(e) => setAlmacenId(e.target.value)}
+              >
+                <option value="">Todos los almacenes</option>
+                {/* Opciones serán cargadas dinámicamente */}
+              </Select>
+            </FormGroup>
+          </FiltersGrid>
+          <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+            <Button onClick={handleBuscar} disabled={loading}>
+              {loading ? 'Generando...' : '🔍 Generar Reporte'}
+            </Button>
+          </div>
+        </FiltersContainer>
 
-      <SummaryCards>
-        <SummaryCard>
-          <CardTitle>Total Productos</CardTitle>
-          <CardValue>{resumen.totalProductos}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardTitle>Valor Total Inventario</CardTitle>
-          <CardValue>S/ {resumen.valorTotalInventario.toFixed(2)}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardTitle>Productos Stock Crítico</CardTitle>
-          <CardValue>{resumen.productosStockCritico}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardTitle>Productos Sin Stock</CardTitle>
-          <CardValue>{resumen.productosSinStock}</CardValue>
-        </SummaryCard>
-      </SummaryCards>
+        {loading && <EmptyState>Cargando reporte...</EmptyState>}
 
-      <TableContainer>
-        <Table>
-          <thead>
-            <tr>
-              <TableHeader>Código</TableHeader>
-              <TableHeader>Producto</TableHeader>
-              <TableHeader>Categoría</TableHeader>
-              <TableHeader>Unidad</TableHeader>
-              <TableHeader>Stock</TableHeader>
-              <TableHeader>Stock Mín</TableHeader>
-              <TableHeader>Stock Máx</TableHeader>
-              <TableHeader>Precio Compra</TableHeader>
-              <TableHeader>Precio Venta</TableHeader>
-              <TableHeader>Valor Inventario</TableHeader>
-              <TableHeader>Ubicación</TableHeader>
-              <TableHeader>Último Movimiento</TableHeader>
-              <TableHeader>Proveedor</TableHeader>
-            </tr>
-          </thead>
-          <tbody>
-            {productos.map((producto) => (
-              <tr key={producto.id}>
-                <TableCell>{producto.codigo}</TableCell>
-                <TableCell>{producto.nombre}</TableCell>
-                <TableCell>{producto.categoria}</TableCell>
-                <TableCell>{producto.unidad}</TableCell>
-                <TableCell>
-                  <StockBadge stock={producto.stockActual} stockMinimo={producto.stockMinimo}>
-                    {producto.stockActual}
-                  </StockBadge>
-                </TableCell>
-                <TableCell>{producto.stockMinimo}</TableCell>
-                <TableCell>{producto.stockMaximo}</TableCell>
-                <TableCell>S/ {producto.precioCompra.toFixed(2)}</TableCell>
-                <TableCell>S/ {producto.precioVenta.toFixed(2)}</TableCell>
-                <TableCell>S/ {producto.valorInventario.toFixed(2)}</TableCell>
-                <TableCell>{producto.ubicacion}</TableCell>
-                <TableCell>{formatDMY(producto.ultimoMovimiento)}</TableCell>
-                <TableCell>{producto.proveedor}</TableCell>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </TableContainer>
+        {!loading && !reporteData && (
+          <EmptyState>No hay datos disponibles. Haga clic en "Generar Reporte".</EmptyState>
+        )}
+
+        {!loading && reporteData && (
+          <>
+            <SummaryCards>
+              <SummaryCard>
+                <CardTitle>Valor Total Inventario</CardTitle>
+                <CardValue>{formatCurrency(reporteData.valorTotalInventario)}</CardValue>
+              </SummaryCard>
+              <SummaryCard>
+                <CardTitle>Total Almacenes</CardTitle>
+                <CardValue>{reporteData.stockPorAlmacen.length}</CardValue>
+              </SummaryCard>
+              <SummaryCard>
+                <CardTitle>Productos en Alerta</CardTitle>
+                <CardValue>{reporteData.productosEnAlerta.length}</CardValue>
+              </SummaryCard>
+            </SummaryCards>
+
+            <Section>
+              <SectionTitle>📦 Stock por Almacén</SectionTitle>
+              <TableContainer>
+                <Table>
+                  <thead>
+                    <tr>
+                      <Th>Almacén</Th>
+                      <Th>Cantidad Total</Th>
+                      <Th>Valor Total</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reporteData.stockPorAlmacen.map((a: any, idx: number) => (
+                      <tr key={idx}>
+                        <Td>{a.almacen}</Td>
+                        <Td>{a._sum.cantidad}</Td>
+                        <Td>{formatCurrency(a._sum.valor)}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </TableContainer>
+            </Section>
+
+            <Section>
+              <SectionTitle>🔄 Productos con Mayor Rotación</SectionTitle>
+              <TableContainer>
+                <Table>
+                  <thead>
+                    <tr>
+                      <Th>Producto</Th>
+                      <Th>Cantidad de Movimientos</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reporteData.productosMasRotacion.map((p: any, idx: number) => (
+                      <tr key={idx}>
+                        <Td>{p.nombreProducto}</Td>
+                        <Td>{p.cantidadMovimientos}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </TableContainer>
+            </Section>
+
+            <Section>
+              <SectionTitle>📊 Valor por Categoría</SectionTitle>
+              <TableContainer>
+                <Table>
+                  <thead>
+                    <tr>
+                      <Th>Categoría</Th>
+                      <Th>Valor Total</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reporteData.valorPorCategoria.map((c: any, idx: number) => (
+                      <tr key={idx}>
+                        <Td>{c.categoria}</Td>
+                        <Td>{formatCurrency(c.valorTotal)}</Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </TableContainer>
+            </Section>
+
+            {reporteData.productosEnAlerta.length > 0 && (
+              <Section>
+                <SectionTitle>⚠️ Productos en Alerta (Stock Bajo)</SectionTitle>
+                <TableContainer>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <Th>Producto</Th>
+                        <Th>Stock Actual</Th>
+                        <Th>Stock Mínimo</Th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reporteData.productosEnAlerta.map((p: any, idx: number) => (
+                        <tr key={idx}>
+                          <Td>{p.nombreProducto}</Td>
+                          <Td style={{ color: '#DC2626', fontWeight: 600 }}>{p.stockActual}</Td>
+                          <Td>{p.stockMinimo}</Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </TableContainer>
+              </Section>
+            )}
+          </>
+        )}
       </Container>
     </Layout>
   );
