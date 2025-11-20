@@ -170,6 +170,10 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
 
   // Función para determinar qué módulo debe estar abierto según la ruta actual
   const getActiveModule = (pathname: string) => {
+    // Verificar reportes primero para evitar conflictos con otros módulos
+    if (pathname.includes('/reportes')) {
+      return 'reportes';
+    }
     if (pathname.includes('/usuarios') || pathname.includes('/roles')) {
       return 'usuarios';
     }
@@ -193,9 +197,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
     }
     if (pathname.includes('/configuracion')) {
       return 'configuracion';
-    }
-    if (pathname.includes('/reportes')) {
-      return 'reportes';
     }
     return null;
   };
