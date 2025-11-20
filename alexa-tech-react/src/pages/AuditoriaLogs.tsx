@@ -1,28 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
 import { useNotification } from '../context/NotificationContext';
-
-interface AuditLog {
-  id: string;
-  timestamp: string;
-  userId: string;
-  username: string;
-  action: string;
-  module: string;
-  details: string;
-  ipAddress: string;
-  userAgent: string;
-  status: 'success' | 'error' | 'warning';
-}
+import { auditoriaApi, type AuditLog } from '../services/auditoriaApi';
 
 interface FilterOptions {
   dateFrom: string;
   dateTo: string;
   userId: string;
-  module: string;
   action: string;
-  status: string;
 }
 
 const Container = styled.div`
@@ -220,19 +206,8 @@ const StatusBadge = styled.span<{ status: string }>`
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
-  
-  ${props => {
-    switch (props.status) {
-      case 'success':
-        return `background: #d4edda; color: #155724;`;
-      case 'error':
-        return `background: #f8d7da; color: #721c24;`;
-      case 'warning':
-        return `background: #fff3cd; color: #856404;`;
-      default:
-        return `background: #e2e3e5; color: #383d41;`;
-    }
-  }}
+  background: #e2e3e5;
+  color: #383d41;
 `;
 
 const ActionBadge = styled.span<{ action: string }>`
@@ -240,32 +215,6 @@ const ActionBadge = styled.span<{ action: string }>`
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
-  
-  ${props => {
-    switch (props.action.toLowerCase()) {
-      case 'login':
-        return `background: #d1ecf1; color: #0c5460;`;
-      case 'logout':
-        return `background: #f8d7da; color: #721c24;`;
-      case 'create':
-        return `background: #d4edda; color: #155724;`;
-      case 'update':
-        return `background: #fff3cd; color: #856404;`;
-      case 'delete':
-        return `background: #f8d7da; color: #721c24;`;
-      default:
-        return `background: #e2e3e5; color: #383d41;`;
-    }
-  }}
-`;
-
-const ModuleBadge = styled.span`
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: #e3f2fd;
-  color: #1565c0;
 `;
 
 const DetailsCell = styled(TableCell)`
@@ -314,123 +263,53 @@ const PaginationButton = styled.button<{ $isActive?: boolean }>`
 `;
 
 const AuditoriaLogs: React.FC = () => {
-  const { showSuccess } = useNotification();
+  const { showSuccess, showError } = useNotification();
 
   const [filters, setFilters] = useState<FilterOptions>({
     dateFrom: '',
     dateTo: '',
     userId: '',
-    module: '',
-    action: '',
-    status: ''
+    action: ''
   });
 
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  // Mock data
-  const mockLogs: AuditLog[] = [
-    {
-      id: '1',
-      timestamp: '2024-03-15 14:30:25',
-      userId: 'user1',
-      username: 'admin',
-      action: 'Login',
-      module: 'Autenticación',
-      details: 'Inicio de sesión exitoso',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success'
-    },
-    {
-      id: '2',
-      timestamp: '2024-03-15 14:32:10',
-      userId: 'user1',
-      username: 'admin',
-      action: 'Create',
-      module: 'Usuarios',
-      details: 'Usuario creado: María García (maria.garcia@email.com)',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success'
-    },
-    {
-      id: '3',
-      timestamp: '2024-03-15 14:35:45',
-      userId: 'user2',
-      username: 'vendedor1',
-      action: 'Create',
-      module: 'Ventas',
-      details: 'Venta registrada: VT-2024-001 por $250.00',
-      ipAddress: '192.168.1.105',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success'
-    },
-    {
-      id: '4',
-      timestamp: '2024-03-15 14:40:12',
-      userId: 'user3',
-      username: 'cajero1',
-      action: 'Update',
-      module: 'Inventario',
-      details: 'Stock actualizado: Laptop HP - Cantidad: 15',
-      ipAddress: '192.168.1.110',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success'
-    },
-    {
-      id: '5',
-      timestamp: '2024-03-15 14:42:30',
-      userId: 'user4',
-      username: 'supervisor1',
-      action: 'Delete',
-      module: 'Productos',
-      details: 'Producto eliminado: Mouse Inalámbrico (ID: 123)',
-      ipAddress: '192.168.1.115',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'warning'
-    },
-    {
-      id: '6',
-      timestamp: '2024-03-15 14:45:18',
-      userId: 'user5',
-      username: 'usuario_test',
-      action: 'Login',
-      module: 'Autenticación',
-      details: 'Intento de inicio de sesión fallido - Credenciales incorrectas',
-      ipAddress: '192.168.1.120',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'error'
-    },
-    {
-      id: '7',
-      timestamp: '2024-03-15 14:50:05',
-      userId: 'user1',
-      username: 'admin',
-      action: 'Update',
-      module: 'Configuración',
-      details: 'Configuración de sistema actualizada: Tiempo de sesión modificado a 8 horas',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success'
-    },
-    {
-      id: '8',
-      timestamp: '2024-03-15 14:55:22',
-      userId: 'user2',
-      username: 'vendedor1',
-      action: 'Create',
-      module: 'Entidades Comerciales',
-      details: 'Entidad comercial registrada: Juan Pérez (juan.perez@email.com)',
-      ipAddress: '192.168.1.105',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      status: 'success'
+  // Cargar logs al montar el componente
+  useEffect(() => {
+    loadLogs();
+  }, [currentPage]);
+
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      const response = await auditoriaApi.getAuditLogs({
+        page: currentPage,
+        limit: itemsPerPage,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+        userId: filters.userId || undefined,
+        action: filters.action || undefined,
+      });
+
+      setLogs(response.logs);
+      setTotalItems(response.pagination.total);
+      setTotalPages(response.pagination.totalPages);
+    } catch (error: any) {
+      console.error('Error al cargar logs:', error);
+      showError(
+        error.response?.data?.message || 'Error al cargar los logs de auditoría'
+      );
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const modules = ['Todos', 'Autenticación', 'Usuarios', 'Ventas', 'Inventario', 'Productos', 'Entidades Comerciales', 'Configuración'];
-  const actions = ['Todos', 'Login', 'Logout', 'Create', 'Update', 'Delete', 'View'];
-  const statuses = ['Todos', 'success', 'error', 'warning'];
+  const actions = ['Todos', 'LOGIN', 'LOGOUT', 'CREATE', 'UPDATE', 'DELETE', 'CREATE_USER', 'UPDATE_USER', 'DELETE_USER', 'CHANGE_PASSWORD', 'UPDATE_PROFILE'];
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -440,50 +319,66 @@ const AuditoriaLogs: React.FC = () => {
     }));
   };
 
-  const applyFilters = () => {
+  const applyFilters = async () => {
     setCurrentPage(1);
+    await loadLogs();
     showSuccess('Filtros aplicados exitosamente');
   };
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
     setFilters({
       dateFrom: '',
       dateTo: '',
       userId: '',
-      module: '',
-      action: '',
-      status: ''
+      action: ''
     });
     setCurrentPage(1);
+    await loadLogs();
     showSuccess('Filtros limpiados');
   };
 
   const exportLogs = () => {
-    // Simular exportación
+    auditoriaApi.exportLogsToCSV(logs);
     showSuccess('Logs exportados exitosamente');
   };
 
-  const filteredLogs = mockLogs.filter(log => {
-    if (filters.module && filters.module !== 'Todos' && log.module !== filters.module) return false;
-    if (filters.action && filters.action !== 'Todos' && log.action !== filters.action) return false;
-    if (filters.status && filters.status !== 'Todos' && log.status !== filters.status) return false;
-    if (filters.userId && !log.username.toLowerCase().includes(filters.userId.toLowerCase())) return false;
-    return true;
-  });
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('es-PE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentLogs = filteredLogs.slice(startIndex, endIndex);
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'success': return 'Éxito';
-      case 'error': return 'Error';
-      case 'warning': return 'Advertencia';
-      default: return status;
+  const getActionBadgeColor = (action: string) => {
+    switch (action.toUpperCase()) {
+      case 'LOGIN':
+        return { bg: '#d1ecf1', color: '#0c5460' };
+      case 'LOGOUT':
+        return { bg: '#f8d7da', color: '#721c24' };
+      case 'CREATE':
+      case 'CREATE_USER':
+        return { bg: '#d4edda', color: '#155724' };
+      case 'UPDATE':
+      case 'UPDATE_USER':
+      case 'UPDATE_PROFILE':
+        return { bg: '#fff3cd', color: '#856404' };
+      case 'DELETE':
+      case 'DELETE_USER':
+        return { bg: '#f8d7da', color: '#721c24' };
+      case 'CHANGE_PASSWORD':
+        return { bg: '#e3f2fd', color: '#1565c0' };
+      default:
+        return { bg: '#e2e3e5', color: '#383d41' };
     }
   };
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
 
   return (
     <Layout title="Auditoría y Logs">
@@ -533,22 +428,6 @@ const AuditoriaLogs: React.FC = () => {
             </FilterGroup>
 
             <FilterGroup>
-              <Label htmlFor="module">Módulo</Label>
-              <Select
-                id="module"
-                name="module"
-                value={filters.module}
-                onChange={handleFilterChange}
-              >
-                {modules.map(module => (
-                  <option key={module} value={module === 'Todos' ? '' : module}>
-                    {module}
-                  </option>
-                ))}
-              </Select>
-            </FilterGroup>
-
-            <FilterGroup>
               <Label htmlFor="action">Acción</Label>
               <Select
                 id="action"
@@ -563,30 +442,14 @@ const AuditoriaLogs: React.FC = () => {
                 ))}
               </Select>
             </FilterGroup>
-
-            <FilterGroup>
-              <Label htmlFor="status">Estado</Label>
-              <Select
-                id="status"
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-              >
-                {statuses.map(status => (
-                  <option key={status} value={status === 'Todos' ? '' : status}>
-                    {status === 'Todos' ? 'Todos' : getStatusText(status)}
-                  </option>
-                ))}
-              </Select>
-            </FilterGroup>
           </FilterGrid>
 
           <FilterActions>
-            <Button $variant="secondary" onClick={clearFilters}>
+            <Button $variant="secondary" onClick={clearFilters} disabled={loading}>
               Limpiar Filtros
             </Button>
-            <Button $variant="primary" onClick={applyFilters}>
-              Aplicar Filtros
+            <Button $variant="primary" onClick={applyFilters} disabled={loading}>
+              {loading ? 'Cargando...' : 'Aplicar Filtros'}
             </Button>
           </FilterActions>
         </FilterSection>
@@ -594,77 +457,100 @@ const AuditoriaLogs: React.FC = () => {
         <LogsSection>
           <LogsHeader>
             <LogsTitle>Registro de Actividades</LogsTitle>
-            <LogsCount>{filteredLogs.length} registros encontrados</LogsCount>
+            <LogsCount>{totalItems} registros encontrados</LogsCount>
           </LogsHeader>
 
-          <LogsTable>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHeaderCell>Fecha/Hora</TableHeaderCell>
-                  <TableHeaderCell>Usuario</TableHeaderCell>
-                  <TableHeaderCell>Acción</TableHeaderCell>
-                  <TableHeaderCell>Módulo</TableHeaderCell>
-                  <TableHeaderCell>Detalles</TableHeaderCell>
-                  <TableHeaderCell>IP</TableHeaderCell>
-                  <TableHeaderCell>Estado</TableHeaderCell>
-                </TableRow>
-              </TableHeader>
-              <tbody>
-                {currentLogs.map(log => (
-                  <TableRow key={log.id}>
-                    <TableCell>{log.timestamp}</TableCell>
-                    <TableCell>{log.username}</TableCell>
-                    <TableCell>
-                      <ActionBadge action={log.action}>{log.action}</ActionBadge>
-                    </TableCell>
-                    <TableCell>
-                      <ModuleBadge>{log.module}</ModuleBadge>
-                    </TableCell>
-                    <DetailsCell>{log.details}</DetailsCell>
-                    <TableCell>{log.ipAddress}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={log.status}>
-                        {getStatusText(log.status)}
-                      </StatusBadge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
-          </LogsTable>
+          {loading ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <p>Cargando logs...</p>
+            </div>
+          ) : logs.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <p>No se encontraron registros</p>
+            </div>
+          ) : (
+            <>
+              <LogsTable>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHeaderCell>Fecha/Hora</TableHeaderCell>
+                      <TableHeaderCell>Usuario</TableHeaderCell>
+                      <TableHeaderCell>Acción</TableHeaderCell>
+                      <TableHeaderCell>Detalles</TableHeaderCell>
+                      <TableHeaderCell>IP</TableHeaderCell>
+                    </TableRow>
+                  </TableHeader>
+                  <tbody>
+                    {logs.map(log => {
+                      const actionColors = getActionBadgeColor(log.action);
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell>{formatTimestamp(log.timestamp)}</TableCell>
+                          <TableCell>{log.user}</TableCell>
+                          <TableCell>
+                            <ActionBadge 
+                              action={log.action}
+                              style={{ 
+                                background: actionColors.bg, 
+                                color: actionColors.color 
+                              }}
+                            >
+                              {log.action}
+                            </ActionBadge>
+                          </TableCell>
+                          <DetailsCell>{log.details || '-'}</DetailsCell>
+                          <TableCell>{log.ipAddress || '-'}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </tbody>
+                </Table>
+              </LogsTable>
 
-          <Pagination>
-            <PaginationInfo>
-              Mostrando {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} de {filteredLogs.length} registros
-            </PaginationInfo>
-            <PaginationControls>
-              <PaginationButton
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </PaginationButton>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const page = i + 1;
-                return (
+              <Pagination>
+                <PaginationInfo>
+                  Mostrando {startIndex + 1}-{Math.min(endIndex, totalItems)} de {totalItems} registros
+                </PaginationInfo>
+                <PaginationControls>
                   <PaginationButton
-                    key={page}
-                    $isActive={currentPage === page}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1 || loading}
                   >
-                    {page}
+                    Anterior
                   </PaginationButton>
-                );
-              })}
-              <PaginationButton
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Siguiente
-              </PaginationButton>
-            </PaginationControls>
-          </Pagination>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let page;
+                    if (totalPages <= 5) {
+                      page = i + 1;
+                    } else if (currentPage <= 3) {
+                      page = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      page = totalPages - 4 + i;
+                    } else {
+                      page = currentPage - 2 + i;
+                    }
+                    return (
+                      <PaginationButton
+                        key={page}
+                        $isActive={currentPage === page}
+                        onClick={() => setCurrentPage(page)}
+                        disabled={loading}
+                      >
+                        {page}
+                      </PaginationButton>
+                    );
+                  })}
+                  <PaginationButton
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Siguiente
+                  </PaginationButton>
+                </PaginationControls>
+              </Pagination>
+            </>
+          )}
         </LogsSection>
       </Container>
     </Layout>
