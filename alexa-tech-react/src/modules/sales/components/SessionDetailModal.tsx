@@ -93,7 +93,11 @@ export const SessionDetailModal: React.FC<SessionDetailModalProps> = ({ sessionI
               </InfoItem>
               <InfoItem>
                 <InfoLabel>Usuario:</InfoLabel>
-                <InfoValue>{session.userId}</InfoValue>
+                <InfoValue>
+                  {session.user 
+                    ? `${session.user.firstName} ${session.user.lastName}`
+                    : session.userId}
+                </InfoValue>
               </InfoItem>
               <InfoItem>
                 <InfoLabel>Fecha Apertura:</InfoLabel>

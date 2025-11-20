@@ -241,6 +241,8 @@ export const cashSessionService = {
       observaciones: session.observaciones ?? undefined,
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
+      cashRegister: session.cashRegister,
+      user: session.user,
     };
   },
 
