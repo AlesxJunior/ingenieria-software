@@ -211,7 +211,9 @@ class ReportesService {
 
     const compras = await prisma.purchase.findMany({
       where: whereClause,
-      include: { items: { include: { product: true } } },
+      include: { 
+        items: { include: { product: true } }
+      },
     });
 
     const totalCompras = compras.length;
@@ -259,6 +261,93 @@ class ReportesService {
       .sort((a, b) => b.totalComprado - a.totalComprado)
       .slice(0, 10);
 
+    // Obtener proveedores únicos de las compras y consultar sus datos reales
+    const proveedorIds = [...new Set(compras.map(c => c.proveedorId).filter(Boolean))];
+    const proveedoresData = await prisma.client.findMany({
+      where: {
+        id: { in: proveedorIds }
+      },
+      select: {
+        id: true,
+        razonSocial: true,
+        nombres: true,
+        apellidos: true,
+        numeroDocumento: true,
+        tipoDocumento: true
+      }
+    });
+
+    // Mapear proveedores
+    const proveedoresMap = new Map(proveedoresData.map(p => [p.id, p]));
+
+    // Agrupar compras por proveedor
+    const comprasPorProveedorMap = new Map<string, { cantidadCompras: number; totalCompras: number }>();
+    compras.forEach(c => {
+      const key = c.proveedorId || 'sin-proveedor';
+      const current = comprasPorProveedorMap.get(key);
+      comprasPorProveedorMap.set(key, {
+        cantidadCompras: (current?.cantidadCompras || 0) + 1,
+        totalCompras: (current?.totalCompras || 0) + Number(c.total)
+      });
+    });
+
+    const comprasPorProveedor = Array.from(comprasPorProveedorMap.entries()).map(([provId, data]) => {
+      const prov = proveedoresMap.get(provId);
+      const nombreProveedor = prov?.razonSocial || `${prov?.nombres || ''} ${prov?.apellidos || ''}`.trim() || 'Proveedor sin nombre';
+      return {
+        proveedorId: provId,
+        nombreProveedor,
+        cantidadCompras: data.cantidadCompras,
+        totalCompras: data.totalCompras,
+        porcentaje: comprasTotal > 0 ? (data.totalCompras / comprasTotal) * 100 : 0
+      };
+    }).sort((a, b) => b.totalCompras - a.totalCompras);
+
+    // Compras por almacén
+    const comprasPorAlmacenMap = new Map<string, { cantidadCompras: number; totalCompras: number }>();
+    compras.forEach(c => {
+      const key = c.almacenId || 'sin-almacen';
+      const current = comprasPorAlmacenMap.get(key);
+      comprasPorAlmacenMap.set(key, {
+        cantidadCompras: (current?.cantidadCompras || 0) + 1,
+        totalCompras: (current?.totalCompras || 0) + Number(c.total)
+      });
+    });
+
+    // Obtener nombres de almacenes
+    const almacenIds = [...comprasPorAlmacenMap.keys()].filter(id => id !== 'sin-almacen');
+    const almacenesData = await prisma.warehouse.findMany({
+      where: { id: { in: almacenIds } },
+      select: { id: true, nombre: true }
+    });
+    const almacenesMap = new Map(almacenesData.map(a => [a.id, a.nombre]));
+
+    const comprasPorAlmacen = Array.from(comprasPorAlmacenMap.entries()).map(([almId, data]) => ({
+      almacenId: almId,
+      nombreAlmacen: almacenesMap.get(almId) || 'Sin almacén',
+      cantidadCompras: data.cantidadCompras,
+      totalCompras: data.totalCompras,
+      porcentaje: comprasTotal > 0 ? (data.totalCompras / comprasTotal) * 100 : 0
+    }));
+
+    // Compras por estado
+    const comprasPorEstadoMap = new Map<string, { cantidad: number; total: number }>();
+    compras.forEach(c => {
+      const estado = c.estado || 'Sin estado';
+      const current = comprasPorEstadoMap.get(estado);
+      comprasPorEstadoMap.set(estado, {
+        cantidad: (current?.cantidad || 0) + 1,
+        total: (current?.total || 0) + Number(c.total)
+      });
+    });
+
+    const comprasPorEstado = Array.from(comprasPorEstadoMap.entries()).map(([estado, data]) => ({
+      estado,
+      cantidad: data.cantidad,
+      total: data.total,
+      porcentaje: comprasTotal > 0 ? (data.total / comprasTotal) * 100 : 0
+    }));
+
     return {
       resumen: {
         totalCompras: comprasTotal,
@@ -268,25 +357,10 @@ class ReportesService {
         comprasMenor: compraMenor,
       },
       comprasPorDia,
-      comprasPorProveedor: [
-        {
-          proveedorId: 'N/A',
-          nombreProveedor: 'Varios',
-          cantidadCompras: totalCompras,
-          totalCompras: comprasTotal,
-          porcentaje: 100,
-        },
-      ],
-      comprasPorAlmacen: [],
+      comprasPorProveedor,
+      comprasPorAlmacen,
       topProductosComprados,
-      comprasPorEstado: [
-        {
-          estado: 'Completado',
-          cantidad: totalCompras,
-          total: comprasTotal,
-          porcentaje: 100,
-        },
-      ],
+      comprasPorEstado,
     };
   }
 
@@ -314,32 +388,66 @@ class ReportesService {
     // NOTA: Idealmente sería Costo, pero usamos Precio Venta por ahora
     const valorTotalInventario = productos.reduce((sum, p) => sum + (p.stock * Number(p.precioVenta)), 0);
 
-    const productosConStock = productos.filter(p => p.stock > 0).length;
-    const productosSinStock = productos.filter(p => p.stock <= 0).length;
-    const productosEnAlerta = productos.filter(p => p.minStock && p.stock <= p.minStock).length;
+    // 2. Obtener stock por almacén usando stockByWarehouses
+    const stockPorAlmacen = await prisma.stockByWarehouse.groupBy({
+      by: ['warehouseId'],
+      _sum: {
+        quantity: true
+      }
+    });
 
-    // 2. Obtener stock por almacén
-    const almacenes = await prisma.warehouse.findMany({
-      include: {
+    // Obtener nombres de almacenes y calcular valores
+    const almacenesIds = stockPorAlmacen.map(s => s.warehouseId);
+    const almacenesData = await prisma.warehouse.findMany({
+      where: { id: { in: almacenesIds } },
+      select: {
+        id: true,
+        nombre: true,
         stockByWarehouses: {
           include: { product: true }
         }
       }
     });
 
-    const stockPorAlmacen = almacenes.map(almacen => {
-      const cantidadProductos = almacen.stockByWarehouses.reduce((sum, s) => sum + s.quantity, 0);
-      const valorInventario = almacen.stockByWarehouses.reduce((sum, s) => sum + (s.quantity * Number(s.product.precioVenta)), 0);
-      const enAlerta = almacen.stockByWarehouses.filter(s => s.minStock && s.quantity <= s.minStock).length;
+    const stockPorAlmacenDetallado = almacenesData.map(almacen => {
+      const valorInventario = almacen.stockByWarehouses.reduce(
+        (sum, s) => sum + (s.quantity * Number(s.product.precioVenta)),
+        0
+      );
+      const cantidadProductos = almacen.stockByWarehouses.reduce(
+        (sum, s) => sum + s.quantity,
+        0
+      );
+      const productosEnAlerta = almacen.stockByWarehouses.filter(
+        s => s.minStock && s.quantity <= s.minStock
+      ).length;
 
       return {
         almacenId: almacen.id,
         nombreAlmacen: almacen.nombre,
         cantidadProductos,
         valorInventario,
-        productosEnAlerta: enAlerta
+        productosEnAlerta
       };
     });
+
+    // 3. Productos en alerta (stock bajo)
+    const productosEnAlertaDetalle = productos
+      .filter(p => p.minStock && p.stock <= p.minStock)
+      .map(p => ({
+        productoId: p.id,
+        nombreProducto: p.nombre,
+        stockActual: p.stock,
+        stockMinimo: p.minStock || 0,
+        stockMaximo: 0, // No implementado a\u00fan
+        almacenId: 'general',
+        nombreAlmacen: 'General'
+      }))
+      .sort((a, b) => a.stockActual - b.stockActual);
+
+    const productosConStock = productos.filter(p => p.stock > 0).length;
+    const productosSinStock = productos.filter(p => p.stock <= 0).length;
+    const productosEnAlerta = productosEnAlertaDetalle.length;
 
     // 3. Calcular rotación (basado en ventas recientes)
     // Top 10 productos con más movimiento en ventas
@@ -400,9 +508,9 @@ class ReportesService {
         productosSinStock,
         productosEnAlerta,
       },
-      stockPorAlmacen,
+      stockPorAlmacen: stockPorAlmacenDetallado,
       productosMasRotacion,
-      productosEnAlerta: [], // Se puede detallar si se requiere
+      productosEnAlerta: productosEnAlertaDetalle,
       valorPorCategoria,
       movimientosRecientes: [], // Se puede implementar con InventoryMovement
     };

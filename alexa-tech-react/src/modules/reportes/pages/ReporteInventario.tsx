@@ -437,14 +437,26 @@ const ReporteInventario: React.FC = () => {
                                 <Th>Producto</Th>
                                 <Th>Stock Actual</Th>
                                 <Th>Stock Mínimo</Th>
+                                <Th>Diferencia</Th>
                               </tr>
                             </thead>
                             <tbody>
                               {(reporteData.productosEnAlerta || []).map((p: any, idx: number) => (
                                 <tr key={idx}>
-                                  <Td>{p.nombreProducto || 'Sin nombre'}</Td>
-                                  <Td style={{ color: '#DC2626', fontWeight: 600 }}>{p.stockActual || 0}</Td>
+                                  <Td style={{ fontWeight: 500 }}>{p.nombreProducto || 'Sin nombre'}</Td>
+                                  <Td style={{ 
+                                    color: p.stockActual === 0 ? '#DC2626' : '#F59E0B', 
+                                    fontWeight: 600 
+                                  }}>
+                                    {p.stockActual || 0}
+                                  </Td>
                                   <Td>{p.stockMinimo || 0}</Td>
+                                  <Td style={{ 
+                                    color: '#DC2626',
+                                    fontWeight: 600
+                                  }}>
+                                    {(p.stockMinimo || 0) - (p.stockActual || 0)}
+                                  </Td>
                                 </tr>
                               ))}
                             </tbody>

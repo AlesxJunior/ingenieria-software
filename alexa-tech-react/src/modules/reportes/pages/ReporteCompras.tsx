@@ -261,22 +261,39 @@ const ReporteCompras: React.FC = () => {
       `Total de Compras\t${formatCurrency(reporteData.resumen?.totalCompras)}`,
       `Cantidad de Compras\t${reporteData.resumen?.cantidadCompras || 0}`,
       `Compra Promedio\t${formatCurrency(reporteData.resumen?.compraPromedio)}`,
-      `Compra Máxima\t${formatCurrency(reporteData.resumen?.compraMayor)}`,
+      `Compra Máxima\t${formatCurrency(reporteData.resumen?.comprasMayor)}`,
+      `Compra Mínima\t${formatCurrency(reporteData.resumen?.comprasMenor)}`,
       '',
       '=================================================================',
       '                   COMPRAS POR DÍA                               ',
       '=================================================================',
       'Fecha\tCantidad de Compras\tTotal del Día',
       ...(reporteData.comprasPorDia || []).map((c: any) => 
-        `${new Date(c.fecha).toLocaleDateString('es-PE')}\t${c.cantidad || 0}\t${formatCurrency(c.total)}`
+        `${formatDMY(c.fecha)}\t${c.cantidad || 0}\t${formatCurrency(c.total)}`
       ),
       '',
       '=================================================================',
       '                 COMPRAS POR PROVEEDOR                           ',
       '=================================================================',
-      'Proveedor\tCantidad de Compras\tTotal Comprado',
+      'Proveedor\tCantidad de Compras\tTotal Comprado\tPorcentaje',
       ...(reporteData.comprasPorProveedor || []).map((p: any) => 
-        `${p.nombreProveedor || 'Sin nombre'}\t${p.cantidadCompras || 0}\t${formatCurrency(p.totalCompras)}`
+        `${p.nombreProveedor || 'Sin nombre'}\t${p.cantidadCompras || 0}\t${formatCurrency(p.totalCompras)}\t${(p.porcentaje || 0).toFixed(2)}%`
+      ),
+      '',
+      '=================================================================',
+      '                 COMPRAS POR ALMACÉN                             ',
+      '=================================================================',
+      'Almacén\tCantidad de Compras\tTotal Comprado',
+      ...(reporteData.comprasPorAlmacen || []).map((a: any) => 
+        `${a.nombreAlmacen || 'Sin almacén'}\t${a.cantidadCompras || 0}\t${formatCurrency(a.totalCompras)}`
+      ),
+      '',
+      '=================================================================',
+      '                 COMPRAS POR ESTADO                              ',
+      '=================================================================',
+      'Estado\tCantidad\tTotal\tPorcentaje',
+      ...(reporteData.comprasPorEstado || []).map((e: any) => 
+        `${e.estado}\t${e.cantidad || 0}\t${formatCurrency(e.total)}\t${(e.porcentaje || 0).toFixed(2)}%`
       ),
       '',
       '=================================================================',
@@ -399,7 +416,7 @@ const ReporteCompras: React.FC = () => {
                           <tbody>
                             {(reporteData.comprasPorDia || []).map((c: any, idx: number) => (
                               <tr key={idx}>
-                                <Td>{new Date(c.fecha).toLocaleDateString('es-PE')}</Td>
+                                <Td>{formatDMY(c.fecha)}</Td>
                                 <Td>{c.cantidad || 0}</Td>
                                 <Td>{formatCurrency(c.total)}</Td>
                               </tr>
@@ -417,15 +434,88 @@ const ReporteCompras: React.FC = () => {
                             <tr>
                               <Th>Proveedor</Th>
                               <Th>Cantidad</Th>
-                              <Th>Total</Th>
+                              <Th>Total Comprado</Th>
+                              <Th>Porcentaje</Th>
                             </tr>
                           </thead>
                           <tbody>
                             {(reporteData.comprasPorProveedor || []).map((p: any, idx: number) => (
                               <tr key={idx}>
-                                <Td>{p.nombreProveedor || 'Sin nombre'}</Td>
+                                <Td style={{ fontWeight: 500 }}>{p.nombreProveedor || 'Sin nombre'}</Td>
                                 <Td>{p.cantidadCompras || 0}</Td>
                                 <Td>{formatCurrency(p.totalCompras)}</Td>
+                                <Td>
+                                  <span style={{ 
+                                    padding: '0.25rem 0.5rem', 
+                                    background: '#3b82f620', 
+                                    color: '#2563eb',
+                                    borderRadius: '0.25rem',
+                                    fontWeight: 600
+                                  }}>
+                                    {(p.porcentaje || 0).toFixed(1)}%
+                                  </span>
+                                </Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+
+                    <Section>
+                      <SectionTitle>📦 Compras por Almacén</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Almacén</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.comprasPorAlmacen || []).map((a: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>{a.nombreAlmacen || 'Sin almacén'}</Td>
+                                <Td>{a.cantidadCompras || 0}</Td>
+                                <Td>{formatCurrency(a.totalCompras)}</Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                      </TableContainer>
+                    </Section>
+
+                    <Section>
+                      <SectionTitle>📊 Compras por Estado</SectionTitle>
+                      <TableContainer>
+                        <Table>
+                          <thead>
+                            <tr>
+                              <Th>Estado</Th>
+                              <Th>Cantidad</Th>
+                              <Th>Total</Th>
+                              <Th>Porcentaje</Th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(reporteData.comprasPorEstado || []).map((e: any, idx: number) => (
+                              <tr key={idx}>
+                                <Td>
+                                  <span style={{
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '0.25rem',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    background: e.estado === 'Recibida' ? '#10b98120' : e.estado === 'Pendiente' ? '#f59e0b20' : '#6b728020',
+                                    color: e.estado === 'Recibida' ? '#059669' : e.estado === 'Pendiente' ? '#d97706' : '#374151'
+                                  }}>
+                                    {e.estado}
+                                  </span>
+                                </Td>
+                                <Td>{e.cantidad || 0}</Td>
+                                <Td>{formatCurrency(e.total)}</Td>
+                                <Td>{(e.porcentaje || 0).toFixed(1)}%</Td>
                               </tr>
                             ))}
                           </tbody>
