@@ -143,7 +143,7 @@ const Alert = styled.div`
 
 const Empresa: React.FC = () => {
   const { showSuccess, showError } = useNotification();
-  const { empresa, setEmpresa, loading, setLoading } = useConfiguracion();
+  const { empresa, setEmpresa, loading, setLoading, reloadEmpresa } = useConfiguracion();
   
   const [formData, setFormData] = useState<EmpresaData>({
     ruc: '',
@@ -205,8 +205,8 @@ const Empresa: React.FC = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const updatedData = await configuracionApi.updateEmpresa(formData);
-      setEmpresa(updatedData);
+      await configuracionApi.updateEmpresa(formData);
+      await reloadEmpresa(); // ✅ Recargar para sincronizar con otros componentes (RealizarVenta)
       showSuccess('Datos de la empresa actualizados exitosamente');
       setIsEditing(false);
     } catch (error) {

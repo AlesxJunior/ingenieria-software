@@ -204,7 +204,7 @@ const ButtonGroup = styled.div`
 
 const Comprobantes: React.FC = () => {
   const { showSuccess, showError } = useNotification();
-  const { comprobantes, setComprobantes, loading, setLoading } = useConfiguracion();
+  const { comprobantes, setComprobantes, loading, setLoading, reloadComprobantes } = useConfiguracion();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingComprobante, setEditingComprobante] = useState<ComprobanteData | null>(null);
@@ -229,8 +229,7 @@ const Comprobantes: React.FC = () => {
   const loadComprobantes = async () => {
     setLoading(true);
     try {
-      const data = await configuracionApi.getComprobantes();
-      setComprobantes(data);
+      await reloadComprobantes(); // ✅ Usar función del context
     } catch (error) {
       showError('Error al cargar comprobantes');
     } finally {
@@ -262,13 +261,43 @@ const Comprobantes: React.FC = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
+      // ✅ Validar que series tengan formato correcto
+      if (!formData.serie || formData.serie.length !== 4) {
+        showError('La serie debe tener exactamente 4 caracteres');
+        setLoading(false);
+        return;
+      }
+      
+      // ✅ Validar números de inicio y fin
+      if (formData.numeroInicio >= formData.numeroFin) {
+        showError('El número de inicio debe ser menor que el número final');
+        setLoading(false);
+        return;
+      }
+      
+      // ✅ Si se marca como predeterminado, desmarcar los demás del mismo tipo
+      let dataToSave = { ...formData };
+      
+      if (formData.predeterminado) {
+        // Desmarcar otros del mismo tipo
+        const otrosComprobantes = comprobantes.filter((c: ComprobanteData) => 
+          c.id !== editingComprobante?.id && 
+          c.tipo === formData.tipo && 
+          c.predeterminado
+        );
+        
+        for (const comprobante of otrosComprobantes) {
+          await configuracionApi.updateComprobante(comprobante.id!, { predeterminado: false });
+        }
+      }
+      
       if (editingComprobante) {
-        const updated = await configuracionApi.updateComprobante(editingComprobante.id!, formData);
-        setComprobantes(prev => prev.map((c: any) => c.id === updated.id ? updated : c));
+        await configuracionApi.updateComprobante(editingComprobante.id!, dataToSave);
+        await reloadComprobantes(); // ✅ Recargar para sincronizar con otros componentes
         showSuccess('Comprobante actualizado exitosamente');
       } else {
-        const created = await configuracionApi.createComprobante(formData);
-        setComprobantes(prev => [...prev, created]);
+        await configuracionApi.createComprobante(dataToSave);
+        await reloadComprobantes(); // ✅ Recargar para sincronizar con otros componentes
         showSuccess('Comprobante creado exitosamente');
       }
       closeModal();
@@ -285,15 +314,38 @@ const Comprobantes: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este comprobante?')) {
+  // ✅ Cambiar a toggle activar/desactivar en lugar de eliminar
+  const handleToggleActivo = async (comprobante: ComprobanteData) => {
+    const nuevoEstado = !comprobante.activo;
+    
+    // ✅ Validar que no sea el último activo del mismo tipo
+    if (!nuevoEstado) {
+      const comprobantesActivosMismoTipo = comprobantes.filter((c: ComprobanteData) => 
+        c.activo && c.tipo === comprobante.tipo && c.id !== comprobante.id
+      );
+      
+      if (comprobantesActivosMismoTipo.length === 0) {
+        showError(`No se puede desactivar el único comprobante de tipo ${comprobante.tipo} activo`);
+        return;
+      }
+    }
+    
+    const confirmMessage = nuevoEstado 
+      ? `¿Activar el comprobante "${comprobante.nombre}"?`
+      : `¿Desactivar el comprobante "${comprobante.nombre}"? No estará disponible en nuevas ventas.`;
+    
+    if (window.confirm(confirmMessage)) {
       setLoading(true);
       try {
-        await configuracionApi.deleteComprobante(id);
-        setComprobantes(prev => prev.filter((c: any) => c.id !== id));
-        showSuccess('Comprobante eliminado exitosamente');
-      } catch (error) {
-        showError('Error al eliminar comprobante');
+        await configuracionApi.updateComprobante(comprobante.id!, { 
+          activo: nuevoEstado,
+          // Si se desactiva y era predeterminado, quitar predeterminado
+          predeterminado: nuevoEstado ? comprobante.predeterminado : false
+        });
+        await reloadComprobantes(); // ✅ Recargar para sincronizar con otros componentes
+        showSuccess(`Comprobante ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
+      } catch (error: any) {
+        showError(error.message || 'Error al actualizar comprobante');
       } finally {
         setLoading(false);
       }
@@ -341,6 +393,7 @@ const Comprobantes: React.FC = () => {
               <Th>Tipo</Th>
               <Th>Serie</Th>
               <Th>Número Actual</Th>
+              <Th>Disponibles</Th>
               <Th>Estado</Th>
               <Th>Predet.</Th>
               <Th>Acciones</Th>
@@ -360,6 +413,19 @@ const Comprobantes: React.FC = () => {
                 <Td>{comprobante.serie}</Td>
                 <Td>{comprobante.numeroActual}</Td>
                 <Td>
+                  {(() => {
+                    const disponibles = comprobante.numeroFin - comprobante.numeroActual;
+                    const porcentaje = ((comprobante.numeroActual - comprobante.numeroInicio) / (comprobante.numeroFin - comprobante.numeroInicio)) * 100;
+                    const color = porcentaje > 80 ? '#ef4444' : porcentaje > 50 ? '#f59e0b' : '#10b981';
+                    
+                    return (
+                      <span style={{ color, fontWeight: 500 }}>
+                        {disponibles.toLocaleString()} ({porcentaje.toFixed(0)}%)
+                      </span>
+                    );
+                  })()}
+                </Td>
+                <Td>
                   <Badge $active={comprobante.activo}>
                     {comprobante.activo ? 'Activo' : 'Inactivo'}
                   </Badge>
@@ -371,10 +437,14 @@ const Comprobantes: React.FC = () => {
                 </Td>
                 <Td>
                   <ActionButton onClick={() => handleEdit(comprobante)}>
-                    Editar
+                    ✏️ Editar
                   </ActionButton>
-                  <ActionButton $variant="danger" onClick={() => handleDelete(comprobante.id!)}>
-                    Eliminar
+                  <ActionButton 
+                    $variant={comprobante.activo ? 'danger' : 'primary'} 
+                    onClick={() => handleToggleActivo(comprobante)}
+                    title={comprobante.activo ? 'Desactivar comprobante' : 'Activar comprobante'}
+                  >
+                    {comprobante.activo ? '🚫 Desactivar' : '✅ Activar'}
                   </ActionButton>
                 </Td>
               </tr>
@@ -438,6 +508,7 @@ const Comprobantes: React.FC = () => {
                 <option value="nota-credito">Nota de Crédito</option>
                 <option value="nota-debito">Nota de Débito</option>
               </Select>
+              <HelpText>Tipo de comprobante SUNAT</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -448,7 +519,9 @@ const Comprobantes: React.FC = () => {
                 value={formData.serie}
                 onChange={handleInputChange}
                 placeholder="F001"
+                maxLength={4}
               />
+              <HelpText>Serie de 4 caracteres (Ej: F001, B001)</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -460,6 +533,7 @@ const Comprobantes: React.FC = () => {
                 onChange={handleInputChange}
                 min="0"
               />
+              <HelpText>Número del último comprobante emitido</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -482,6 +556,7 @@ const Comprobantes: React.FC = () => {
                 onChange={handleInputChange}
                 min="1"
               />
+              <WarningText>⚠️ Se desactivará automáticamente al alcanzar este número</WarningText>
             </FormGroup>
 
             <FormGroup>
@@ -494,6 +569,7 @@ const Comprobantes: React.FC = () => {
                 />
                 Activo
               </CheckboxLabel>
+              <HelpText>Solo los comprobantes activos estarán disponibles</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -504,8 +580,9 @@ const Comprobantes: React.FC = () => {
                   checked={formData.predeterminado}
                   onChange={handleInputChange}
                 />
-                Predeterminado
+                Predeterminado para este tipo
               </CheckboxLabel>
+              <HelpText>Se seleccionará automáticamente para este tipo de comprobante</HelpText>
             </FormGroup>
 
             <ButtonGroup>
@@ -525,9 +602,23 @@ const Comprobantes: React.FC = () => {
 };
 
 export default Comprobantes;
+
 const ButtonSecondary = styled(Button)`
   background-color: #6b7280;
   &:hover {
     background-color: #4b5563;
   }
+`;
+
+const HelpText = styled.small`
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+`;
+
+const WarningText = styled(HelpText)`
+  color: #f59e0b;
+  font-weight: 500;
 `;

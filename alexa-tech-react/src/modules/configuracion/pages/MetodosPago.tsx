@@ -210,9 +210,17 @@ const ButtonSecondary = styled(Button)`
   }
 `;
 
+const HelpText = styled.small`
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+`;
+
 const MetodosPago: React.FC = () => {
   const { showSuccess, showError } = useNotification();
-  const { metodosPago, setMetodosPago, loading, setLoading } = useConfiguracion();
+  const { metodosPago, setMetodosPago, loading, setLoading, reloadMetodosPago } = useConfiguracion();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMetodo, setEditingMetodo] = useState<MetodoPagoData | null>(null);
@@ -234,8 +242,7 @@ const MetodosPago: React.FC = () => {
   const loadMetodosPago = async () => {
     setLoading(true);
     try {
-      const data = await configuracionApi.getMetodosPago();
-      setMetodosPago(data);
+      await reloadMetodosPago(); // ✅ Usar función del context
     } catch (error) {
       showError('Error al cargar métodos de pago');
     } finally {
@@ -262,13 +269,27 @@ const MetodosPago: React.FC = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
+      // ✅ Si se marca como predeterminado, desmarcar los demás del mismo tipo
+      let dataToSave = { ...formData };
+      
+      if (formData.predeterminado) {
+        // Actualizar los demás métodos activos para quitarles predeterminado
+        const otrosMetodos = metodosPago.filter((m: MetodoPagoData) => 
+          m.id !== editingMetodo?.id && m.predeterminado
+        );
+        
+        for (const metodo of otrosMetodos) {
+          await configuracionApi.updateMetodoPago(metodo.id!, { predeterminado: false });
+        }
+      }
+      
       if (editingMetodo) {
-        const updated = await configuracionApi.updateMetodoPago(editingMetodo.id!, formData);
-        setMetodosPago(prev => prev.map((m: any) => m.id === updated.id ? updated : m));
+        await configuracionApi.updateMetodoPago(editingMetodo.id!, dataToSave);
+        await reloadMetodosPago(); // ✅ Recargar para sincronizar con otros componentes
         showSuccess('Método de pago actualizado exitosamente');
       } else {
-        const created = await configuracionApi.createMetodoPago(formData);
-        setMetodosPago(prev => [...prev, created]);
+        await configuracionApi.createMetodoPago(dataToSave);
+        await reloadMetodosPago(); // ✅ Recargar para sincronizar con otros componentes
         showSuccess('Método de pago creado exitosamente');
       }
       closeModal();
@@ -285,15 +306,35 @@ const MetodosPago: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este método de pago?')) {
+  // ✅ Cambiar a toggle activar/desactivar en lugar de eliminar
+  const handleToggleActivo = async (metodo: MetodoPagoData) => {
+    const nuevoEstado = !metodo.activo;
+    
+    // ✅ Validar que no sea el último activo
+    if (!nuevoEstado) {
+      const metodosActivos = metodosPago.filter((m: MetodoPagoData) => m.activo && m.id !== metodo.id);
+      if (metodosActivos.length === 0) {
+        showError('No se puede desactivar el único método de pago activo');
+        return;
+      }
+    }
+    
+    const confirmMessage = nuevoEstado 
+      ? `¿Activar el método de pago "${metodo.nombre}"?`
+      : `¿Desactivar el método de pago "${metodo.nombre}"? No estará disponible en nuevas ventas.`;
+    
+    if (window.confirm(confirmMessage)) {
       setLoading(true);
       try {
-        await configuracionApi.deleteMetodoPago(id);
-        setMetodosPago(prev => prev.filter((m: any) => m.id !== id));
-        showSuccess('Método de pago eliminado exitosamente');
-      } catch (error) {
-        showError('Error al eliminar método de pago');
+        await configuracionApi.updateMetodoPago(metodo.id!, { 
+          activo: nuevoEstado,
+          // Si se desactiva y era predeterminado, quitar predeterminado
+          predeterminado: nuevoEstado ? metodo.predeterminado : false
+        });
+        await reloadMetodosPago(); // ✅ Recargar para sincronizar con otros componentes
+        showSuccess(`Método de pago ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
+      } catch (error: any) {
+        showError(error.message || 'Error al actualizar método de pago');
       } finally {
         setLoading(false);
       }
@@ -372,10 +413,14 @@ const MetodosPago: React.FC = () => {
                 </Td>
                 <Td>
                   <ActionButton onClick={() => handleEdit(metodo)}>
-                    Editar
+                    ✏️ Editar
                   </ActionButton>
-                  <ActionButton $variant="danger" onClick={() => handleDelete(metodo.id!)}>
-                    Eliminar
+                  <ActionButton 
+                    $variant={metodo.activo ? 'danger' : 'primary'} 
+                    onClick={() => handleToggleActivo(metodo)}
+                    title={metodo.activo ? 'Desactivar método' : 'Activar método'}
+                  >
+                    {metodo.activo ? '🚫 Desactivar' : '✅ Activar'}
                   </ActionButton>
                 </Td>
               </tr>
@@ -441,6 +486,7 @@ const MetodosPago: React.FC = () => {
                 <option value="plin">Plin</option>
                 <option value="otro">Otro</option>
               </Select>
+              <HelpText>Categoría técnica del método (define el ícono y comportamiento)</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -453,6 +499,7 @@ const MetodosPago: React.FC = () => {
                 />
                 Activo
               </CheckboxLabel>
+              <HelpText>Solo los métodos activos estarán disponibles en ventas</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -465,6 +512,7 @@ const MetodosPago: React.FC = () => {
                 />
                 Predeterminado
               </CheckboxLabel>
+              <HelpText>Se seleccionará automáticamente al crear una venta</HelpText>
             </FormGroup>
 
             <FormGroup>
@@ -475,8 +523,9 @@ const MetodosPago: React.FC = () => {
                   checked={formData.requiereReferencia}
                   onChange={handleInputChange}
                 />
-                Requiere Referencia
+                Requiere Referencia (N° Operación)
               </CheckboxLabel>
+              <HelpText>Si está marcado, solicitará número de operación/voucher en la venta</HelpText>
             </FormGroup>
 
             <ButtonGroup>

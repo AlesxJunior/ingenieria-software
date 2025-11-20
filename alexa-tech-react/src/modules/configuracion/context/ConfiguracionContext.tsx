@@ -1,23 +1,80 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import configuracionApi, { type EmpresaData, type ComprobanteData, type MetodoPagoData } from '../services/configuracionApi';
 
 interface ConfiguracionContextType {
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  empresa: any;
-  setEmpresa: React.Dispatch<React.SetStateAction<any>>;
-  comprobantes: any[];
-  setComprobantes: React.Dispatch<React.SetStateAction<any[]>>;
-  metodosPago: any[];
-  setMetodosPago: React.Dispatch<React.SetStateAction<any[]>>;
+  empresa: EmpresaData | null;
+  setEmpresa: React.Dispatch<React.SetStateAction<EmpresaData | null>>;
+  comprobantes: ComprobanteData[];
+  setComprobantes: React.Dispatch<React.SetStateAction<ComprobanteData[]>>;
+  metodosPago: MetodoPagoData[];
+  setMetodosPago: React.Dispatch<React.SetStateAction<MetodoPagoData[]>>;
+  // ✅ Funciones para recargar datos
+  reloadEmpresa: () => Promise<void>;
+  reloadComprobantes: () => Promise<void>;
+  reloadMetodosPago: () => Promise<void>;
+  reloadAll: () => Promise<void>;
 }
 
 const ConfiguracionContext = createContext<ConfiguracionContextType | undefined>(undefined);
 
 export const ConfiguracionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(false);
-  const [empresa, setEmpresa] = useState<any>(null);
-  const [comprobantes, setComprobantes] = useState<any[]>([]);
-  const [metodosPago, setMetodosPago] = useState<any[]>([]);
+  const [empresa, setEmpresa] = useState<EmpresaData | null>(null);
+  const [comprobantes, setComprobantes] = useState<ComprobanteData[]>([]);
+  const [metodosPago, setMetodosPago] = useState<MetodoPagoData[]>([]);
+
+  // ✅ Cargar empresa
+  const reloadEmpresa = async () => {
+    try {
+      const data = await configuracionApi.getEmpresa();
+      setEmpresa(data);
+    } catch (error) {
+      console.error('Error al cargar empresa:', error);
+    }
+  };
+
+  // ✅ Cargar comprobantes
+  const reloadComprobantes = async () => {
+    try {
+      const data = await configuracionApi.getComprobantes();
+      setComprobantes(data);
+      console.log('🔄 Comprobantes recargados en Context:', data.length);
+    } catch (error) {
+      console.error('Error al cargar comprobantes:', error);
+    }
+  };
+
+  // ✅ Cargar métodos de pago
+  const reloadMetodosPago = async () => {
+    try {
+      const data = await configuracionApi.getMetodosPago();
+      setMetodosPago(data);
+      console.log('🔄 Métodos de pago recargados en Context:', data.length);
+    } catch (error) {
+      console.error('Error al cargar métodos de pago:', error);
+    }
+  };
+
+  // ✅ Recargar todo
+  const reloadAll = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        reloadEmpresa(),
+        reloadComprobantes(),
+        reloadMetodosPago(),
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Carga inicial
+  useEffect(() => {
+    reloadAll();
+  }, []);
 
   return (
     <ConfiguracionContext.Provider
@@ -30,6 +87,10 @@ export const ConfiguracionProvider: React.FC<{ children: ReactNode }> = ({ child
         setComprobantes,
         metodosPago,
         setMetodosPago,
+        reloadEmpresa,
+        reloadComprobantes,
+        reloadMetodosPago,
+        reloadAll,
       }}
     >
       {children}
