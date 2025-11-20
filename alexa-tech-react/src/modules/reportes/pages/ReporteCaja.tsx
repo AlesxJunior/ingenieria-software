@@ -415,38 +415,6 @@ const ReporteCaja: React.FC = () => {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-    movimientosPorUsuario.slice(0, 10).forEach((u, idx) => {
-      header += `#${idx + 1}\t${u.usuario}\t${u.cantidad}\tS/ ${u.total.toFixed(2)}\n`;
-    });
-    header += `\n`;
-
-    // Análisis por Método de Pago
-    const movimientosPorMetodo = calcularMovimientosPorMetodoPago();
-    header += `=== DISTRIBUCIÓN POR MÉTODO DE PAGO ===\n`;
-    header += `Método\tCantidad\tMonto Total\tPorcentaje\n`;
-    movimientosPorMetodo.forEach(m => {
-      header += `${m.metodo}\t${m.cantidad}\tS/ ${m.total.toFixed(2)}\t${m.porcentaje.toFixed(2)}%\n`;
-    });
-    header += `\n`;
-
-    // Detalle de movimientos
-    header += `=== DETALLE DE MOVIMIENTOS ===\n`;
-    const csvContent = [
-      'Fecha\tHora\tTipo\tConcepto\tMonto\tSaldo\tUsuario\tComprobante\tMétodo Pago\tObservaciones',
-      ...movimientos.map(m => 
-        `${m.fecha}\t${m.hora}\t${m.tipo}\t${m.concepto}\tS/ ${m.monto.toFixed(2)}\tS/ ${m.saldo.toFixed(2)}\t${m.usuario}\t${m.comprobante || '-'}\t${m.metodoPago}\t${m.observaciones || '-'}`
-      )
-    ].join('\n');
-
-    const fullContent = BOM + header + csvContent;
-    const blob = new Blob([fullContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Reporte_Caja_${fechaInicio || 'completo'}_${fechaFin || new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
 
   const calcularResumen = () => {
     if (!reporteData) {
