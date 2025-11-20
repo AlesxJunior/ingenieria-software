@@ -106,6 +106,7 @@ interface QuotesContextType {
   createQuote: (data: CreateQuoteInput) => Promise<Quote>;
   getQuoteById: (id: string) => Promise<Quote>;
   updateQuote: (id: string, data: Partial<Quote>) => Promise<Quote>;
+  updateQuoteStatus: (id: string, estado: QuoteStatus, motivoRechazo?: string) => Promise<Quote>; // ✅ Nuevo
   deleteQuote: (id: string) => Promise<void>;
   approveQuote: (id: string) => Promise<Quote>;
   rejectQuote: (id: string, motivoRechazo?: string) => Promise<Quote>;
@@ -298,6 +299,48 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [fetchQuotes, showNotification]);
 
   /**
+   * ✅ Actualizar estado de una cotización (Convertida, Aceptada, etc.)
+   */
+  const updateQuoteStatus = useCallback(async (id: string, estado: QuoteStatus, motivoRechazo?: string): Promise<Quote> => {
+    try {
+      setLoading(true);
+
+      const response = await fetchAPI(`/quotes/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ estado, motivoRechazo })
+      });
+
+      if (response.success || response.quote) {
+        const updatedQuote = response.quote || response.data;
+        
+        // No mostrar notificación si se llama desde conversión automática
+        if (estado !== 'Convertida') {
+          showNotification('success', 'Éxito', `Cotización ${estado.toLowerCase()} exitosamente`);
+        }
+        
+        // ✅ Actualizar el estado local
+        setQuotes(prevQuotes => prevQuotes.map(q => q.id === id ? { ...q, estado } : q));
+        
+        return updatedQuote;
+      }
+
+      throw new Error(response.message || 'Error al actualizar estado');
+    } catch (error: any) {
+      console.error('Error al actualizar estado de cotización:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al actualizar estado';
+      
+      // Solo mostrar error si no es conversión automática
+      if (estado !== 'Convertida') {
+        showNotification('error', 'Error', errorMessage);
+      }
+      
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [showNotification]);
+
+  /**
    * Eliminar una cotización
    */
   const deleteQuote = useCallback(async (id: string): Promise<void> => {
@@ -438,6 +481,7 @@ export const QuotesProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     createQuote,
     getQuoteById,
     updateQuote,
+    updateQuoteStatus, // ✅ Agregar nueva función
     deleteQuote,
     approveQuote,
     rejectQuote,

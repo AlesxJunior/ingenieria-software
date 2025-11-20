@@ -293,6 +293,19 @@ export class CreditNoteService {
         });
       }
 
+      // ✅ 2.5 Actualizar totalVentas en la sesión de caja de la venta original
+      if (sale.cashSessionId) {
+        await tx.cashSession.update({
+          where: { id: sale.cashSessionId },
+          data: {
+            totalVentas: {
+              decrement: total, // Decrementar el total por la devolución
+            },
+          },
+        });
+        console.log(`✅ CashSession ${sale.cashSessionId} actualizada por NC: -S/ ${total.toFixed(2)}`);
+      }
+
       // 3. Reversar inventario (siempre, porque son devoluciones físicas)
       await this.reversarInventario(
         sale.almacenId,

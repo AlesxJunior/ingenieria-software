@@ -709,12 +709,10 @@ const Cotizaciones: React.FC = () => {
                                   quoteCode: quote.codigoCotizacion,
                                   clienteId: quote.clienteId,
                                   items: quote.items.map(item => ({
-                                    id: item.productId,
                                     productId: item.productId,
-                                    productName: item.nombreProducto,
-                                    quantity: item.cantidad,
-                                    price: item.precioUnitario,
-                                    subtotal: item.subtotal
+                                    nombreProducto: item.nombreProducto,
+                                    cantidad: Number(item.cantidad),
+                                    precioUnitario: Number(item.precioUnitario),
                                   }))
                                 }
                               });

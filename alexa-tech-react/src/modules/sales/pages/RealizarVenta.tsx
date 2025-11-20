@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { useProducts, type Product } from '../../products/context/ProductContext';
@@ -9,7 +9,8 @@ import { useQuotes } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { useAuth } from '../../../context/AuthContext';
 import { tokenUtils } from '../../../utils/api';
-import configuracionApi, { type ComprobanteData, type MetodoPagoData } from '../../configuracion/services/configuracionApi';
+import { useConfiguracion } from '../../configuracion/context/ConfiguracionContext'; // ✅ Importar context
+import type { ComprobanteData, MetodoPagoData } from '../../configuracion/services/configuracionApi';
 
 // 🎨 DISEÑO SIGUIENDO EL BOCETO HTML
 const SalesContainer = styled.div`
@@ -694,6 +695,7 @@ interface CartItem {
 
 const RealizarVenta: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { products } = useProducts();
   const { clients } = useClients();
   const {
@@ -703,9 +705,25 @@ const RealizarVenta: React.FC = () => {
     downloadInvoice,
     loading: salesLoading,
   } = useSales();
-  const { createQuote } = useQuotes();
+  const { createQuote, updateQuoteStatus } = useQuotes(); // ✅ Usar updateQuoteStatus
   const { user } = useAuth();
   const { addNotification } = useNotification();
+  
+  // ✅ Usar configuración desde Context (sincronizado globalmente)
+  const { 
+    comprobantes: comprobantesConfig, 
+    metodosPago: metodosPagoConfig,
+    empresa 
+  } = useConfiguracion();
+  
+  // DEBUG: Verificar datos del contexto
+  useEffect(() => {
+    console.log('📦 Datos de ConfiguracionContext recibidos:', {
+      comprobantes: comprobantesConfig.length,
+      metodosPago: metodosPagoConfig.length,
+      empresa: empresa ? '✅ Cargada' : '❌ No cargada'
+    });
+  }, [comprobantesConfig, metodosPagoConfig, empresa]);
 
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
@@ -714,15 +732,24 @@ const RealizarVenta: React.FC = () => {
   const [selectedWarehouse] = useState<string>('WH-PRINCIPAL'); // 🆕 Siempre almacén principal
   const [tipoDocumento, setTipoDocumento] = useState<'DNI' | 'RUC' | 'CE' | 'Pasaporte'>('DNI'); // 🆕 Tipo de documento del cliente
   
-  // ✅ Estados para configuración dinámica
+  // ✅ Estado para rastrear cotización de origen
+  const [sourceQuoteId, setSourceQuoteId] = useState<string | null>(null);
+  
+  // ✅ Estados locales filtrados (solo activos)
   const [comprobantes, setComprobantes] = useState<ComprobanteData[]>([]);
   const [metodosPago, setMetodosPago] = useState<MetodoPagoData[]>([]);
   const [tipoComprobante, setTipoComprobante] = useState<string>('Boleta');
   const [formaPago, setFormaPago] = useState<string>('Efectivo');
   
+  // ✅ Estados para configuración de IGV desde Empresa
+  const [igvConfig, setIgvConfig] = useState({
+    activo: true,
+    porcentaje: 18,
+  });
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
-  const [includeIGV, setIncludeIGV] = useState(true);
+  const [includeIGV, setIncludeIGV] = useState(true); // Se actualizará desde configuración
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
@@ -761,59 +788,58 @@ const RealizarVenta: React.FC = () => {
 
   const selectedClientData = clients.find((c: Client) => c.id === selectedClient);
 
-  // ✅ Cargar comprobantes y métodos de pago desde configuración
+  // ✅ Sincronizar con ConfiguracionContext (se actualiza automáticamente)
   useEffect(() => {
-    const loadConfiguracion = async () => {
-      try {
-        const [comprobantesData, metodosPagoData] = await Promise.all([
-          configuracionApi.getComprobantes(),
-          configuracionApi.getMetodosPago()
-        ]);
-        
-        // Filtrar solo activos
-        const comprobantesActivos = comprobantesData.filter(c => c.activo);
-        const metodosActivos = metodosPagoData.filter(m => m.activo);
-        
-        setComprobantes(comprobantesActivos);
-        setMetodosPago(metodosActivos);
-        
-        // Seleccionar predeterminados
-        const comprobantePredeterminado = comprobantesActivos.find(c => c.predeterminado);
-        if (comprobantePredeterminado) {
-          setTipoComprobante(comprobantePredeterminado.tipo);
-        }
-        
-        const metodoPredeterminado = metodosActivos.find(m => m.predeterminado);
-        if (metodoPredeterminado) {
-          setFormaPago(metodoPredeterminado.nombre);
-        }
-      } catch (error) {
-        console.error('Error al cargar configuración:', error);
-        addNotification('warning', 'Advertencia', 'No se pudo cargar la configuración. Usando valores predeterminados.');
-      }
-    };
+    // Filtrar solo activos
+    const comprobantesActivos = comprobantesConfig.filter(c => c.activo);
+    const metodosActivos = metodosPagoConfig.filter(m => m.activo);
     
-    loadConfiguracion();
-  }, []);
+    setComprobantes(comprobantesActivos);
+    setMetodosPago(metodosActivos);
+    
+    // Seleccionar predeterminados si cambian
+    const comprobantePredeterminado = comprobantesActivos.find(c => c.predeterminado);
+    if (comprobantePredeterminado && !tipoComprobante) {
+      setTipoComprobante(normalizarTipoComprobante(comprobantePredeterminado.tipo));
+    }
+    
+    const metodoPredeterminado = metodosActivos.find(m => m.predeterminado);
+    if (metodoPredeterminado && !formaPago) {
+      setFormaPago(metodoPredeterminado.nombre);
+    }
+    
+    console.log('🔄 Configuración actualizada desde Context:', {
+      comprobantes: comprobantesActivos.length,
+      metodosPago: metodosActivos.length
+    });
+  }, [comprobantesConfig, metodosPagoConfig]);
+
+  // ✅ Cargar configuración de IGV desde empresa
+  useEffect(() => {
+    if (empresa) {
+      setIgvConfig({
+        activo: empresa.igvActivo,
+        porcentaje: empresa.igvPorcentaje,
+      });
+      
+      // Estado por defecto de includeIGV según configuración de empresa
+      setIncludeIGV(empresa.igvActivo);
+      
+      console.log('⚙️ Configuración de IGV cargada:', {
+        activo: empresa.igvActivo,
+        porcentaje: empresa.igvPorcentaje,
+      });
+    }
+  }, [empresa]);
 
   // 🆕 Actualizar tipo de comprobante automáticamente según el tipo de documento
   useEffect(() => {
     if (tipoDocumento === 'RUC') {
-      // Buscar un comprobante de tipo factura
-      const factura = comprobantes.find(c => c.tipo === 'factura');
-      if (factura) {
-        setTipoComprobante(factura.tipo);
-      } else {
-        setTipoComprobante('Factura');
-      }
+      // Para RUC siempre usar Factura
+      setTipoComprobante('Factura');
     } else {
-      // Buscar un comprobante de tipo boleta
-      const boleta = comprobantes.find(c => c.tipo === 'boleta');
-      if (boleta) {
-        setTipoComprobante(boleta.tipo);
-      } else {
-        setTipoComprobante('Boleta');
-      }
+      // Para otros documentos usar Boleta
+      setTipoComprobante('Boleta');
     }
   }, [tipoDocumento, comprobantes]);
 
@@ -824,13 +850,81 @@ const RealizarVenta: React.FC = () => {
     }
   }, [selectedClientData]);
 
+  // ✅ Procesar datos de cotización al cargar la página
+  useEffect(() => {
+    const state = location.state as any;
+    
+    // Esperar a que los productos y clientes estén cargados
+    if (!state?.fromQuote || !state?.items || state?.items.length === 0) {
+      return;
+    }
+    
+    if (products.length === 0 || clients.length === 0) {
+      return; // Esperar a que los datos estén disponibles
+    }
+    
+    console.log('📋 Cargando datos desde cotización:', state);
+    
+    // ✅ Guardar el ID de la cotización de origen
+    if (state.quoteId) {
+      setSourceQuoteId(state.quoteId);
+      console.log('💾 Cotización de origen guardada:', state.quoteId);
+    }
+    
+    // Cargar cliente si existe
+    if (state.clienteId) {
+      setSelectedClient(state.clienteId);
+      const cliente = clients.find((c: Client) => c.id === state.clienteId);
+      if (cliente) {
+        setTipoDocumento(cliente.tipoDocumento as 'DNI' | 'RUC' | 'CE' | 'Pasaporte');
+      }
+    }
+    
+    // Cargar items al carrito - los datos ya vienen como números desde Cotizaciones
+    const itemsCarrito: CartItem[] = state.items.map((item: any) => {
+      // Buscar producto en la lista para obtener el stock actual
+      const producto = products.find((p: Product) => p.id === item.productId);
+      
+      return {
+        productId: item.productId,
+        nombreProducto: item.nombreProducto,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        stock: producto?.currentStock || 999,
+      };
+    }).filter((item: CartItem) => item.stock > 0); // Solo items con stock disponible
+    
+    if (itemsCarrito.length > 0) {
+      setCart(itemsCarrito);
+      
+      // Mostrar notificación
+      addNotification(
+        'success', 
+        'Cotización Cargada', 
+        `Se cargaron ${itemsCarrito.length} productos de la cotización ${state.quoteCode || ''}`
+      );
+    } else {
+      addNotification(
+        'warning', 
+        'Sin Stock', 
+        'Los productos de la cotización no tienen stock disponible'
+      );
+    }
+    
+    // Limpiar el state para evitar que se vuelva a cargar
+    setTimeout(() => {
+      navigate(location.pathname, { replace: true, state: {} });
+    }, 100);
+  }, [location.state, clients, products]);
+
   // Cálculos
   const calculateSubtotal = () => {
     return cart.reduce((sum, item) => sum + item.cantidad * item.precioUnitario, 0);
   };
 
   const calculateTax = () => {
-    return includeIGV ? calculateSubtotal() * 0.18 : 0;
+    if (!includeIGV || !igvConfig.activo) return 0;
+    return calculateSubtotal() * (igvConfig.porcentaje / 100);
   };
 
   const calculateTotal = () => {
@@ -840,6 +934,15 @@ const RealizarVenta: React.FC = () => {
   // 🆕 Función para redondear al décimo más cercano (monedas de S/ 0.10)
   const redondearAlDecimo = (monto: number): number => {
     return Math.round(monto * 10) / 10;
+  };
+
+  // ✅ Normalizar tipo de comprobante (backend espera mayúscula inicial)
+  const normalizarTipoComprobante = (tipo: string): string => {
+    const tipoLower = tipo.toLowerCase();
+    if (tipoLower === 'factura') return 'Factura';
+    if (tipoLower === 'boleta') return 'Boleta';
+    if (tipoLower === 'notaventa') return 'NotaVenta';
+    return tipo; // Si ya está en formato correcto
   };
 
   // Agregar al carrito
@@ -907,6 +1010,7 @@ const RealizarVenta: React.FC = () => {
     setCart([]);
     setSelectedClient('');
     setClientSearchTerm('');
+    setSourceQuoteId(null); // ✅ Limpiar referencia a cotización
     addNotification('info', 'Carrito Limpio', 'Se eliminaron todos los productos');
   };
 
@@ -944,11 +1048,15 @@ const RealizarVenta: React.FC = () => {
     // 🆕 Confirmación antes de procesar
     const subtotal = calculateSubtotal();
     const total = calculateTotal();
+    const igvLine = includeIGV && igvConfig.activo 
+      ? `IGV (${igvConfig.porcentaje}%): S/ ${calculateTax().toFixed(2)}\n`
+      : '';
+    
     const confirmed = window.confirm(
       `¿Confirmar venta?\n\n` +
       `Productos: ${cart.length}\n` +
       `Subtotal: S/ ${subtotal.toFixed(2)}\n` +
-      `IGV (18%): S/ ${calculateTax().toFixed(2)}\n` +
+      igvLine +
       `Total: S/ ${total.toFixed(2)}\n\n` +
       `Comprobante: ${tipoComprobante}\n` +
       `Forma de pago: ${formaPago}`
@@ -965,7 +1073,7 @@ const RealizarVenta: React.FC = () => {
         cashSessionId: activeCashSession.id,
         clienteId: selectedClient || undefined,
         almacenId: selectedWarehouse,
-        tipoComprobante,
+        tipoComprobante: normalizarTipoComprobante(tipoComprobante), // ✅ Normalizar antes de enviar
         formaPago,
         incluyeIGV: includeIGV, // 🆕 Enviar si incluye IGV o no
         items: cart.map(item => ({
@@ -978,6 +1086,7 @@ const RealizarVenta: React.FC = () => {
       };
 
       console.log('🛒 Creando venta (estado Pendiente):', saleData);
+      console.log('💡 Tipo Comprobante enviado:', saleData.tipoComprobante);
       console.log('💡 IncludeIGV:', includeIGV);
 
       // PASO 1: Crear venta en estado Pendiente
@@ -1069,6 +1178,18 @@ const RealizarVenta: React.FC = () => {
       const completedSale = await confirmPayment(pendingSaleId, paymentData);
       
       console.log('✅ Pago confirmado:', completedSale);
+
+      // ✅ Actualizar estado de cotización si viene de una
+      if (sourceQuoteId) {
+        try {
+          await updateQuoteStatus(sourceQuoteId, 'Convertida');
+          console.log('✅ Cotización actualizada a estado Convertida:', sourceQuoteId);
+          setSourceQuoteId(null); // Limpiar referencia
+        } catch (error) {
+          console.error('❌ Error al actualizar cotización:', error);
+          // No bloquear el flujo si falla la actualización
+        }
+      }
 
       // Cerrar modal
       setShowPaymentModal(false);
@@ -1401,8 +1522,12 @@ const RealizarVenta: React.FC = () => {
                 id="apply-igv"
                 checked={includeIGV}
                 onChange={(e) => setIncludeIGV(e.target.checked)}
+                disabled={!igvConfig.activo} // ✅ Deshabilitar si IGV no está activo en empresa
               />
-              <label htmlFor="apply-igv">Aplicar IGV (18%)</label>
+              <label htmlFor="apply-igv">
+                Aplicar IGV ({igvConfig.porcentaje}%)
+                {!igvConfig.activo && ' (Desactivado en configuración)'}
+              </label>
             </CheckboxGroup>
           </FormGrid>
         </Card>
@@ -1519,9 +1644,9 @@ const RealizarVenta: React.FC = () => {
                   <span>Subtotal</span>
                   <strong>S/ {calculateSubtotal().toFixed(2)}</strong>
                 </li>
-                {includeIGV && (
+                {includeIGV && igvConfig.activo && (
                   <li>
-                    <span>IGV (18%)</span>
+                    <span>IGV ({igvConfig.porcentaje}%)</span>
                     <strong>S/ {calculateTax().toFixed(2)}</strong>
                   </li>
                 )}

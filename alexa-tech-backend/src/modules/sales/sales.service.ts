@@ -310,6 +310,19 @@ export const salesService = {
       },
     });
 
+    // ✅ Actualizar totalVentas en la sesión de caja si existe
+    if (sale.cashSessionId) {
+      await prisma.cashSession.update({
+        where: { id: sale.cashSessionId },
+        data: {
+          totalVentas: {
+            increment: totalVenta, // Incrementar el total de ventas
+          },
+        },
+      });
+      console.log(`✅ CashSession ${sale.cashSessionId} actualizada: +S/ ${totalVenta.toFixed(2)}`);
+    }
+
     // 🔄 Registrar movimiento de kardex para cada producto (COMENTADO temporalmente - implementar después)
     // for (const item of sale.items) {
     //   await inventoryService.createKardexMovement({
