@@ -9,6 +9,7 @@ import { useQuotes } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { useAuth } from '../../../context/AuthContext';
 import { tokenUtils } from '../../../utils/api';
+import configuracionApi, { type ComprobanteData, type MetodoPagoData } from '../../configuracion/services/configuracionApi';
 
 // 🎨 DISEÑO SIGUIENDO EL BOCETO HTML
 const SalesContainer = styled.div`
@@ -712,8 +713,13 @@ const RealizarVenta: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [selectedWarehouse] = useState<string>('WH-PRINCIPAL'); // 🆕 Siempre almacén principal
   const [tipoDocumento, setTipoDocumento] = useState<'DNI' | 'RUC' | 'CE' | 'Pasaporte'>('DNI'); // 🆕 Tipo de documento del cliente
-  const [tipoComprobante, setTipoComprobante] = useState<'Boleta' | 'Factura' | 'NotaVenta'>('Boleta');
-  const [formaPago, setFormaPago] = useState<'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin'>('Efectivo');
+  
+  // ✅ Estados para configuración dinámica
+  const [comprobantes, setComprobantes] = useState<ComprobanteData[]>([]);
+  const [metodosPago, setMetodosPago] = useState<MetodoPagoData[]>([]);
+  const [tipoComprobante, setTipoComprobante] = useState<string>('Boleta');
+  const [formaPago, setFormaPago] = useState<string>('Efectivo');
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
   const [includeIGV, setIncludeIGV] = useState(true);
@@ -755,14 +761,61 @@ const RealizarVenta: React.FC = () => {
 
   const selectedClientData = clients.find((c: Client) => c.id === selectedClient);
 
+  // ✅ Cargar comprobantes y métodos de pago desde configuración
+  useEffect(() => {
+    const loadConfiguracion = async () => {
+      try {
+        const [comprobantesData, metodosPagoData] = await Promise.all([
+          configuracionApi.getComprobantes(),
+          configuracionApi.getMetodosPago()
+        ]);
+        
+        // Filtrar solo activos
+        const comprobantesActivos = comprobantesData.filter(c => c.activo);
+        const metodosActivos = metodosPagoData.filter(m => m.activo);
+        
+        setComprobantes(comprobantesActivos);
+        setMetodosPago(metodosActivos);
+        
+        // Seleccionar predeterminados
+        const comprobantePredeterminado = comprobantesActivos.find(c => c.predeterminado);
+        if (comprobantePredeterminado) {
+          setTipoComprobante(comprobantePredeterminado.tipo);
+        }
+        
+        const metodoPredeterminado = metodosActivos.find(m => m.predeterminado);
+        if (metodoPredeterminado) {
+          setFormaPago(metodoPredeterminado.nombre);
+        }
+      } catch (error) {
+        console.error('Error al cargar configuración:', error);
+        addNotification('warning', 'Advertencia', 'No se pudo cargar la configuración. Usando valores predeterminados.');
+      }
+    };
+    
+    loadConfiguracion();
+  }, []);
+
   // 🆕 Actualizar tipo de comprobante automáticamente según el tipo de documento
   useEffect(() => {
     if (tipoDocumento === 'RUC') {
-      setTipoComprobante('Factura');
+      // Buscar un comprobante de tipo factura
+      const factura = comprobantes.find(c => c.tipo === 'factura');
+      if (factura) {
+        setTipoComprobante(factura.tipo);
+      } else {
+        setTipoComprobante('Factura');
+      }
     } else {
-      setTipoComprobante('Boleta');
+      // Buscar un comprobante de tipo boleta
+      const boleta = comprobantes.find(c => c.tipo === 'boleta');
+      if (boleta) {
+        setTipoComprobante(boleta.tipo);
+      } else {
+        setTipoComprobante('Boleta');
+      }
     }
-  }, [tipoDocumento]);
+  }, [tipoDocumento, comprobantes]);
 
   // 🆕 Actualizar tipo de documento cuando se selecciona un cliente
   useEffect(() => {
@@ -967,12 +1020,17 @@ const RealizarVenta: React.FC = () => {
       return;
     }
 
-    if (formaPago === 'Efectivo' && montoRecibidoNum < pendingSaleTotal) {
+    // ✅ Verificar si el método de pago requiere referencia
+    const metodoSeleccionado = metodosPago.find(m => m.nombre === formaPago);
+    const requiereReferencia = metodoSeleccionado?.requiereReferencia ?? (formaPago !== 'Efectivo');
+    const esEfectivo = metodoSeleccionado?.tipo === 'efectivo' || formaPago === 'Efectivo';
+
+    if (esEfectivo && montoRecibidoNum < pendingSaleTotal) {
       addNotification('warning', 'Monto Insuficiente', `El monto recibido debe ser al menos S/ ${pendingSaleTotal.toFixed(2)}`);
       return;
     }
 
-    if ((formaPago !== 'Efectivo') && !referenciaPago.trim()) {
+    if (requiereReferencia && !referenciaPago.trim()) {
       addNotification('warning', 'Referencia Requerida', 'Ingresa el número de operación/voucher');
       return;
     }
@@ -985,7 +1043,7 @@ const RealizarVenta: React.FC = () => {
       let cambioExacto = 0;
       let cambioRedondeado = 0;
       
-      if (formaPago === 'Efectivo') {
+      if (esEfectivo) {
         cambioExacto = montoRecibidoNum - pendingSaleTotal;
         cambioRedondeado = redondearAlDecimo(cambioExacto);
         montoCambio = cambioRedondeado; // Usar el cambio redondeado
@@ -1000,7 +1058,7 @@ const RealizarVenta: React.FC = () => {
       console.log('💰 Confirmando pago:', paymentData);
       
       // 🐛 Debug: mostrar redondeo de cambio
-      if (formaPago === 'Efectivo' && Math.abs(cambioExacto - cambioRedondeado) > 0.001) {
+      if (esEfectivo && Math.abs(cambioExacto - cambioRedondeado) > 0.001) {
         console.log('🔄 Redondeo de cambio:', {
           cambioExacto: cambioExacto.toFixed(2),
           cambioRedondeado: cambioRedondeado.toFixed(2),
@@ -1312,13 +1370,28 @@ const RealizarVenta: React.FC = () => {
               <Select
                 id="tipo-pago"
                 value={formaPago}
-                onChange={(e) => setFormaPago(e.target.value as any)}
+                onChange={(e) => setFormaPago(e.target.value)}
               >
-                <option value="Efectivo">💵 Efectivo</option>
-                <option value="Tarjeta">💳 Tarjeta</option>
-                <option value="Transferencia">🏦 Transferencia</option>
-                <option value="Yape">📱 Yape</option>
-                <option value="Plin">📱 Plin</option>
+                {metodosPago.length > 0 ? (
+                  metodosPago.map((metodo) => (
+                    <option key={metodo.id} value={metodo.nombre}>
+                      {metodo.tipo === 'efectivo' && '💵 '}
+                      {metodo.tipo === 'tarjeta' && '💳 '}
+                      {metodo.tipo === 'transferencia' && '🏦 '}
+                      {metodo.tipo === 'yape' && '📱 '}
+                      {metodo.tipo === 'plin' && '📱 '}
+                      {metodo.nombre}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Tarjeta">💳 Tarjeta</option>
+                    <option value="Transferencia">🏦 Transferencia</option>
+                    <option value="Yape">📱 Yape</option>
+                    <option value="Plin">📱 Plin</option>
+                  </>
+                )}
               </Select>
             </FormGroup>
 
@@ -1528,7 +1601,12 @@ const RealizarVenta: React.FC = () => {
             </PaymentMethodInfo>
 
             <PaymentForm>
-              {formaPago === 'Efectivo' ? (
+              {(() => {
+                const metodoSeleccionado = metodosPago.find(m => m.nombre === formaPago);
+                const esEfectivo = metodoSeleccionado?.tipo === 'efectivo' || formaPago === 'Efectivo';
+                const requiereReferencia = metodoSeleccionado?.requiereReferencia ?? !esEfectivo;
+
+                return esEfectivo ? (
                 <>
                   {/* 🆕 Mostrar info de redondeo sugerido */}
                   {(() => {
@@ -1624,7 +1702,8 @@ const RealizarVenta: React.FC = () => {
                     Ingresa el código de operación de {formaPago}
                   </small>
                 </PaymentFormGroup>
-              )}
+              );
+              })()}
             </PaymentForm>
 
             <ModalActions>

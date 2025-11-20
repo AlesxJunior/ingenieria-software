@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { salesService } from './sales.service';
 import { prisma } from '../../config/database';
+import { configuracionService } from '../configuracion/configuracion.service';
 
 // Tipo para PDFDocument
 type PDFDocumentType = InstanceType<typeof PDFDocument>;
@@ -46,13 +47,19 @@ export const invoiceService = {
       where: { id: sale.almacenId },
     });
 
-    // Datos de la empresa (puedes configurar esto desde variables de entorno o BD)
+    // ✅ Obtener datos de la empresa desde configuración
+    const company = await configuracionService.getCompany();
+    
+    if (!company) {
+      throw new Error('No se encontró configuración de empresa. Configure los datos en Configuración > Empresa');
+    }
+
     const companyData = {
-      nombre: 'ALEXA TECH S.A.C.',
-      ruc: '20123456789',
-      direccion: 'Av. Tecnología 123, Lima, Perú',
-      telefono: '+51 999 888 777',
-      email: 'ventas@alexatech.com',
+      nombre: company.nombreComercial || company.razonSocial,
+      ruc: company.ruc,
+      direccion: company.direccion,
+      telefono: company.telefono,
+      email: company.email,
     };
 
     const invoiceData: InvoiceData = {
