@@ -613,12 +613,12 @@ const ReporteCaja: React.FC = () => {
                 <ChartContainer>
                   <ChartTitle>Distribución por Método de Pago</ChartTitle>
                   {calcularMovimientosPorMetodoPago().map((metodo) => (
-                    <ChartBar key={metodo.metodo} percentage={metodo.porcentaje} color="#6366f1">
-                      <span className="label">{metodo.metodo}</span>
+                    <ChartBar key={metodo.metodoPago} percentage={metodo.porcentaje} color="#6366f1">
+                      <span className="label">{metodo.metodoPago}</span>
                       <div className="bar-container">
                         <div className="bar-fill"></div>
                       </div>
-                      <span className="value">S/ {metodo.total.toFixed(2)} ({metodo.porcentaje.toFixed(1)}%)</span>
+                      <span className="value">S/ {metodo.montoTotal.toFixed(2)} ({metodo.porcentaje.toFixed(1)}%)</span>
                     </ChartBar>
                   ))}
                 </ChartContainer>
