@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
+import { apiService } from '../../../utils/api';
 
 const formatDateInput = (d: Date) => d.toISOString().slice(0, 10);
 const formatDMY = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -284,17 +285,41 @@ const ChartBar = styled.div<{ percentage: number; color: string }>`
 `;
 
 interface MovimientoCaja {
-  id: string;
-  fecha: string;
-  hora: string;
-  tipo: 'INGRESO' | 'EGRESO' | 'APERTURA' | 'CIERRE';
-  concepto: string;
-  monto: number;
-  saldo: number;
-  usuario: string;
-  comprobante?: string;
-  metodoPago: string;
-  observaciones?: string;
+  cajaId: string;
+  nombreCaja: string;
+  usuarioId: string;
+  nombreUsuario: string;
+  montoApertura: number;
+  totalIngresos: number;
+  totalEgresos: number;
+  montoCierre: number;
+  estado: string;
+  fechaApertura: string;
+  fechaCierre?: string;
+}
+
+interface CajaReporte {
+  resumen: {
+    cajasAbiertas: number;
+    cajasCerradas: number;
+    totalEfectivo: number;
+    totalTarjeta: number;
+    totalTransferencia: number;
+    totalOtros: number;
+    totalGeneral: number;
+  };
+  movimientosPorCaja: MovimientoCaja[];
+  movimientosPorMetodo: {
+    metodoPago: string;
+    cantidadTransacciones: number;
+    montoTotal: number;
+    porcentaje: number;
+  }[];
+  ventasPorHora: {
+    hora: number;
+    cantidadVentas: number;
+    montoTotal: number;
+  }[];
 }
 
 const ReporteCaja: React.FC = () => {
@@ -305,91 +330,35 @@ const ReporteCaja: React.FC = () => {
   const [usuario, setUsuario] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
   const [concepto, setConcepto] = useState('');
-  const [movimientos, setMovimientos] = useState<MovimientoCaja[]>([]);
+  const [reporteData, setReporteData] = useState<CajaReporte | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Mock data - esto será reemplazado con datos reales del backend
-  const mockMovimientos: MovimientoCaja[] = [
-    {
-      id: '1',
-      fecha: '2024-01-15',
-      hora: '09:00',
-      tipo: 'APERTURA',
-      concepto: 'Apertura de caja del día',
-      monto: 500,
-      saldo: 500,
-      usuario: 'Juan Pérez',
-      metodoPago: 'EFECTIVO',
-      observaciones: 'Caja inicial'
-    },
-    {
-      id: '2',
-      fecha: '2024-01-15',
-      hora: '10:30',
-      tipo: 'INGRESO',
-      concepto: 'Venta de productos',
-      monto: 150,
-      saldo: 650,
-      usuario: 'Juan Pérez',
-      comprobante: 'B001-0001',
-      metodoPago: 'EFECTIVO',
-      observaciones: 'Venta al contado'
-    },
-    {
-      id: '3',
-      fecha: '2024-01-15',
-      hora: '11:15',
-      tipo: 'EGRESO',
-      concepto: 'Compra de insumos',
-      monto: -75,
-      saldo: 575,
-      usuario: 'Juan Pérez',
-      comprobante: 'F001-0001',
-      metodoPago: 'EFECTIVO',
-      observaciones: 'Pago a proveedor'
-    },
-    {
-      id: '4',
-      fecha: '2024-01-15',
-      hora: '14:20',
-      tipo: 'INGRESO',
-      concepto: 'Venta de servicios',
-      monto: 200,
-      saldo: 775,
-      usuario: 'María García',
-      comprobante: 'B001-0002',
-      metodoPago: 'TARJETA',
-      observaciones: 'Servicio técnico'
-    },
-    {
-      id: '5',
-      fecha: '2024-01-15',
-      hora: '18:00',
-      tipo: 'CIERRE',
-      concepto: 'Cierre de caja del día',
-      monto: 0,
-      saldo: 775,
-      usuario: 'Juan Pérez',
-      metodoPago: 'EFECTIVO',
-      observaciones: 'Caja cuadrada'
-    }
-  ];
-
   useEffect(() => {
-    // Cargar datos iniciales
-    setMovimientos(mockMovimientos);
+    handleBuscar();
   }, []);
 
-  const handleBuscar = () => {
+  const handleBuscar = async () => {
     setLoading(true);
-    // Simular búsqueda - en producción esto llamaría al backend
-    setTimeout(() => {
-      setMovimientos(mockMovimientos);
+    try {
+      const res = await apiService.getReporteCaja({
+        fechaInicio: fechaInicio || undefined,
+        fechaFin: fechaFin || undefined,
+      });
+
+      if (res.success && res.data) {
+        setReporteData(res.data);
+      }
+    } catch (e) {
+      console.error('Error cargando reporte caja', e);
+      setReporteData(null);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const handleExportar = () => {
+    if (!reporteData) return;
+
     const BOM = '\uFEFF';
     
     // Preparar encabezado con filtros aplicados
@@ -403,22 +372,49 @@ const ReporteCaja: React.FC = () => {
 
     // Resumen
     header += `=== RESUMEN GENERAL ===\n`;
-    header += `Total Ingresos\tTotal Egresos\tSaldo Final\tTotal Movimientos\n`;
-    header += `S/ ${resumen.totalIngresos.toFixed(2)}\tS/ ${resumen.totalEgresos.toFixed(2)}\tS/ ${resumen.saldoFinal.toFixed(2)}\t${resumen.totalMovimientos}\n\n`;
+    header += `Total Efectivo\tTotal Tarjeta\tTotal Transferencia\tTotal Otros\tTotal General\n`;
+    header += `S/ ${reporteData.resumen.totalEfectivo.toFixed(2)}\tS/ ${reporteData.resumen.totalTarjeta.toFixed(2)}\tS/ ${reporteData.resumen.totalTransferencia.toFixed(2)}\tS/ ${reporteData.resumen.totalOtros.toFixed(2)}\tS/ ${reporteData.resumen.totalGeneral.toFixed(2)}\n\n`;
 
-    // Análisis por Tipo
-    const movimientosPorTipo = calcularMovimientosPorTipo();
-    header += `=== MOVIMIENTOS POR TIPO ===\n`;
-    header += `Tipo\tCantidad\tMonto Total\tPorcentaje\n`;
-    movimientosPorTipo.forEach(t => {
-      header += `${t.tipo}\t${t.cantidad}\tS/ ${t.total.toFixed(2)}\t${t.porcentaje.toFixed(2)}%\n`;
-    });
-    header += `\n`;
+    // Estado de cajas
+    header += `=== ESTADO DE CAJAS ===\n`;
+    header += `Cajas Abiertas\tCajas Cerradas\n`;
+    header += `${reporteData.resumen.cajasAbiertas}\t${reporteData.resumen.cajasCerradas}\n\n`;
 
     // Análisis por Usuario
     const movimientosPorUsuario = calcularMovimientosPorUsuario();
     header += `=== TOP 10 USUARIOS CON MÁS MOVIMIENTOS ===\n`;
     header += `Posición\tUsuario\tTotal Movimientos\tMonto Total\n`;
+    movimientosPorUsuario.slice(0, 10).forEach((u, idx) => {
+      header += `#${idx + 1}\t${u.usuario}\t${u.cantidad}\tS/ ${u.total.toFixed(2)}\n`;
+    });
+    header += `\n`;
+
+    // Análisis por Método de Pago
+    header += `=== DISTRIBUCIÓN POR MÉTODO DE PAGO ===\n`;
+    header += `Método\tTransacciones\tMonto Total\tPorcentaje\n`;
+    reporteData.movimientosPorMetodo.forEach(m => {
+      header += `${m.metodoPago}\t${m.cantidadTransacciones}\tS/ ${m.montoTotal.toFixed(2)}\t${m.porcentaje.toFixed(2)}%\n`;
+    });
+    header += `\n`;
+
+    // Detalle de movimientos por caja
+    header += `=== DETALLE DE MOVIMIENTOS POR CAJA ===\n`;
+    const csvContent = [
+      'Caja\tUsuario\tApertura\tIngresos\tEgresos\tCierre\tEstado\tFecha Apertura\tFecha Cierre',
+      ...reporteData.movimientosPorCaja.map(m => 
+        `${m.nombreCaja}\t${m.nombreUsuario}\tS/ ${m.montoApertura.toFixed(2)}\tS/ ${m.totalIngresos.toFixed(2)}\tS/ ${m.totalEgresos.toFixed(2)}\tS/ ${m.montoCierre.toFixed(2)}\t${m.estado}\t${formatDMY(m.fechaApertura)}\t${m.fechaCierre ? formatDMY(m.fechaCierre) : '-'}`
+      )
+    ].join('\n');
+
+    const fullContent = BOM + header + csvContent;
+    const blob = new Blob([fullContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_Caja_${fechaInicio || 'completo'}_${fechaFin || new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
     movimientosPorUsuario.slice(0, 10).forEach((u, idx) => {
       header += `#${idx + 1}\t${u.usuario}\t${u.cantidad}\tS/ ${u.total.toFixed(2)}\n`;
     });
@@ -453,41 +449,53 @@ const ReporteCaja: React.FC = () => {
   };
 
   const calcularResumen = () => {
-    const totalIngresos = movimientos.filter(m => m.tipo === 'INGRESO').reduce((sum, m) => sum + m.monto, 0);
-    const totalEgresos = Math.abs(movimientos.filter(m => m.tipo === 'EGRESO').reduce((sum, m) => sum + m.monto, 0));
-    const saldoFinal = movimientos.length > 0 ? movimientos[movimientos.length - 1].saldo : 0;
-    const totalMovimientos = movimientos.length;
+    if (!reporteData) {
+      return {
+        totalIngresos: 0,
+        totalEgresos: 0,
+        saldoFinal: 0,
+        totalMovimientos: 0
+      };
+    }
 
+    const totalIngresos = reporteData.resumen.totalEfectivo + 
+                         reporteData.resumen.totalTarjeta + 
+                         reporteData.resumen.totalTransferencia + 
+                         reporteData.resumen.totalOtros;
+    
     return {
       totalIngresos,
-      totalEgresos,
-      saldoFinal,
-      totalMovimientos
+      totalEgresos: 0, // Backend no proporciona egresos detallados aún
+      saldoFinal: reporteData.resumen.totalGeneral,
+      totalMovimientos: reporteData.movimientosPorCaja.length
     };
   };
 
   const calcularMovimientosPorTipo = () => {
-    const tipos = ['INGRESO', 'EGRESO', 'APERTURA', 'CIERRE'];
-    const totalMonto = movimientos.reduce((sum, m) => sum + Math.abs(m.monto), 0);
+    if (!reporteData || !reporteData.movimientosPorCaja) return [];
     
-    return tipos.map(tipo => {
-      const movs = movimientos.filter(m => m.tipo === tipo);
-      const cantidad = movs.length;
-      const total = movs.reduce((sum, m) => sum + Math.abs(m.monto), 0);
-      const porcentaje = totalMonto > 0 ? (total / totalMonto) * 100 : 0;
-      
-      return { tipo, cantidad, total, porcentaje };
-    }).filter(t => t.cantidad > 0);
+    const totalMonto = reporteData.movimientosPorCaja.reduce((sum, m) => sum + m.totalIngresos, 0);
+    
+    return [
+      {
+        tipo: 'INGRESO',
+        cantidad: reporteData.movimientosPorCaja.filter(m => m.estado === 'Cerrada').length,
+        total: totalMonto,
+        porcentaje: 100
+      }
+    ];
   };
 
   const calcularMovimientosPorUsuario = () => {
+    if (!reporteData || !reporteData.movimientosPorCaja) return [];
+    
     const usuariosMap = new Map<string, { cantidad: number; total: number }>();
     
-    movimientos.forEach(m => {
-      const current = usuariosMap.get(m.usuario) || { cantidad: 0, total: 0 };
-      usuariosMap.set(m.usuario, {
+    reporteData.movimientosPorCaja.forEach(m => {
+      const current = usuariosMap.get(m.nombreUsuario) || { cantidad: 0, total: 0 };
+      usuariosMap.set(m.nombreUsuario, {
         cantidad: current.cantidad + 1,
-        total: current.total + Math.abs(m.monto)
+        total: current.total + m.totalIngresos
       });
     });
 
@@ -497,17 +505,8 @@ const ReporteCaja: React.FC = () => {
   };
 
   const calcularMovimientosPorMetodoPago = () => {
-    const metodos = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'CHEQUE'];
-    const totalMonto = movimientos.reduce((sum, m) => sum + Math.abs(m.monto), 0);
-    
-    return metodos.map(metodo => {
-      const movs = movimientos.filter(m => m.metodoPago === metodo);
-      const cantidad = movs.length;
-      const total = movs.reduce((sum, m) => sum + Math.abs(m.monto), 0);
-      const porcentaje = totalMonto > 0 ? (total / totalMonto) * 100 : 0;
-      
-      return { metodo, cantidad, total, porcentaje };
-    }).filter(m => m.cantidad > 0);
+    if (!reporteData || !reporteData.movimientosPorMetodo) return [];
+    return reporteData.movimientosPorMetodo;
   };
 
   const resumen = calcularResumen();
@@ -663,39 +662,37 @@ const ReporteCaja: React.FC = () => {
                 <Table>
                   <thead>
                     <tr>
-                      <TableHeader>Fecha</TableHeader>
-                      <TableHeader>Hora</TableHeader>
-                      <TableHeader>Tipo</TableHeader>
-                      <TableHeader>Concepto</TableHeader>
-                      <TableHeader>Monto</TableHeader>
-                      <TableHeader>Saldo</TableHeader>
+                      <TableHeader>Caja</TableHeader>
                       <TableHeader>Usuario</TableHeader>
-                      <TableHeader>Comprobante</TableHeader>
-                      <TableHeader>Método Pago</TableHeader>
-                      <TableHeader>Observaciones</TableHeader>
+                      <TableHeader>Apertura</TableHeader>
+                      <TableHeader>Ingresos</TableHeader>
+                      <TableHeader>Egresos</TableHeader>
+                      <TableHeader>Cierre</TableHeader>
+                      <TableHeader>Estado</TableHeader>
+                      <TableHeader>Fecha Apertura</TableHeader>
+                      <TableHeader>Fecha Cierre</TableHeader>
                     </tr>
                   </thead>
                   <tbody>
-                    {movimientos.map((movimiento) => (
-                      <tr key={movimiento.id}>
-                        <TableCell>{formatDMY(movimiento.fecha)}</TableCell>
-                        <TableCell>{movimiento.hora}</TableCell>
+                    {reporteData?.movimientosPorCaja.map((movimiento) => (
+                      <tr key={movimiento.cajaId}>
+                        <TableCell style={{ fontWeight: 600 }}>{movimiento.nombreCaja}</TableCell>
+                        <TableCell>{movimiento.nombreUsuario}</TableCell>
+                        <TableCell>S/ {movimiento.montoApertura.toFixed(2)}</TableCell>
+                        <TableCell style={{ color: '#059669', fontWeight: 600 }}>
+                          S/ {movimiento.totalIngresos.toFixed(2)}
+                        </TableCell>
+                        <TableCell style={{ color: '#DC2626', fontWeight: 600 }}>
+                          S/ {movimiento.totalEgresos.toFixed(2)}
+                        </TableCell>
+                        <TableCell style={{ fontWeight: 600 }}>S/ {movimiento.montoCierre.toFixed(2)}</TableCell>
                         <TableCell>
-                          <TypeBadge type={movimiento.tipo}>
-                            {movimiento.tipo === 'INGRESO' ? 'Ingreso' :
-                              movimiento.tipo === 'EGRESO' ? 'Egreso' :
-                                movimiento.tipo === 'APERTURA' ? 'Apertura' : 'Cierre'}
+                          <TypeBadge type={movimiento.estado === 'Abierta' ? 'APERTURA' : 'CIERRE'}>
+                            {movimiento.estado}
                           </TypeBadge>
                         </TableCell>
-                        <TableCell>{movimiento.concepto}</TableCell>
-                        <TableCell style={{ color: movimiento.monto >= 0 ? '#059669' : '#DC2626', fontWeight: 600 }}>
-                          S/ {movimiento.monto.toFixed(2)}
-                        </TableCell>
-                        <TableCell style={{ fontWeight: 600 }}>S/ {movimiento.saldo.toFixed(2)}</TableCell>
-                        <TableCell>{movimiento.usuario}</TableCell>
-                        <TableCell>{movimiento.comprobante || '-'}</TableCell>
-                        <TableCell>{movimiento.metodoPago}</TableCell>
-                        <TableCell>{movimiento.observaciones || '-'}</TableCell>
+                        <TableCell>{formatDMY(movimiento.fechaApertura)}</TableCell>
+                        <TableCell>{movimiento.fechaCierre ? formatDMY(movimiento.fechaCierre) : '-'}</TableCell>
                       </tr>
                     ))}
                   </tbody>
@@ -762,16 +759,18 @@ const ReporteCaja: React.FC = () => {
                       <thead>
                         <tr>
                           <TableHeader>Método</TableHeader>
-                          <TableHeader>Cantidad</TableHeader>
+                          <TableHeader>Transacciones</TableHeader>
                           <TableHeader>Monto Total</TableHeader>
+                          <TableHeader>Porcentaje</TableHeader>
                         </tr>
                       </thead>
                       <tbody>
                         {calcularMovimientosPorMetodoPago().map((metodo) => (
-                          <tr key={metodo.metodo}>
-                            <TableCell style={{ fontWeight: 500 }}>{metodo.metodo}</TableCell>
-                            <TableCell>{metodo.cantidad}</TableCell>
-                            <TableCell style={{ fontWeight: 600 }}>S/ {metodo.total.toFixed(2)}</TableCell>
+                          <tr key={metodo.metodoPago}>
+                            <TableCell style={{ fontWeight: 500 }}>{metodo.metodoPago}</TableCell>
+                            <TableCell>{metodo.cantidadTransacciones}</TableCell>
+                            <TableCell style={{ fontWeight: 600 }}>S/ {metodo.montoTotal.toFixed(2)}</TableCell>
+                            <TableCell>{metodo.porcentaje.toFixed(1)}%</TableCell>
                           </tr>
                         ))}
                       </tbody>
