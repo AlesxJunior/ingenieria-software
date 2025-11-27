@@ -19,12 +19,21 @@ export const SalesController = {
         formaPago,
         incluyeIGV, // 🆕 Extraer incluyeIGV del body
         items,
+        payments, // 🆕 Extraer payments del body para múltiples métodos de pago
+        observaciones,
       } = req.body || {};
+
+      // 🐛 DEBUG: Verificar si payments llega al controller
+      console.log('🔍 [CONTROLLER] req.body completo:', req.body);
+      console.log('🔍 [CONTROLLER] payments extraído:', payments);
 
       // Validaciones básicas
       if (!almacenId) details.push({ field: 'almacenId', message: 'almacenId es requerido', value: almacenId });
       if (!tipoComprobante) details.push({ field: 'tipoComprobante', message: 'tipoComprobante es requerido', value: tipoComprobante });
-      if (!formaPago) details.push({ field: 'formaPago', message: 'formaPago es requerido', value: formaPago });
+      
+      // ✅ formaPago ahora SIEMPRE es opcional (se crea SalePayment automáticamente)
+      // Si no se proporciona ni formaPago ni payments, se usará "Efectivo" por defecto
+      
       if (!items || !Array.isArray(items) || items.length === 0) {
         details.push({ field: 'items', message: 'Mínimo 1 item requerido', value: items });
       }
@@ -98,24 +107,32 @@ export const SalesController = {
       }
 
       const userId = req.user?.userId as string;
-      const sale = await salesService.create(
-        {
-          cashSessionId: cashSessionId ? String(cashSessionId) : undefined,
-          clienteId: clienteId ? String(clienteId) : undefined,
-          almacenId: String(almacenId),
-          tipoComprobante: String(tipoComprobante) as any,
-          formaPago: String(formaPago) as any,
-          incluyeIGV: incluyeIGV !== undefined ? Boolean(incluyeIGV) : undefined, // 🆕 Pasar incluyeIGV
-          items: items.map((it: any) => ({
-            productId: String(it.productId),
-            nombreProducto: it.nombreProducto ? String(it.nombreProducto) : undefined,
-            cantidad: Number(it.cantidad),
-            precioUnitario: Number(it.precioUnitario),
-          })),
-          observaciones: req.body.observaciones ? String(req.body.observaciones) : undefined,
-        },
-        userId,
-      );
+      
+      // 🐛 DEBUG: Ver qué se está pasando al service
+      const saleDataToService = {
+        cashSessionId: cashSessionId ? String(cashSessionId) : undefined,
+        clienteId: clienteId ? String(clienteId) : undefined,
+        almacenId: String(almacenId),
+        tipoComprobante: String(tipoComprobante) as any,
+        formaPago: formaPago ? String(formaPago) as any : undefined, // 🆕 Hacer opcional
+        incluyeIGV: incluyeIGV !== undefined ? Boolean(incluyeIGV) : undefined,
+        items: items.map((it: any) => ({
+          productId: String(it.productId),
+          nombreProducto: it.nombreProducto ? String(it.nombreProducto) : undefined,
+          cantidad: Number(it.cantidad),
+          precioUnitario: Number(it.precioUnitario),
+        })),
+        observaciones: observaciones ? String(observaciones) : undefined,
+        payments: payments && Array.isArray(payments) ? payments.map((p: any) => ({
+          metodoPago: String(p.metodoPago) as any,
+          monto: Number(p.monto),
+          referencia: p.referencia ? String(p.referencia) : undefined,
+        })) : undefined,
+      };
+      
+      console.log('🔍 [CONTROLLER] Objeto que se pasará al service:', JSON.stringify(saleDataToService, null, 2));
+      
+      const sale = await salesService.create(saleDataToService, userId);
 
       return ResponseHelper.created(res, sale, 'Venta creada exitosamente');
     } catch (error: any) {

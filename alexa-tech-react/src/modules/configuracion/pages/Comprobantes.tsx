@@ -395,7 +395,6 @@ const Comprobantes: React.FC = () => {
               <Th>Número Actual</Th>
               <Th>Disponibles</Th>
               <Th>Estado</Th>
-              <Th>Predet.</Th>
               <Th>Acciones</Th>
             </tr>
           </thead>
@@ -415,13 +414,37 @@ const Comprobantes: React.FC = () => {
                 <Td>
                   {(() => {
                     const disponibles = comprobante.numeroFin - comprobante.numeroActual;
-                    const porcentaje = ((comprobante.numeroActual - comprobante.numeroInicio) / (comprobante.numeroFin - comprobante.numeroInicio)) * 100;
-                    const color = porcentaje > 80 ? '#ef4444' : porcentaje > 50 ? '#f59e0b' : '#10b981';
+                    const total = comprobante.numeroFin - comprobante.numeroInicio;
+                    const usados = comprobante.numeroActual - comprobante.numeroInicio;
+                    const porcentajeUsado = (usados / total) * 100;
+                    
+                    // Colores según el uso
+                    let color = '#10b981'; // Verde (bajo uso)
+                    let emoji = '✅';
+                    
+                    if (porcentajeUsado >= 95) {
+                      color = '#dc2626'; // Rojo crítico
+                      emoji = '🔴';
+                    } else if (porcentajeUsado >= 80) {
+                      color = '#f59e0b'; // Naranja alto
+                      emoji = '⚠️';
+                    } else if (porcentajeUsado >= 50) {
+                      color = '#f59e0b'; // Amarillo medio
+                      emoji = '🟡';
+                    }
                     
                     return (
-                      <span style={{ color, fontWeight: 500 }}>
-                        {disponibles.toLocaleString()} ({porcentaje.toFixed(0)}%)
-                      </span>
+                      <DisponiblesContainer>
+                        <DisponiblesNumber style={{ color }}>
+                          {emoji} {disponibles.toLocaleString('es-PE')}
+                        </DisponiblesNumber>
+                        <DisponiblesInfo>
+                          Usado: {usados.toLocaleString('es-PE')} / {total.toLocaleString('es-PE')}
+                        </DisponiblesInfo>
+                        <ProgressBar>
+                          <ProgressFill $percentage={porcentajeUsado} $color={color} />
+                        </ProgressBar>
+                      </DisponiblesContainer>
                     );
                   })()}
                 </Td>
@@ -429,11 +452,6 @@ const Comprobantes: React.FC = () => {
                   <Badge $active={comprobante.activo}>
                     {comprobante.activo ? 'Activo' : 'Inactivo'}
                   </Badge>
-                </Td>
-                <Td>
-                  {comprobante.predeterminado && (
-                    <Badge $active={true}>Sí</Badge>
-                  )}
                 </Td>
                 <Td>
                   <ActionButton onClick={() => handleEdit(comprobante)}>
@@ -572,19 +590,6 @@ const Comprobantes: React.FC = () => {
               <HelpText>Solo los comprobantes activos estarán disponibles</HelpText>
             </FormGroup>
 
-            <FormGroup>
-              <CheckboxLabel>
-                <Checkbox
-                  type="checkbox"
-                  name="predeterminado"
-                  checked={formData.predeterminado}
-                  onChange={handleInputChange}
-                />
-                Predeterminado para este tipo
-              </CheckboxLabel>
-              <HelpText>Se seleccionará automáticamente para este tipo de comprobante</HelpText>
-            </FormGroup>
-
             <ButtonGroup>
               <Button type="button" onClick={handleSave} disabled={loading}>
                 {loading ? 'Guardando...' : 'Guardar'}
@@ -621,4 +626,42 @@ const HelpText = styled.small`
 const WarningText = styled(HelpText)`
   color: #f59e0b;
   font-weight: 500;
+`;
+
+const DisponiblesContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+`;
+
+const DisponiblesNumber = styled.div`
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+const DisponiblesInfo = styled.div`
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 2px;
+`;
+
+const ProgressFill = styled.div<{ $percentage: number; $color: string }>`
+  height: 100%;
+  width: ${props => props.$percentage}%;
+  background-color: ${props => props.$color};
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 3px;
 `;

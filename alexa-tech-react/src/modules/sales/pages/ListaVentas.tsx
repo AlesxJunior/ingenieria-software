@@ -536,6 +536,36 @@ const ListaVentas: React.FC = () => {
     }
   };
 
+  // ✅ Función para renderizar método(s) de pago
+  const renderPaymentMethods = (sale: Sale) => {
+    if (sale.payments && sale.payments.length > 0) {
+      // Tiene pagos múltiples
+      if (sale.payments.length > 1) {
+        return (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+            {sale.payments.map((payment, index) => (
+              <PaymentBadge key={payment.id || index} method={payment.metodoPago}>
+                {getPaymentText(payment.metodoPago)}
+              </PaymentBadge>
+            ))}
+          </div>
+        );
+      }
+      // Un solo pago en el array
+      return (
+        <PaymentBadge method={sale.payments[0].metodoPago}>
+          {getPaymentText(sale.payments[0].metodoPago)}
+        </PaymentBadge>
+      );
+    }
+    // Fallback a formaPago (legacy)
+    return (
+      <PaymentBadge method={sale.formaPago}>
+        {getPaymentText(sale.formaPago)}
+      </PaymentBadge>
+    );
+  };
+
   const handleViewSale = (saleId: string) => {
     navigate(`/ventas/detalle/${saleId}`);
   };
@@ -846,9 +876,7 @@ const ListaVentas: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <PaymentBadge method={sale.formaPago}>
-                          {getPaymentText(sale.formaPago)}
-                        </PaymentBadge>
+                        {renderPaymentMethods(sale)}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={sale.estado}>

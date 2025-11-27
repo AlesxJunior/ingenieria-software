@@ -478,7 +478,6 @@ const AuditoriaLogs: React.FC = () => {
                       <TableHeaderCell>Usuario</TableHeaderCell>
                       <TableHeaderCell>Acción</TableHeaderCell>
                       <TableHeaderCell>Detalles</TableHeaderCell>
-                      <TableHeaderCell>IP</TableHeaderCell>
                     </TableRow>
                   </TableHeader>
                   <tbody>
@@ -500,7 +499,6 @@ const AuditoriaLogs: React.FC = () => {
                             </ActionBadge>
                           </TableCell>
                           <DetailsCell>{log.details || '-'}</DetailsCell>
-                          <TableCell>{log.ipAddress || '-'}</TableCell>
                         </TableRow>
                       );
                     })}

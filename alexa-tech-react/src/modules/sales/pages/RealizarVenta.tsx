@@ -11,6 +11,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { tokenUtils } from '../../../utils/api';
 import { useConfiguracion } from '../../configuracion/context/ConfiguracionContext'; // ✅ Importar context
 import type { ComprobanteData, MetodoPagoData } from '../../configuracion/services/configuracionApi';
+import { PaymentProcessModal, type PaymentConfirmData } from '../components/PaymentProcessModal';
+import { QuickClientModal } from '../components/QuickClientModal';
 
 // 🎨 DISEÑO SIGUIENDO EL BOCETO HTML
 const SalesContainer = styled.div`
@@ -697,7 +699,7 @@ const RealizarVenta: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { products } = useProducts();
-  const { clients } = useClients();
+  const { clients, loadClients } = useClients();
   const {
     activeCashSession,
     createSale,
@@ -739,6 +741,8 @@ const RealizarVenta: React.FC = () => {
   const [comprobantes, setComprobantes] = useState<ComprobanteData[]>([]);
   const [metodosPago, setMetodosPago] = useState<MetodoPagoData[]>([]);
   const [tipoComprobante, setTipoComprobante] = useState<string>('Boleta');
+  // @ts-ignore - Used for future features
+  const [comprobanteSeleccionado, setComprobanteSeleccionado] = useState<ComprobanteData | null>(null);
   const [formaPago, setFormaPago] = useState<string>('Efectivo');
   
   // ✅ Estados para configuración de IGV desde Empresa
@@ -760,6 +764,14 @@ const RealizarVenta: React.FC = () => {
   const [montoRecibido, setMontoRecibido] = useState<string>('');
   const [referenciaPago, setReferenciaPago] = useState<string>('');
   const [pendingSaleTotal, setPendingSaleTotal] = useState<number>(0);
+
+  // 🆕 Estados para nuevo modal unificado de pago
+  const [showNewPaymentModal, setShowNewPaymentModal] = useState(false);
+
+  // 🆕 Estados para modal de creación rápida de cliente
+  const [showQuickClientModal, setShowQuickClientModal] = useState(false);
+  // @ts-ignore - tempClientData is read, setter may be used in future
+  const [tempClientData, setTempClientData] = useState<Client | null>(null);
 
   // Fecha y hora actual
   const currentDate = new Date().toISOString().split('T')[0];
@@ -786,7 +798,8 @@ const RealizarVenta: React.FC = () => {
     return name.includes(searchLower) || document.includes(searchLower);
   });
 
-  const selectedClientData = clients.find((c: Client) => c.id === selectedClient);
+  // \u2705 SOLUCI\u00d3N: Mostrar datos temporales si existen, sino buscar en la lista
+  const selectedClientData = tempClientData || clients.find((c: Client) => c.id === selectedClient);
 
   // ✅ Sincronizar con ConfiguracionContext (se actualiza automáticamente)
   useEffect(() => {
@@ -945,6 +958,20 @@ const RealizarVenta: React.FC = () => {
     return tipo; // Si ya está en formato correcto
   };
 
+  // ✅ Normalizar método de pago (backend espera mayúscula inicial)
+  const normalizarMetodoPago = (metodo: string): string => {
+    const normalizaciones: Record<string, string> = {
+      'efectivo': 'Efectivo',
+      'tarjeta': 'Tarjeta',
+      'transferencia': 'Transferencia',
+      'yape': 'Yape',
+      'plin': 'Plin',
+      'múltiple': 'Múltiple',
+      'multiple': 'Múltiple'
+    };
+    return normalizaciones[metodo.toLowerCase()] || metodo;
+  };
+
   // Agregar al carrito
   const addToCart = (product: Product) => {
     // 🐛 Debug: verificar ID del producto
@@ -1027,7 +1054,50 @@ const RealizarVenta: React.FC = () => {
     setClientSearchTerm('');
   };
 
-  // Procesar venta (PASO 1: Registrar venta en estado Pendiente)
+  // 🆕 Handler para cuando se crea un cliente desde el modal rápido
+  const handleQuickClientCreated = async (clientId: string, clientData: any) => {
+    console.log('🎯 RealizarVenta: handleQuickClientCreated EJECUTADO');
+    console.log('🎯 Cliente creado:', clientId, clientData);
+    
+    // Actualizar tipo de documento basado en el cliente
+    if (clientData.tipoDocumento === 'RUC') {
+      setTipoDocumento('RUC');
+      // Si es RUC, cambiar a Factura
+      if (tipoComprobante === 'Boleta') {
+        const facturaComprobante = comprobantes.find(c => c.tipo === 'factura');
+        if (facturaComprobante) {
+          setTipoComprobante('Factura');
+          setComprobanteSeleccionado(facturaComprobante);
+        }
+      }
+    } else {
+      setTipoDocumento(clientData.tipoDocumento || 'DNI');
+    }
+
+    // Cerrar modal primero para mejor UX
+    setShowQuickClientModal(false);
+    
+    // Limpiar búsqueda y dropdown
+    setClientSearchTerm('');
+    setShowClientDropdown(false);
+
+    // Seleccionar el cliente creado
+    setSelectedClient(clientId);
+    
+    // Recargar en segundo plano
+    console.log('📡 Recargando clientes en segundo plano...');
+    loadClients()
+      .then(() => {
+        console.log('✅ Lista actualizada');
+      })
+      .catch((err: any) => {
+        console.error('Error recargando clientes:', err);
+      });
+    
+    addNotification('success', 'Cliente Creado', 'Cliente agregado y seleccionado para la venta');
+  };
+
+  // Procesar venta - Abre el modal de pago unificado
   const processSale = async () => {
     if (!activeCashSession) {
       addNotification('error', 'Caja Cerrada', 'No hay una caja abierta. Abre una caja antes de realizar ventas.');
@@ -1045,49 +1115,53 @@ const RealizarVenta: React.FC = () => {
       return;
     }
 
-    // 🆕 Confirmación antes de procesar
-    const subtotal = calculateSubtotal();
-    const total = calculateTotal();
-    const igvLine = includeIGV && igvConfig.activo 
-      ? `IGV (${igvConfig.porcentaje}%): S/ ${calculateTax().toFixed(2)}\n`
-      : '';
-    
-    const confirmed = window.confirm(
-      `¿Confirmar venta?\n\n` +
-      `Productos: ${cart.length}\n` +
-      `Subtotal: S/ ${subtotal.toFixed(2)}\n` +
-      igvLine +
-      `Total: S/ ${total.toFixed(2)}\n\n` +
-      `Comprobante: ${tipoComprobante}\n` +
-      `Forma de pago: ${formaPago}`
-    );
+    // 🆕 Abrir el nuevo modal de pago unificado
+    setShowNewPaymentModal(true);
+  };
 
-    if (!confirmed) {
-      return;
-    }
+  // 🆕 Handler para confirmar pago desde el nuevo modal
+  const handleNewPaymentConfirm = async (paymentData: PaymentConfirmData) => {
+    if (!activeCashSession) return;
 
     setIsProcessing(true);
 
     try {
+      // Determinar formaPago: si hay múltiples pagos, usar el primero; si no, usar el único
+      const mainFormaPago = paymentData.payments && paymentData.payments.length > 0
+        ? paymentData.payments[0].metodoPago
+        : (paymentData.formaPago || 'Efectivo');
+
       const saleData: CreateSaleInput = {
         cashSessionId: activeCashSession.id,
         clienteId: selectedClient || undefined,
         almacenId: selectedWarehouse,
-        tipoComprobante: normalizarTipoComprobante(tipoComprobante), // ✅ Normalizar antes de enviar
-        formaPago,
-        incluyeIGV: includeIGV, // 🆕 Enviar si incluye IGV o no
+        tipoComprobante: normalizarTipoComprobante(tipoComprobante) as 'Boleta' | 'Factura' | 'NotaVenta',
+        incluyeIGV: includeIGV,
+        formaPago: normalizarMetodoPago(mainFormaPago) as 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin',
         items: cart.map(item => ({
           productId: item.productId,
           nombreProducto: item.nombreProducto,
           cantidad: Number(item.cantidad),
           precioUnitario: Number(item.precioUnitario)
         })),
-        observaciones: ''
+        observaciones: '',
+        // 🆕 Incluir payments directamente si existen
+        payments: paymentData.payments && paymentData.payments.length > 0
+          ? paymentData.payments.map(p => ({
+              metodoPago: normalizarMetodoPago(p.metodoPago) as 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin',
+              monto: p.monto,
+              referencia: p.referencia || undefined,
+            }))
+          : undefined,
       };
 
       console.log('🛒 Creando venta (estado Pendiente):', saleData);
+      console.log('🔍 ¿payments está en saleData?', 'payments' in saleData, saleData.payments);
       console.log('💡 Tipo Comprobante enviado:', saleData.tipoComprobante);
+      console.log('💡 FormaPago:', saleData.formaPago);
       console.log('💡 IncludeIGV:', includeIGV);
+      console.log('💰 Datos de pago recibidos del modal:', paymentData);
+      console.log('💰 Pagos múltiples:', paymentData.payments);
 
       // PASO 1: Crear venta en estado Pendiente
       const newSale = await createSale(saleData);
@@ -1096,18 +1170,69 @@ const RealizarVenta: React.FC = () => {
       console.log('💰 Total recibido del backend:', newSale.total);
       console.log('💰 IGV recibido del backend:', newSale.igv);
 
-      // PASO 2: Mostrar modal de confirmación de pago
-      setPendingSaleId(newSale.id);
-      setPendingSaleTotal(Number(newSale.total)); // ✅ Usar el total real del backend
-      
-      // 🆕 Para efectivo: sugerir monto redondeado, para otros: monto exacto
-      const totalExacto = Number(newSale.total);
-      const montoSugerido = formaPago === 'Efectivo' 
-        ? redondearAlDecimo(totalExacto)
-        : totalExacto;
-      
-      setMontoRecibido(montoSugerido.toFixed(2));
-      setShowPaymentModal(true);
+      // PASO 2: Confirmar pago automáticamente
+      await confirmPayment(newSale.id, {
+        montoRecibido: paymentData.montoRecibido || Number(newSale.total),
+        referenciaPago: paymentData.referencia,
+        montoCambio: paymentData.cambio,
+      });
+
+      // Cerrar modal
+      setShowNewPaymentModal(false);
+
+      // Limpiar formulario
+      setCart([]);
+      setSelectedClient('');
+      setClientSearchTerm('');
+      setSearchTerm('');
+      setTempClientData(null); // Limpiar cliente temporal
+      setLastSaleId(newSale.id);
+
+      addNotification('success', 'Venta Registrada', `Venta ${newSale.codigoVenta} completada exitosamente`);
+
+      // 🖨️ Preguntar si quiere imprimir (permaneciendo en la página de realizar venta)
+      setTimeout(async () => {
+        const shouldPrint = window.confirm('¿Deseas imprimir el comprobante?');
+        if (shouldPrint) {
+          try {
+            // Descargar PDF con autenticación
+            const token = tokenUtils.getAccessToken();
+            const pdfUrl = `${import.meta.env.VITE_API_URL}/sales/${newSale.id}/invoice/preview`;
+            
+            const response = await fetch(pdfUrl, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al generar el PDF');
+            }
+
+            // Crear un Blob del PDF y abrirlo en nueva ventana
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Abrir en nueva ventana y activar el diálogo de impresión
+            const printWindow = window.open(blobUrl, '_blank');
+            
+            // Esperar a que cargue el PDF y abrir diálogo de impresión
+            if (printWindow) {
+              printWindow.onload = () => {
+                printWindow.focus();
+                printWindow.print();
+              };
+            }
+            
+            // Liberar memoria después de 1 minuto
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+          } catch (error) {
+            console.error('❌ Error al abrir PDF:', error);
+            addNotification('error', 'Error', 'No se pudo abrir el comprobante para imprimir');
+          }
+        }
+        // ✅ Ya NO navegamos - nos quedamos en la página de realizar venta
+      }, 500);
 
     } catch (error: any) {
       console.error('❌ Error al crear venta:', error);
@@ -1117,7 +1242,7 @@ const RealizarVenta: React.FC = () => {
     }
   };
 
-  // 🆕 PASO 2: Confirmar pago de la venta
+  // 🆕 PASO 2: Confirmar pago de la venta (LEGACY - mantener para compatibilidad)
   const handleConfirmPayment = async () => {
     if (!pendingSaleId) return;
 
@@ -1413,6 +1538,13 @@ const RealizarVenta: React.FC = () => {
                 />
                 <SearchButton>🔍</SearchButton>
               </InputWithButton>
+              <Button
+                type="button"
+                onClick={() => setShowQuickClientModal(true)}
+                style={{ marginTop: '8px', width: '100%' }}
+              >
+                + Nuevo Cliente
+              </Button>
               {showClientDropdown && filteredClients.length > 0 && (
                 <AutocompleteDropdown>
                   {filteredClients.map((client: Client) => (
@@ -1484,36 +1616,6 @@ const RealizarVenta: React.FC = () => {
                 value={currentTime}
                 readOnly
               />
-            </FormGroup>
-
-            <FormGroup>
-              <Label htmlFor="tipo-pago">Tipo de Pago</Label>
-              <Select
-                id="tipo-pago"
-                value={formaPago}
-                onChange={(e) => setFormaPago(e.target.value)}
-              >
-                {metodosPago.length > 0 ? (
-                  metodosPago.map((metodo) => (
-                    <option key={metodo.id} value={metodo.nombre}>
-                      {metodo.tipo === 'efectivo' && '💵 '}
-                      {metodo.tipo === 'tarjeta' && '💳 '}
-                      {metodo.tipo === 'transferencia' && '🏦 '}
-                      {metodo.tipo === 'yape' && '📱 '}
-                      {metodo.tipo === 'plin' && '📱 '}
-                      {metodo.nombre}
-                    </option>
-                  ))
-                ) : (
-                  <>
-                    <option value="Efectivo">💵 Efectivo</option>
-                    <option value="Tarjeta">💳 Tarjeta</option>
-                    <option value="Transferencia">🏦 Transferencia</option>
-                    <option value="Yape">📱 Yape</option>
-                    <option value="Plin">📱 Plin</option>
-                  </>
-                )}
-              </Select>
             </FormGroup>
 
             <CheckboxGroup>
@@ -1729,7 +1831,6 @@ const RealizarVenta: React.FC = () => {
               {(() => {
                 const metodoSeleccionado = metodosPago.find(m => m.nombre === formaPago);
                 const esEfectivo = metodoSeleccionado?.tipo === 'efectivo' || formaPago === 'Efectivo';
-                const requiereReferencia = metodoSeleccionado?.requiereReferencia ?? !esEfectivo;
 
                 return esEfectivo ? (
                 <>
@@ -1850,6 +1951,38 @@ const RealizarVenta: React.FC = () => {
           </ModalContent>
         </ModalOverlay>
       )}
+
+      {/* 🆕 Modal Unificado de Pago (PaymentProcessModal) */}
+      <PaymentProcessModal
+        isOpen={showNewPaymentModal}
+        onClose={() => setShowNewPaymentModal(false)}
+        onConfirm={handleNewPaymentConfirm}
+        tipoComprobante={tipoComprobante}
+        cliente={selectedClientData ? {
+          id: selectedClientData.id,
+          nombres: selectedClientData.nombres,
+          apellidos: selectedClientData.apellidos,
+          razonSocial: selectedClientData.razonSocial,
+          tipoDocumento: selectedClientData.tipoDocumento,
+          numeroDocumento: selectedClientData.numeroDocumento,
+        } : null}
+        cart={cart}
+        subtotal={calculateSubtotal()}
+        igv={calculateTax()}
+        total={calculateTotal()}
+        includeIGV={includeIGV}
+        igvPorcentaje={igvConfig.porcentaje}
+        metodosPago={metodosPago}
+        isProcessing={isProcessing}
+      />
+
+      {/* 🆕 Modal de Creación Rápida de Cliente */}
+      <QuickClientModal
+        isOpen={showQuickClientModal}
+        onClose={() => setShowQuickClientModal(false)}
+        onClientCreated={handleQuickClientCreated}
+        initialSearchTerm={clientSearchTerm}
+      />
     </Layout>
   );
 };

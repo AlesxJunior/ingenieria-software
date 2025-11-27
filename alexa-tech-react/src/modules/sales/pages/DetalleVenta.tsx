@@ -604,8 +604,28 @@ const DetalleVenta: React.FC = () => {
               <InfoValue>{formatDate(sale.fechaEmision)} - {formatTime(sale.fechaEmision)}</InfoValue>
             </InfoItem>
             <InfoItem>
-              <InfoLabel>Forma de Pago</InfoLabel>
-              <InfoValue>{sale.formaPago}</InfoValue>
+              <InfoLabel>Método(s) de Pago</InfoLabel>
+              <InfoValue>
+                {sale.payments && sale.payments.length > 0 ? (
+                  sale.payments.length === 1 ? (
+                    // Un solo método
+                    sale.payments[0].metodoPago
+                  ) : (
+                    // Múltiples métodos: mostrar lista
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {sale.payments.map((payment, index) => (
+                        <span key={payment.id || index} style={{ fontSize: '0.9rem' }}>
+                          • {payment.metodoPago}: S/ {Number(payment.monto).toFixed(2)}
+                          {payment.referencia && ` (${payment.referencia})`}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                ) : (
+                  // Fallback a formaPago (legacy)
+                  sale.formaPago
+                )}
+              </InfoValue>
             </InfoItem>
           </InfoGrid>
         </Card>

@@ -13,6 +13,7 @@ import cashRegisterRoutes from '../modules/sales/cash-register.routes';
 import cashSessionRoutes from '../modules/sales/cash-session.routes';
 import configuracionRoutes from '../modules/configuracion/configuracion.routes';
 import reportesRoutes from '../modules/reportes/reportes.routes';
+import { sunatRoutes } from '../modules/sunat';
 // Rutas que aún no se han migrado a módulos
 import auditRoutes from './auditRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
@@ -91,6 +92,9 @@ router.use('/reportes', reportesRoutes);
 // Alias en inglés para compatibilidad Frontend
 router.use('/reports', reportesRoutes);
 
+// Rutas de SUNAT (consulta RUC/DNI)
+router.use('/sunat', sunatRoutes);
+
 // ==========================================
 // RUTAS PENDIENTES DE MIGRACIÓN
 // ==========================================
@@ -152,6 +156,7 @@ router.get('/', (req, res) => {
         configuracion: '/api/configuracion',
         reportes: '/api/reportes',
         reports: '/api/reports',
+        sunat: '/api/sunat',
         warehouses: '/api/warehouses',
         almacenes: '/api/almacenes',
         movementReasons: '/api/movement-reasons',

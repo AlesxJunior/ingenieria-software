@@ -9,3 +9,4 @@ export * from './purchases';
 export * from './clients';
 export * from './warehouses';
 export * from './permissions';
+export * from './sunat';

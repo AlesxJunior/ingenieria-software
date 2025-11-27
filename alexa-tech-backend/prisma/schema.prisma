@@ -500,7 +500,7 @@ model Sale {
   usuarioId       String
   fechaEmision    DateTime          @default(now())
   tipoComprobante SaleVoucherType   @default(Boleta)
-  formaPago       SalePaymentMethod @default(Efectivo)
+  formaPago       SalePaymentMethod? // ⚠️ DEPRECATED: Usar payments[] en su lugar
   subtotal        Decimal           @default(0)
   igv             Decimal           @default(0)
   total           Decimal           @default(0)
@@ -535,6 +535,7 @@ model Sale {
   cliente     Client?      @relation("SaleClient", fields: [clienteId], references: [id], onDelete: SetNull)
   usuario     User         @relation("SaleCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
   items       SaleItem[]
+  payments    SalePayment[] @relation("SalePayments") // 🆕 NUEVO: Relación con pagos múltiples
 
   // Relación para Notas de Crédito
   saleOrigin  Sale?  @relation("CreditNotes", fields: [saleOriginId], references: [id], onDelete: Restrict)
@@ -564,6 +565,23 @@ model SaleItem {
   product Product @relation("SaleItemProduct", fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("sale_items")
+}
+
+// 🆕 NUEVO: Modelo para Pagos Múltiples en Ventas
+model SalePayment {
+  id             String            @id @default(cuid())
+  saleId         String
+  metodoPago     SalePaymentMethod
+  monto          Decimal
+  referencia     String? // Número de operación, voucher, código QR, etc.
+  observaciones  String?
+  orden          Int               @default(1) // Orden del pago (1 = primero, 2 = segundo)
+  createdAt      DateTime          @default(now())
+
+  // Relaciones
+  sale Sale @relation("SalePayments", fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("sale_payments")
 }
 
 // Modelo para Movimientos de Caja

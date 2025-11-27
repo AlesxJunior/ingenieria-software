@@ -59,6 +59,16 @@ export interface Sale {
   referenciaPago?: string;
   fechaPago?: string;
   
+  // 🆕 Pagos múltiples
+  payments?: Array<{
+    id: string;
+    metodoPago: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin';
+    monto: number;
+    referencia?: string;
+    observaciones?: string;
+    orden: number;
+  }>;
+  
   // Campos calculados (vienen del backend)
   montoNotaCredito?: number; // Total de NCs aplicadas
   montoEfectivo?: number; // total - montoNotaCredito
@@ -102,8 +112,16 @@ export interface CreateSaleInput {
   clienteId?: string;
   almacenId: string;
   tipoComprobante: 'Boleta' | 'Factura' | 'NotaVenta';
-  formaPago: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin';
+  formaPago?: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin'; // ✅ Opcional si usa payments
   incluyeIGV?: boolean; // 🆕 Para indicar si se aplica IGV o no
+  comprobanteId?: string; // 🆕 ID del comprobante específico a usar
+  // 🆕 Pagos múltiples
+  payments?: Array<{
+    metodoPago: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Yape' | 'Plin';
+    monto: number;
+    referencia?: string;
+    observaciones?: string;
+  }>;
   items: Array<{
     productId: string;
     nombreProducto?: string;

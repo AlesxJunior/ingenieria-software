@@ -66,7 +66,7 @@ class ReportesService {
       total: data.total
     })).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-    // Ventas por método de pago
+    // Ventas por método de pago (formaPago puede ser null ahora)
     const efectivo = ventas.filter(v => v.formaPago === 'Efectivo').reduce((s, v) => s + Number(v.total), 0);
     const tarjeta = ventas.filter(v => v.formaPago === 'Tarjeta').reduce((s, v) => s + Number(v.total), 0);
     const otros = ventasTotal - efectivo - tarjeta;
@@ -86,7 +86,7 @@ class ReportesService {
       },
       {
         metodoPago: 'Otros',
-        cantidad: ventas.filter(v => !['Efectivo', 'Tarjeta'].includes(v.formaPago)).length,
+        cantidad: ventas.filter(v => !['Efectivo', 'Tarjeta'].includes(v.formaPago || '')).length,
         total: otros,
         porcentaje: ventasTotal > 0 ? (otros / ventasTotal) * 100 : 0,
       },
@@ -650,6 +650,7 @@ class ReportesService {
     }
     const ventas = await prisma.sale.findMany({ where: ventasWhere });
 
+    // formaPago puede ser null - manejar correctamente
     const efectivo = ventas.filter(v => v.formaPago === 'Efectivo').reduce((s, v) => s + Number(v.total), 0);
     const tarjeta = ventas.filter(v => v.formaPago === 'Tarjeta').reduce((s, v) => s + Number(v.total), 0);
     const transferencia = ventas.filter(v => v.formaPago === 'Transferencia').reduce((s, v) => s + Number(v.total), 0);
