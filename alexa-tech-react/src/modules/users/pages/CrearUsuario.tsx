@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../../components/Layout';
@@ -7,6 +7,14 @@ import { validatePasswordWithConfirmation, validateUsername, validateEmail } fro
 import PasswordRequirements from '../../../components/PasswordRequirements';
 import { apiService } from '../../../utils/api';
 
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isActive: boolean;
+}
+
 interface UserFormData {
   username: string;
   email: string;
@@ -14,6 +22,7 @@ interface UserFormData {
   password: string;
   confirmPassword: string;
   status: 'activo' | 'inactivo';
+  roleId: string; // RBAC: Rol obligatorio
 }
 
 interface FormErrors {
@@ -167,11 +176,28 @@ const CrearUsuario: React.FC = () => {
     fullName: '',
     password: '',
     confirmPassword: '',
-    status: 'activo'
+    status: 'activo',
+    roleId: '' // RBAC: Sin rol por defecto
   });
 
+  const [roles, setRoles] = useState<Role[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Cargar roles disponibles
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await apiService.get<Role[]>('/users/roles');
+        setRoles(response.filter(r => r.isActive));
+      } catch (error) {
+        console.error('Error al cargar roles:', error);
+        showNotification('error', 'Error', 'No se pudieron cargar los roles disponibles');
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -201,6 +227,11 @@ const CrearUsuario: React.FC = () => {
       if (confirmErrors.length > 0) {
         newErrors.confirmPassword = confirmErrors[0].message;
       }
+    }
+
+    // RBAC: Validar que se haya seleccionado un rol
+    if (!formData.roleId) {
+      newErrors.roleId = 'Debe seleccionar un rol para el usuario';
     }
 
     setErrors(newErrors);
@@ -244,7 +275,7 @@ const CrearUsuario: React.FC = () => {
         firstName,
         lastName,
         isActive: formData.status === 'activo',
-        permissions: [], // Permisos por defecto para un nuevo usuario
+        roleId: formData.roleId, // RBAC: Rol obligatorio
       };
 
       const response = await apiService.createUser(payload);
@@ -319,18 +350,39 @@ const CrearUsuario: React.FC = () => {
               {errors.fullName && <ErrorMessage>{errors.fullName}</ErrorMessage>}
             </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="status">Estado</Label>
-              <Select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-              >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </Select>
-            </FormGroup>
+            <FormRow>
+              <FormGroup>
+                <Label htmlFor="roleId">Rol *</Label>
+                <Select
+                  id="roleId"
+                  name="roleId"
+                  value={formData.roleId}
+                  onChange={handleInputChange}
+                  $hasError={!!errors.roleId}
+                >
+                  <option value="">Seleccionar rol...</option>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.id}>
+                      {role.name} - {role.description}
+                    </option>
+                  ))}
+                </Select>
+                {errors.roleId && <ErrorMessage>{errors.roleId}</ErrorMessage>}
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="status">Estado</Label>
+                <Select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                >
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </Select>
+              </FormGroup>
+            </FormRow>
 
             <FormRow>
               <FormGroup>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useNotification } from '../context/NotificationContext';
-import { apiService } from '../utils/api';
+import { useNotification } from '../../../context/NotificationContext';
+import { apiService } from '../../../utils/api';
 
 // ============================================================================
 // INTERFACES

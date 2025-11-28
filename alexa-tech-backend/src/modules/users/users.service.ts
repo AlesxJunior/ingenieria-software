@@ -33,6 +33,15 @@ export class UserService {
         config.bcryptRounds,
       );
 
+      // Verificar que el rol existe
+      const roleExists = await prisma.role.findUnique({
+        where: { id: userData.roleId },
+      });
+
+      if (!roleExists) {
+        throw new Error('El rol especificado no existe');
+      }
+
       // Crear el usuario
       const user = await prisma.user.create({
         data: {
@@ -41,7 +50,10 @@ export class UserService {
           password: hashedPassword,
           firstName: userData.firstName,
           lastName: userData.lastName,
-          permissions: userData.permissions || [],
+          roleId: userData.roleId, // RBAC: Asignar rol obligatorio
+        },
+        include: {
+          role: true, // Incluir datos del rol en la respuesta
         },
       });
 
@@ -58,6 +70,7 @@ export class UserService {
     try {
       return await prisma.user.findUnique({
         where: { id },
+        include: { role: true }, // RBAC: Incluir datos del rol
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por ID:', error);
@@ -70,6 +83,7 @@ export class UserService {
     try {
       return await prisma.user.findUnique({
         where: { email },
+        include: { role: true }, // RBAC: Incluir datos del rol
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por email:', error);
@@ -82,6 +96,7 @@ export class UserService {
     try {
       return await prisma.user.findUnique({
         where: { username },
+        include: { role: true }, // RBAC: Incluir datos del rol
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por username:', error);
@@ -126,6 +141,17 @@ export class UserService {
       // Preparar datos para actualizar
       const updateData: any = { ...userData };
 
+      // Validar que el rol existe si se está cambiando
+      if (userData.roleId) {
+        const roleExists = await prisma.role.findUnique({
+          where: { id: userData.roleId },
+        });
+
+        if (!roleExists) {
+          throw new Error('El rol especificado no existe');
+        }
+      }
+
       // Hashear nueva contraseña si se proporciona
       if (userData.password) {
         updateData.password = await bcrypt.hash(
@@ -138,6 +164,7 @@ export class UserService {
       const updatedUser = await prisma.user.update({
         where: { id },
         data: updateData,
+        include: { role: true }, // RBAC: Incluir datos del rol
       });
 
       logger.info(`Usuario actualizado: ${updatedUser.email}`);
@@ -188,6 +215,7 @@ export class UserService {
     try {
       return await prisma.user.findMany({
         where: { isActive: true },
+        include: { role: true }, // RBAC: Incluir datos del rol
         orderBy: { createdAt: 'desc' },
       });
     } catch (error) {
@@ -221,6 +249,7 @@ export class UserService {
 
       return await prisma.user.findMany({
         where: whereConditions,
+        include: { role: true }, // RBAC: Incluir datos del rol
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
@@ -270,6 +299,7 @@ export class UserService {
       const deletedUser = await prisma.user.update({
         where: { id },
         data: { isActive: false },
+        include: { role: true }, // RBAC: Incluir datos del rol
       });
 
       logger.info(`Usuario eliminado (soft delete): ${user.email}`);
@@ -311,6 +341,7 @@ export class UserService {
       const [users, total] = await Promise.all([
         prisma.user.findMany({
           where: whereConditions,
+          include: { role: true }, // RBAC: Incluir datos del rol
           orderBy: { createdAt: 'desc' },
           take: limit,
           skip: offset,

@@ -46,12 +46,9 @@ model User {
   updatedAt  DateTime  @updatedAt
   lastAccess DateTime?
 
-  // RBAC: Relación con Role
-  roleId String? // ID del rol asignado (nullable para migración)
-  role   Role?   @relation(fields: [roleId], references: [id], onDelete: SetNull)
-
-  // DEPRECADO: Mantener temporalmente para migración
-  permissions String[] @default([]) // ⚠️ DEPRECADO: Usar role.permissions en su lugar
+  // RBAC: Relación con Role (OBLIGATORIO)
+  roleId String // ID del rol asignado (obligatorio para RBAC puro)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
   // Relaciones
   auditLogs          AuditLog[]

@@ -64,16 +64,14 @@ export const requirePermission = (...requiredPermissions: string[]) => {
         return;
       }
 
-      // ⭐ RBAC: Obtener permisos del rol si existe, sino usar permisos directos (fallback)
-      let userPermissions: string[] = [];
-      
-      if (user.roleId && user.role) {
-        // Usar permisos del rol (RBAC)
-        userPermissions = user.role.permissions;
-      } else {
-        // Fallback: Usar permisos directos (sistema legacy)
-        userPermissions = user.permissions;
+      // ⭐ RBAC: Obtener permisos del rol del usuario
+      if (!user.role) {
+        logger.warn('User has no assigned role', { userId: user.id });
+        sendForbidden(res, 'El usuario no tiene un rol asignado');
+        return;
       }
+
+      const userPermissions = user.role.permissions;
 
       const hasPermission = PermissionUtils.hasAnyPermission(
         userPermissions,
@@ -83,8 +81,8 @@ export const requirePermission = (...requiredPermissions: string[]) => {
       // --- DEBUG LOG ---
       console.log('[DEBUG] requirePermission Check:', {
         userId: user.id,
-        hasRole: !!user.roleId,
-        roleName: user.role?.name || 'Sin rol',
+        roleId: user.roleId,
+        roleName: user.role.name,
         userPermissions: userPermissions,
         requiredPermissions: requiredPermissions,
         hasPermission: hasPermission
@@ -138,15 +136,22 @@ export const requireAllPermissions = (...requiredPermissions: string[]) => {
         return;
       }
 
+      // RBAC: Obtener permisos del rol
+      if (!user.role) {
+        logger.warn('User has no assigned role', { userId: user.id });
+        sendForbidden(res, 'El usuario no tiene un rol asignado');
+        return;
+      }
+
       const hasAllPermissions = PermissionUtils.hasAllPermissions(
-        user.permissions,
+        user.role.permissions,
         requiredPermissions,
       );
 
       if (!hasAllPermissions) {
         logger.warn('All permissions authorization failed', {
           userId: req.user.userId,
-          userPermissions: user.permissions,
+          userPermissions: user.role.permissions,
           requiredPermissions,
           endpoint: req.path,
         });
@@ -220,8 +225,15 @@ export const requireOwnerOrAdmin = (userIdParam: string = 'id') => {
         return;
       }
 
+      // RBAC: Obtener permisos del rol
+      if (!user.role) {
+        logger.warn('User has no assigned role', { userId: user.id });
+        sendForbidden(res, 'El usuario no tiene un rol asignado');
+        return;
+      }
+
       const hasAdminPermissions = PermissionUtils.hasAnyPermission(
-        user.permissions,
+        user.role.permissions,
         ['users.update', 'users.delete', 'system.settings'],
       );
 
@@ -229,7 +241,7 @@ export const requireOwnerOrAdmin = (userIdParam: string = 'id') => {
         logger.warn('Owner/Admin authorization failed', {
           currentUserId,
           requestedUserId,
-          userPermissions: user.permissions,
+          userPermissions: user.role.permissions,
           endpoint: req.path,
         });
         sendForbidden(res, 'Solo puedes acceder a tu propia información');

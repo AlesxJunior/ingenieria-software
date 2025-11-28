@@ -34,7 +34,7 @@ const ListaUsuarios = lazy(() => import('./modules/users/pages/ListaUsuarios'));
 const CrearUsuario = lazy(() => import('./modules/users/pages/CrearUsuario'));
 const EditarUsuario = lazy(() => import('./modules/users/pages/EditarUsuario'));
 const PerfilUsuario = lazy(() => import('./modules/users/pages/PerfilUsuario'));
-const ListaRoles = lazy(() => import('./pages/ListaRoles'));
+const ListaRoles = lazy(() => import('./modules/users/pages/ListaRoles'));
 const AuditoriaLogs = lazy(() => import('./pages/AuditoriaLogs'));
 const ListaCompras = lazy(() => import('./modules/purchases/pages/ListaCompras'));
 const ListadoStock = lazy(() => import('./modules/inventory/pages/Inventario/ListadoStock'));

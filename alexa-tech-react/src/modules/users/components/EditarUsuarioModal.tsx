@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../../../context/NotificationContext';
 import { validateUsername, validateEmail } from '../../../utils/validation';
+import { apiService } from '../../../utils/api';
 
-interface Permission {
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+interface Role {
   id: string;
   name: string;
   description: string;
-  module: string;
-  submodule?: string;
+  permissions: string[];
+  isActive: boolean;
 }
 
 interface ExtendedUser {
@@ -21,7 +26,8 @@ interface ExtendedUser {
   lastLogin?: string;
   createdAt: string;
   updatedAt: string;
-  permissions?: string[];
+  roleId: string;
+  role?: Role;
 }
 
 interface UserFormData {
@@ -30,7 +36,7 @@ interface UserFormData {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  permissions: string[];
+  roleId: string;
 }
 
 interface FormErrors {
@@ -38,6 +44,7 @@ interface FormErrors {
   email?: string;
   firstName?: string;
   lastName?: string;
+  roleId?: string;
 }
 
 interface EditarUsuarioModalProps {
@@ -47,211 +54,9 @@ interface EditarUsuarioModalProps {
   onSave: (userData: UserFormData) => void;
 }
 
-// Definición de permisos disponibles basados en el sistema del backend
-const AVAILABLE_PERMISSIONS: Permission[] = [
-  // MÓDULO: DASHBOARD
-  {
-    id: 'dashboard.read',
-    name: 'Ver Dashboard',
-    description: 'Acceder al panel principal y métricas del sistema',
-    module: 'DASHBOARD'
-  },
-  
-  // MÓDULO: USUARIOS
-  {
-    id: 'users.create',
-    name: 'Crear Usuarios',
-    description: 'Crear nuevos usuarios en el sistema',
-    module: 'USUARIOS'
-  },
-  {
-    id: 'users.read',
-    name: 'Ver Usuarios',
-    description: 'Ver la lista de usuarios del sistema',
-    module: 'USUARIOS'
-  },
-  {
-    id: 'users.update',
-    name: 'Actualizar Usuarios',
-    description: 'Modificar información de usuarios existentes',
-    module: 'USUARIOS'
-  },
-  
-  
-  // MÓDULO: CLIENTES
-  {
-    id: 'clients.create',
-    name: 'Crear Clientes',
-    description: 'Registrar nuevos clientes en el sistema',
-    module: 'CLIENTES'
-  },
-  {
-    id: 'clients.read',
-    name: 'Ver Clientes',
-    description: 'Ver la lista de clientes del sistema',
-    module: 'CLIENTES'
-  },
-  {
-    id: 'clients.update',
-    name: 'Actualizar Clientes',
-    description: 'Modificar información de clientes',
-    module: 'CLIENTES'
-  },
-  {
-    id: 'clients.delete',
-    name: 'Eliminar Clientes',
-    description: 'Eliminar clientes del sistema',
-    module: 'CLIENTES'
-  },
-  
-  // MÓDULO: VENTAS
-  {
-    id: 'sales.create',
-    name: 'Crear Ventas',
-    description: 'Registrar nuevas ventas',
-    module: 'VENTAS'
-  },
-  {
-    id: 'sales.read',
-    name: 'Ver Ventas',
-    description: 'Ver el historial de ventas',
-    module: 'VENTAS'
-  },
-  {
-    id: 'sales.update',
-    name: 'Actualizar Ventas',
-    description: 'Modificar ventas existentes',
-    module: 'VENTAS'
-  },
-  {
-    id: 'sales.delete',
-    name: 'Eliminar Ventas',
-    description: 'Eliminar registros de ventas',
-    module: 'VENTAS'
-  },
-  
-  // MÓDULO: PRODUCTOS
-  {
-    id: 'products.create',
-    name: 'Crear Productos',
-    description: 'Agregar nuevos productos al catálogo',
-    module: 'PRODUCTOS'
-  },
-  {
-    id: 'products.read',
-    name: 'Ver Productos',
-    description: 'Ver el catálogo de productos',
-    module: 'PRODUCTOS'
-  },
-  {
-    id: 'products.update',
-    name: 'Actualizar Productos',
-    description: 'Modificar información de productos',
-    module: 'PRODUCTOS'
-  },
-  {
-    id: 'products.delete',
-    name: 'Eliminar Productos',
-    description: 'Eliminar productos del catálogo',
-    module: 'PRODUCTOS'
-  },
-  
-  // MÓDULO: INVENTARIO
-  {
-    id: 'inventory.read',
-    name: 'Ver Inventario',
-    description: 'Ver el estado del inventario',
-    module: 'INVENTARIO'
-  },
-  {
-    id: 'inventory.update',
-    name: 'Actualizar Inventario',
-    description: 'Modificar niveles de inventario',
-    module: 'INVENTARIO'
-  },
-  
-  // MÓDULO: COMPRAS
-  {
-    id: 'purchases.create',
-    name: 'Crear Compras',
-    description: 'Registrar nuevas compras a proveedores',
-    module: 'COMPRAS'
-  },
-  {
-    id: 'purchases.read',
-    name: 'Ver Compras',
-    description: 'Ver el historial de compras',
-    module: 'COMPRAS'
-  },
-  {
-    id: 'purchases.update',
-    name: 'Actualizar Compras',
-    description: 'Modificar compras existentes',
-    module: 'COMPRAS'
-  },
-  {
-    id: 'purchases.delete',
-    name: 'Eliminar Compras',
-    description: 'Eliminar registros de compras',
-    module: 'COMPRAS'
-  },
-  
-  // MÓDULO: FACTURACIÓN
-  {
-    id: 'invoicing.create',
-    name: 'Crear Facturas',
-    description: 'Generar nuevas facturas',
-    module: 'FACTURACIÓN'
-  },
-  {
-    id: 'invoicing.read',
-    name: 'Ver Facturas',
-    description: 'Ver el historial de facturas',
-    module: 'FACTURACIÓN'
-  },
-  {
-    id: 'invoicing.update',
-    name: 'Actualizar Facturas',
-    description: 'Modificar facturas existentes',
-    module: 'FACTURACIÓN'
-  },
-  {
-    id: 'invoicing.delete',
-    name: 'Eliminar Facturas',
-    description: 'Eliminar facturas del sistema',
-    module: 'FACTURACIÓN'
-  },
-  
-  // MÓDULO: CONFIGURACIÓN
-  {
-    id: 'system.settings',
-    name: 'Configuración del Sistema',
-    description: 'Acceder y modificar configuraciones del sistema',
-    module: 'CONFIGURACIÓN'
-  },
-  
-  // MÓDULO: REPORTES
-  {
-    id: 'reports.sales',
-    name: 'Reportes de Ventas',
-    description: 'Generar y ver reportes de ventas',
-    module: 'REPORTES'
-  },
-  {
-    id: 'reports.inventory',
-    name: 'Reportes de Inventario',
-    description: 'Ver reportes de inventario y stock',
-    module: 'REPORTES'
-  },
-  {
-    id: 'reports.financial',
-    name: 'Reportes Financieros',
-    description: 'Ver reportes financieros y contables',
-    module: 'REPORTES'
-  }
-];
-
-
+// ============================================================================
+// STYLED COMPONENTS
+// ============================================================================
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -259,207 +64,119 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 20px;
 `;
 
 const ModalContent = styled.div`
   background: white;
-  border-radius: 8px;
-  padding: 24px;
-  width: 90%;
-  max-width: 500px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 `;
 
 const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  padding: 24px;
+  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
 `;
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
 `;
 
 const CloseButton = styled.button`
-  background: none;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   cursor: pointer;
-  color: #666;
-  
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
   &:hover {
-    color: #333;
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
   }
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 16px;
+  padding: 24px;
 `;
 
-
+const InputGroup = styled.div`
+  margin-bottom: 20px;
+`;
 
 const Label = styled.label`
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   font-weight: 500;
-  color: #333;
+  color: #2c3e50;
+  font-size: 14px;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
   font-size: 14px;
-  
+  transition: all 0.2s;
+  box-sizing: border-box;
+
   &:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
-`;
-
-
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-  ` : `
-    background: #f8f9fa;
-    color: #6c757d;
-    border: 1px solid #dee2e6;
-    
-    &:hover {
-      background: #e9ecef;
-    }
-  `}
 
   &:disabled {
-    opacity: 0.6;
+    background-color: #f8f9fa;
     cursor: not-allowed;
-    transform: none;
   }
 `;
 
-const PermissionsSection = styled.div`
-  margin-top: 20px;
-`;
-
-const PermissionsTitle = styled.h3`
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
-const ModuleGroup = styled.div`
-  margin-bottom: 20px;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  overflow: hidden;
-`;
-
-const ModuleHeader = styled.div`
-  background: #f8f9fa;
+const Select = styled.select<{ hasError?: boolean }>`
+  width: 100%;
   padding: 12px 16px;
-  border-bottom: 1px solid #e9ecef;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const ModuleName = styled.h4`
-  margin: 0;
+  border: 2px solid ${props => props.hasError ? '#dc3545' : '#ddd'};
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
-  color: #495057;
-`;
-
-const SelectAllButton = styled.button`
-  background: none;
-  border: none;
-  color: #667eea;
-  font-size: 12px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  background-color: white;
   cursor: pointer;
-  text-decoration: underline;
-  
-  &:hover {
-    color: #764ba2;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.hasError ? '#dc3545' : '#667eea'};
+    box-shadow: 0 0 0 3px ${props => props.hasError ? 'rgba(220, 53, 69, 0.1)' : 'rgba(102, 126, 234, 0.1)'};
   }
-`;
 
-const PermissionsList = styled.div`
-  padding: 16px;
-`;
-
-const PermissionItem = styled.div`
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  
-  &:last-child {
-    margin-bottom: 0;
+  &:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
   }
-`;
-
-const PermissionCheckbox = styled.input`
-  margin-right: 12px;
-  margin-top: 2px;
-`;
-
-const PermissionInfo = styled.div`
-  flex: 1;
-`;
-
-const PermissionName = styled.div`
-  font-size: 14px;
-  font-weight: 500;
-  color: #2c3e50;
-  margin-bottom: 2px;
-`;
-
-const PermissionDescription = styled.div`
-  font-size: 12px;
-  color: #6c757d;
-`;
-
-const ErrorMessage = styled.div`
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 4px;
-  margin-left: 4px;
-`;
-
-const InputGroup = styled.div`
-  margin-bottom: 16px;
 `;
 
 const InputWithError = styled(Input)<{ hasError?: boolean }>`
@@ -467,11 +184,120 @@ const InputWithError = styled(Input)<{ hasError?: boolean }>`
   
   &:focus {
     border-color: ${props => props.hasError ? '#dc3545' : '#667eea'};
-    box-shadow: 0 0 0 2px ${props => props.hasError ? 'rgba(220, 53, 69, 0.25)' : 'rgba(102, 126, 234, 0.25)'};
+    box-shadow: 0 0 0 3px ${props => props.hasError ? 'rgba(220, 53, 69, 0.1)' : 'rgba(102, 126, 234, 0.1)'};
   }
 `;
 
+const ErrorMessage = styled.div`
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 6px;
+  margin-left: 4px;
+  font-weight: 500;
+`;
 
+const InfoBox = styled.div`
+  background: #e7f3ff;
+  border-left: 4px solid #2196f3;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+`;
+
+const InfoTitle = styled.div`
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 8px;
+  font-size: 14px;
+`;
+
+const InfoText = styled.div`
+  color: #0d47a1;
+  font-size: 13px;
+  line-height: 1.5;
+`;
+
+const PermissionsPreview = styled.div`
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+`;
+
+const PermissionBadge = styled.span`
+  display: inline-block;
+  padding: 4px 10px;
+  background: #667eea;
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  margin: 4px;
+  font-weight: 500;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 24px;
+  border-top: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+`;
+
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  ${props => props.$variant === 'primary' ? `
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  ` : `
+    background: #6c757d;
+    color: white;
+
+    &:hover {
+      background: #5a6268;
+    }
+  `}
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+`;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
   isOpen,
@@ -482,6 +308,8 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [selectedRolePermissions, setSelectedRolePermissions] = useState<string[]>([]);
 
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
@@ -489,9 +317,27 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
     firstName: '',
     lastName: '',
     isActive: true,
-    permissions: []
+    roleId: ''
   });
 
+  // Cargar roles disponibles
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await apiService.get<Role[]>('/users/roles');
+        setRoles(response.filter(r => r.isActive));
+      } catch (error) {
+        console.error('Error al cargar roles:', error);
+        showNotification('error', 'Error', 'No se pudieron cargar los roles disponibles');
+      }
+    };
+
+    if (isOpen) {
+      fetchRoles();
+    }
+  }, [isOpen]);
+
+  // Cargar datos del usuario
   useEffect(() => {
     if (user) {
       setFormData({
@@ -500,10 +346,25 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
-        permissions: user.permissions || []
+        roleId: user.roleId
       });
+
+      // Cargar permisos del rol actual
+      if (user.role) {
+        setSelectedRolePermissions(user.role.permissions);
+      }
     }
   }, [user]);
+
+  // Actualizar preview de permisos cuando cambia el rol
+  useEffect(() => {
+    const selectedRole = roles.find(r => r.id === formData.roleId);
+    if (selectedRole) {
+      setSelectedRolePermissions(selectedRole.permissions);
+    } else {
+      setSelectedRolePermissions([]);
+    }
+  }, [formData.roleId, roles]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -530,7 +391,10 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
       newErrors.lastName = 'El apellido es requerido';
     }
 
-    // Los permisos son opcionales, no requieren validación específica
+    // Validar rol
+    if (!formData.roleId) {
+      newErrors.roleId = 'Debe seleccionar un rol';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -551,11 +415,10 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
       showNotification('success', 'Usuario Actualizado', 'El usuario ha sido actualizado exitosamente.');
       onClose();
     } catch (error) {
-       const errorMessage = (error as Error).message || 'No se pudo actualizar el usuario. Es posible que no tengas los permisos necesarios.';
-       console.error('Error al actualizar el usuario:', error);
-       showNotification('error', 'Error de Actualización', errorMessage);
-       return;
-     } finally {
+      const errorMessage = (error as Error).message || 'No se pudo actualizar el usuario.';
+      console.error('Error al actualizar el usuario:', error);
+      showNotification('error', 'Error de Actualización', errorMessage);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -568,33 +431,16 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-  };
 
-
-
-  const handlePermissionChange = (permissionId: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: checked 
-        ? [...prev.permissions, permissionId]
-        : prev.permissions.filter(id => id !== permissionId)
-    }));
-  };
-
-  const handleSelectAllPermissions = (module: string, select: boolean) => {
-    const modulePermissions = AVAILABLE_PERMISSIONS
-      .filter(p => p.module === module)
-      .map(p => p.id);
-    
-    setFormData(prev => ({
-      ...prev,
-      permissions: select
-        ? [...new Set([...prev.permissions, ...modulePermissions])]
-        : prev.permissions.filter(id => !modulePermissions.includes(id))
-    }));
+    // Limpiar error del campo modificado
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
   if (!isOpen) return null;
+
+  const selectedRole = roles.find(r => r.id === formData.roleId);
 
   return (
     <ModalOverlay onClick={onClose}>
@@ -605,127 +451,117 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
         </ModalHeader>
         
         <form onSubmit={handleSubmit}>
-          <InputGroup>
-            <Label htmlFor="username">Nombre de Usuario</Label>
-            <InputWithError
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              hasError={!!errors.username}
-              required
-            />
-            {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
-          </InputGroup>
-          
-          <InputGroup>
-            <Label htmlFor="email">Email</Label>
-            <InputWithError
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              hasError={!!errors.email}
-              required
-            />
-            {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
-          </InputGroup>
-
-          <InputGroup>
-            <Label htmlFor="firstName">Nombre</Label>
-            <InputWithError
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              hasError={!!errors.firstName}
-              required
-            />
-            {errors.firstName && <ErrorMessage>{errors.firstName}</ErrorMessage>}
-          </InputGroup>
-
-          <InputGroup>
-            <Label htmlFor="lastName">Apellido</Label>
-            <InputWithError
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              hasError={!!errors.lastName}
-              required
-            />
-            {errors.lastName && <ErrorMessage>{errors.lastName}</ErrorMessage>}
-          </InputGroup>
-          
-
-          
-
-          
           <FormGroup>
-            <Label htmlFor="isActive">
-              <Input
-                type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
+            <InfoBox>
+              <InfoTitle>Sistema de Control de Acceso Basado en Roles (RBAC)</InfoTitle>
+              <InfoText>
+                Los permisos del usuario están determinados por el rol asignado. 
+                Para modificar permisos, edite el rol correspondiente en la sección "Roles y Permisos".
+              </InfoText>
+            </InfoBox>
+
+            <InputGroup>
+              <Label htmlFor="username">Nombre de Usuario</Label>
+              <InputWithError
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
-                style={{ width: 'auto', marginRight: '8px' }}
+                hasError={!!errors.username}
+                required
               />
-              Usuario Activo
-            </Label>
+              {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
+            </InputGroup>
+            
+            <InputGroup>
+              <Label htmlFor="email">Email</Label>
+              <InputWithError
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                hasError={!!errors.email}
+                required
+              />
+              {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+            </InputGroup>
+
+            <InputGroup>
+              <Label htmlFor="firstName">Nombre</Label>
+              <InputWithError
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                hasError={!!errors.firstName}
+                required
+              />
+              {errors.firstName && <ErrorMessage>{errors.firstName}</ErrorMessage>}
+            </InputGroup>
+
+            <InputGroup>
+              <Label htmlFor="lastName">Apellido</Label>
+              <InputWithError
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                hasError={!!errors.lastName}
+                required
+              />
+              {errors.lastName && <ErrorMessage>{errors.lastName}</ErrorMessage>}
+            </InputGroup>
+
+            <InputGroup>
+              <Label htmlFor="roleId">Rol *</Label>
+              <Select
+                id="roleId"
+                name="roleId"
+                value={formData.roleId}
+                onChange={handleChange}
+                hasError={!!errors.roleId}
+                required
+              >
+                <option value="">Seleccionar rol...</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.id}>
+                    {role.name} - {role.description}
+                  </option>
+                ))}
+              </Select>
+              {errors.roleId && <ErrorMessage>{errors.roleId}</ErrorMessage>}
+
+              {selectedRole && selectedRolePermissions.length > 0 && (
+                <PermissionsPreview>
+                  <Label style={{ marginBottom: '8px' }}>
+                    Permisos del rol "{selectedRole.name}":
+                  </Label>
+                  {selectedRolePermissions.map(permission => (
+                    <PermissionBadge key={permission}>
+                      {permission}
+                    </PermissionBadge>
+                  ))}
+                </PermissionsPreview>
+              )}
+            </InputGroup>
+
+            <InputGroup>
+              <CheckboxLabel>
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleChange}
+                />
+                Usuario Activo
+              </CheckboxLabel>
+            </InputGroup>
           </FormGroup>
-
-          <PermissionsSection>
-            <PermissionsTitle>Permisos del Usuario</PermissionsTitle>
-            {Object.entries(
-              AVAILABLE_PERMISSIONS.reduce((acc, permission) => {
-                if (!acc[permission.module]) {
-                  acc[permission.module] = [];
-                }
-                acc[permission.module].push(permission);
-                return acc;
-              }, {} as Record<string, Permission[]>)
-            ).map(([module, permissions]) => {
-              const modulePermissionIds = permissions.map(p => p.id);
-              const allSelected = modulePermissionIds.every(id => formData.permissions.includes(id));
-              
-              return (
-                <ModuleGroup key={module}>
-                  <ModuleHeader>
-                    <ModuleName>{module}</ModuleName>
-                    <SelectAllButton
-                      type="button"
-                      onClick={() => handleSelectAllPermissions(module, !allSelected)}
-                    >
-                      {allSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
-                    </SelectAllButton>
-                  </ModuleHeader>
-                  <PermissionsList>
-                    {permissions.map(permission => (
-                      <PermissionItem key={permission.id}>
-                        <PermissionCheckbox
-                          type="checkbox"
-                          id={permission.id}
-                          checked={formData.permissions.includes(permission.id)}
-                          onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
-                        />
-                        <PermissionInfo>
-                          <PermissionName>{permission.name}</PermissionName>
-                          <PermissionDescription>{permission.description}</PermissionDescription>
-                        </PermissionInfo>
-                      </PermissionItem>
-                    ))}
-                  </PermissionsList>
-                </ModuleGroup>
-              );
-            })}
-          </PermissionsSection>
-
-
           
           <ButtonGroup>
             <Button type="button" $variant="secondary" onClick={onClose}>

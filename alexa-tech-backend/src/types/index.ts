@@ -1,6 +1,6 @@
 import { Request } from 'express';
 
-// Interfaces de usuario
+// Interfaces de usuario (RBAC)
 export interface User {
   id: string;
   username: string;
@@ -8,7 +8,7 @@ export interface User {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  permissions: string[];
+  roleId: string; // RBAC: Rol obligatorio
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,7 +19,7 @@ export interface UserCreateInput {
   password: string;
   firstName: string;
   lastName: string;
-  permissions?: string[];
+  roleId: string; // RBAC: Rol obligatorio al crear usuario
 }
 
 export interface UserUpdateInput {
@@ -29,7 +29,7 @@ export interface UserUpdateInput {
   firstName?: string;
   lastName?: string;
   isActive?: boolean;
-  permissions?: string[];
+  roleId?: string; // RBAC: Permitir cambio de rol
 }
 
 export interface UserResponse {
@@ -39,7 +39,12 @@ export interface UserResponse {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  permissions: string[];
+  roleId: string; // RBAC: Rol del usuario
+  role?: {
+    id: string;
+    name: string;
+    permissions: string[];
+  };
   createdAt: Date;
   updatedAt: Date;
 }
