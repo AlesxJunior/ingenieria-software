@@ -71,9 +71,12 @@ export const ConfiguracionProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   };
 
-  // ✅ Carga inicial
+  // ✅ Carga inicial (solo si hay token)
   useEffect(() => {
-    reloadAll();
+    const token = localStorage.getItem('authToken') || localStorage.getItem('alexatech_token');
+    if (token) {
+      reloadAll();
+    }
   }, []);
 
   return (

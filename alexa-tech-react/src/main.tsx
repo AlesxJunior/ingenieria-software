@@ -1,6 +1,9 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 
+// Importar Font Awesome localmente
+import '@fortawesome/fontawesome-free/css/all.min.css'
+
 // Registrar service worker para cache agresivo
 if (
   'serviceWorker' in navigator &&

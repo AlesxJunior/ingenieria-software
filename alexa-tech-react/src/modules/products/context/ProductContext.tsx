@@ -113,7 +113,10 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   useEffect(() => {
-    loadProducts();
+    const token = localStorage.getItem('authToken') || localStorage.getItem('alexatech_token');
+    if (token) {
+      loadProducts();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo cargar al montar el componente
 

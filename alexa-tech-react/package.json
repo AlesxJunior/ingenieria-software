@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@alexa-tech/shared": "file:../shared",
-    "@fortawesome/fontawesome-free": "^7.0.1",
+    "@fortawesome/fontawesome-free": "^7.1.0",
     "axios": "^1.12.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
