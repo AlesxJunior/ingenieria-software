@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../../../context/NotificationContext';
 import { useClients } from '../context/ClientContext';
 import UbigeoSelector from './UbigeoSelector';
+import { apiService } from '../../../utils/api';
 
 interface ClienteFormData {
   tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
@@ -26,6 +27,29 @@ interface ClienteFormData {
 interface FormErrors {
   [key: string]: string;
 }
+
+interface SunatRucData {
+  ruc: string;
+  razonSocial: string;
+  nombreComercial?: string;
+  direccion?: string;
+  estado: string;
+  condicion: string;
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+}
+
+interface ReniecDniData {
+  dni: string;
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+}
+
+interface Departamento { id: string; nombre: string; }
+interface Provincia { id: string; nombre: string; departamentoId: string; }
+interface Distrito { id: string; nombre: string; provinciaId: string; }
 
 interface NuevoClienteModalProps {
   isOpen: boolean;
@@ -160,6 +184,87 @@ const ErrorMessage = styled.span`
   margin-top: 0.25rem;
 `;
 
+const SearchButton = styled.button<{ $loading?: boolean }>`
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  min-width: 140px;
+  justify-content: center;
+  font-size: 0.95rem;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const SearchButtonRow = styled.div`
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  
+  > div:first-child {
+    flex: 1;
+  }
+`;
+
+const StatusMessage = styled.div<{ $type: 'success' | 'error' | 'info' }>`
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  ${props => props.$type === 'success' && `
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+  `}
+
+  ${props => props.$type === 'error' && `
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  `}
+
+  ${props => props.$type === 'info' && `
+    background: #e0f2fe;
+    color: #075985;
+    border: 1px solid #7dd3fc;
+  `}
+`;
+
+const Spinner = styled.span`
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   gap: 1rem;
@@ -211,6 +316,17 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
   const { addClient } = useClients();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  
+  // Estados de búsqueda
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [dataFound, setDataFound] = useState(false);
+  
+  // Datos de ubigeo para autoselección
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
+  const [provincias, setProvincias] = useState<Provincia[]>([]);
+  const [distritos, setDistritos] = useState<Distrito[]>([]);
+  
   const [formData, setFormData] = useState<ClienteFormData>({
     tipoEntidad: 'Cliente',
     tipoDocumento: 'DNI',
@@ -226,7 +342,211 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
     distritoId: ''
   });
 
-  const validateForm = (): boolean => {
+  // Cargar departamentos al abrir modal
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    const loadDeps = async () => {
+      try {
+        const res = await apiService.getDepartamentos();
+        if (res.success && res.data && active) {
+          setDepartamentos(res.data);
+        }
+      } catch (err) {
+        console.error('Error cargando departamentos:', err);
+      }
+    };
+    loadDeps();
+    return () => { active = false; };
+  }, [isOpen]);
+
+  // Auto-seleccionar ubigeo por nombre (desde SUNAT)
+  const autoSelectUbigeo = useCallback(async (depName?: string, provName?: string, distName?: string) => {
+    if (!depName) return;
+    
+    console.log('🔍 autoSelectUbigeo llamado con:', { depName, provName, distName });
+    
+    // Función helper para normalizar texto (quitar tildes y caracteres especiales)
+    const normalize = (text: string) => {
+      return text
+        .toUpperCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Quitar tildes
+        .replace(/Ñ/g, 'N');
+    };
+    
+    // Cargar departamentos si no están disponibles
+    let deps = departamentos;
+    if (deps.length === 0) {
+      console.log('📡 Cargando departamentos...');
+      const resDeps = await apiService.getDepartamentos();
+      if (resDeps.success && resDeps.data) {
+        deps = resDeps.data;
+        setDepartamentos(deps);
+      } else {
+        console.error('❌ Error cargando departamentos');
+        return;
+      }
+    }
+    
+    // Buscar departamento por nombre
+    const depNormalized = normalize(depName);
+    console.log('🔎 Buscando departamento:', depNormalized);
+    const foundDep = deps.find(d => {
+      const dNorm = normalize(d.nombre);
+      return dNorm.includes(depNormalized) || depNormalized.includes(dNorm);
+    });
+    
+    if (foundDep) {
+      console.log('✅ Departamento encontrado:', foundDep.nombre, foundDep.id);
+      setFormData(prev => ({ ...prev, departamentoId: foundDep.id }));
+      
+      // Cargar provincias y buscar
+      if (provName) {
+        const resP = await apiService.getProvincias(foundDep.id);
+        if (resP.success && resP.data) {
+          setProvincias(resP.data);
+          const provNormalized = normalize(provName);
+          console.log('🔎 Buscando provincia:', provNormalized);
+          const foundProv = resP.data.find((p: Provincia) => {
+            const pNorm = normalize(p.nombre);
+            return pNorm.includes(provNormalized) || provNormalized.includes(pNorm);
+          });
+          
+          if (foundProv) {
+            console.log('✅ Provincia encontrada:', foundProv.nombre, foundProv.id);
+            setFormData(prev => ({ ...prev, provinciaId: foundProv.id }));
+            
+            // Cargar distritos y buscar
+            if (distName) {
+              const resD = await apiService.getDistritos(foundProv.id);
+              if (resD.success && resD.data) {
+                setDistritos(resD.data);
+                const distNormalized = normalize(distName);
+                console.log('🔎 Buscando distrito:', distNormalized);
+                const foundDist = resD.data.find((d: Distrito) => {
+                  const dNorm = normalize(d.nombre);
+                  return dNorm.includes(distNormalized) || distNormalized.includes(dNorm);
+                });
+                if (foundDist) {
+                  console.log('✅ Distrito encontrado:', foundDist.nombre, foundDist.id);
+                  setFormData(prev => ({ ...prev, distritoId: foundDist.id }));
+                } else {
+                  console.log('⚠️ Distrito no encontrado:', distNormalized);
+                }
+              }
+            }
+          } else {
+            console.log('⚠️ Provincia no encontrada:', provNormalized);
+          }
+        }
+      }
+    } else {
+      console.log('⚠️ Departamento no encontrado:', depNormalized);
+    }
+  }, [departamentos]);
+
+  // Reset al cerrar modal
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        tipoEntidad: 'Cliente',
+        tipoDocumento: 'DNI',
+        numeroDocumento: '',
+        nombres: '',
+        apellidos: '',
+        razonSocial: '',
+        email: '',
+        telefono: '',
+        direccion: '',
+        departamentoId: '',
+        provinciaId: '',
+        distritoId: ''
+      });
+      setSearchStatus(null);
+      setDataFound(false);
+      setErrors({});
+      setIsLoading(false);
+      setIsSearching(false);
+    }
+  }, [isOpen]);
+
+  // Buscar en SUNAT/RENIEC
+  const handleSearch = async () => {
+    const doc = formData.numeroDocumento.trim();
+    
+    // Validaciones
+    if (formData.tipoDocumento === 'DNI' && doc.length !== 8) {
+      setSearchStatus({ type: 'error', message: 'El DNI debe tener 8 dígitos' });
+      return;
+    }
+    if (formData.tipoDocumento === 'RUC' && doc.length !== 11) {
+      setSearchStatus({ type: 'error', message: 'El RUC debe tener 11 dígitos' });
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchStatus(null);
+
+    try {
+      const endpoint = formData.tipoDocumento === 'RUC' 
+        ? `/sunat/ruc/${doc}` 
+        : `/sunat/dni/${doc}`;
+
+      const response = await apiService.get<any>(endpoint);
+
+      if (response.success && response.data) {
+        if (formData.tipoDocumento === 'RUC') {
+          const data = response.data as SunatRucData;
+          setFormData(prev => ({
+            ...prev,
+            razonSocial: data.razonSocial || '',
+            direccion: data.direccion || ''
+          }));
+          
+          // Autocompletar ubigeo desde SUNAT
+          if (data.departamento || data.provincia || data.distrito) {
+            autoSelectUbigeo(data.departamento, data.provincia, data.distrito);
+          }
+          
+          setSearchStatus({ 
+            type: 'success', 
+            message: `✅ Empresa encontrada: ${data.razonSocial}` 
+          });
+        } else {
+          const data = response.data as ReniecDniData;
+          setFormData(prev => ({
+            ...prev,
+            nombres: data.nombres || '',
+            apellidos: `${data.apellidoPaterno || ''} ${data.apellidoMaterno || ''}`.trim()
+          }));
+          setSearchStatus({ 
+            type: 'success', 
+            message: `✅ Persona encontrada: ${data.nombres} ${data.apellidoPaterno}` 
+          });
+        }
+        setDataFound(true);
+      } else {
+        setSearchStatus({ 
+          type: 'error', 
+          message: response.message || 'No se encontró información' 
+        });
+        setDataFound(false);
+      }
+    } catch (error: any) {
+      console.error('Error al buscar:', error);
+      setSearchStatus({ 
+        type: 'error', 
+        message: error.message || 'Error al conectar con el servicio' 
+      });
+      setDataFound(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const validateForm = (): boolean {
     const newErrors: FormErrors = {};
 
     // Validar campos según tipo de documento
@@ -321,6 +641,10 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
         razonSocial: '',
         numeroDocumento: ''
       }));
+      
+      // Reset estado de búsqueda
+      setSearchStatus(null);
+      setDataFound(false);
     } else {
       // Sanitizar dígitos para documentos numéricos y normalización para Pasaporte
       if (name === 'numeroDocumento') {
@@ -332,6 +656,9 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
           value = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           if (value.length > 8) value = value.slice(0, 8);
         }
+        // Reset estado de búsqueda al cambiar documento
+        setDataFound(false);
+        setSearchStatus(null);
       }
       setFormData(prev => ({
         ...prev,
@@ -481,6 +808,38 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
             </FormGroup>
           </FormRow>
 
+          {/* Búsqueda automática para DNI y RUC */}
+          {(formData.tipoDocumento === 'DNI' || formData.tipoDocumento === 'RUC') && (
+            <SearchButtonRow>
+              <div>
+                <SearchButton
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={
+                    isSearching ||
+                    (formData.tipoDocumento === 'DNI' && formData.numeroDocumento.length !== 8) ||
+                    (formData.tipoDocumento === 'RUC' && formData.numeroDocumento.length !== 11)
+                  }
+                  $loading={isSearching}
+                >
+                  {isSearching ? (
+                    <>
+                      <Spinner /> Buscando...
+                    </>
+                  ) : (
+                    <>🔍 Buscar en {formData.tipoDocumento === 'RUC' ? 'SUNAT' : 'RENIEC'}</>
+                  )}
+                </SearchButton>
+              </div>
+            </SearchButtonRow>
+          )}
+
+          {searchStatus && (
+            <StatusMessage $type={searchStatus.type}>
+              {searchStatus.message}
+            </StatusMessage>
+          )}
+
           <SectionTitle>Información Personal</SectionTitle>
           
           {/* Campos para DNI, CE y Pasaporte */}
@@ -496,6 +855,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
                   onChange={handleInputChange}
                   $hasError={!!errors.nombres}
                   placeholder="Ingrese los nombres"
+                  readOnly={dataFound && formData.tipoDocumento === 'DNI'}
                 />
                 {errors.nombres && <ErrorMessage>{errors.nombres}</ErrorMessage>}
               </FormGroup>
@@ -510,6 +870,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
                   onChange={handleInputChange}
                   $hasError={!!errors.apellidos}
                   placeholder="Ingrese los apellidos"
+                  readOnly={dataFound && formData.tipoDocumento === 'DNI'}
                 />
                 {errors.apellidos && <ErrorMessage>{errors.apellidos}</ErrorMessage>}
               </FormGroup>
@@ -528,6 +889,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
                 onChange={handleInputChange}
                 $hasError={!!errors.razonSocial}
                 placeholder="Ingrese la razón social"
+                readOnly={dataFound && formData.tipoDocumento === 'RUC'}
               />
               {errors.razonSocial && <ErrorMessage>{errors.razonSocial}</ErrorMessage>}
             </FormGroup>
@@ -574,6 +936,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
               onChange={handleInputChange}
               $hasError={!!errors.direccion}
               placeholder="Ingrese la dirección completa"
+              readOnly={dataFound && formData.tipoDocumento === 'RUC'}
             />
             {errors.direccion && <ErrorMessage>{errors.direccion}</ErrorMessage>}
           </FormGroup>
