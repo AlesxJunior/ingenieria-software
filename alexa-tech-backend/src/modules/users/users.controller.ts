@@ -70,7 +70,15 @@ export class UserController {
               lastName: user.lastName,
               isActive: user.isActive,
               lastAccess: user.lastAccess,
-              permissions: user.role?.permissions || [],
+              roleId: user.roleId, // ✅ RBAC: Incluir roleId
+              role: user.role ? { // ✅ RBAC: Incluir información del rol
+                id: user.role.id,
+                name: user.role.name,
+                description: user.role.description,
+                permissions: user.role.permissions,
+                isActive: user.role.isActive
+              } : undefined,
+              permissions: user.role?.permissions || [], // Mantener por compatibilidad
               createdAt: user.createdAt,
               updatedAt: user.updatedAt,
             })),

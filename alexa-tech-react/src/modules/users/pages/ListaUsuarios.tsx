@@ -9,6 +9,14 @@ import EditarUsuarioModal from '../components/EditarUsuarioModal';
 
 // Interfaces extendidas para usuarios
 
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isActive: boolean;
+}
+
 interface ExtendedUser {
   id: string;
   username: string;
@@ -19,6 +27,8 @@ interface ExtendedUser {
   lastAccess?: string;
   createdAt: string;
   updatedAt: string;
+  roleId: string;
+  role?: Role;
 }
 
 interface UserFormData {
@@ -27,6 +37,7 @@ interface UserFormData {
   firstName: string;
   lastName: string;
   isActive: boolean;
+  roleId: string;
 }
 
 const Container = styled.div`
@@ -355,7 +366,11 @@ const ListaUsuarios: React.FC = () => {
         status: statusFilter || undefined
       });
       
-      setUsers(response.data?.users || []);
+      const usersData = response.data?.users || [];
+      console.log('📥 [ListaUsuarios] Users loaded:', usersData.length, 'usuarios');
+      console.log('🔍 [ListaUsuarios] First user sample:', usersData[0]);
+      
+      setUsers(usersData);
       setTotalUsers(response.data?.pagination?.totalUsers || 0);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -411,6 +426,13 @@ const ListaUsuarios: React.FC = () => {
   const handleEditUser = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (user) {
+      console.log('✏️ [ListaUsuarios] Editing user:', {
+        id: user.id,
+        username: user.username,
+        roleId: user.roleId,
+        hasRole: !!user.role,
+        roleName: user.role?.name
+      });
       setSelectedUser(user);
       setIsEditModalOpen(true);
     }
@@ -419,7 +441,7 @@ const ListaUsuarios: React.FC = () => {
   const handleSaveUser = async (userData: UserFormData) => {
     try {
       if (selectedUser) {
-        // Filtrar solo las propiedades que acepta la API
+        // Preparar datos para el backend (RBAC: incluir roleId)
         const backendUserData: any = {};
         
         if (userData.username) backendUserData.username = userData.username;
@@ -427,8 +449,9 @@ const ListaUsuarios: React.FC = () => {
         if (userData.firstName) backendUserData.firstName = userData.firstName;
         if (userData.lastName) backendUserData.lastName = userData.lastName;
         if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
+        if (userData.roleId) backendUserData.roleId = userData.roleId; // ✅ RBAC
 
-        
+        console.log('💾 [ListaUsuarios] Updating user:', selectedUser.id, backendUserData);
         await apiService.updateUser(selectedUser.id, backendUserData);
         showInfo('Usuario actualizado exitosamente');
         loadUsers(); // Recargar la lista
