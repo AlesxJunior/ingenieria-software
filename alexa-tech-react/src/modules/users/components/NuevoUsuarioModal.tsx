@@ -3,13 +3,20 @@ import styled from 'styled-components';
 import { useNotification } from '../../../context/NotificationContext';
 import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../../../utils/validation';
 import PasswordRequirements from '../../../components/PasswordRequirements';
+import RoleSelector from './RoleSelector';
+import PermissionsPreview from './PermissionsPreview';
 
-interface Permission {
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+interface Role {
   id: string;
   name: string;
   description: string;
-  module: string;
-  submodule?: string;
+  permissions: string[];
+  isActive: boolean;
+  isSystem: boolean;
 }
 
 interface UserFormData {
@@ -20,7 +27,7 @@ interface UserFormData {
   password: string;
   confirmPassword: string;
   isActive: boolean;
-  permissions: string[];
+  roleId: string; // ✅ RBAC: Rol obligatorio (sin permissions directos)
 }
 
 interface FormErrors {
@@ -33,211 +40,9 @@ interface NuevoUsuarioModalProps {
   onSave: (userData: Partial<UserFormData>) => Promise<void>;
 }
 
-// Definición de permisos disponibles basados en el sistema del backend
-const AVAILABLE_PERMISSIONS: Permission[] = [
-  // MÓDULO: DASHBOARD
-  {
-    id: 'dashboard.read',
-    name: 'Ver Dashboard',
-    description: 'Acceder al panel principal y métricas del sistema',
-    module: 'DASHBOARD'
-  },
-  
-  // MÓDULO: USUARIOS
-  {
-    id: 'users.create',
-    name: 'Crear Usuarios',
-    description: 'Crear nuevos usuarios en el sistema',
-    module: 'USUARIOS'
-  },
-  {
-    id: 'users.read',
-    name: 'Ver Usuarios',
-    description: 'Ver la lista de usuarios del sistema',
-    module: 'USUARIOS'
-  },
-  {
-    id: 'users.update',
-    name: 'Actualizar Usuarios',
-    description: 'Modificar información de usuarios existentes',
-    module: 'USUARIOS'
-  },
-  
-  
-  // MÓDULO: CLIENTES
-  {
-    id: 'clients.create',
-    name: 'Crear Clientes',
-    description: 'Registrar nuevos clientes en el sistema',
-    module: 'CLIENTES'
-  },
-  {
-    id: 'clients.read',
-    name: 'Ver Clientes',
-    description: 'Ver la lista de clientes del sistema',
-    module: 'CLIENTES'
-  },
-  {
-    id: 'clients.update',
-    name: 'Actualizar Clientes',
-    description: 'Modificar información de clientes existentes',
-    module: 'CLIENTES'
-  },
-  {
-    id: 'clients.delete',
-    name: 'Eliminar Clientes',
-    description: 'Eliminar clientes del sistema',
-    module: 'CLIENTES'
-  },
-  
-  // MÓDULO: VENTAS
-  {
-    id: 'sales.create',
-    name: 'Crear Ventas',
-    description: 'Registrar nuevas ventas',
-    module: 'VENTAS'
-  },
-  {
-    id: 'sales.read',
-    name: 'Ver Ventas',
-    description: 'Ver el historial de ventas',
-    module: 'VENTAS'
-  },
-  {
-    id: 'sales.update',
-    name: 'Actualizar Ventas',
-    description: 'Modificar ventas existentes',
-    module: 'VENTAS'
-  },
-  {
-    id: 'sales.delete',
-    name: 'Eliminar Ventas',
-    description: 'Eliminar registros de ventas',
-    module: 'VENTAS'
-  },
-  
-  // MÓDULO: PRODUCTOS
-  {
-    id: 'products.create',
-    name: 'Crear Productos',
-    description: 'Agregar nuevos productos al catálogo',
-    module: 'PRODUCTOS'
-  },
-  {
-    id: 'products.read',
-    name: 'Ver Productos',
-    description: 'Ver el catálogo de productos',
-    module: 'PRODUCTOS'
-  },
-  {
-    id: 'products.update',
-    name: 'Actualizar Productos',
-    description: 'Modificar información de productos existentes',
-    module: 'PRODUCTOS'
-  },
-  {
-    id: 'products.delete',
-    name: 'Eliminar Productos',
-    description: 'Eliminar productos del catálogo',
-    module: 'PRODUCTOS'
-  },
-  
-  // MÓDULO: INVENTARIO
-  {
-    id: 'inventory.read',
-    name: 'Ver Inventario',
-    description: 'Ver el estado del inventario',
-    module: 'INVENTARIO'
-  },
-  {
-    id: 'inventory.update',
-    name: 'Actualizar Inventario',
-    description: 'Modificar cantidades y estado del inventario',
-    module: 'INVENTARIO'
-  },
-  
-  // MÓDULO: COMPRAS
-  {
-    id: 'purchases.create',
-    name: 'Crear Compras',
-    description: 'Registrar nuevas compras a proveedores',
-    module: 'COMPRAS'
-  },
-  {
-    id: 'purchases.read',
-    name: 'Ver Compras',
-    description: 'Ver el historial de compras',
-    module: 'COMPRAS'
-  },
-  {
-    id: 'purchases.update',
-    name: 'Actualizar Compras',
-    description: 'Modificar compras existentes',
-    module: 'COMPRAS'
-  },
-  {
-    id: 'purchases.delete',
-    name: 'Eliminar Compras',
-    description: 'Eliminar registros de compras',
-    module: 'COMPRAS'
-  },
-  
-  // MÓDULO: FACTURACIÓN
-  {
-    id: 'invoicing.create',
-    name: 'Crear Facturas',
-    description: 'Generar nuevas facturas',
-    module: 'FACTURACIÓN'
-  },
-  {
-    id: 'invoicing.read',
-    name: 'Ver Facturas',
-    description: 'Ver el historial de facturas',
-    module: 'FACTURACIÓN'
-  },
-  {
-    id: 'invoicing.update',
-    name: 'Actualizar Facturas',
-    description: 'Modificar facturas existentes',
-    module: 'FACTURACIÓN'
-  },
-  {
-    id: 'invoicing.delete',
-    name: 'Eliminar Facturas',
-    description: 'Eliminar facturas del sistema',
-    module: 'FACTURACIÓN'
-  },
-  
-  // MÓDULO: CONFIGURACIÓN
-  {
-    id: 'system.settings',
-    name: 'Configuración del Sistema',
-    description: 'Acceder y modificar configuraciones del sistema',
-    module: 'CONFIGURACIÓN'
-  },
-  
-  // MÓDULO: REPORTES
-  {
-    id: 'reports.sales',
-    name: 'Reportes de Ventas',
-    description: 'Ver reportes y estadísticas de ventas',
-    module: 'REPORTES'
-  },
-  {
-    id: 'reports.inventory',
-    name: 'Reportes de Inventario',
-    description: 'Ver reportes de inventario y stock',
-    module: 'REPORTES'
-  },
-  {
-    id: 'reports.financial',
-    name: 'Reportes Financieros',
-    description: 'Ver reportes financieros y contables',
-    module: 'REPORTES'
-  }
-];
-
-
+// ============================================================================
+// STYLED COMPONENTS
+// ============================================================================
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -263,37 +68,46 @@ const ModalContent = styled.div`
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 `;
 
-const Header = styled.div`
+const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
 `;
 
-const Title = styled.h2`
+const ModalTitle = styled.h2`
   color: #2c3e50;
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.75rem;
   font-weight: 600;
 `;
 
 const CloseButton = styled.button`
-  background: #6c757d;
-  color: white;
+  background: none;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  font-size: 1.75rem;
+  color: #6c757d;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 
   &:hover {
-    background: #5a6268;
+    background: #f8f9fa;
+    color: #2c3e50;
   }
 `;
 
 const Form = styled.form`
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 `;
 
@@ -310,160 +124,163 @@ const FormRow = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 `;
 
 const Label = styled.label`
-  font-weight: 500;
+  margin-bottom: 0.5rem;
   color: #2c3e50;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+`;
+
+const Required = styled.span`
+  color: #e74c3c;
+  margin-left: 0.25rem;
 `;
 
 const Input = styled.input<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
+  padding: 0.75rem 1rem;
   font-size: 1rem;
-  transition: border-color 0.2s;
+  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#dee2e6'};
+  border-radius: 8px;
+  transition: all 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
+    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
   }
-`;
-
-
-
-const ErrorMessage = styled.span`
-  color: #e74c3c;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
-`;
-
-
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  ${props => props.$variant === 'primary' ? `
-    background: #3498db;
-    color: white;
-    
-    &:hover {
-      background: #2980b9;
-    }
-  ` : `
-    background: #6c757d;
-    color: white;
-    
-    &:hover {
-      background: #5a6268;
-    }
-  `}
 
   &:disabled {
-    background: #bdc3c7;
+    background-color: #f8f9fa;
     cursor: not-allowed;
   }
 `;
 
-const PermissionsSection = styled.div`
-  margin-top: 20px;
+const ErrorText = styled.span`
+  color: #e74c3c;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
 `;
 
-const PermissionsTitle = styled.h3`
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
-const ModuleGroup = styled.div`
-  margin-bottom: 20px;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  overflow: hidden;
-`;
-
-const ModuleHeader = styled.div`
-  background: #f8f9fa;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e9ecef;
+const CheckboxWrapper = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 1rem 0;
 `;
 
-const ModuleName = styled.h4`
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #495057;
-`;
-
-const SelectAllButton = styled.button`
-  background: none;
-  border: none;
-  color: #667eea;
-  font-size: 12px;
+const Checkbox = styled.input`
+  width: 18px;
+  height: 18px;
   cursor: pointer;
-  text-decoration: underline;
-  
-  &:hover {
-    color: #764ba2;
-  }
 `;
 
-const PermissionsList = styled.div`
-  padding: 16px;
-`;
-
-const PermissionItem = styled.div`
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const PermissionCheckbox = styled.input`
-  margin-right: 12px;
-  margin-top: 2px;
-`;
-
-const PermissionInfo = styled.div`
-  flex: 1;
-`;
-
-const PermissionName = styled.div`
-  font-size: 14px;
-  font-weight: 500;
+const CheckboxLabel = styled.label`
   color: #2c3e50;
-  margin-bottom: 2px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
 `;
 
-const PermissionDescription = styled.div`
-  font-size: 12px;
-  color: #6c757d;
+const Divider = styled.div`
+  height: 1px;
+  background: #e9ecef;
+  margin: 1.5rem 0;
 `;
+
+const SectionTitle = styled.h3`
+  color: #2c3e50;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 24px;
+    background: #3498db;
+    border-radius: 2px;
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e9ecef;
+`;
+
+const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  min-width: 120px;
+
+  ${props => {
+    if (props.$variant === 'primary') {
+      return `
+        background: #3498db;
+        color: white;
+        &:hover:not(:disabled) {
+          background: #2980b9;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+      `;
+    }
+    return `
+      background: #95a5a6;
+      color: white;
+      &:hover:not(:disabled) {
+        background: #7f8c8d;
+      }
+    `;
+  }}
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+`;
+
+const InfoBox = styled.div`
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  
+  p {
+    margin: 0;
+    color: #1565c0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+`;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, onSave }) => {
   const { showNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  
   const [formData, setFormData] = useState<UserFormData>({
     username: '',
     email: '',
@@ -472,10 +289,8 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
     password: '',
     confirmPassword: '',
     isActive: true,
-    permissions: []
+    roleId: '' // ✅ RBAC: Rol obligatorio
   });
-
-
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -516,68 +331,31 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
       }
     }
 
-
+    // ✅ RBAC: Validar que se haya seleccionado un rol (OBLIGATORIO)
+    if (!formData.roleId || formData.roleId.trim() === '') {
+      newErrors.roleId = 'Debe seleccionar un rol para el usuario';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-
-    // Limpiar errores cuando el usuario empiece a escribir
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-
-
-  const handlePermissionChange = (permissionId: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: checked 
-        ? [...prev.permissions, permissionId]
-        : prev.permissions.filter(id => id !== permissionId)
-    }));
-  };
-
-  const handleSelectAllPermissions = (module: string, select: boolean) => {
-    const modulePermissions = AVAILABLE_PERMISSIONS
-      .filter(p => p.module === module)
-      .map(p => p.id);
-    
-    setFormData(prev => ({
-      ...prev,
-      permissions: select
-        ? [...new Set([...prev.permissions, ...modulePermissions])]
-        : prev.permissions.filter(id => !modulePermissions.includes(id))
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
+      showNotification('error', 'Error de Validación', 'Por favor, corrija los errores en el formulario');
       return;
     }
 
-    setIsLoading(true);
-    
     try {
-      await onSave(formData);
+      setIsLoading(true);
       
-      // Mostrar notificación de éxito
-      showNotification('success', 'Usuario Creado', 'El usuario ha sido creado exitosamente.');
+      // ✅ RBAC: Preparar datos - NO incluir confirmPassword ni permissions
+      const { confirmPassword, ...userDataToSend } = formData;
+      
+      // Enviar al backend con roleId obligatorio
+      await onSave(userDataToSend);
       
       // Resetear formulario
       setFormData({
@@ -588,191 +366,235 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
         password: '',
         confirmPassword: '',
         isActive: true,
-        permissions: []
+        roleId: ''
       });
-      
+      setSelectedRole(null);
       setErrors({});
       
-      // Cerrar modal
       onClose();
-    } catch (error) {
-      const errorMessage = (error as Error).message || 'No se pudo crear el usuario. Es posible que no tengas los permisos necesarios.';
-      console.error('Error al crear el usuario:', error);
-      showNotification('error', 'Error de Creación', errorMessage);
-      return;
+    } catch (error: any) {
+      console.error('Error al crear usuario:', error);
+      showNotification(
+        'error',
+        'Error al Crear Usuario',
+        error.response?.data?.message || error.message || 'Error al crear el usuario'
+      );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    // Limpiar error del campo cuando el usuario empiece a escribir
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleRoleChange = (roleId: string, role: Role | null) => {
+    setFormData(prev => ({ ...prev, roleId }));
+    setSelectedRole(role);
+    
+    // Limpiar error de roleId
+    if (errors.roleId) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.roleId;
+        return newErrors;
+      });
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <ModalOverlay onClick={onClose}>
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-        <Header>
-          <Title>Crear Nuevo Usuario</Title>
-          <CloseButton onClick={onClose}>Cerrar</CloseButton>
-        </Header>
+    <ModalOverlay onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Crear Nuevo Usuario</ModalTitle>
+          <CloseButton onClick={onClose} type="button">&times;</CloseButton>
+        </ModalHeader>
 
         <Form onSubmit={handleSubmit}>
+          {/* INFORMACIÓN BÁSICA */}
+          <SectionTitle>Información Básica</SectionTitle>
+
           <FormRow>
             <FormGroup>
-              <Label htmlFor="username">Nombre de Usuario *</Label>
+              <Label>
+                Nombre de Usuario<Required>*</Required>
+              </Label>
               <Input
                 type="text"
-                id="username"
                 name="username"
                 value={formData.username}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 $hasError={!!errors.username}
-                placeholder="Ingrese el nombre de usuario"
+                placeholder="Ej: jperez"
+                disabled={isLoading}
+                autoComplete="username"
               />
-              {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
+              {errors.username && <ErrorText>{errors.username}</ErrorText>}
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="email">Email *</Label>
+              <Label>
+                Correo Electrónico<Required>*</Required>
+              </Label>
               <Input
                 type="email"
-                id="email"
                 name="email"
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 $hasError={!!errors.email}
-                placeholder="Ingrese el email"
+                placeholder="Ej: juan.perez@example.com"
+                disabled={isLoading}
+                autoComplete="email"
               />
-              {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+              {errors.email && <ErrorText>{errors.email}</ErrorText>}
             </FormGroup>
           </FormRow>
 
           <FormRow>
             <FormGroup>
-              <Label htmlFor="firstName">Nombre *</Label>
+              <Label>
+                Nombre<Required>*</Required>
+              </Label>
               <Input
                 type="text"
-                id="firstName"
                 name="firstName"
                 value={formData.firstName}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 $hasError={!!errors.firstName}
-                placeholder="Ingrese el nombre"
+                placeholder="Ej: Juan"
+                disabled={isLoading}
+                autoComplete="given-name"
               />
-              {errors.firstName && <ErrorMessage>{errors.firstName}</ErrorMessage>}
+              {errors.firstName && <ErrorText>{errors.firstName}</ErrorText>}
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="lastName">Apellido *</Label>
+              <Label>
+                Apellido<Required>*</Required>
+              </Label>
               <Input
                 type="text"
-                id="lastName"
                 name="lastName"
                 value={formData.lastName}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 $hasError={!!errors.lastName}
-                placeholder="Ingrese el apellido"
+                placeholder="Ej: Pérez"
+                disabled={isLoading}
+                autoComplete="family-name"
               />
-              {errors.lastName && <ErrorMessage>{errors.lastName}</ErrorMessage>}
+              {errors.lastName && <ErrorText>{errors.lastName}</ErrorText>}
             </FormGroup>
           </FormRow>
 
+          <Divider />
 
+          {/* SEGURIDAD */}
+          <SectionTitle>Seguridad</SectionTitle>
 
           <FormRow>
             <FormGroup>
-              <Label htmlFor="password">Contraseña *</Label>
+              <Label>
+                Contraseña<Required>*</Required>
+              </Label>
               <Input
                 type="password"
-                id="password"
                 name="password"
                 value={formData.password}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 $hasError={!!errors.password}
                 placeholder="Mínimo 8 caracteres"
+                disabled={isLoading}
+                autoComplete="new-password"
               />
-              {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
-              <PasswordRequirements password={formData.password} />
+              {errors.password && <ErrorText>{errors.password}</ErrorText>}
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="confirmPassword">Confirmar Contraseña *</Label>
+              <Label>
+                Confirmar Contraseña<Required>*</Required>
+              </Label>
               <Input
                 type="password"
-                id="confirmPassword"
                 name="confirmPassword"
                 value={formData.confirmPassword}
-                onChange={handleInputChange}
+                onChange={handleChange}
                 $hasError={!!errors.confirmPassword}
-                placeholder="Confirme la contraseña"
+                placeholder="Repita la contraseña"
+                disabled={isLoading}
+                autoComplete="new-password"
               />
-              {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
+              {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}
             </FormGroup>
           </FormRow>
 
-          <FormGroup>
-            <Label htmlFor="isActive">
-              <Input
-                type="checkbox"
-                id="isActive"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleInputChange}
-                style={{ width: 'auto', marginRight: '8px' }}
-              />
-              Usuario Activo
-            </Label>
-          </FormGroup>
+          <PasswordRequirements password={formData.password} />
 
-          <PermissionsSection>
-            <PermissionsTitle>Permisos del Usuario</PermissionsTitle>
-            {Object.entries(
-              AVAILABLE_PERMISSIONS.reduce((acc, permission) => {
-                if (!acc[permission.module]) {
-                  acc[permission.module] = [];
-                }
-                acc[permission.module].push(permission);
-                return acc;
-              }, {} as Record<string, Permission[]>)
-            ).map(([module, permissions]) => {
-              const modulePermissionIds = permissions.map(p => p.id);
-              const allSelected = modulePermissionIds.every(id => formData.permissions.includes(id));
-              
-              return (
-                <ModuleGroup key={module}>
-                  <ModuleHeader>
-                    <ModuleName>{module}</ModuleName>
-                    <SelectAllButton
-                      type="button"
-                      onClick={() => handleSelectAllPermissions(module, !allSelected)}
-                    >
-                      {allSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
-                    </SelectAllButton>
-                  </ModuleHeader>
-                  <PermissionsList>
-                    {permissions.map(permission => (
-                      <PermissionItem key={permission.id}>
-                        <PermissionCheckbox
-                          type="checkbox"
-                          id={permission.id}
-                          checked={formData.permissions.includes(permission.id)}
-                          onChange={(e) => handlePermissionChange(permission.id, e.target.checked)}
-                        />
-                        <PermissionInfo>
-                          <PermissionName>{permission.name}</PermissionName>
-                          <PermissionDescription>{permission.description}</PermissionDescription>
-                        </PermissionInfo>
-                      </PermissionItem>
-                    ))}
-                  </PermissionsList>
-                </ModuleGroup>
-              );
-            })}
-          </PermissionsSection>
+          <Divider />
 
+          {/* ✅ RBAC: ASIGNACIÓN DE ROL (OBLIGATORIO) */}
+          <SectionTitle>Rol y Permisos</SectionTitle>
 
+          <InfoBox>
+            <p>
+              <strong>Sistema RBAC:</strong> Los permisos se asignan automáticamente según el rol seleccionado. 
+              El usuario heredará todos los permisos del rol que elija.
+            </p>
+          </InfoBox>
 
+          <RoleSelector
+            value={formData.roleId}
+            onChange={handleRoleChange}
+            required
+            disabled={isLoading}
+            error={errors.roleId}
+            label="Rol del Usuario"
+            showDescription
+          />
+
+          {/* Preview de permisos del rol seleccionado */}
+          {selectedRole && selectedRole.permissions.length > 0 && (
+            <PermissionsPreview
+              permissions={selectedRole.permissions}
+              title="Permisos que tendrá este usuario:"
+              groupByModule
+            />
+          )}
+
+          <Divider />
+
+          {/* ESTADO */}
+          <CheckboxWrapper>
+            <Checkbox
+              type="checkbox"
+              id="isActive"
+              name="isActive"
+              checked={formData.isActive}
+              onChange={handleChange}
+              disabled={isLoading}
+            />
+            <CheckboxLabel htmlFor="isActive">
+              Usuario activo (puede iniciar sesión)
+            </CheckboxLabel>
+          </CheckboxWrapper>
+
+          {/* BOTONES */}
           <ButtonGroup>
-            <Button type="button" $variant="secondary" onClick={onClose}>
+            <Button type="button" $variant="secondary" onClick={onClose} disabled={isLoading}>
               Cancelar
             </Button>
             <Button type="submit" $variant="primary" disabled={isLoading}>

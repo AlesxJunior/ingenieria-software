@@ -45,6 +45,7 @@ export interface UserResponse {
     name: string;
     permissions: string[];
   };
+  permissions: string[]; // RBAC: Permisos del rol (para retrocompatibilidad)
   createdAt: Date;
   updatedAt: Date;
 }

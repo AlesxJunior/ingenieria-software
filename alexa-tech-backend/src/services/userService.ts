@@ -1,4 +1,4 @@
-import { User, Prisma } from '@prisma/client';
+import { User, Prisma, Role } from '@prisma/client';
 import { prisma } from '../config/database';
 import { UserCreateInput, UserUpdateInput } from '../types';
 import * as bcrypt from 'bcrypt';
@@ -6,13 +6,11 @@ import { config } from '../config';
 import { logger } from '../utils/logger';
 
 // Tipo para usuario con rol incluido (RBAC)
-type UserWithRole = Prisma.UserGetPayload<{
-  include: { role: true };
-}>;
+type UserWithRole = User & { role: Role };
 
 export class UserService {
   // Crear un nuevo usuario
-  async create(userData: UserCreateInput): Promise<User> {
+  async create(userData: UserCreateInput): Promise<UserWithRole> {
     try {
       // Verificar si el email ya existe
       const existingUserByEmail = await prisma.user.findUnique({
@@ -38,6 +36,15 @@ export class UserService {
         config.bcryptRounds,
       );
 
+      // Verificar que el rol existe
+      const roleExists = await prisma.role.findUnique({
+        where: { id: userData.roleId },
+      });
+
+      if (!roleExists) {
+        throw new Error('El rol especificado no existe');
+      }
+
       // Crear el usuario
       const user = await prisma.user.create({
         data: {
@@ -46,7 +53,10 @@ export class UserService {
           password: hashedPassword,
           firstName: userData.firstName,
           lastName: userData.lastName,
-          permissions: userData.permissions || [],
+          roleId: userData.roleId, // RBAC: Asignar rol obligatorio
+        },
+        include: {
+          role: true, // Incluir datos del rol en la respuesta
         },
       });
 
@@ -104,7 +114,7 @@ export class UserService {
   }
 
   // Actualizar usuario
-  async update(id: string, userData: UserUpdateInput): Promise<User | null> {
+  async update(id: string, userData: UserUpdateInput): Promise<UserWithRole | null> {
     try {
       // Verificar si el usuario existe
       const existingUser = await prisma.user.findUnique({
@@ -152,6 +162,9 @@ export class UserService {
       const updatedUser = await prisma.user.update({
         where: { id },
         data: updateData,
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
 
       logger.info(`Usuario actualizado: ${updatedUser.email}`);

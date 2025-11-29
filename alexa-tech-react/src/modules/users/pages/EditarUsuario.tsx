@@ -3,12 +3,24 @@ import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../../../components/Layout';
 import { useNotification } from '../../../context/NotificationContext';
+import { apiService } from '../../../utils/api';
+import RoleSelector from '../components/RoleSelector';
+import PermissionsPreview from '../components/PermissionsPreview';
+
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  isActive: boolean;
+}
 
 interface UserFormData {
   username: string;
   email: string;
   fullName: string;
   status: boolean;
+  roleId: string; // ✅ RBAC: Rol obligatorio
 }
 
 interface FormErrors {
@@ -210,9 +222,12 @@ const EditarUsuario: React.FC = () => {
     username: '',
     email: '',
     fullName: '',
-    status: true
+    status: true,
+    roleId: '' // ✅ RBAC
   });
 
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [originalRoleId, setOriginalRoleId] = useState<string>('');
   const [changePassword, setChangePassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -222,35 +237,39 @@ const EditarUsuario: React.FC = () => {
 
 
 
-  // Datos de ejemplo - en una aplicación real vendrían de una API
+  // Datos de ejemplo - en una aplicación real vendrían de una API con roleId
   const mockUsers = [
     {
       id: '1',
       username: 'admin',
       email: 'admin@alexatech.com',
       fullName: 'Administrador Principal',
-      status: true
+      status: true,
+      roleId: '1' // Admin role
     },
     {
       id: '2',
       username: 'jhose_daniel',
       email: 'jhosedaniel@gmail.com',
       fullName: 'Jhose Daniel',
-      status: true
+      status: true,
+      roleId: '2' // Vendedor role
     },
     {
       id: '3',
       username: 'nestor_rene',
       email: 'nestorRene@gmail.com',
       fullName: 'Nestor René',
-      status: true
+      status: true,
+      roleId: '2'
     },
     {
       id: '4',
       username: 'alex_junior',
       email: 'alexjunior@gmail.com',
       fullName: 'Alex Junior',
-      status: false
+      status: false,
+      roleId: '3' // Almacenero role
     }
   ];
 
@@ -266,8 +285,10 @@ const EditarUsuario: React.FC = () => {
             username: user.username,
             email: user.email,
             fullName: user.fullName,
-            status: user.status
+            status: user.status,
+            roleId: user.roleId // ✅ RBAC: Cargar rol actual
           });
+          setOriginalRoleId(user.roleId); // Guardar rol original para detectar cambios
         } else {
           showError('Usuario no encontrado');
           navigate('/usuarios');
@@ -309,7 +330,10 @@ const EditarUsuario: React.FC = () => {
       }
     }
 
-
+    // ✅ RBAC: Validar que se haya seleccionado un rol
+    if (!formData.roleId) {
+      newErrors.roleId = 'Debe seleccionar un rol para el usuario';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -327,6 +351,15 @@ const EditarUsuario: React.FC = () => {
         ...prev,
         [name]: ''
       }));
+    }
+  };
+
+  const handleRoleChange = (roleId: string, role: Role | null) => {
+    setFormData(prev => ({ ...prev, roleId }));
+    setSelectedRole(role);
+    
+    if (errors.roleId) {
+      setErrors(prev => ({ ...prev, roleId: '' }));
     }
   };
 
@@ -442,7 +475,38 @@ const EditarUsuario: React.FC = () => {
               </PermissionItem>
             </FormGroup>
 
+            {/* ✅ RBAC: Gestión de Rol */}
+            <PasswordSection>
+              <SectionTitle>Rol y Permisos (RBAC)</SectionTitle>
+              
+              <RoleSelector
+                value={formData.roleId}
+                onChange={handleRoleChange}
+                required
+                disabled={isSubmitting}
+                error={errors.roleId}
+                label="Rol del Usuario"
+                showDescription
+              />
 
+              {/* Preview de permisos del rol seleccionado */}
+              {selectedRole && selectedRole.permissions.length > 0 && (
+                <PermissionsPreview
+                  permissions={selectedRole.permissions}
+                  title={`Permisos del rol "${selectedRole.name}":`}
+                  groupByModule
+                />
+              )}
+
+              {/* Alerta si cambió el rol */}
+              {originalRoleId && formData.roleId !== originalRoleId && (
+                <InfoBox style={{ marginTop: '1rem', background: '#fff3cd', borderColor: '#ffc107' }}>
+                  <InfoText style={{ color: '#856404' }}>
+                    ⚠️ <strong>Cambio de rol detectado.</strong> Los permisos del usuario se actualizarán según el nuevo rol.
+                  </InfoText>
+                </InfoBox>
+              )}
+            </PasswordSection>
 
             <PasswordSection>
               <SectionTitle>Gestión de Contraseña</SectionTitle>

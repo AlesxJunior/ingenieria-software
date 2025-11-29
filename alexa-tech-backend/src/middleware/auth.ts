@@ -92,7 +92,7 @@ export const requirePermission = (...requiredPermissions: string[]) => {
       if (!hasPermission) {
         logger.warn('Permission authorization failed', {
           userId: req.user.userId,
-          userPermissions: user.permissions,
+          userPermissions: userPermissions, // RBAC: permisos del rol
           requiredPermissions,
           endpoint: req.path,
         });

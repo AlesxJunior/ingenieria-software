@@ -19,7 +19,6 @@ interface ExtendedUser {
   lastAccess?: string;
   createdAt: string;
   updatedAt: string;
-  permissions?: string[];
 }
 
 interface UserFormData {
@@ -28,7 +27,6 @@ interface UserFormData {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  permissions?: string[];
 }
 
 const Container = styled.div`
@@ -429,7 +427,6 @@ const ListaUsuarios: React.FC = () => {
         if (userData.firstName) backendUserData.firstName = userData.firstName;
         if (userData.lastName) backendUserData.lastName = userData.lastName;
         if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-        if (userData.permissions) backendUserData.permissions = userData.permissions;
 
         
         await apiService.updateUser(selectedUser.id, backendUserData);
@@ -470,7 +467,6 @@ const ListaUsuarios: React.FC = () => {
       if (userData.firstName) backendUserData.firstName = userData.firstName;
       if (userData.lastName) backendUserData.lastName = userData.lastName;
       if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-      if (userData.permissions) backendUserData.permissions = userData.permissions;
 
       
       const resp = await apiService.createUser(backendUserData);

@@ -6,6 +6,8 @@ import { useNotification } from '../../../context/NotificationContext';
 import { validatePasswordWithConfirmation, validateUsername, validateEmail } from '../../../utils/validation';
 import PasswordRequirements from '../../../components/PasswordRequirements';
 import { apiService } from '../../../utils/api';
+import RoleSelector from '../components/RoleSelector';
+import PermissionsPreview from '../components/PermissionsPreview';
 
 interface Role {
   id: string;
@@ -180,24 +182,9 @@ const CrearUsuario: React.FC = () => {
     roleId: '' // RBAC: Sin rol por defecto
   });
 
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Cargar roles disponibles
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await apiService.get<Role[]>('/users/roles');
-        setRoles(response.filter(r => r.isActive));
-      } catch (error) {
-        console.error('Error al cargar roles:', error);
-        showNotification('error', 'Error', 'No se pudieron cargar los roles disponibles');
-      }
-    };
-
-    fetchRoles();
-  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -253,6 +240,15 @@ const CrearUsuario: React.FC = () => {
     }
   };
 
+  const handleRoleChange = (roleId: string, role: Role | null) => {
+    setFormData(prev => ({ ...prev, roleId }));
+    setSelectedRole(role);
+    
+    if (errors.roleId) {
+      setErrors(prev => ({ ...prev, roleId: '' }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -268,6 +264,7 @@ const CrearUsuario: React.FC = () => {
       const firstName = nameParts.shift() || '';
       const lastName = nameParts.join(' ');
 
+      // ✅ RBAC: Enviar solo roleId, NUNCA permissions
       const payload = {
         username: formData.username,
         email: formData.email,
@@ -275,7 +272,7 @@ const CrearUsuario: React.FC = () => {
         firstName,
         lastName,
         isActive: formData.status === 'activo',
-        roleId: formData.roleId, // RBAC: Rol obligatorio
+        roleId: formData.roleId, // RBAC: Rol obligatorio (permisos heredados del rol)
       };
 
       const response = await apiService.createUser(payload);
@@ -350,39 +347,38 @@ const CrearUsuario: React.FC = () => {
               {errors.fullName && <ErrorMessage>{errors.fullName}</ErrorMessage>}
             </FormGroup>
 
-            <FormRow>
-              <FormGroup>
-                <Label htmlFor="roleId">Rol *</Label>
-                <Select
-                  id="roleId"
-                  name="roleId"
-                  value={formData.roleId}
-                  onChange={handleInputChange}
-                  $hasError={!!errors.roleId}
-                >
-                  <option value="">Seleccionar rol...</option>
-                  {roles.map(role => (
-                    <option key={role.id} value={role.id}>
-                      {role.name} - {role.description}
-                    </option>
-                  ))}
-                </Select>
-                {errors.roleId && <ErrorMessage>{errors.roleId}</ErrorMessage>}
-              </FormGroup>
+            {/* ✅ RBAC: Selector de Rol con componente reutilizable */}
+            <RoleSelector
+              value={formData.roleId}
+              onChange={handleRoleChange}
+              required
+              disabled={isSubmitting}
+              error={errors.roleId}
+              label="Rol del Usuario"
+              showDescription
+            />
 
-              <FormGroup>
-                <Label htmlFor="status">Estado</Label>
-                <Select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                </Select>
-              </FormGroup>
-            </FormRow>
+            {/* Preview de permisos del rol seleccionado */}
+            {selectedRole && selectedRole.permissions.length > 0 && (
+              <PermissionsPreview
+                permissions={selectedRole.permissions}
+                title={`Permisos que tendrá este usuario (heredados del rol "${selectedRole.name}"):`}
+                groupByModule
+              />
+            )}
+
+            <FormGroup>
+              <Label htmlFor="status">Estado</Label>
+              <Select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+              >
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </Select>
+            </FormGroup>
 
             <FormRow>
               <FormGroup>

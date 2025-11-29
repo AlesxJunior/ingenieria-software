@@ -266,8 +266,8 @@ const PermissionsHeader = styled.div`
 `;
 
 const PermissionCount = styled.span`
-  background: #667eea;
-  color: white;
+  background: #e3f2fd;
+  color: #1976d2;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;

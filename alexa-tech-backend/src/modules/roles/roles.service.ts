@@ -357,7 +357,7 @@ export class RoleService {
         prisma.role.count({ where: { isActive: false } }),
         prisma.role.count({ where: { isSystem: true } }),
         prisma.role.count({ where: { isSystem: false } }),
-        prisma.user.count({ where: { roleId: { not: null } } }),
+        prisma.user.count(), // Todos los usuarios tienen rol ahora (roleId es requerido)
         prisma.user.count(),
       ]);
 

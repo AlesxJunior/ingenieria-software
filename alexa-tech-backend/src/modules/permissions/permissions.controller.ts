@@ -190,7 +190,7 @@ export class PermissionController {
         }
 
         const hasPermission = PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [], // RBAC: Permisos del rol
           permissionId,
         );
 

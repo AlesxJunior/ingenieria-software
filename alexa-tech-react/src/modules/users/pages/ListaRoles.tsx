@@ -165,6 +165,12 @@ const StatCard = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-left: 4px solid;
   border-left-color: ${props => props.color || '#3498db'};
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
 `;
 
 const StatValue = styled.div`
@@ -316,8 +322,8 @@ const LoadingSpinner = styled.div`
 `;
 
 const PermissionCount = styled.span`
-  background: #667eea;
-  color: white;
+  background: #e3f2fd;
+  color: #1976d2;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;

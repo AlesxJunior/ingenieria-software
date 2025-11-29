@@ -157,7 +157,7 @@ export const PermissionsService = {
     }
 
     const hasPermission = PermissionUtils.hasPermission(
-      user.permissions || [],
+      user.role?.permissions || [], // RBAC: Permisos del rol
       permissionId,
     );
 
@@ -183,7 +183,7 @@ export const PermissionsService = {
       throw new Error('Usuario no encontrado');
     }
 
-    return user.permissions || [];
+    return user.role?.permissions || []; // RBAC: Permisos del rol
   },
 
   /**

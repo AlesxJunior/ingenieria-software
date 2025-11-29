@@ -24,7 +24,7 @@ export class UserController {
 
       // Verificar permisos para ver usuarios
       const fullUser = await userService.findById(currentUser?.userId || '');
-      if (!fullUser || !fullUser.permissions.includes('users.read')) {
+      if (!fullUser || !fullUser.role?.permissions.includes('users.read')) {
         sendForbidden(res, 'No tienes permisos para ver la lista de usuarios');
         return;
       }
@@ -70,7 +70,7 @@ export class UserController {
               lastName: user.lastName,
               isActive: user.isActive,
               lastAccess: user.lastAccess,
-              permissions: user.permissions || [],
+              permissions: user.role?.permissions || [],
               roleId: user.roleId,
               role: user.role,
               createdAt: user.createdAt,
@@ -110,7 +110,7 @@ export class UserController {
       const fullUser = await userService.findById(currentUser?.userId || '');
       if (
         currentUser?.userId !== id &&
-        (!fullUser || !fullUser.permissions.includes('users.read'))
+        (!fullUser || !fullUser.role?.permissions.includes('users.read'))
       ) {
         sendForbidden(res, 'No tienes permisos para ver este usuario');
         return;
@@ -133,7 +133,7 @@ export class UserController {
           firstName: user.firstName,
           lastName: user.lastName,
           isActive: user.isActive,
-          permissions: user.permissions,
+          permissions: user.role?.permissions || [],
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },
@@ -149,7 +149,7 @@ export class UserController {
 
       // Verificar permisos para crear usuarios
       const fullUser = await userService.findById(currentUser?.userId || '');
-      if (!fullUser || !fullUser.permissions.includes('users.create')) {
+      if (!fullUser || !fullUser.role?.permissions.includes('users.create')) {
         sendForbidden(res, 'No tienes permisos para crear usuarios');
         return;
       }
@@ -168,7 +168,7 @@ export class UserController {
           password: req.body.password,
           firstName: req.body.firstName || '',
           lastName: req.body.lastName || '',
-          permissions: req.body.permissions || [],
+          roleId: req.body.roleId,
         });
 
         logger.info(`User created by ${fullUser.email}`, {
@@ -185,7 +185,7 @@ export class UserController {
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             isActive: newUser.isActive,
-            permissions: newUser.permissions,
+            permissions: newUser.role?.permissions || [],
             createdAt: newUser.createdAt,
             updatedAt: newUser.updatedAt,
           },
@@ -233,7 +233,7 @@ export class UserController {
           firstName: req.body.firstName,
           lastName: req.body.lastName,
           password: req.body.password, // Solo si se proporciona
-          permissions: req.body.permissions,
+          roleId: req.body.roleId,
         });
 
         if (!updatedUser) {
@@ -252,7 +252,7 @@ export class UserController {
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
             isActive: updatedUser.isActive,
-            permissions: updatedUser.permissions || [],
+            permissions: updatedUser.role?.permissions || [],
             createdAt: updatedUser.createdAt,
             updatedAt: updatedUser.updatedAt,
           },
@@ -340,7 +340,7 @@ export class UserController {
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
             isActive: updatedUser.isActive,
-            permissions: updatedUser.permissions || [],
+            permissions: updatedUser.role?.permissions || [],
             createdAt: updatedUser.createdAt,
             updatedAt: updatedUser.updatedAt,
           },
@@ -368,7 +368,7 @@ export class UserController {
 
       // Verificar permisos para cambiar estados de usuarios
       const fullUser = await userService.findById(currentUser?.userId || '');
-      if (!fullUser || !fullUser.permissions.includes('users.update')) {
+      if (!fullUser || !fullUser.role?.permissions.includes('users.update')) {
         sendForbidden(
           res,
           'No tienes permisos para cambiar el estado de usuarios',
@@ -433,7 +433,7 @@ export class UserController {
 
       // Verificar permisos para eliminar usuarios
       const fullUser = await userService.findById(currentUser?.userId || '');
-      if (!fullUser || !fullUser.permissions.includes('users.delete')) {
+      if (!fullUser || !fullUser.role?.permissions.includes('users.delete')) {
         sendForbidden(res, 'No tienes permisos para eliminar usuarios');
         return;
       }
@@ -490,7 +490,7 @@ export class UserController {
     }
 
     // Verificar si tiene permisos para editar usuarios
-    if (fullUser.permissions.includes('users.update')) {
+    if (fullUser.role?.permissions.includes('users.update')) {
       return { allowed: true };
     }
 
