@@ -325,7 +325,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -431,7 +431,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -486,7 +486,7 @@ export class ClientController {
       // Verificar permisos para crear entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.create',
         )
       ) {
@@ -596,7 +596,7 @@ export class ClientController {
       // Verificar permisos para actualizar entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.update',
         )
       ) {
@@ -630,6 +630,8 @@ export class ClientController {
         const updateData: UpdateClientData = {};
 
         // Solo incluir campos que están presentes en el body
+        if (req.body.tipoEntidad !== undefined)
+          updateData.tipoEntidad = req.body.tipoEntidad;
         if (req.body.tipoDocumento !== undefined)
           updateData.tipoDocumento = req.body.tipoDocumento;
         if (req.body.numeroDocumento !== undefined)
@@ -743,7 +745,7 @@ export class ClientController {
       // Verificar permisos para reactivar entidades comerciales (usando permiso de update)
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.update',
         )
       ) {
@@ -839,7 +841,7 @@ export class ClientController {
       // Verificar permisos para ver estadísticas de entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -903,7 +905,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -974,7 +976,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {

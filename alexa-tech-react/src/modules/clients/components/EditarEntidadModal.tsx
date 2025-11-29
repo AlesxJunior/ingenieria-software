@@ -153,6 +153,25 @@ const TextArea = styled.textarea`
   }
 `;
 
+const InfoAlert = styled.div`
+  background-color: #e7f3ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  font-size: 14px;
+  color: #0056b3;
+  line-height: 1.5;
+  
+  &::before {
+    content: 'ℹ️';
+    font-size: 18px;
+  }
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
@@ -205,6 +224,7 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
     provinciaId: '',
     distritoId: '',
   });
+  const [originalTipoEntidad, setOriginalTipoEntidad] = useState<'Cliente' | 'Proveedor' | 'Ambos'>('Cliente');
   const [errors, setErrors] = useState<{ departamentoId?: string; provinciaId?: string; distritoId?: string }>({});
 
   useEffect(() => {
@@ -223,6 +243,7 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
         provinciaId: client.provinciaId || '',
         distritoId: client.distritoId || ''
       });
+      setOriginalTipoEntidad(client.tipoEntidad);
     }
   }, [client]);
 
@@ -306,6 +327,25 @@ const EditarClienteModal: React.FC<EditarClienteModalProps> = ({
         </ModalHeader>
         
         <form onSubmit={handleSubmit}>
+          {/* Alerta informativa cuando cambia el tipo de entidad */}
+          {formData.tipoEntidad !== originalTipoEntidad && (
+            <InfoAlert>
+              <div>
+                <strong>Cambio de tipo de entidad:</strong> Está cambiando de{' '}
+                <strong>{originalTipoEntidad}</strong> a <strong>{formData.tipoEntidad}</strong>.
+                {formData.tipoEntidad === 'Ambos' && (
+                  <> Esta entidad ahora podrá ser usada tanto en compras como en ventas.</>
+                )}
+                {originalTipoEntidad === 'Ambos' && formData.tipoEntidad === 'Cliente' && (
+                  <> Esta entidad dejará de estar disponible como proveedor.</>
+                )}
+                {originalTipoEntidad === 'Ambos' && formData.tipoEntidad === 'Proveedor' && (
+                  <> Esta entidad dejará de estar disponible como cliente.</>
+                )}
+              </div>
+            </InfoAlert>
+          )}
+          
           <FormRow>
             <FormGroup>
               <Label htmlFor="tipoEntidad">Tipo de Entidad</Label>

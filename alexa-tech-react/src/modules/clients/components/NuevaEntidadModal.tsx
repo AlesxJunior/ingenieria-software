@@ -324,8 +324,8 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
   
   // Datos de ubigeo para autoselección
   const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
-  const [provincias, setProvincias] = useState<Provincia[]>([]);
-  const [distritos, setDistritos] = useState<Distrito[]>([]);
+  const [_provincias, setProvincias] = useState<Provincia[]>([]);
+  const [_distritos, setDistritos] = useState<Distrito[]>([]);
   
   const [formData, setFormData] = useState<ClienteFormData>({
     tipoEntidad: 'Cliente',
@@ -546,7 +546,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
     }
   };
 
-  const validateForm = (): boolean {
+  const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     // Validar campos según tipo de documento
