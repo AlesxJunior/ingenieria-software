@@ -16,7 +16,6 @@ export interface Client {
   tipoDocumento: 'DNI' | 'CE' | 'RUC';
   numeroDocumento: string;
   direccion: string;
-  ciudad: string;
   // Campos de Ubigeo
   departamentoId: string;
   provinciaId: string;

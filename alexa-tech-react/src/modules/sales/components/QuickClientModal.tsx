@@ -11,9 +11,11 @@ interface QuickClientModalProps {
   onClose: () => void;
   onClientCreated: (clientId: string, clientData: ClientFormData) => void;
   initialSearchTerm?: string;
+  defaultTipoEntidad?: 'Cliente' | 'Proveedor' | 'Ambos';
 }
 
 interface ClientFormData {
+  tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
   tipoDocumento: 'DNI' | 'RUC' | 'CE' | 'Pasaporte';
   numeroDocumento: string;
   nombres?: string;
@@ -392,8 +394,10 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
   onClose,
   onClientCreated,
   initialSearchTerm,
+  defaultTipoEntidad,
 }) => {
   // Estados del formulario
+  const [tipoEntidad, setTipoEntidad] = useState<'Cliente' | 'Proveedor' | 'Ambos'>(defaultTipoEntidad || 'Cliente');
   const [tipoDocumento, setTipoDocumento] = useState<'DNI' | 'RUC' | 'CE' | 'Pasaporte'>('DNI');
   const [numeroDocumento, setNumeroDocumento] = useState('');
   const [nombres, setNombres] = useState('');
@@ -900,6 +904,19 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
           </DocumentSection>
 
           <FormGrid>
+            <SectionTitle>🏷️ Tipo de Entidad</SectionTitle>
+            <FormGroup>
+              <Label>¿Qué tipo de entidad es? *</Label>
+              <Select
+                value={tipoEntidad}
+                onChange={(e) => setTipoEntidad(e.target.value as 'Cliente' | 'Proveedor' | 'Ambos')}
+              >
+                <option value="Cliente">Cliente</option>
+                <option value="Proveedor">Proveedor</option>
+                <option value="Ambos">Ambos (Cliente y Proveedor)</option>
+              </Select>
+            </FormGroup>
+
             <SectionTitle>📋 Datos {tipoDocumento === 'RUC' ? 'de la Empresa' : 'Personales'}</SectionTitle>
             
             {tipoDocumento === 'RUC' ? (

@@ -113,9 +113,9 @@ const validateClientCreate = (
   if (
     !data.telefono ||
     typeof data.telefono !== 'string' ||
-    data.telefono.trim().length < 8
+    data.telefono.trim().length < 9
   ) {
-    errors.push('El teléfono debe tener al menos 8 caracteres');
+    errors.push('El teléfono debe tener al menos 9 caracteres');
   }
 
   if (
@@ -251,9 +251,9 @@ const validateClientUpdate = (
 
   if (
     data.telefono !== undefined &&
-    (typeof data.telefono !== 'string' || data.telefono.trim().length < 8)
+    (typeof data.telefono !== 'string' || data.telefono.trim().length < 9)
   ) {
-    errors.push('El teléfono debe tener al menos 8 caracteres');
+    errors.push('El teléfono debe tener al menos 9 caracteres');
   }
 
   if (
@@ -325,7 +325,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -431,7 +431,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -486,7 +486,7 @@ export class ClientController {
       // Verificar permisos para crear entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.create',
         )
       ) {
@@ -596,7 +596,7 @@ export class ClientController {
       // Verificar permisos para actualizar entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.update',
         )
       ) {
@@ -743,7 +743,7 @@ export class ClientController {
       // Verificar permisos para reactivar entidades comerciales (usando permiso de update)
       if (
         !PermissionUtils.hasPermission(
-          user.permissions || [],
+          user.role?.permissions || [],
           'commercial_entities.update',
         )
       ) {
@@ -839,7 +839,7 @@ export class ClientController {
       // Verificar permisos para ver estadísticas de entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -903,7 +903,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {
@@ -974,7 +974,7 @@ export class ClientController {
       // Verificar permisos para ver entidades comerciales
       if (
         !PermissionUtils.hasPermission(
-          userById.permissions || [],
+          userById.role?.permissions || [],
           'commercial_entities.read',
         )
       ) {

@@ -275,7 +275,7 @@ const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }
     if (!formData.telefono.trim()) {
       newErrors.telefono = 'El teléfono es requerido';
     } else if (!/^\d{9}$/.test(formData.telefono)) {
-      newErrors.telefono = 'El teléfono debe tener 9 dígitos';
+      newErrors.telefono = 'El teléfono debe tener exactamente 9 dígitos';
     }
 
     if (!formData.direccion.trim()) {

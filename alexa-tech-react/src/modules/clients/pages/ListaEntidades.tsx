@@ -248,12 +248,40 @@ const ActionButton = styled.button<{ $color: string }>`
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 8px;
   font-size: 12px;
+  transition: opacity 0.2s;
 
   &:hover {
     opacity: 0.8;
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const Badge = styled.span<{ $type: 'Cliente' | 'Proveedor' | 'Ambos' }>`
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  
+  ${props => props.$type === 'Cliente' && `
+    background-color: #e3f2fd;
+    color: #1976d2;
+  `}
+  
+  ${props => props.$type === 'Proveedor' && `
+    background-color: #fff3e0;
+    color: #f57c00;
+  `}
+  
+  ${props => props.$type === 'Ambos' && `
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+  `}
 `;
 
 
@@ -482,6 +510,7 @@ const ListaEntidades: React.FC = () => {
           <Table>
             <thead>
               <tr>
+                <th>Tipo</th>
                 <th>Nombre Completo</th>
                 <th>Email</th>
                 <th>Teléfono</th>
@@ -493,13 +522,20 @@ const ListaEntidades: React.FC = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
                     Cargando entidades...
                   </td>
                 </tr>
               ) : clients.length > 0 ? (
                 clients.map((client) => (
                   <tr key={client.id}>
+                    <td>
+                      <Badge $type={client.tipoEntidad}>
+                        {client.tipoEntidad === 'Cliente' ? '👤 Cliente' :
+                         client.tipoEntidad === 'Proveedor' ? '🏭 Proveedor' :
+                         '🤝 Ambos'}
+                      </Badge>
+                    </td>
                     <td>
                       {client.tipoDocumento === 'RUC' 
                         ? client.razonSocial || ''
@@ -509,7 +545,7 @@ const ListaEntidades: React.FC = () => {
                     <td>{client.email}</td>
                     <td>{client.telefono}</td>
                     <td>{client.tipoDocumento} {formatNumeroDocumento(client.numeroDocumento)}</td>
-                    <td>{client.direccion}, {client.ciudad}</td>
+                    <td>{client.direccion}</td>
                     <td>
                       <ActionButton 
                         onClick={() => handleEdit(client.id)}
@@ -522,7 +558,7 @@ const ListaEntidades: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
                     No se encontraron entidades que coincidan con la búsqueda
                   </td>
                 </tr>
@@ -542,6 +578,11 @@ const ListaEntidades: React.FC = () => {
                       : `${client.nombres || ''} ${client.apellidos || ''}`.trim()
                     }
                   </MobileCardTitle>
+                  <Badge $type={client.tipoEntidad}>
+                    {client.tipoEntidad === 'Cliente' ? '👤' :
+                     client.tipoEntidad === 'Proveedor' ? '🏭' :
+                     '🤝'}
+                  </Badge>
                 </MobileCardHeader>
                 
                 <MobileCardBody>
@@ -562,7 +603,7 @@ const ListaEntidades: React.FC = () => {
                   
                   <MobileCardField>
                     <MobileCardLabel>Dirección</MobileCardLabel>
-                    <MobileCardValue>{client.direccion}, {client.ciudad}</MobileCardValue>
+                    <MobileCardValue>{client.direccion}</MobileCardValue>
                   </MobileCardField>
                 </MobileCardBody>
                 
