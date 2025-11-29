@@ -1,0 +1,451 @@
+{
+  "generatedAt": "2025-11-29T07:07:04.278Z",
+  "database": "PostgreSQL",
+  "rbacVersion": "1.0",
+  "summary": {
+    "totalUsers": 4,
+    "totalRoles": 4,
+    "totalPermissions": 33,
+    "usersWithoutRole": 0,
+    "orphanUsers": 0
+  },
+  "schema": {
+    "usersTable": [
+      {
+        "column_name": "id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "username",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "password",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "firstName",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "lastName",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "isActive",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "column_name": "createdAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "column_name": "updatedAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "lastAccess",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "roleId",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      }
+    ],
+    "rolesTable": [
+      {
+        "column_name": "id",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "permissions",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": "ARRAY[]::text[]"
+      },
+      {
+        "column_name": "isActive",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "column_name": "isSystem",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "createdAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "column_name": "updatedAt",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      }
+    ]
+  },
+  "data": {
+    "users": [
+      {
+        "id": "cmhx9lg890003o1p4s9zxikgq",
+        "username": "supervisor",
+        "email": "supervisor@alexatech.com",
+        "firstName": "Carlos",
+        "lastName": "Supervisor",
+        "isActive": true,
+        "roleId": "cmi5hcc2b0001o19cjldahgmm",
+        "role": {
+          "id": "cmi5hcc2b0001o19cjldahgmm",
+          "name": "Supervisor",
+          "permissionsCount": 24,
+          "permissions": [
+            "dashboard.read",
+            "users.read",
+            "clients.create",
+            "clients.read",
+            "clients.update",
+            "sales.create",
+            "sales.read",
+            "sales.update",
+            "products.create",
+            "products.read",
+            "products.update",
+            "inventory.read",
+            "inventory.update",
+            "purchases.create",
+            "purchases.read",
+            "purchases.update",
+            "cash-registers.read",
+            "cash-registers.update",
+            "cash-sessions.create",
+            "cash-sessions.read",
+            "cash-sessions.update",
+            "reports.sales",
+            "reports.inventory",
+            "reports.financial"
+          ],
+          "isSystem": true,
+          "isActive": true
+        },
+        "createdAt": "2025-11-13T10:06:50.986Z",
+        "updatedAt": "2025-11-28T19:14:38.908Z",
+        "lastAccess": null
+      },
+      {
+        "id": "cmhx9lg880002o1p4mmavsy9g",
+        "username": "cajero",
+        "email": "cajero@alexatech.com",
+        "firstName": "María",
+        "lastName": "Cajero",
+        "isActive": true,
+        "roleId": "cmi5hcc2d0003o19cntsgkhdk",
+        "role": {
+          "id": "cmi5hcc2d0003o19cntsgkhdk",
+          "name": "Cajero",
+          "permissionsCount": 10,
+          "permissions": [
+            "clients.read",
+            "sales.create",
+            "sales.read",
+            "products.read",
+            "inventory.read",
+            "cash-sessions.create",
+            "cash-sessions.read",
+            "cash-sessions.update",
+            "sales.update",
+            "dashboard.read"
+          ],
+          "isSystem": true,
+          "isActive": true
+        },
+        "createdAt": "2025-11-13T10:06:50.984Z",
+        "updatedAt": "2025-11-28T19:14:38.908Z",
+        "lastAccess": null
+      },
+      {
+        "id": "cmhx9lg840000o1p48ittjaca",
+        "username": "admin",
+        "email": "admin@alexatech.com",
+        "firstName": "Admin",
+        "lastName": "Nestor",
+        "isActive": true,
+        "roleId": "cmi5hcc210000o19c07rzqho7",
+        "role": {
+          "id": "cmi5hcc210000o19c07rzqho7",
+          "name": "Admin",
+          "permissionsCount": 33,
+          "permissions": [
+            "dashboard.read",
+            "users.create",
+            "users.read",
+            "users.update",
+            "clients.create",
+            "clients.read",
+            "clients.update",
+            "clients.delete",
+            "sales.create",
+            "sales.read",
+            "sales.update",
+            "sales.delete",
+            "products.create",
+            "products.read",
+            "products.update",
+            "products.delete",
+            "inventory.read",
+            "inventory.update",
+            "purchases.create",
+            "purchases.read",
+            "purchases.update",
+            "purchases.delete",
+            "cash-registers.create",
+            "cash-registers.read",
+            "cash-registers.update",
+            "cash-registers.delete",
+            "cash-sessions.create",
+            "cash-sessions.read",
+            "cash-sessions.update",
+            "system.settings",
+            "reports.sales",
+            "reports.inventory",
+            "reports.financial"
+          ],
+          "isSystem": true,
+          "isActive": true
+        },
+        "createdAt": "2025-11-13T10:06:50.981Z",
+        "updatedAt": "2025-11-28T19:14:38.908Z",
+        "lastAccess": "2025-11-28T18:53:45.532Z"
+      },
+      {
+        "id": "cmhx9lg870001o1p4q03wk3zs",
+        "username": "vendedor",
+        "email": "vendedor@alexatech.com",
+        "firstName": "Juan",
+        "lastName": "Vendedor",
+        "isActive": true,
+        "roleId": "cmi5hcc2c0002o19c8cyqdurm",
+        "role": {
+          "id": "cmi5hcc2c0002o19c8cyqdurm",
+          "name": "Vendedor",
+          "permissionsCount": 9,
+          "permissions": [
+            "dashboard.read",
+            "clients.create",
+            "clients.read",
+            "clients.update",
+            "sales.create",
+            "sales.read",
+            "products.read",
+            "inventory.read",
+            "reports.sales"
+          ],
+          "isSystem": true,
+          "isActive": true
+        },
+        "createdAt": "2025-11-13T10:06:50.983Z",
+        "updatedAt": "2025-11-28T19:14:38.908Z",
+        "lastAccess": "2025-11-18T23:53:15.539Z"
+      }
+    ],
+    "roles": [
+      {
+        "id": "cmi5hcc210000o19c07rzqho7",
+        "name": "Admin",
+        "description": "Administrador del sistema con acceso completo a todas las funcionalidades",
+        "permissions": [
+          "dashboard.read",
+          "users.create",
+          "users.read",
+          "users.update",
+          "clients.create",
+          "clients.read",
+          "clients.update",
+          "clients.delete",
+          "sales.create",
+          "sales.read",
+          "sales.update",
+          "sales.delete",
+          "products.create",
+          "products.read",
+          "products.update",
+          "products.delete",
+          "inventory.read",
+          "inventory.update",
+          "purchases.create",
+          "purchases.read",
+          "purchases.update",
+          "purchases.delete",
+          "cash-registers.create",
+          "cash-registers.read",
+          "cash-registers.update",
+          "cash-registers.delete",
+          "cash-sessions.create",
+          "cash-sessions.read",
+          "cash-sessions.update",
+          "system.settings",
+          "reports.sales",
+          "reports.inventory",
+          "reports.financial"
+        ],
+        "permissionsCount": 33,
+        "isActive": true,
+        "isSystem": true,
+        "usersCount": 1,
+        "createdAt": "2025-11-19T04:05:52.009Z",
+        "updatedAt": "2025-11-19T04:05:52.009Z"
+      },
+      {
+        "id": "cmi5hcc2b0001o19cjldahgmm",
+        "name": "Supervisor",
+        "description": "Supervisor con acceso a gestión de operaciones y reportes",
+        "permissions": [
+          "dashboard.read",
+          "users.read",
+          "clients.create",
+          "clients.read",
+          "clients.update",
+          "sales.create",
+          "sales.read",
+          "sales.update",
+          "products.create",
+          "products.read",
+          "products.update",
+          "inventory.read",
+          "inventory.update",
+          "purchases.create",
+          "purchases.read",
+          "purchases.update",
+          "cash-registers.read",
+          "cash-registers.update",
+          "cash-sessions.create",
+          "cash-sessions.read",
+          "cash-sessions.update",
+          "reports.sales",
+          "reports.inventory",
+          "reports.financial"
+        ],
+        "permissionsCount": 24,
+        "isActive": true,
+        "isSystem": true,
+        "usersCount": 1,
+        "createdAt": "2025-11-19T04:05:52.019Z",
+        "updatedAt": "2025-11-19T04:05:52.019Z"
+      },
+      {
+        "id": "cmi5hcc2c0002o19c8cyqdurm",
+        "name": "Vendedor",
+        "description": "Vendedor con acceso a ventas y gestión de clientes",
+        "permissions": [
+          "dashboard.read",
+          "clients.create",
+          "clients.read",
+          "clients.update",
+          "sales.create",
+          "sales.read",
+          "products.read",
+          "inventory.read",
+          "reports.sales"
+        ],
+        "permissionsCount": 9,
+        "isActive": true,
+        "isSystem": true,
+        "usersCount": 1,
+        "createdAt": "2025-11-19T04:05:52.021Z",
+        "updatedAt": "2025-11-19T04:05:52.021Z"
+      },
+      {
+        "id": "cmi5hcc2d0003o19cntsgkhdk",
+        "name": "Cajero",
+        "description": "Cajero con acceso a operaciones de caja y ventas básicas",
+        "permissions": [
+          "clients.read",
+          "sales.create",
+          "sales.read",
+          "products.read",
+          "inventory.read",
+          "cash-sessions.create",
+          "cash-sessions.read",
+          "cash-sessions.update",
+          "sales.update",
+          "dashboard.read"
+        ],
+        "permissionsCount": 10,
+        "isActive": true,
+        "isSystem": true,
+        "usersCount": 1,
+        "createdAt": "2025-11-19T04:05:52.022Z",
+        "updatedAt": "2025-11-19T05:00:18.608Z"
+      }
+    ]
+  },
+  "integrity": {
+    "foreignKeys": [
+      {
+        "constraint_name": "users_roleId_fkey",
+        "table_name": "users",
+        "column_name": "roleId",
+        "foreign_table_name": "roles",
+        "foreign_column_name": "id",
+        "delete_rule": "RESTRICT",
+        "update_rule": "CASCADE"
+      }
+    ],
+    "constraints": []
+  },
+  "validation": {
+    "passed": [
+      "La columna \"permissions\" fue eliminada de tabla \"users\"",
+      "La columna \"roleId\" es NOT NULL (correcto)",
+      "Todos los usuarios tienen roleId asignado",
+      "Todos los usuarios tienen roleId válido",
+      "Foreign Key tiene DELETE RESTRICT (correcto)"
+    ],
+    "failed": [],
+    "warnings": []
+  }
+}

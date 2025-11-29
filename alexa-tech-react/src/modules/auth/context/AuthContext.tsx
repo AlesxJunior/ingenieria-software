@@ -9,7 +9,11 @@ interface User {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  permissions?: string[];
+  role?: {
+    id: string;
+    name: string;
+    permissions: string[];
+  };
 }
 
 export interface AuthContextType {
@@ -115,9 +119,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const hasPermission = (permission: string): boolean => {
-    if (!user || !user.permissions) return false;
+    if (!user) return false;
 
-    const perms = user.permissions;
+    // Intentar obtener permisos desde role.permissions (RBAC nuevo)
+    let perms: string[] = [];
+    
+    if (user.role?.permissions && Array.isArray(user.role.permissions)) {
+      perms = user.role.permissions;
+    } 
+    // Fallback: permisos directos (legacy, solo para compatibilidad temporal)
+    else if ((user as any).permissions && Array.isArray((user as any).permissions)) {
+      perms = (user as any).permissions;
+      console.warn('⚠️ [AuthContext] Usuario con permisos legacy (user.permissions). Debería reiniciar sesión para usar user.role.permissions');
+    } 
+    else {
+      console.error('❌ [AuthContext] Usuario sin permisos:', user);
+      return false;
+    }
 
     if (perms.includes(permission)) return true;
 

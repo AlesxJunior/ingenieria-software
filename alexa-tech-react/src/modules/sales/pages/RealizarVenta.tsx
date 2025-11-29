@@ -1086,10 +1086,16 @@ const RealizarVenta: React.FC = () => {
   };
 
   // 🆕 Handler para cuando se convierte un proveedor
-  const handleProviderConverted = (updatedClient: Client) => {
+  const handleProviderConverted = async (updatedClient: Client) => {
     console.log('✅ Proveedor convertido:', updatedClient);
+    
+    // Esperar un momento para que el contexto termine de actualizar
+    // (updateClient ya llamó a loadClients internamente)
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Seleccionar el cliente recién convertido
     setSelectedClient(updatedClient.id);
+    
     addNotification(
       'success',
       'Entidad Convertida',

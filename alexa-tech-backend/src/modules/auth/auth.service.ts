@@ -7,6 +7,7 @@ import {
 import { userService } from '../../services/userService';
 import { jwtService } from '../../utils/jwt';
 import { logger } from '../../utils/logger';
+import { prisma } from '../../config/database';
 import {
   createValidationError,
   createUnauthorizedError,
@@ -98,6 +99,15 @@ export class AuthService {
     }
 
     try {
+      // Obtener rol por defecto (Vendedor) para nuevos usuarios
+      const defaultRole = await prisma.role.findFirst({
+        where: { name: 'Vendedor' }
+      });
+
+      if (!defaultRole) {
+        throw createValidationError('No se encontró el rol por defecto para nuevos usuarios');
+      }
+
       // Crear usuario
       const newUser = await userService.create({
         username,
@@ -105,6 +115,7 @@ export class AuthService {
         password,
         firstName: '',
         lastName: '',
+        roleId: defaultRole.id, // RBAC: Asignar rol por defecto
       });
 
       // Generar tokens

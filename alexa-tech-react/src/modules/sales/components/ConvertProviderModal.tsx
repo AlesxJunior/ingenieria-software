@@ -217,13 +217,8 @@ export const ConvertProviderModal: React.FC<ConvertProviderModalProps> = ({
         tipoEntidad: selectedOption
       };
 
+      // Actualizar en el backend (esto ya recarga la lista de clientes)
       await updateClient(provider.id, updatedData);
-
-      showNotification(
-        'success',
-        'Conversión Exitosa',
-        `${provider.razonSocial || provider.nombres} ahora es ${selectedOption}`
-      );
 
       // Crear objeto Client actualizado para pasar al callback
       const updatedClient: Client = {
@@ -231,6 +226,7 @@ export const ConvertProviderModal: React.FC<ConvertProviderModalProps> = ({
         tipoEntidad: selectedOption
       };
 
+      // Llamar callback DESPUÉS de que se actualice
       onConverted(updatedClient);
       onClose();
     } catch (error) {

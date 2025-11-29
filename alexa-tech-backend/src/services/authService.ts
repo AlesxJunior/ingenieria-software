@@ -71,7 +71,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
-        permissions: user.permissions || [],
+        permissions: user.role?.permissions || [], // RBAC: Permisos del rol
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -122,7 +122,7 @@ export class AuthService {
           firstName: newUser.firstName,
           lastName: newUser.lastName,
           isActive: newUser.isActive,
-          permissions: newUser.permissions || [],
+          permissions: newUser.role?.permissions || [], // RBAC: Permisos del rol
           createdAt: newUser.createdAt,
           updatedAt: newUser.updatedAt,
         },
@@ -294,7 +294,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       isActive: user.isActive,
-      permissions: user.permissions || [],
+      permissions: user.role?.permissions || [], // RBAC: Permisos del rol
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

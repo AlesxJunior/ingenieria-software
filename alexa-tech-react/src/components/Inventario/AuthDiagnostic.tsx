@@ -98,11 +98,11 @@ const AuthDiagnostic: React.FC = () => {
         </StatusBadge>
       </DiagnosticItem>
 
-      {user?.permissions && (
+      {user?.role?.permissions && (
         <DiagnosticItem>
           <span>Permisos del usuario:</span>
           <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>
-            {user.permissions.join(', ')}
+            {user.role.permissions.join(', ')}
           </span>
         </DiagnosticItem>
       )}

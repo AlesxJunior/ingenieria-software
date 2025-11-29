@@ -9,7 +9,11 @@ interface User {
   firstName: string;
   lastName: string;
   isActive: boolean;
-  permissions?: string[];
+  role?: {
+    id: string;
+    name: string;
+    permissions: string[];
+  };
 }
 
 export interface AuthContextType {
@@ -115,9 +119,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const hasPermission = (permission: string): boolean => {
-    if (!user || !user.permissions) return false;
+    if (!user || !user.role?.permissions) return false;
 
-    const perms = user.permissions;
+    const perms = user.role.permissions;
 
     if (perms.includes(permission)) return true;
 
