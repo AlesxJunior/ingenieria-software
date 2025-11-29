@@ -119,7 +119,7 @@ function App() {
                   <Route 
                     path="/lista-entidades" 
                     element={
-                      <ProtectedRoute requiredPermission="clients.read">
+                      <ProtectedRoute requiredPermission="commercial_entities.read">
                         <ListaEntidades />
                       </ProtectedRoute>
                     } 
@@ -135,12 +135,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/editar-entidad/:id" element={
-                    <ProtectedRoute requiredPermission="clients.update">
+                    <ProtectedRoute requiredPermission="commercial_entities.update">
                       <EditarEntidad />
                     </ProtectedRoute>
                   } />
                   <Route path="/registrar-entidad" element={
-                    <ProtectedRoute requiredPermission="clients.create">
+                    <ProtectedRoute requiredPermission="commercial_entities.create">
                       <RegistroEntidad />
                     </ProtectedRoute>
                   } />

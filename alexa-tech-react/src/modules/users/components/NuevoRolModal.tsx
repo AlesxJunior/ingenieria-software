@@ -43,10 +43,10 @@ const PERMISSION_METADATA: Record<string, { name: string; description: string; m
   'users.update': { name: 'Actualizar Usuarios', description: 'Modificar usuarios', module: 'USUARIOS' },
   
   // Clientes
-  'clients.create': { name: 'Crear Clientes', description: 'Registrar clientes', module: 'CLIENTES' },
-  'clients.read': { name: 'Ver Clientes', description: 'Ver lista de clientes', module: 'CLIENTES' },
-  'clients.update': { name: 'Actualizar Clientes', description: 'Modificar clientes', module: 'CLIENTES' },
-  'clients.delete': { name: 'Eliminar Clientes', description: 'Eliminar clientes', module: 'CLIENTES' },
+  'commercial_entities.create': { name: 'Crear Entidades', description: 'Registrar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  'commercial_entities.read': { name: 'Ver Entidades', description: 'Ver lista de clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  'commercial_entities.update': { name: 'Actualizar Entidades', description: 'Modificar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  'commercial_entities.delete': { name: 'Eliminar Entidades', description: 'Eliminar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
   
   // Ventas
   'sales.create': { name: 'Crear Ventas', description: 'Registrar ventas', module: 'VENTAS' },
