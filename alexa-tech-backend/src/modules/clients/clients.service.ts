@@ -351,18 +351,18 @@ export const clientService = {
 
       // Preparar datos para actualización
       const updateData: any = {};
-      if (data.tipoEntidad)
+      if (data.tipoEntidad !== undefined)
         updateData.tipoEntidad = data.tipoEntidad as TipoEntidad;
-      if (data.tipoDocumento) updateData.tipoDocumento = data.tipoDocumento;
-      if (data.numeroDocumento)
+      if (data.tipoDocumento !== undefined) updateData.tipoDocumento = data.tipoDocumento;
+      if (data.numeroDocumento !== undefined)
         updateData.numeroDocumento = data.numeroDocumento.trim();
-      if (data.email) updateData.email = data.email.toLowerCase().trim();
-      if (data.telefono) updateData.telefono = data.telefono.trim();
-      if (data.direccion) updateData.direccion = data.direccion.trim();
+      if (data.email !== undefined) updateData.email = data.email.toLowerCase().trim();
+      if (data.telefono !== undefined) updateData.telefono = data.telefono.trim();
+      if (data.direccion !== undefined) updateData.direccion = data.direccion.trim();
       // Ubigeo
-      if (data.departamentoId) updateData.departamentoId = data.departamentoId;
-      if (data.provinciaId) updateData.provinciaId = data.provinciaId;
-      if (data.distritoId) updateData.distritoId = data.distritoId;
+      if (data.departamentoId !== undefined) updateData.departamentoId = data.departamentoId;
+      if (data.provinciaId !== undefined) updateData.provinciaId = data.provinciaId;
+      if (data.distritoId !== undefined) updateData.distritoId = data.distritoId;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
       // Campos condicionales según tipo de documento
