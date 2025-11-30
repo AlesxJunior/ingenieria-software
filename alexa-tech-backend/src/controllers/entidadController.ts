@@ -658,11 +658,15 @@ export class ClientController {
         if (req.body.razonSocial !== undefined)
           updateData.razonSocial = req.body.razonSocial;
 
+        console.log('📦 [UPDATE CLIENT] updateData a enviar al servicio:', JSON.stringify(updateData, null, 2));
+
         const updatedClient = await clientService.updateClient(
           id!,
           updateData,
           currentUser.userId!,
         );
+
+        console.log('✅ [UPDATE CLIENT] Cliente actualizado:', JSON.stringify(updatedClient, null, 2));
 
         logger.info(
           `Usuario ${currentUser.userId!} actualizó la entidad comercial ${id}`,

@@ -630,6 +630,8 @@ export class ClientController {
         const updateData: UpdateClientData = {};
 
         // Solo incluir campos que están presentes en el body
+        if (req.body.tipoEntidad !== undefined)
+          updateData.tipoEntidad = req.body.tipoEntidad;
         if (req.body.tipoDocumento !== undefined)
           updateData.tipoDocumento = req.body.tipoDocumento;
         if (req.body.numeroDocumento !== undefined)
