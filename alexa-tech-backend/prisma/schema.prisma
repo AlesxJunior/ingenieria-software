@@ -15,6 +15,49 @@ enum TipoEntidad {
 }
 
 // ============================================
+// MÓDULO DE CONFIGURACIÓN - MAESTROS DE PRODUCTOS
+// ============================================
+
+model ProductCategory {
+  id          String  @id @default(cuid())
+  codigo      String  @unique // Código corto único (ej: "ABR", "BEB", "LAC")
+  nombre      String  @unique // Nombre de la categoría (ej: "Abarrotes", "Bebidas")
+  descripcion String? // Descripción opcional de la categoría
+  activo      Boolean @default(true) // Permite soft delete de categorías
+
+  // Auditoría
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con productos
+  products Product[] @relation("ProductCategoryRelation")
+
+  @@map("product_categories")
+}
+
+model UnitOfMeasure {
+  id          String  @id @default(cuid())
+  codigo      String  @unique // Código corto único (ej: "UND", "KG", "LT")
+  nombre      String  @unique // Nombre de la unidad (ej: "Unidad", "Kilogramo", "Litro")
+  simbolo     String? // Símbolo opcional (ej: "kg", "lt", "un")
+  descripcion String? // Descripción opcional
+  activo      Boolean @default(true) // Permite soft delete de unidades
+
+  // Auditoría
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con productos
+  products Product[] @relation("ProductUnitRelation")
+
+  @@map("units_of_measure")
+}
+
+// ============================================
 // MÓDULO DE ROLES Y PERMISOS (RBAC)
 // ============================================
 
@@ -183,17 +226,43 @@ model Client {
 }
 
 model Product {
-  id             String  @id @default(cuid())
-  codigo         String  @unique
-  nombre         String
-  descripcion    String?
-  categoria      String
-  precioVenta    Decimal
-  stock          Int     @default(0)
-  minStock       Int?
+  id          String  @id @default(cuid())
+  codigo      String  @unique
+  nombre      String
+  descripcion String?
+
+  // ============================================
+  // CATEGORÍA Y UNIDAD DE MEDIDA - RELACIONES FK
+  // ============================================
+  // Temporalmente opcionales para permitir migración de datos
+  categoriaId String?
+  categoria   ProductCategory? @relation("ProductCategoryRelation", fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  unidadMedidaId String?
+  unidadMedida   UnitOfMeasure? @relation("ProductUnitRelation", fields: [unidadMedidaId], references: [id], onDelete: Restrict)
+
+  // ============================================
+  // CAMPOS LEGACY (DEPRECADOS - Mantener para migración)
+  // ============================================
+  /// @deprecated: Campo legacy. Mantener temporalmente para compatibilidad.
+  /// TODO: Eliminar este campo y migrar datos cuando la transición complete.
+  categoria_legacy    String? @map("categoria") // DEPRECATED
+
+  /// @deprecated: Campo legacy. Mantener temporalmente para compatibilidad.
+  /// TODO: Eliminar este campo y migrar datos cuando la transición complete.
+  unidadMedida_legacy String? @map("unidadMedida") // DEPRECATED
+
+  precioVenta Decimal
+  stock       Int     @default(0)
+  minStock    Int?
+
+  // NOTA: trackInventory reservado para futuras features
+  // Propósito: Habilitar/deshabilitar rastreo de inventario por producto
+  // Estado actual: Campo presente en BD pero NO implementado en frontend/backend
+  // Acción: Mantener para compatibilidad futura
   trackInventory Boolean @default(true)
-  estado         Boolean @default(true) // Activo/Inactivo (soft delete)
-  unidadMedida   String
+
+  estado Boolean @default(true) // Activo/Inactivo (soft delete)
 
   // Auditoría de creación/actualización
   usuarioCreacion      String?
@@ -488,20 +557,20 @@ model CashSession {
 }
 
 model Sale {
-  id              String            @id @default(cuid())
-  codigoVenta     String            @unique
-  tipo            SaleType          @default(Venta)
+  id              String             @id @default(cuid())
+  codigoVenta     String             @unique
+  tipo            SaleType           @default(Venta)
   cashSessionId   String?
   clienteId       String?
   almacenId       String
   usuarioId       String
-  fechaEmision    DateTime          @default(now())
-  tipoComprobante SaleVoucherType   @default(Boleta)
+  fechaEmision    DateTime           @default(now())
+  tipoComprobante SaleVoucherType    @default(Boleta)
   formaPago       SalePaymentMethod? // ⚠️ DEPRECATED: Usar payments[] en su lugar
-  subtotal        Decimal           @default(0)
-  igv             Decimal           @default(0)
-  total           Decimal           @default(0)
-  estado          SaleStatus        @default(Pendiente)
+  subtotal        Decimal            @default(0)
+  igv             Decimal            @default(0)
+  total           Decimal            @default(0)
+  estado          SaleStatus         @default(Pendiente)
   observaciones   String?
 
   // Campos para tracking de pago
@@ -528,9 +597,9 @@ model Sale {
   updatedAt DateTime @updatedAt
 
   // Relaciones
-  cashSession CashSession? @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
-  cliente     Client?      @relation("SaleClient", fields: [clienteId], references: [id], onDelete: SetNull)
-  usuario     User         @relation("SaleCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
+  cashSession CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  cliente     Client?       @relation("SaleClient", fields: [clienteId], references: [id], onDelete: SetNull)
+  usuario     User          @relation("SaleCreatedBy", fields: [usuarioId], references: [id], onDelete: Cascade)
   items       SaleItem[]
   payments    SalePayment[] @relation("SalePayments") // 🆕 NUEVO: Relación con pagos múltiples
 
@@ -566,14 +635,14 @@ model SaleItem {
 
 // 🆕 NUEVO: Modelo para Pagos Múltiples en Ventas
 model SalePayment {
-  id             String            @id @default(cuid())
-  saleId         String
-  metodoPago     SalePaymentMethod
-  monto          Decimal
-  referencia     String? // Número de operación, voucher, código QR, etc.
-  observaciones  String?
-  orden          Int               @default(1) // Orden del pago (1 = primero, 2 = segundo)
-  createdAt      DateTime          @default(now())
+  id            String            @id @default(cuid())
+  saleId        String
+  metodoPago    SalePaymentMethod
+  monto         Decimal
+  referencia    String? // Número de operación, voucher, código QR, etc.
+  observaciones String?
+  orden         Int               @default(1) // Orden del pago (1 = primero, 2 = segundo)
+  createdAt     DateTime          @default(now())
 
   // Relaciones
   sale Sale @relation("SalePayments", fields: [saleId], references: [id], onDelete: Cascade)

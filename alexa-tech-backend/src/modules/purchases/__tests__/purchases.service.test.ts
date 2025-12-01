@@ -61,7 +61,7 @@ vi.mock('../../../services/entidadService', () => ({
   },
 }));
 
-vi.mock('../../../services/productService', () => ({
+vi.mock('../../products/products.service', () => ({
   __esModule: true,
   productService: {
     findByCodigo: vi.fn(),
@@ -75,7 +75,7 @@ vi.mock('../../../services/productService', () => ({
 
 import { AuditService } from '../../../services/auditService';
 import { clientService } from '../../../services/entidadService';
-import { productService } from '../../../services/productService';
+import { productService } from '../../products/products.service';
 
 const prismaMock = prisma as any;
 

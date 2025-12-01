@@ -23,7 +23,6 @@ const GestionCaja = lazy(() => import('./modules/sales/pages/GestionCaja'));
 const HistorialCaja = lazy(() => import('./modules/sales/pages/HistorialCaja'));
 const ListaEntidades = lazy(() => import('./modules/clients/pages/ListaEntidades'));
 const ListaProductos = lazy(() => import('./modules/products/pages/ListaProductos'));
-const EditarProducto = lazy(() => import('./modules/products/pages/EditarProducto'));
 const EditarEntidad = lazy(() => import('./modules/clients/pages/EditarEntidad'));
 const RegistroEntidad = lazy(() => import('./modules/clients/pages/RegistroEntidad'));
 const RealizarVenta = lazy(() => import('./modules/sales/pages/RealizarVenta'));
@@ -47,6 +46,7 @@ const ConfiguracionMiPerfil = lazy(() => import('./modules/configuracion/pages/M
 const ConfiguracionEmpresa = lazy(() => import('./modules/configuracion/pages/Empresa'));
 const ConfiguracionComprobantes = lazy(() => import('./modules/configuracion/pages/Comprobantes'));
 const ConfiguracionMetodosPago = lazy(() => import('./modules/configuracion/pages/MetodosPago'));
+const ConfiguracionProductos = lazy(() => import('./pages/ConfiguracionProductos'));
 
 // Módulo de Reportes
 const ReportesVentas = lazy(() => import('./modules/reportes/pages/ReporteVentas'));
@@ -127,11 +127,6 @@ function App() {
                   <Route path="/lista-productos" element={
                     <ProtectedRoute requiredPermission="products.read">
                       <ListaProductos />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/editar-producto/:id" element={
-                    <ProtectedRoute requiredPermission="products.update">
-                      <EditarProducto />
                     </ProtectedRoute>
                   } />
                   <Route path="/editar-entidad/:id" element={
@@ -241,6 +236,11 @@ function App() {
                   <Route path="/configuracion/metodos-pago" element={
                     <ProtectedRoute requiredPermission="system.settings">
                       <ConfiguracionMetodosPago />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/configuracion/productos" element={
+                    <ProtectedRoute requiredPermission="system.settings">
+                      <ConfiguracionProductos />
                     </ProtectedRoute>
                   } />
 

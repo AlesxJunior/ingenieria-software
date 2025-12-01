@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { useProducts, type Product } from '../context/ProductContext';
@@ -319,9 +319,58 @@ const EmptyState = styled.div`
   color: #666;
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+  
+  ${media.tablet} {
+    flex-direction: column;
+    gap: 15px;
+  }
+`;
+
+const PaginationInfo = styled.div`
+  color: #666;
+  font-size: 14px;
+`;
+
+const PaginationControls = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+`;
+
+const PageButton = styled.button<{ $active?: boolean; $disabled?: boolean }>`
+  padding: 6px 12px;
+  border: 1px solid ${props => props.$active ? '#0047b3' : '#ddd'};
+  border-radius: 4px;
+  background: ${props => props.$active ? '#0047b3' : 'white'};
+  color: ${props => props.$active ? 'white' : '#333'};
+  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
+  font-size: 14px;
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  transition: all 0.2s;
+
+  &:hover {
+    ${props => !props.$disabled && !props.$active && `
+      background: #f8f9fa;
+      border-color: #0047b3;
+    `}
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+`;
+
 
 const ListaProductos: React.FC = () => {
-  const { products, updateProduct, loadProducts } = useProducts();
+  const { products, pagination, updateProduct, loadProducts } = useProducts();
   const { showSuccess, showError } = useNotification();
   const { openModal, closeModal } = useModal();
   const [searchTerm, setSearchTerm] = useState('');
@@ -329,42 +378,60 @@ const ListaProductos: React.FC = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
   
+  // Debounce para búsqueda
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-  // Cargar productos al montar el componente
+  // Efecto de debounce para searchTerm
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        await loadProducts();
-      } catch (err) {
-        console.error('Error fetching products on mount:', err);
-      }
-    };
-    fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms de debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Cargar productos con filtros server-side
+  const fetchProductsWithFilters = useCallback(async () => {
+    try {
+      const filters: any = {
+        page: currentPage,
+        limit: pageSize,
+      };
+
+      if (debouncedSearchTerm) filters.q = debouncedSearchTerm;
+      if (selectedCategory) filters.categoria = selectedCategory;
+      if (minPrice) filters.minPrecio = parseFloat(minPrice);
+      if (maxPrice) filters.maxPrecio = parseFloat(maxPrice);
+
+      await loadProducts(filters);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    }
+  }, [currentPage, pageSize, debouncedSearchTerm, selectedCategory, minPrice, maxPrice, loadProducts]);
+
+  // Cargar productos cuando cambien los filtros o la página
+  useEffect(() => {
+    fetchProductsWithFilters();
+  }, [fetchProductsWithFilters]);
 
   const handleNewProduct = () => {
     openModal(<NuevoProductoModal onClose={closeModal} />, 'Registrar Producto', 'large');
   };
 
-  // Obtener categorías únicas para el filtro
-  const categories = Array.from(new Set(products.map(product => product.category)));
-
-  // Filtrar productos basado en todos los criterios de búsqueda
-  const filteredProducts = products.filter(product => {
-    const matchesSearchTerm = searchTerm === '' || 
-      product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCategory = selectedCategory === '' || product.category === selectedCategory;
-
-    const matchesMinPrice = minPrice === '' || product.price >= parseFloat(minPrice);
-    const matchesMaxPrice = maxPrice === '' || product.price <= parseFloat(maxPrice);
-
-    return matchesSearchTerm && matchesCategory && matchesMinPrice && matchesMaxPrice;
-  });
+  // Obtener categorías únicas para el filtro (de los productos actuales)
+  const categories = Array.from(
+    new Set(
+      products.map(product => {
+        // Extraer nombre de categoría: priorizar relación FK, luego campo legacy
+        const catName = product.categoria?.nombre || product.category;
+        // Si category es objeto (no debería, pero por seguridad), extraer nombre
+        return typeof catName === 'string' ? catName : catName?.nombre || '';
+      }).filter(Boolean)
+    )
+  ).sort();
 
   const handleEdit = (productId: string | number) => {
     const product = products.find(p => p.id === productId);
@@ -400,6 +467,7 @@ const ListaProductos: React.FC = () => {
     setSelectedCategory('');
     setMinPrice('');
     setMaxPrice('');
+    setCurrentPage(1); // Resetear a la primera página
   };
 
   const formatPrice = (price: number) => {
@@ -490,12 +558,16 @@ const ListaProductos: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((product) => (
+            {products.length > 0 ? (
+              products.map((product) => (
                 <tr key={product.productCode}>
                   <td>{product.productCode}</td>
                   <td>{product.productName}</td>
-                  <td>{product.category}</td>
+                  <td>
+                    {product.categoria?.nombre || 
+                     (typeof product.category === 'string' ? product.category : product.category?.nombre) || 
+                     '-'}
+                  </td>
                   <td>{formatPrice(product.price)}</td>
                   <td>{product.initialStock}</td>
                   <td>{product.minStock ?? '-'}</td>
@@ -504,7 +576,11 @@ const ListaProductos: React.FC = () => {
                       {product.isActive ? 'Activo' : 'Inactivo'}
                     </ActiveBadge>
                   </td>
-                  <td>{product.unit}</td>
+                  <td>
+                    {product.unidadMedida?.nombre || 
+                     (typeof product.unit === 'string' ? product.unit : product.unit?.nombre) || 
+                     '-'}
+                  </td>
                   <td>
                     <ActionButton 
                       onClick={() => handleEdit(product.id)}
@@ -537,8 +613,8 @@ const ListaProductos: React.FC = () => {
         </Table>
 
         <MobileCardContainer>
-          {filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
+          {products.length > 0 ? (
+            products.map((product) => (
               <MobileCard key={product.productCode}>
                 <MobileCardHeader>
                   <MobileCardTitle>{product.productName}</MobileCardTitle>
@@ -548,7 +624,11 @@ const ListaProductos: React.FC = () => {
                 <MobileCardBody>
                   <MobileCardField>
                     <MobileCardLabel>Categoría</MobileCardLabel>
-                    <MobileCardValue>{product.category}</MobileCardValue>
+                    <MobileCardValue>
+                      {product.categoria?.nombre || 
+                       (typeof product.category === 'string' ? product.category : product.category?.nombre) || 
+                       '-'}
+                    </MobileCardValue>
                   </MobileCardField>
                   
                   <MobileCardField>
@@ -577,7 +657,11 @@ const ListaProductos: React.FC = () => {
                   
                   <MobileCardField>
                     <MobileCardLabel>Unidad</MobileCardLabel>
-                    <MobileCardValue>{product.unit}</MobileCardValue>
+                    <MobileCardValue>
+                      {product.unidadMedida?.nombre || 
+                       (typeof product.unit === 'string' ? product.unit : product.unit?.nombre) || 
+                       '-'}
+                    </MobileCardValue>
                   </MobileCardField>
 
 
@@ -608,6 +692,53 @@ const ListaProductos: React.FC = () => {
             </EmptyState>
           )}
         </MobileCardContainer>
+        
+        {/* Paginación */}
+        {pagination && pagination.total > 0 && (
+          <PaginationContainer>
+            <PaginationInfo>
+              Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} productos
+            </PaginationInfo>
+            
+            <PaginationControls>
+              <PageButton 
+                onClick={() => setCurrentPage(1)} 
+                $disabled={currentPage === 1}
+                disabled={currentPage === 1}
+              >
+                Primera
+              </PageButton>
+              
+              <PageButton 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} 
+                $disabled={currentPage === 1}
+                disabled={currentPage === 1}
+              >
+                ← Anterior
+              </PageButton>
+              
+              <PaginationInfo>
+                Página {pagination.page} de {pagination.pages}
+              </PaginationInfo>
+              
+              <PageButton 
+                onClick={() => setCurrentPage(prev => Math.min(pagination.pages, prev + 1))} 
+                $disabled={currentPage >= pagination.pages}
+                disabled={currentPage >= pagination.pages}
+              >
+                Siguiente →
+              </PageButton>
+              
+              <PageButton 
+                onClick={() => setCurrentPage(pagination.pages)} 
+                $disabled={currentPage >= pagination.pages}
+                disabled={currentPage >= pagination.pages}
+              >
+                Última
+              </PageButton>
+            </PaginationControls>
+          </PaginationContainer>
+        )}
       </TableContainer>
     </Layout>
   );

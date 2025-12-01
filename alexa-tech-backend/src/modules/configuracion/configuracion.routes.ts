@@ -88,4 +88,82 @@ router.delete(
   (req, res) => configuracionController.deleteMetodoPago(req, res)
 );
 
+// ==========================================
+// CATEGORÍAS DE PRODUCTOS
+// ==========================================
+router.get(
+  '/categorias',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.getAllCategories(req, res)
+);
+
+router.get(
+  '/categorias/:id',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.getCategoryById(req, res)
+);
+
+router.post(
+  '/categorias',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.createCategory(req, res)
+);
+
+router.put(
+  '/categorias/:id',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.updateCategory(req, res)
+);
+
+router.delete(
+  '/categorias/:id',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.deleteCategory(req, res)
+);
+
+router.delete(
+  '/categorias/:id/hard',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.hardDeleteCategory(req, res)
+);
+
+// ==========================================
+// UNIDADES DE MEDIDA
+// ==========================================
+router.get(
+  '/unidades',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.getAllUnits(req, res)
+);
+
+router.get(
+  '/unidades/:id',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.getUnitById(req, res)
+);
+
+router.post(
+  '/unidades',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.createUnit(req, res)
+);
+
+router.put(
+  '/unidades/:id',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.updateUnit(req, res)
+);
+
+router.delete(
+  '/unidades/:id',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.deleteUnit(req, res)
+);
+
+router.delete(
+  '/unidades/:id/hard',
+  requirePermission('system.settings'),
+  (req, res) => configuracionController.hardDeleteUnit(req, res)
+);
+
 export default router;

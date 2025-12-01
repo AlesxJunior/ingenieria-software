@@ -72,7 +72,7 @@ vi.mock('./productService', () => ({
 
 import { AuditService } from './auditService';
 import { clientService } from './entidadService';
-import { productService } from './productService';
+import { productService } from '../modules/products/products.service';
 
 const prismaMock = prisma as any;
 

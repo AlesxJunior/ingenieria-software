@@ -377,7 +377,12 @@ class ReportesService {
         precioVenta: true,
         estado: true,
         minStock: true,
-        categoria: true
+        categoria_legacy: true,
+        categoria: {
+          select: {
+            nombre: true
+          }
+        }
       }
     });
 
@@ -481,7 +486,7 @@ class ReportesService {
     // 4. Valor por categoría
     const valorPorCategoriaMap = new Map<string, { cantidad: number; valor: number }>();
     productos.forEach(p => {
-      const cat = p.categoria || 'Sin Categoría';
+      const cat: string = p.categoria?.nombre || p.categoria_legacy || 'Sin Categoría';
       const val = p.stock * Number(p.precioVenta);
       const current = valorPorCategoriaMap.get(cat);
       valorPorCategoriaMap.set(cat, {

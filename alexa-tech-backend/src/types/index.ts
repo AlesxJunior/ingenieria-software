@@ -141,12 +141,14 @@ export interface ProductCreateInput {
   codigo: string;
   nombre: string;
   descripcion?: string;
-  categoria: string;
+  categoria: string; // campo legacy (texto libre)
+  categoriaId?: string; // FK a tabla maestra ProductCategory
   precioVenta: number;
   stock?: number; // solo para compatibilidad temporal
   minStock?: number;
   estado?: boolean;
-  unidadMedida: string;
+  unidadMedida: string; // campo legacy (texto libre)
+  unidadMedidaId?: string; // FK a tabla maestra UnitOfMeasure
   stockInitial?: {
     warehouseId: string;
     cantidad: number;
@@ -156,12 +158,14 @@ export interface ProductCreateInput {
 export interface ProductUpdateInput {
   nombre?: string;
   descripcion?: string;
-  categoria?: string;
+  categoria?: string; // campo legacy (texto libre)
+  categoriaId?: string | null; // FK a tabla maestra ProductCategory (null permite limpiar)
   precioVenta?: number;
   minStock?: number;
   // stock se gestiona por inventario; evitar actualizar directamente
   estado?: boolean;
-  unidadMedida?: string;
+  unidadMedida?: string; // campo legacy (texto libre)
+  unidadMedidaId?: string | null; // FK a tabla maestra UnitOfMeasure (null permite limpiar)
 }
 
 export interface ProductStatusUpdateInput {

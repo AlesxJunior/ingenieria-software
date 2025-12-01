@@ -10,20 +10,41 @@ export interface Product {
   id: string;
   productCode: string;
   productName: string;
-  category: string;
+  descripcion?: string;
+  category: string;  // Campo legacy - mantener por compatibilidad
+  categoriaId?: string;  // FK a tabla maestra
+  categoria?: {  // Relación incluida desde backend
+    id: string;
+    codigo: string;
+    nombre: string;
+  };
   price: number;
   initialStock: number;
   currentStock: number;
   minStock?: number;
   status: 'disponible' | 'agotado' | 'proximamente';
-  unit: string;
+  unit: string;  // Campo legacy - mantener por compatibilidad
+  unidadMedidaId?: string;  // FK a tabla maestra
+  unidadMedida?: {  // Relación incluida desde backend
+    id: string;
+    codigo: string;
+    nombre: string;
+  };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
+interface PaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
 interface ProductContextType {
   products: Product[];
+  pagination: PaginationMetadata | null;
   loadProducts: (params?: {
     categoria?: string;
     estado?: boolean;
@@ -33,6 +54,8 @@ interface ProductContextType {
     maxPrecio?: number;
     minStock?: number;
     maxStock?: number;
+    page?: number;
+    limit?: number;
     signal?: AbortSignal;
   }) => Promise<void>;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -45,6 +68,7 @@ const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState<PaginationMetadata | null>(null);
   const { setIsLoading } = useUI();
   const { showSuccess, showError } = useNotification();
 
@@ -58,6 +82,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           id: p.id || p._id || p.codigo || String(Date.now()), // ✅ Usar p.id primero (PRD-XXX)
           productCode: p.codigo,
           productName: p.nombre,
+          descripcion: p.descripcion || undefined,
           category: p.categoria,
           price: p.precioVenta,
           initialStock: p.stock,
@@ -70,6 +95,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
           updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(),
         } as Product));
         setProducts(mapped);
+        
+        // Actualizar metadata de paginación si existe
+        if (response.data.pagination) {
+          setPagination(response.data.pagination);
+        }
       } else {
         showError(response.message || 'Error al cargar los productos');
       }
@@ -121,7 +151,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []); // Solo cargar al montar el componente
 
   return (
-    <ProductContext.Provider value={{ products, loadProducts, addProduct, updateProduct, deleteProduct, getProductById }}>
+    <ProductContext.Provider value={{ products, pagination, loadProducts, addProduct, updateProduct, deleteProduct, getProductById }}>
       {children}
     </ProductContext.Provider>
   );

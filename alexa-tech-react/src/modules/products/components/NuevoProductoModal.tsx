@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useProducts } from '../context/ProductContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { apiService } from '../../../utils/api';
-import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../../../utils/productOptions';
+import { configuracionApi } from '../../../services/configuracionApi';
+import type { ProductCategory, UnitOfMeasure } from '../../../types/configuracion';
 import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../../../constants/warehouses';
 
 const FormGrid = styled.div`
@@ -80,6 +81,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
 interface ProductFormData {
   productCode: string;
   productName: string;
+  descripcion: string;
   category: string;
   price: string;
   initialStock: string;
@@ -97,9 +99,12 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
   const { showSuccess, showError } = useNotification();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [codigoExists, setCodigoExists] = useState(false);
+  const [checkingCodigo, setCheckingCodigo] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>({
     productCode: '',
     productName: '',
+    descripcion: '',
     category: '',
     price: '',
     initialStock: '',
@@ -108,6 +113,31 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     minStock: ''
   });
   const [warehouseOptions, setWarehouseOptions] = useState<{ id: string; name: string }[]>(WAREHOUSE_SELECT_OPTIONS.map(o => ({ id: o.value, name: o.label })));
+  const [categorias, setCategorias] = useState<ProductCategory[]>([]);
+  const [unidades, setUnidades] = useState<UnitOfMeasure[]>([]);
+
+  // Cargar maestros de configuración
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [cats, units] = await Promise.all([
+          configuracionApi.getActiveCategories(),
+          configuracionApi.getActiveUnits()
+        ]);
+        if (mounted) {
+          setCategorias(cats);
+          setUnidades(units);
+          console.log('[NuevoProductoModal] Maestros cargados:', { categorias: cats.length, unidades: units.length });
+        }
+      } catch (e) {
+        console.error('[NuevoProductoModal] Error cargando maestros:', e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Cargar almacenes
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -146,31 +176,78 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     return () => { mounted = false; };
   }, []);
 
-  // Fusionar opciones dinámicas con listas por defecto evitando duplicados
-  const mergeOptions = (primary: string[], fallback: string[]) => {
-    const seen = new Set(primary.map(v => v.toLowerCase()));
-    const merged = [...primary];
-    for (const f of fallback) {
-      if (!seen.has(f.toLowerCase())) {
-        merged.push(f);
-        seen.add(f.toLowerCase());
-      }
-    }
-    return merged;
-  };
-
+  // Opciones de categorías desde maestros
   const categoryOptions = useMemo(() => {
-    const dyn = Array.from(new Set((products || []).map(p => p.category).filter(Boolean))).sort();
-    return mergeOptions(dyn, CATEGORY_OPTIONS);
-  }, [products]);
+    const opciones = [...categorias.map(c => c.nombre)];
+    // Agregar categorías existentes en productos que no estén en maestros
+    const fromProducts = Array.from(new Set(
+      (products || []).map(p => {
+        const cat = p.categoria?.nombre || p.category;
+        return typeof cat === 'string' ? cat : cat?.nombre || '';
+      }).filter(Boolean)
+    ));
+    fromProducts.forEach(cat => {
+      if (!opciones.includes(cat)) opciones.push(cat);
+    });
+    return opciones.sort();
+  }, [categorias, products]);
 
   const unitOptions = useMemo(() => {
-    const dyn = Array.from(new Set((products || []).map(p => p.unit).filter(Boolean))).sort();
-    return mergeOptions(dyn, UNIT_OPTIONS);
-  }, [products]);
+    const opciones = [...unidades.map(u => u.nombre)];
+    // Agregar unidades existentes en productos que no estén en maestros
+    const fromProducts = Array.from(new Set(
+      (products || []).map(p => {
+        const unit = p.unidadMedida?.nombre || p.unit;
+        return typeof unit === 'string' ? unit : unit?.nombre || '';
+      }).filter(Boolean)
+    ));
+    fromProducts.forEach(unit => {
+      if (!opciones.includes(unit)) opciones.push(unit);
+    });
+    return opciones.sort();
+  }, [unidades, products]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target as HTMLInputElement & HTMLSelectElement;
+  // Función debounced para verificar código único
+  const checkCodigoUnique = useCallback(
+    async (codigo: string) => {
+      if (codigo.length < 3) {
+        setCodigoExists(false);
+        return;
+      }
+      
+      setCheckingCodigo(true);
+      try {
+        const response = await apiService.getProductByCodigo(codigo);
+        setCodigoExists(response.success && response.data ? true : false);
+        
+        if (response.success && response.data) {
+          setErrors(prev => ({ 
+            ...prev, 
+            productCode: `El código "${codigo}" ya existe` 
+          }));
+        }
+      } catch (error) {
+        setCodigoExists(false);
+      } finally {
+        setCheckingCodigo(false);
+      }
+    },
+    []
+  );
+
+  // Debounce timer para evitar múltiples llamadas
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.productCode) {
+        checkCodigoUnique(formData.productCode);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.productCode, checkCodigoUnique]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target as HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement;
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -178,6 +255,14 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
 
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+    
+    // Limpiar error de código duplicado cuando el usuario cambia el código
+    if (name === 'productCode') {
+      setCodigoExists(false);
+      if (errors.productCode && errors.productCode.includes('ya existe')) {
+        setErrors(prev => ({ ...prev, productCode: undefined }));
+      }
     }
 
     if (name === 'price' && value) {
@@ -206,6 +291,8 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
     const newErrors: Record<string, string | undefined> = {};
 
     if (!formData.productCode.trim()) newErrors.productCode = 'El código es requerido';
+    else if (codigoExists) newErrors.productCode = `El código "${formData.productCode}" ya existe`;
+    
     if (!formData.productName.trim()) newErrors.productName = 'El nombre es requerido';
     if (!formData.category.trim()) newErrors.category = 'La categoría es requerida';
 
@@ -236,6 +323,10 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
       }
     }
 
+    if (formData.descripcion.length > 500) {
+      newErrors.descripcion = 'La descripción no puede exceder 500 caracteres';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -252,6 +343,7 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
       const payload = {
         codigo: formData.productCode,
         nombre: formData.productName,
+        descripcion: formData.descripcion.trim() || undefined,
         categoria: formData.category,
         precioVenta: parseFloat(formData.price),
         estado: true,
@@ -268,10 +360,12 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
       addProduct({
         productCode: payload.codigo,
         productName: payload.nombre,
+        descripcion: payload.descripcion,
         category: payload.categoria,
         price: payload.precioVenta,
         initialStock: initial,
         currentStock: initial,
+        minStock: minStock,
         status: stockStatus as 'disponible' | 'agotado',
         unit: payload.unidadMedida,
         isActive: payload.estado
@@ -292,13 +386,65 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
       <FormGrid>
         <FormGroup>
           <label htmlFor="productCode">Código *</label>
-          <input id="productCode" name="productCode" type="text" value={formData.productCode} onChange={handleInputChange} />
+          <div style={{ position: 'relative' }}>
+            <input 
+              id="productCode" 
+              name="productCode" 
+              type="text" 
+              value={formData.productCode} 
+              onChange={handleInputChange}
+              style={{
+                borderColor: codigoExists ? '#e74c3c' : (formData.productCode && !checkingCodigo && !codigoExists) ? '#27ae60' : undefined,
+                paddingRight: '30px'
+              }}
+            />
+            {checkingCodigo && (
+              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#7f8c8d' }}>
+                ⏳
+              </span>
+            )}
+            {!checkingCodigo && formData.productCode && codigoExists && (
+              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#e74c3c' }}>
+                ✗
+              </span>
+            )}
+            {!checkingCodigo && formData.productCode && !codigoExists && (
+              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#27ae60' }}>
+                ✓
+              </span>
+            )}
+          </div>
           {errors.productCode && <span className="error">{errors.productCode}</span>}
         </FormGroup>
         <FormGroup>
           <label htmlFor="productName">Nombre *</label>
           <input id="productName" name="productName" type="text" value={formData.productName} onChange={handleInputChange} />
           {errors.productName && <span className="error">{errors.productName}</span>}
+        </FormGroup>
+        <FormGroup style={{ gridColumn: '1 / -1' }}>
+          <label htmlFor="descripcion">Descripción</label>
+          <textarea 
+            id="descripcion" 
+            name="descripcion" 
+            rows={3}
+            maxLength={500}
+            value={formData.descripcion} 
+            onChange={handleInputChange}
+            placeholder="Descripción detallada del producto (opcional, máx 500 caracteres)"
+            style={{ 
+              resize: 'vertical',
+              minHeight: '80px',
+              fontFamily: 'inherit',
+              padding: '10px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '5px',
+              fontSize: '14px'
+            }}
+          />
+          <small style={{ color: '#666', fontSize: '12px' }}>
+            {formData.descripcion.length}/500 caracteres
+          </small>
+          {errors.descripcion && <span className="error">{errors.descripcion}</span>}
         </FormGroup>
         <FormGroup>
           <label htmlFor="category">Categoría *</label>
@@ -358,7 +504,13 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
       </FormGrid>
       <Actions>
         <Button type="button" $variant="secondary" onClick={onClose}>Cancelar</Button>
-        <Button type="submit" $variant="primary" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Registrar'}</Button>
+        <Button 
+          type="submit" 
+          $variant="primary" 
+          disabled={isSubmitting || checkingCodigo || codigoExists}
+        >
+          {isSubmitting ? 'Guardando...' : checkingCodigo ? 'Verificando...' : 'Registrar'}
+        </Button>
       </Actions>
     </form>
   );

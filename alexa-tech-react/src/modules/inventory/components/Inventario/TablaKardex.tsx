@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import type { MovimientoKardex, PaginationData } from '../../../../types/inventario';
 import { getWarehouseLabel } from '../../../../constants/warehouses';
+import { formatDateToLocal } from '../../../../utils/dateFormatter';
 
 const TableContainer = styled.div`
   background: white;
@@ -240,17 +241,6 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
   loading = false,
   onPageChange
 }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getUTCDate().toString().padStart(2, '0');
-    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-    const year = date.getUTCFullYear();
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
-
   const getMovementLabel = (type: 'ENTRADA' | 'SALIDA' | 'AJUSTE') => {
     switch (type) {
       case 'ENTRADA': return 'ENTRADA';
@@ -441,7 +431,7 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
           <tbody>
             {movimientos.map((movimiento) => (
               <Tr key={movimiento.id} data-testid={`kardex-row-${movimiento.id}`}>
-                <Td>{formatDate(movimiento.fecha)}</Td>
+                <Td>{formatDateToLocal(movimiento.fecha)}</Td>
                 <Td>
                   <div>
                     <strong>{movimiento.codigo}</strong>

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
-import productService from './productService';
+import productService from '../modules/products/products.service';
 import { prisma } from '../config/database';
 
 // Mock the database module directly in the test file

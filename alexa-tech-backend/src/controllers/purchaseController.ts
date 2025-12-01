@@ -9,7 +9,7 @@ import {
 import { purchaseService } from '../services/purchaseService';
 import { AuthenticatedRequest } from '../types';
 import { inventoryService } from '../services/inventoryService';
-import { productService } from '../services/productService';
+import { productService } from '../modules/products/products.service';
 
 // Métodos de pago permitidos actualizados
 const VALID_PAYMENT_METHODS = ['Efectivo', 'Tarjeta', 'Transferencia'];

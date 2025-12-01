@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database';
-import { productService } from '../../services/productService';
+import { productService } from '../products/products.service';
 import { AuditService } from '../../services/auditService';
 import { inventoryService } from '../../services/inventoryService';
 

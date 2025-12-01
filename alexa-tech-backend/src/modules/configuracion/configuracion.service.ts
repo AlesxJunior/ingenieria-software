@@ -1,5 +1,15 @@
 import { prisma } from '../../config/database';
-import type { CompanyData, ComprobanteTypeData, PaymentMethodData } from './configuracion.types';
+import type { 
+  CompanyData, 
+  ComprobanteTypeData, 
+  PaymentMethodData,
+  ProductCategoryData,
+  ProductCategoryInput,
+  ProductCategoryResponse,
+  UnitOfMeasureData,
+  UnitOfMeasureInput,
+  UnitOfMeasureResponse
+} from './configuracion.types';
 
 // Servicio de Configuración - Maneja empresa, tipos de comprobantes y métodos de pago
 export class ConfiguracionService {
@@ -197,6 +207,314 @@ export class ConfiguracionService {
 
   async deletePaymentMethod(id: string): Promise<void> {
     await prisma.paymentMethodConfig.delete({
+      where: { id },
+    });
+  }
+
+  // ==========================================
+  // CATEGORÍAS DE PRODUCTOS
+  // ==========================================
+
+  async getAllCategories(): Promise<ProductCategoryResponse[]> {
+    const categories = await prisma.productCategory.findMany({
+      orderBy: { nombre: 'asc' },
+    });
+    return categories as ProductCategoryResponse[];
+  }
+
+  async getActiveCategories(): Promise<ProductCategoryResponse[]> {
+    const categories = await prisma.productCategory.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' },
+    });
+    return categories as ProductCategoryResponse[];
+  }
+
+  async getCategoryById(id: string): Promise<ProductCategoryResponse | null> {
+    const category = await prisma.productCategory.findUnique({
+      where: { id },
+    });
+    return category as ProductCategoryResponse | null;
+  }
+
+  async getCategoryByCodigo(codigo: string): Promise<ProductCategoryResponse | null> {
+    const category = await prisma.productCategory.findUnique({
+      where: { codigo },
+    });
+    return category as ProductCategoryResponse | null;
+  }
+
+  async getCategoryByNombre(nombre: string): Promise<ProductCategoryResponse | null> {
+    const category = await prisma.productCategory.findFirst({
+      where: { nombre: { equals: nombre, mode: 'insensitive' } },
+    });
+    return category as ProductCategoryResponse | null;
+  }
+
+  async createCategory(data: ProductCategoryInput, userId?: string): Promise<ProductCategoryResponse> {
+    // Verificar que el código no exista
+    const existing = await prisma.productCategory.findUnique({
+      where: { codigo: data.codigo },
+    });
+    
+    if (existing) {
+      throw new Error(`Ya existe una categoría con el código ${data.codigo}`);
+    }
+
+    // Verificar que el nombre no exista
+    const existingName = await prisma.productCategory.findUnique({
+      where: { nombre: data.nombre },
+    });
+    
+    if (existingName) {
+      throw new Error(`Ya existe una categoría con el nombre ${data.nombre}`);
+    }
+
+    const category = await prisma.productCategory.create({
+      data: {
+        codigo: data.codigo.toUpperCase(),
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        activo: data.activo ?? true,
+        createdBy: userId,
+      },
+    });
+    
+    return category as ProductCategoryResponse;
+  }
+
+  async updateCategory(id: string, data: Partial<ProductCategoryInput>, userId?: string): Promise<ProductCategoryResponse> {
+    // Si se actualiza el código, verificar que no exista
+    if (data.codigo) {
+      const existing = await prisma.productCategory.findUnique({
+        where: { codigo: data.codigo },
+      });
+      
+      if (existing && existing.id !== id) {
+        throw new Error(`Ya existe otra categoría con el código ${data.codigo}`);
+      }
+    }
+
+    // Si se actualiza el nombre, verificar que no exista
+    if (data.nombre) {
+      const existingName = await prisma.productCategory.findUnique({
+        where: { nombre: data.nombre },
+      });
+      
+      if (existingName && existingName.id !== id) {
+        throw new Error(`Ya existe otra categoría con el nombre ${data.nombre}`);
+      }
+    }
+
+    const category = await prisma.productCategory.update({
+      where: { id },
+      data: {
+        ...(data.codigo && { codigo: data.codigo.toUpperCase() }),
+        ...(data.nombre && { nombre: data.nombre }),
+        ...(data.descripcion !== undefined && { descripcion: data.descripcion }),
+        ...(data.activo !== undefined && { activo: data.activo }),
+        updatedBy: userId,
+      },
+    });
+    
+    return category as ProductCategoryResponse;
+  }
+
+  async deleteCategory(id: string, userId?: string): Promise<ProductCategoryResponse> {
+    const category = await prisma.productCategory.findUnique({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new Error('Categoría no encontrada');
+    }
+
+    // Soft delete - marcar como inactivo
+    const updated = await prisma.productCategory.update({
+      where: { id },
+      data: { 
+        activo: false,
+        updatedBy: userId,
+      },
+    });
+
+    return updated as ProductCategoryResponse;
+  }
+
+  async hardDeleteCategory(id: string): Promise<void> {
+    const category = await prisma.productCategory.findUnique({
+      where: { id },
+    });
+
+    if (!category) {
+      throw new Error('Categoría no encontrada');
+    }
+
+    // Verificar que no haya productos usando esta categoría
+    const productsCount = await prisma.product.count({
+      where: { categoriaId: id },
+    });
+
+    if (productsCount > 0) {
+      throw new Error(`No se puede eliminar la categoría porque tiene ${productsCount} productos asociados`);
+    }
+
+    await prisma.productCategory.delete({
+      where: { id },
+    });
+  }
+
+  // ==========================================
+  // UNIDADES DE MEDIDA
+  // ==========================================
+
+  async getAllUnits(): Promise<UnitOfMeasureResponse[]> {
+    const units = await prisma.unitOfMeasure.findMany({
+      orderBy: { nombre: 'asc' },
+    });
+    return units as UnitOfMeasureResponse[];
+  }
+
+  async getActiveUnits(): Promise<UnitOfMeasureResponse[]> {
+    const units = await prisma.unitOfMeasure.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' },
+    });
+    return units as UnitOfMeasureResponse[];
+  }
+
+  async getUnitById(id: string): Promise<UnitOfMeasureResponse | null> {
+    const unit = await prisma.unitOfMeasure.findUnique({
+      where: { id },
+    });
+    return unit as UnitOfMeasureResponse | null;
+  }
+
+  async getUnitByCodigo(codigo: string): Promise<UnitOfMeasureResponse | null> {
+    const unit = await prisma.unitOfMeasure.findUnique({
+      where: { codigo },
+    });
+    return unit as UnitOfMeasureResponse | null;
+  }
+
+  async getUnitByNombre(nombre: string): Promise<UnitOfMeasureResponse | null> {
+    const unit = await prisma.unitOfMeasure.findFirst({
+      where: { nombre: { equals: nombre, mode: 'insensitive' } },
+    });
+    return unit as UnitOfMeasureResponse | null;
+  }
+
+  async createUnit(data: UnitOfMeasureInput, userId?: string): Promise<UnitOfMeasureResponse> {
+    // Verificar que el código no exista
+    const existing = await prisma.unitOfMeasure.findUnique({
+      where: { codigo: data.codigo },
+    });
+    
+    if (existing) {
+      throw new Error(`Ya existe una unidad de medida con el código ${data.codigo}`);
+    }
+
+    // Verificar que el nombre no exista
+    const existingName = await prisma.unitOfMeasure.findUnique({
+      where: { nombre: data.nombre },
+    });
+    
+    if (existingName) {
+      throw new Error(`Ya existe una unidad de medida con el nombre ${data.nombre}`);
+    }
+
+    const unit = await prisma.unitOfMeasure.create({
+      data: {
+        codigo: data.codigo.toUpperCase(),
+        nombre: data.nombre,
+        simbolo: data.simbolo,
+        descripcion: data.descripcion,
+        activo: data.activo ?? true,
+        createdBy: userId,
+      },
+    });
+    
+    return unit as UnitOfMeasureResponse;
+  }
+
+  async updateUnit(id: string, data: Partial<UnitOfMeasureInput>, userId?: string): Promise<UnitOfMeasureResponse> {
+    // Si se actualiza el código, verificar que no exista
+    if (data.codigo) {
+      const existing = await prisma.unitOfMeasure.findUnique({
+        where: { codigo: data.codigo },
+      });
+      
+      if (existing && existing.id !== id) {
+        throw new Error(`Ya existe otra unidad de medida con el código ${data.codigo}`);
+      }
+    }
+
+    // Si se actualiza el nombre, verificar que no exista
+    if (data.nombre) {
+      const existingName = await prisma.unitOfMeasure.findUnique({
+        where: { nombre: data.nombre },
+      });
+      
+      if (existingName && existingName.id !== id) {
+        throw new Error(`Ya existe otra unidad de medida con el nombre ${data.nombre}`);
+      }
+    }
+
+    const unit = await prisma.unitOfMeasure.update({
+      where: { id },
+      data: {
+        ...(data.codigo && { codigo: data.codigo.toUpperCase() }),
+        ...(data.nombre && { nombre: data.nombre }),
+        ...(data.simbolo !== undefined && { simbolo: data.simbolo }),
+        ...(data.descripcion !== undefined && { descripcion: data.descripcion }),
+        ...(data.activo !== undefined && { activo: data.activo }),
+        updatedBy: userId,
+      },
+    });
+    
+    return unit as UnitOfMeasureResponse;
+  }
+
+  async deleteUnit(id: string, userId?: string): Promise<UnitOfMeasureResponse> {
+    const unit = await prisma.unitOfMeasure.findUnique({
+      where: { id },
+    });
+
+    if (!unit) {
+      throw new Error('Unidad de medida no encontrada');
+    }
+
+    // Soft delete - marcar como inactivo
+    const updated = await prisma.unitOfMeasure.update({
+      where: { id },
+      data: { 
+        activo: false,
+        updatedBy: userId,
+      },
+    });
+
+    return updated as UnitOfMeasureResponse;
+  }
+
+  async hardDeleteUnit(id: string): Promise<void> {
+    const unit = await prisma.unitOfMeasure.findUnique({
+      where: { id },
+    });
+
+    if (!unit) {
+      throw new Error('Unidad de medida no encontrada');
+    }
+
+    // Verificar que no haya productos usando esta unidad
+    const productsCount = await prisma.product.count({
+      where: { unidadMedidaId: id },
+    });
+
+    if (productsCount > 0) {
+      throw new Error(`No se puede eliminar la unidad de medida porque tiene ${productsCount} productos asociados`);
+    }
+
+    await prisma.unitOfMeasure.delete({
       where: { id },
     });
   }

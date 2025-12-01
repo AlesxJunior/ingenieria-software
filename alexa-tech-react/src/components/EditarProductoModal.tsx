@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import styled from 'styled-components';
 import { useProducts, type Product } from '../context/ProductContext';
 import { useNotification } from '../context/NotificationContext';
 import { apiService } from '../utils/api';
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
+import { configuracionApi } from '../services/configuracionApi';
+import type { ProductCategory, UnitOfMeasure } from '../types/configuracion';
 
 const FormGrid = styled.div`
   display: grid;
@@ -96,6 +98,9 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
   const { showSuccess, showError } = useNotification();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
+  const [categorias, setCategorias] = useState<ProductCategory[]>([]);
+  const [unidades, setUnidades] = useState<UnitOfMeasure[]>([]);
+  const [loadingMaestros, setLoadingMaestros] = useState(true);
 
   const [formData, setFormData] = useState<EditProductFormData>({
     productCode: product.productCode,
@@ -107,7 +112,29 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     minStock: product.minStock?.toString() || ''
   });
 
-  // Opciones dinámicas combinadas con listas por defecto
+  // Cargar categorías y unidades activas
+  useEffect(() => {
+    const fetchMaestros = async () => {
+      try {
+        setLoadingMaestros(true);
+        const [cats, units] = await Promise.all([
+          configuracionApi.getActiveCategories(),
+          configuracionApi.getActiveUnits()
+        ]);
+        setCategorias(cats);
+        setUnidades(units);
+      } catch (error) {
+        console.error('Error al cargar maestros:', error);
+        // Si falla, usar valores por defecto
+      } finally {
+        setLoadingMaestros(false);
+      }
+    };
+
+    fetchMaestros();
+  }, []);
+
+  // Opciones dinámicas combinadas con maestros y listas por defecto
   const mergeOptions = (primary: string[], fallback: string[]) => {
     const seen = new Set(primary.map(v => v.toLowerCase()));
     const merged = [...primary];
@@ -121,14 +148,18 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
   };
 
   const categoryOptions = useMemo(() => {
+    // Usar maestros primero, luego fallback a categorías dinámicas de productos
+    const maestrosNames = categorias.map(c => c.nombre);
     const dyn = Array.from(new Set((products || []).map(p => p.category).filter(Boolean))).sort();
-    return mergeOptions(dyn, CATEGORY_OPTIONS);
-  }, [products]);
+    return mergeOptions(maestrosNames, mergeOptions(dyn, CATEGORY_OPTIONS));
+  }, [products, categorias]);
 
   const unitOptions = useMemo(() => {
+    // Usar maestros primero, luego fallback a unidades dinámicas de productos
+    const maestrosNames = unidades.map(u => u.nombre);
     const dyn = Array.from(new Set((products || []).map(p => p.unit).filter(Boolean))).sort();
-    return mergeOptions(dyn, UNIT_OPTIONS);
-  }, [products]);
+    return mergeOptions(maestrosNames, mergeOptions(dyn, UNIT_OPTIONS));
+  }, [products, unidades]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target as HTMLInputElement & HTMLSelectElement;
@@ -240,8 +271,8 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
         </FormGroup>
         <FormGroup>
           <label htmlFor="category">Categoría *</label>
-          <select id="category" name="category" value={formData.category} onChange={handleInputChange}>
-            <option value="">Selecciona una categoría</option>
+          <select id="category" name="category" value={formData.category} onChange={handleInputChange} disabled={loadingMaestros}>
+            <option value="">{loadingMaestros ? 'Cargando...' : 'Selecciona una categoría'}</option>
             {categoryOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
@@ -259,8 +290,8 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
         </FormGroup>
         <FormGroup>
           <label htmlFor="unit">Unidad *</label>
-          <select id="unit" name="unit" value={formData.unit} onChange={handleInputChange}>
-            <option value="">Selecciona unidad</option>
+          <select id="unit" name="unit" value={formData.unit} onChange={handleInputChange} disabled={loadingMaestros}>
+            <option value="">{loadingMaestros ? 'Cargando...' : 'Selecciona unidad'}</option>
             {unitOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}

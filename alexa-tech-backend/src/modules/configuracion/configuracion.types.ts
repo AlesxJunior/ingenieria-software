@@ -51,3 +51,59 @@ export interface PaymentMethodData {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+// ============================================
+// MAESTROS DE PRODUCTOS
+// ============================================
+
+export interface ProductCategoryData {
+  id?: string;
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  activo: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface ProductCategoryInput {
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+export interface ProductCategoryResponse extends ProductCategoryData {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UnitOfMeasureData {
+  id?: string;
+  codigo: string;
+  nombre: string;
+  simbolo?: string;
+  descripcion?: string;
+  activo: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface UnitOfMeasureInput {
+  codigo: string;
+  nombre: string;
+  simbolo?: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+export interface UnitOfMeasureResponse extends UnitOfMeasureData {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

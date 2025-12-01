@@ -162,6 +162,208 @@ export class ConfiguracionController {
       return ResponseHelper.error(res, 'Error al eliminar método de pago', error.message);
     }
   }
+
+  // ==========================================
+  // CATEGORÍAS DE PRODUCTOS
+  // ==========================================
+
+  async getAllCategories(req: Request, res: Response): Promise<Response> {
+    try {
+      const activo = req.query.activo === 'true';
+      const categories = activo 
+        ? await configuracionService.getActiveCategories()
+        : await configuracionService.getAllCategories();
+      return ResponseHelper.success(res, categories, 'Categorías obtenidas exitosamente');
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al obtener categorías', error.message);
+    }
+  }
+
+  async getCategoryById(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      const category = await configuracionService.getCategoryById(id);
+      
+      if (!category) {
+        return ResponseHelper.notFound(res, 'Categoría no encontrada');
+      }
+      
+      return res.json(category);
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al obtener categoría', error.message);
+    }
+  }
+
+  async createCategory(req: Request, res: Response): Promise<Response> {
+    try {
+      const { codigo, nombre } = req.body;
+      
+      // Validaciones
+      const errors: string[] = [];
+      if (!codigo || codigo.trim() === '') errors.push('Código es requerido');
+      if (!nombre || nombre.trim() === '') errors.push('Nombre es requerido');
+      if (codigo && codigo.length > 10) errors.push('Código no puede exceder 10 caracteres');
+      if (nombre && nombre.length > 100) errors.push('Nombre no puede exceder 100 caracteres');
+      
+      if (errors.length > 0) {
+        return ResponseHelper.validationError(res, errors);
+      }
+      
+      const category = await configuracionService.createCategory(req.body);
+      return ResponseHelper.created(res, category, 'Categoría creada exitosamente');
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al crear categoría', error.message);
+    }
+  }
+
+  async updateCategory(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      const category = await configuracionService.updateCategory(id, req.body);
+      return ResponseHelper.success(res, category, 'Categoría actualizada exitosamente');
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al actualizar categoría', error.message);
+    }
+  }
+
+  async deleteCategory(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      await configuracionService.deleteCategory(id);
+      return res.status(204).send();
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al eliminar categoría', error.message);
+    }
+  }
+
+  async hardDeleteCategory(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      await configuracionService.hardDeleteCategory(id);
+      return res.status(204).send();
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al eliminar categoría permanentemente', error.message);
+    }
+  }
+
+  // ==========================================
+  // UNIDADES DE MEDIDA
+  // ==========================================
+
+  async getAllUnits(req: Request, res: Response): Promise<Response> {
+    try {
+      const activo = req.query.activo === 'true';
+      const units = activo 
+        ? await configuracionService.getActiveUnits()
+        : await configuracionService.getAllUnits();
+      return ResponseHelper.success(res, units, 'Unidades obtenidas exitosamente');
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al obtener unidades de medida', error.message);
+    }
+  }
+
+  async getUnitById(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      const unit = await configuracionService.getUnitById(id);
+      
+      if (!unit) {
+        return ResponseHelper.notFound(res, 'Unidad de medida no encontrada');
+      }
+      
+      return res.json(unit);
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al obtener unidad de medida', error.message);
+    }
+  }
+
+  async createUnit(req: Request, res: Response): Promise<Response> {
+    try {
+      const { codigo, nombre } = req.body;
+      
+      // Validaciones
+      const errors: string[] = [];
+      if (!codigo || codigo.trim() === '') errors.push('Código es requerido');
+      if (!nombre || nombre.trim() === '') errors.push('Nombre es requerido');
+      if (codigo && codigo.length > 10) errors.push('Código no puede exceder 10 caracteres');
+      if (nombre && nombre.length > 100) errors.push('Nombre no puede exceder 100 caracteres');
+      
+      if (errors.length > 0) {
+        return ResponseHelper.validationError(res, errors);
+      }
+      
+      const unit = await configuracionService.createUnit(req.body);
+      return ResponseHelper.created(res, unit, 'Unidad de medida creada exitosamente');
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al crear unidad de medida', error.message);
+    }
+  }
+
+  async updateUnit(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      const unit = await configuracionService.updateUnit(id, req.body);
+      return ResponseHelper.success(res, unit, 'Unidad de medida actualizada exitosamente');
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al actualizar unidad de medida', error.message);
+    }
+  }
+
+  async deleteUnit(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      await configuracionService.deleteUnit(id);
+      return res.status(204).send();
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al eliminar unidad de medida', error.message);
+    }
+  }
+
+  async hardDeleteUnit(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return ResponseHelper.validationError(res, ['ID requerido']);
+      }
+      
+      await configuracionService.hardDeleteUnit(id);
+      return res.status(204).send();
+    } catch (error: any) {
+      return ResponseHelper.error(res, 'Error al eliminar unidad de medida permanentemente', error.message);
+    }
+  }
 }
 
 export const configuracionController = new ConfiguracionController();

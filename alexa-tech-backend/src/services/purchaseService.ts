@@ -6,7 +6,7 @@ import {
   PurchaseStatusUpdateInput,
 } from '../types';
 import { clientService } from './entidadService';
-import { productService } from './productService';
+import { productService } from '../modules/products/products.service';
 import { AuditService } from './auditService';
 import { inventoryService } from './inventoryService';
 

@@ -784,6 +784,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
         
         // Llamar callback inmediatamente (el padre maneja el cierre del modal)
         onClientCreated(clientId, {
+          tipoEntidad: 'Cliente',
           tipoDocumento,
           numeroDocumento: numeroDocumento.trim(),
           nombres: nombres.trim(),

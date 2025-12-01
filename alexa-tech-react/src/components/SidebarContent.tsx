@@ -381,7 +381,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
 
           
 
-          <NavItem $isActive={isActive('/configuracion/mi-perfil') || isActive('/configuracion/empresa') || isActive('/configuracion/comprobantes') || isActive('/configuracion/metodos-pago')}>
+          <NavItem $isActive={isActive('/configuracion/mi-perfil') || isActive('/configuracion/empresa') || isActive('/configuracion/comprobantes') || isActive('/configuracion/metodos-pago') || isActive('/configuracion/productos')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('configuracion'); }}>
               <i className="fas fa-cogs"></i>
               <span>Configuración</span>
@@ -405,6 +405,11 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               <SubMenuItem $isActive={isActive('/configuracion/metodos-pago')}>
                 <Link to="/configuracion/metodos-pago" onClick={handleItemClick}>
                   <h3>Métodos de Pago</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/configuracion/productos')}>
+                <Link to="/configuracion/productos" onClick={handleItemClick}>
+                  <h3>Categorías y Unidades</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>

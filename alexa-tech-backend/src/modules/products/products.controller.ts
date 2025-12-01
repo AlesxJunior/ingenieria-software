@@ -6,7 +6,7 @@ import {
   validateProductStatusUpdate,
   validateProductQueryFilters,
 } from '../../utils/validation';
-import { productService } from '../../services/productService';
+import { productService } from './products.service';
 import { AuthenticatedRequest } from '../../types';
 
 
@@ -92,6 +92,8 @@ export const ProductController = {
         maxPrecio,
         minStock,
         maxStock,
+        page,
+        limit,
       } = req.query;
 
       const filters = {
@@ -111,10 +113,28 @@ export const ProductController = {
         maxStock: maxStock !== undefined ? Number(maxStock) : undefined,
       };
 
-      const products = await productService.list(filters);
+      // Paginación
+      const currentPage = page !== undefined ? Math.max(1, Number(page)) : 1;
+      const pageSize = limit !== undefined ? Math.max(1, Math.min(100, Number(limit))) : 50;
+      const offset = (currentPage - 1) * pageSize;
+
+      const { products, total } = await productService.listPaginated(filters, {
+        limit: pageSize,
+        offset,
+      });
+
       return ResponseHelper.success(
         res,
-        { products, total: products.length, filters },
+        {
+          products,
+          pagination: {
+            page: currentPage,
+            limit: pageSize,
+            total,
+            pages: Math.ceil(total / pageSize),
+          },
+          filters,
+        },
         'Productos obtenidos correctamente',
       );
     } catch (error: any) {
