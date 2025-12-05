@@ -867,6 +867,3 @@ export const salesService = {
 };
 
 export default salesService;
-/ /   F o r c e   r e l o a d 
- 
- 
