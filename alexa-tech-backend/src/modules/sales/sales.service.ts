@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database';
-import { productService } from '../products/products.service';
+import { productService } from '../../services/productService';
 import { AuditService } from '../../services/auditService';
 import { inventoryService } from '../../services/inventoryService';
 
@@ -49,7 +49,7 @@ interface Sale {
   usuarioId: string;
   fechaEmision: string;
   tipoComprobante: string;
-  formaPago?: string | null;  // Ahora opcional
+  formaPago: string;
   subtotal: number;
   igv: number;
   total: number;
@@ -257,19 +257,18 @@ export const salesService = {
       total
     });
 
-    // ✅ SIEMPRE crear registros en SalePayment (migración completa)
-    let paymentsData: any[];
-    let formaPagoPrincipal: string | undefined;
+    // 🆕 Validar pagos múltiples si se envían
+    let paymentsData: any[] | undefined;
+    let formaPagoPrincipal = data.formaPago;
     
     console.log('🔍 Verificando payments:', {
       hasPayments: !!data.payments,
       paymentsLength: data.payments?.length,
-      paymentsData: data.payments,
-      formaPago: data.formaPago
+      paymentsData: data.payments
     });
     
     if (data.payments && data.payments.length > 0) {
-      // ✅ Múltiples métodos de pago proporcionados
+      // Validar que la suma de pagos sea igual al total
       const totalPagos = data.payments.reduce((sum, p) => sum + p.monto, 0);
       
       if (Math.abs(totalPagos - total) > 0.01) { // Tolerancia de 1 centavo
@@ -278,6 +277,7 @@ export const salesService = {
         );
       }
 
+      // Preparar datos de pagos para crear
       paymentsData = data.payments.map((payment, index) => ({
         metodoPago: payment.metodoPago as any,
         monto: payment.monto as any,
@@ -286,31 +286,14 @@ export const salesService = {
         orden: index + 1,
       }));
 
-      formaPagoPrincipal = data.payments[0]?.metodoPago; // Para compatibilidad legacy
+      // El formaPago principal será el del primer pago (para mantener compatibilidad)
+      formaPagoPrincipal = data.payments[0].metodoPago;
 
       console.log('💳 Pagos múltiples detectados:', {
-        cantidad: data.payments?.length || 0,
+        cantidad: data.payments.length,
         totalPagos,
         totalVenta: total,
         pagos: paymentsData
-      });
-    } else {
-      // ✅ Un solo método de pago - CREAR SalePayment igual
-      const metodoPago = data.formaPago || 'Efectivo';
-      
-      paymentsData = [{
-        metodoPago: metodoPago as any,
-        monto: total as any,
-        referencia: null,  // Sin referencia para pagos únicos simples
-        observaciones: null,
-        orden: 1,
-      }];
-      
-      formaPagoPrincipal = metodoPago as any;
-
-      console.log('💳 Pago único detectado, creando SalePayment:', {
-        metodoPago,
-        monto: total,
       });
     }
 
@@ -330,7 +313,7 @@ export const salesService = {
         usuarioId: userId,
         fechaEmision: now,
         tipoComprobante: data.tipoComprobante as any,
-        formaPago: formaPagoPrincipal as any, // ⚠️ DEPRECATED: Solo compatibilidad legacy
+        formaPago: formaPagoPrincipal as any, // 🆕 Usar el método principal
         subtotal: subtotal as any,
         igv: igv as any,
         total: total as any,
@@ -341,10 +324,12 @@ export const salesService = {
         items: {
           create: items,
         },
-        // ✅ SIEMPRE crear registros en SalePayment (uno o múltiples)
-        payments: {
-          create: paymentsData,
-        },
+        // 🆕 Crear pagos múltiples si existen
+        ...(paymentsData && paymentsData.length > 0 && {
+          payments: {
+            create: paymentsData,
+          },
+        }),
       },
       include: { 
         items: true,
@@ -882,3 +867,6 @@ export const salesService = {
 };
 
 export default salesService;
+/ /   F o r c e   r e l o a d 
+ 
+ 

@@ -106,6 +106,15 @@ model User {
   cashMovements      CashMovement[]      @relation("CashMovementUser")
   sales              Sale[]              @relation("SaleCreatedBy")
   quotes             Quote[]             @relation("QuoteCreatedBy")
+  
+  // Relaciones - Módulo de Compras
+  solicitudesCreadas      PurchaseRequest[]  @relation("SolicitudPor")
+  solicitudesAprobadas    PurchaseRequest[]  @relation("AprobadoPor")
+  ordenesCompraCreadas    PurchaseOrder[]    @relation("OCCreadoPor")
+  ordenesCompraAprobadas  PurchaseOrder[]    @relation("OCAprobadoPor")
+  recepcionesRecibidas    PurchaseReceipt[]  @relation("RCRecibidoPor")
+  recepcionesInspeccionadas PurchaseReceipt[] @relation("RCInspeccionadoPor")
+  facturasRegistradas     PurchaseInvoice[]  @relation("FacturaRegistradaPor")
 
   @@map("users")
 }
@@ -221,6 +230,11 @@ model Client {
   // Relaciones inversas
   sales  Sale[]  @relation("SaleClient")
   quotes Quote[] @relation("QuoteClient")
+  
+  // Relaciones - Módulo de Compras (Proveedores)
+  ordenesCompra    PurchaseOrder[]    @relation("OCProveedor")
+  facturasCompra   PurchaseInvoice[]  @relation("FacturaProveedor")
+  cuentasPorPagar  AccountPayable[]   @relation("CuentaPorPagarProveedor")
 
   @@map("commercial_entities")
 }
@@ -282,6 +296,11 @@ model Product {
   // Relaciones de inventario
   stockByWarehouses  StockByWarehouse[]
   inventoryMovements InventoryMovement[]
+  
+  // Relaciones - Módulo de Compras
+  solicitudItems      PurchaseRequestItem[] @relation("SolicitudProducto")
+  ordenCompraItems    PurchaseOrderItem[]   @relation("OCProducto")
+  recepcionItems      PurchaseReceiptItem[] @relation("RecepcionProducto")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -471,6 +490,11 @@ model Warehouse {
   // Relaciones de inventario
   stockByWarehouses  StockByWarehouse[]
   inventoryMovements InventoryMovement[]
+  
+  // Relaciones - Módulo de Compras
+  solicitudesCompra PurchaseRequest[] @relation("SolicitudAlmacenDestino")
+  ordenesCompra     PurchaseOrder[]   @relation("OCAlmacenDestino")
+  recepciones       PurchaseReceipt[] @relation("RecepcionAlmacen")
 
   @@map("warehouses")
 }
@@ -509,6 +533,10 @@ model InventoryMovement {
   warehouse      Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   movementReason MovementReason? @relation(fields: [reasonId], references: [id], onDelete: SetNull)
+  
+  // Relación con recepción de compra (opcional)
+  recepcionCompra   PurchaseReceipt? @relation("RecepcionMovimientos", fields: [recepcionCompraId], references: [id], onDelete: SetNull)
+  recepcionCompraId String?
 
   @@map("inventory_movements")
 }
@@ -783,3 +811,441 @@ model PaymentMethodConfig {
 
   @@map("payment_method_config")
 }
+
+// ============================================
+// MÓDULO DE COMPRAS PROFESIONAL
+// ============================================
+
+// Enums para Solicitudes de Compra
+enum PurchaseRequestStatus {
+  BORRADOR   // En creación
+  APROBADA   // Aprobada, lista para OC
+  RECHAZADA  // Rechazada
+  CONVERTIDA // Convertida a OC
+  CANCELADA  // Cancelada
+}
+
+enum PurchaseRequestPriority {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+// Enums para Órdenes de Compra
+enum PurchaseOrderStatus {
+  PENDIENTE     // Creada, no enviada
+  ENVIADA       // Enviada al proveedor
+  CONFIRMADA    // Proveedor confirmó
+  EN_RECEPCION  // Llegó mercancía, en proceso de recepción
+  PARCIAL       // Recepción parcial
+  COMPLETADA    // Todo recibido
+  CERRADA       // Cerrada y facturada
+  CANCELADA     // Cancelada
+}
+
+// Enums para Recepciones de Compra
+enum PurchaseReceiptStatus {
+  PENDIENTE   // En creación
+  INSPECCION  // En control de calidad
+  CONFIRMADA  // Confirmada, stock actualizado
+  CANCELADA   // Cancelada
+}
+
+// Enums para Control de Calidad
+enum QualityControlStatus {
+  PENDIENTE  // Aún no inspeccionado
+  APROBADO   // Aprobado
+  RECHAZADO  // Rechazado
+  PARCIAL    // Parcialmente aprobado
+}
+
+// Enums para Cuentas por Pagar
+enum AccountPayableStatus {
+  PENDIENTE // Sin pagar
+  PARCIAL   // Pago parcial
+  PAGADA    // Pagada completamente
+  VENCIDA   // Pasó fecha de vencimiento
+  ANULADA   // Anulada
+}
+
+// ============================================
+// MODELOS DEL MÓDULO DE COMPRAS
+// ============================================
+
+// Solicitud de Compra (Purchase Request)
+model PurchaseRequest {
+  id          String                   @id @default(cuid())
+  codigo      String                   @unique // SR-2025-0001
+  estado      PurchaseRequestStatus    @default(BORRADOR)
+  
+  // Relaciones con usuarios
+  solicitadoPorId String
+  solicitadoPor   User   @relation("SolicitudPor", fields: [solicitadoPorId], references: [id], onDelete: Restrict)
+  
+  aprobadoPorId   String?
+  aprobadoPor     User?   @relation("AprobadoPor", fields: [aprobadoPorId], references: [id], onDelete: SetNull)
+  
+  // Relación con almacén destino
+  almacenDestinoId String
+  almacenDestino   Warehouse @relation("SolicitudAlmacenDestino", fields: [almacenDestinoId], references: [id], onDelete: Restrict)
+  
+  // Datos de la solicitud
+  fechaSolicitud  DateTime                  @default(now())
+  fechaNecesaria  DateTime // Cuándo se necesita
+  prioridad       PurchaseRequestPriority   @default(MEDIA)
+  motivo          String // Razón de la solicitud
+  observaciones   String?
+  
+  // Aprobación
+  fechaAprobacion       DateTime?
+  comentariosAprobacion String?
+  
+  // Items de la solicitud
+  items PurchaseRequestItem[]
+  
+  // Orden de compra generada (opcional)
+  ordenCompra PurchaseOrder?
+  
+  // Auditoría
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+  
+  @@map("purchase_requests")
+}
+
+// Items de Solicitud de Compra
+model PurchaseRequestItem {
+  id String @id @default(cuid())
+  
+  // Relación con solicitud
+  solicitudId String
+  solicitud   PurchaseRequest @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+  
+  // Relación con producto
+  productoId String
+  producto   Product @relation("SolicitudProducto", fields: [productoId], references: [id], onDelete: Restrict)
+  
+  // Cantidades
+  cantidadSolicitada Int // Cantidad requerida
+  stockActual        Int // Stock al momento de solicitar
+  stockMinimo        Int // Stock mínimo configurado
+  
+  observaciones String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("purchase_request_items")
+}
+
+// Orden de Compra (Purchase Order)
+model PurchaseOrder {
+  id     String               @id @default(cuid())
+  codigo String               @unique // OC-2025-0001
+  estado PurchaseOrderStatus  @default(PENDIENTE)
+  
+  // Relación con proveedor
+  proveedorId String
+  proveedor   Client @relation("OCProveedor", fields: [proveedorId], references: [id], onDelete: Restrict)
+  
+  // Relación con almacén destino
+  almacenDestinoId String
+  almacenDestino   Warehouse @relation("OCAlmacenDestino", fields: [almacenDestinoId], references: [id], onDelete: Restrict)
+  
+  // Relaciones con usuarios
+  creadoPorId String
+  creadoPor   User   @relation("OCCreadoPor", fields: [creadoPorId], references: [id], onDelete: Restrict)
+  
+  aprobadoPorId String?
+  aprobadoPor   User?  @relation("OCAprobadoPor", fields: [aprobadoPorId], references: [id], onDelete: SetNull)
+  
+  // Origen (opcional - solicitud de compra)
+  solicitudCompraId String?           @unique
+  solicitudCompra   PurchaseRequest?  @relation(fields: [solicitudCompraId], references: [id], onDelete: SetNull)
+  
+  // Fechas
+  fechaEmision         DateTime  @default(now())
+  fechaEnvio           DateTime? // Cuándo se envió al proveedor
+  fechaConfirmacion    DateTime? // Cuándo el proveedor confirmó
+  fechaEntregaEstimada DateTime // Cuándo debería llegar
+  fechaEntregaReal     DateTime? // Cuándo realmente llegó
+  
+  // Datos comerciales
+  moneda     String  @default("PEN") // PEN, USD
+  tipoCambio Decimal @default(1.00) @db.Decimal(10, 4)
+  
+  condicionesPago   String // "Contado", "Crédito 30 días"
+  formaPago         String // "Transferencia", "Efectivo"
+  
+  observaciones       String?
+  terminosCondiciones String? // Términos adicionales
+  
+  // Referencia proveedor
+  numeroOCProveedor String? // Número de OC que asigna el proveedor
+  
+  // Totales
+  subtotal  Decimal @db.Decimal(10, 2)
+  descuento Decimal @default(0) @db.Decimal(10, 2)
+  igv       Decimal @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+  
+  // Items de la orden
+  items PurchaseOrderItem[]
+  
+  // Recepciones asociadas
+  recepciones PurchaseReceipt[]
+  
+  // Factura asociada
+  factura PurchaseInvoice?
+  
+  // Auditoría
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+  
+  @@index([proveedorId])
+  @@index([estado])
+  @@index([fechaEmision])
+  @@map("purchase_orders_v2")
+}
+
+// Items de Orden de Compra
+model PurchaseOrderItem {
+  id String @id @default(cuid())
+  
+  // Relación con orden de compra
+  ordenCompraId String
+  ordenCompra   PurchaseOrder @relation(fields: [ordenCompraId], references: [id], onDelete: Cascade)
+  
+  // Relación con producto
+  productoId String
+  producto   Product @relation("OCProducto", fields: [productoId], references: [id], onDelete: Restrict)
+  
+  // Cantidades
+  cantidadOrdenada  Int // Cantidad pedida
+  cantidadRecibida  Int @default(0) // Cantidad recibida (acumulado)
+  cantidadAceptada  Int @default(0) // Cantidad aceptada (QC OK)
+  cantidadRechazada Int @default(0) // Cantidad rechazada (QC FAIL)
+  cantidadPendiente Int // cantidadOrdenada - cantidadRecibida
+  
+  // Precios
+  precioUnitario Decimal @db.Decimal(10, 2)
+  descuento      Decimal @default(0) @db.Decimal(10, 2) // % o monto
+  incluyeIGV     Boolean @default(true) // Si el item incluye IGV o no
+  subtotal       Decimal @db.Decimal(10, 2)
+  igv            Decimal @db.Decimal(10, 2)
+  total          Decimal @db.Decimal(10, 2)
+  
+  // Datos adicionales
+  descripcion   String? // Descripción específica del item
+  observaciones String?
+  
+  // Relación con items de recepción
+  recepcionItems PurchaseReceiptItem[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([ordenCompraId])
+  @@index([productoId])
+  @@map("purchase_order_items")
+}
+
+// Recepción de Compra (Purchase Receipt)
+model PurchaseReceipt {
+  id     String                 @id @default(cuid())
+  codigo String                 @unique // RC-2025-0001
+  estado PurchaseReceiptStatus  @default(PENDIENTE)
+  
+  // Relación con orden de compra
+  ordenCompraId String
+  ordenCompra   PurchaseOrder @relation(fields: [ordenCompraId], references: [id], onDelete: Restrict)
+  
+  // Relación con almacén
+  almacenId String
+  almacen   Warehouse @relation("RecepcionAlmacen", fields: [almacenId], references: [id], onDelete: Restrict)
+  
+  // Relaciones con usuarios
+  recibidoPorId String
+  recibidoPor   User   @relation("RCRecibidoPor", fields: [recibidoPorId], references: [id], onDelete: Restrict)
+  
+  inspeccionadoPorId String?
+  inspeccionadoPor   User?  @relation("RCInspeccionadoPor", fields: [inspeccionadoPorId], references: [id], onDelete: SetNull)
+  
+  // Fechas
+  fechaRecepcion  DateTime @default(now())
+  horaRecepcion   DateTime @default(now())
+  fechaInspeccion DateTime?
+  
+  // Datos de entrega
+  guiaRemision       String? // Guía del proveedor
+  transportista      String?
+  condicionMercancia String? // "Buena", "Con daños", etc.
+  
+  // Tipo de recepción
+  esRecepcionCompleta Boolean @default(false)
+  esRecepcionParcial  Boolean @default(false)
+  
+  // Observaciones
+  observaciones String?
+  incidencias   String? // Problemas encontrados
+  
+  // Items recibidos
+  items PurchaseReceiptItem[]
+  
+  // Movimientos de inventario generados
+  movimientosInventario InventoryMovement[] @relation("RecepcionMovimientos")
+  
+  // Auditoría
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+  
+  @@index([ordenCompraId])
+  @@index([fechaRecepcion])
+  @@map("purchase_receipts")
+}
+
+// Items de Recepción de Compra
+model PurchaseReceiptItem {
+  id String @id @default(cuid())
+  
+  // Relación con recepción
+  recepcionId String
+  recepcion   PurchaseReceipt @relation(fields: [recepcionId], references: [id], onDelete: Cascade)
+  
+  // Relación con item de orden de compra
+  ordenCompraItemId String
+  ordenCompraItem   PurchaseOrderItem @relation(fields: [ordenCompraItemId], references: [id], onDelete: Restrict)
+  
+  // Relación con producto
+  productoId String
+  producto   Product @relation("RecepcionProducto", fields: [productoId], references: [id], onDelete: Restrict)
+  
+  // Cantidades
+  cantidadOrdenada  Int // Referencia de OC
+  cantidadRecibida  Int // Cantidad física recibida
+  cantidadAceptada  Int // Cantidad que pasó QC
+  cantidadRechazada Int // Cantidad que falló QC
+  
+  // Control de calidad
+  estadoQC      QualityControlStatus @default(PENDIENTE)
+  motivoRechazo String? // Si cantidadRechazada > 0
+  
+  // Lote y vencimiento (opcional)
+  numeroLote       String?
+  fechaVencimiento DateTime?
+  
+  observaciones String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([recepcionId])
+  @@index([productoId])
+  @@map("purchase_receipt_items")
+}
+
+// Factura de Compra (Purchase Invoice)
+model PurchaseInvoice {
+  id     String @id @default(cuid())
+  codigo String @unique // FC-2025-0001
+  
+  // Relación con orden de compra
+  ordenCompraId String        @unique
+  ordenCompra   PurchaseOrder @relation(fields: [ordenCompraId], references: [id], onDelete: Restrict)
+  
+  // Relación con proveedor
+  proveedorId String
+  proveedor   Client @relation("FacturaProveedor", fields: [proveedorId], references: [id], onDelete: Restrict)
+  
+  // Usuario que registró la factura
+  registradoPorId String
+  registradoPor   User   @relation("FacturaRegistradaPor", fields: [registradoPorId], references: [id], onDelete: Restrict)
+  
+  // Datos del comprobante
+  tipoComprobante String // "FACTURA", "BOLETA", "NOTA_CREDITO"
+  serie           String // F001
+  numero          String // 00000123
+  numeroCompleto  String @unique // F001-00000123
+  
+  // Fechas
+  fechaEmision    DateTime
+  fechaVencimiento DateTime? // Si es a crédito
+  fechaRecepcion  DateTime  @default(now()) // Cuándo se recibió la factura
+  
+  // Montos
+  moneda     String  @default("PEN")
+  tipoCambio Decimal @default(1.00) @db.Decimal(10, 4)
+  
+  subtotal  Decimal @db.Decimal(10, 2)
+  descuento Decimal @default(0) @db.Decimal(10, 2)
+  igv       Decimal @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+  
+  // Validación
+  validada            Boolean @default(false)
+  diferenciaDetectada Boolean @default(false)
+  motivoDiferencia    String? // Si total factura ≠ total OC
+  
+  // Archivo
+  archivoURL String? // PDF escaneado
+  
+  observaciones String?
+  
+  // Cuenta por pagar generada
+  cuentaPorPagar AccountPayable?
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+  
+  @@unique([serie, numero])
+  @@index([proveedorId])
+  @@index([fechaEmision])
+  @@map("purchase_invoices")
+}
+
+// Cuenta por Pagar (Account Payable)
+model AccountPayable {
+  id     String               @id @default(cuid())
+  codigo String               @unique // CXP-2025-0001
+  estado AccountPayableStatus @default(PENDIENTE)
+  
+  // Relación con factura de compra
+  facturaCompraId String          @unique
+  facturaCompra   PurchaseInvoice @relation(fields: [facturaCompraId], references: [id], onDelete: Restrict)
+  
+  // Relación con proveedor
+  proveedorId String
+  proveedor   Client @relation("CuentaPorPagarProveedor", fields: [proveedorId], references: [id], onDelete: Restrict)
+  
+  // Fechas
+  fechaEmision     DateTime
+  fechaVencimiento DateTime
+  fechaPago        DateTime? // Cuándo se pagó
+  
+  // Montos
+  moneda         String  @default("PEN")
+  montoPendiente Decimal @db.Decimal(10, 2)
+  montoPagado    Decimal @default(0) @db.Decimal(10, 2)
+  montoTotal     Decimal @db.Decimal(10, 2)
+  
+  // Pago
+  metodoPago     String? // "Efectivo", "Transferencia"
+  referenciaPago String? // Nro. de operación
+  bancoId        String? // Si es transferencia
+  
+  observaciones String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([proveedorId])
+  @@index([estado])
+  @@index([fechaVencimiento])
+  @@map("accounts_payable")
+}
+

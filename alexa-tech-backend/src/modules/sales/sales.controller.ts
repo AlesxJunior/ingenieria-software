@@ -30,10 +30,7 @@ export const SalesController = {
       // Validaciones básicas
       if (!almacenId) details.push({ field: 'almacenId', message: 'almacenId es requerido', value: almacenId });
       if (!tipoComprobante) details.push({ field: 'tipoComprobante', message: 'tipoComprobante es requerido', value: tipoComprobante });
-      
-      // ✅ formaPago ahora SIEMPRE es opcional (se crea SalePayment automáticamente)
-      // Si no se proporciona ni formaPago ni payments, se usará "Efectivo" por defecto
-      
+      if (!formaPago) details.push({ field: 'formaPago', message: 'formaPago es requerido', value: formaPago });
       if (!items || !Array.isArray(items) || items.length === 0) {
         details.push({ field: 'items', message: 'Mínimo 1 item requerido', value: items });
       }
@@ -114,7 +111,7 @@ export const SalesController = {
         clienteId: clienteId ? String(clienteId) : undefined,
         almacenId: String(almacenId),
         tipoComprobante: String(tipoComprobante) as any,
-        formaPago: formaPago ? String(formaPago) as any : undefined, // 🆕 Hacer opcional
+        formaPago: String(formaPago) as any,
         incluyeIGV: incluyeIGV !== undefined ? Boolean(incluyeIGV) : undefined,
         items: items.map((it: any) => ({
           productId: String(it.productId),

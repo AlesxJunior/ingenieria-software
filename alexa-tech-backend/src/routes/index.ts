@@ -14,6 +14,7 @@ import cashSessionRoutes from '../modules/sales/cash-session.routes';
 import configuracionRoutes from '../modules/configuracion/configuracion.routes';
 import reportesRoutes from '../modules/reportes/reportes.routes';
 import { sunatRoutes } from '../modules/sunat';
+import aiRecommendationsRoutes from '../modules/ai/ai-recommendations.routes';
 // Rutas que aún no se han migrado a módulos
 import auditRoutes from './auditRoutes';
 import ubigeoRoutes from './ubigeoRoutes';
@@ -45,9 +46,11 @@ router.use('/productos', productsRoutes);
 // Alias en inglés para compatibilidad
 router.use('/products', productsRoutes);
 
+// Rutas de IA (Asistente de Ventas)
+router.use('/ai', aiRecommendationsRoutes);
+
 // Rutas de compras
 router.use('/compras', purchasesRoutes);
-// Alias en inglés para compatibilidad Frontend
 router.use('/purchases', purchasesRoutes);
 
 // Rutas de almacenes

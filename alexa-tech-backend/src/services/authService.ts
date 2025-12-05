@@ -71,6 +71,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         isActive: user.isActive,
+        roleId: user.roleId,
         permissions: user.role?.permissions || [], // RBAC: Permisos del rol
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -99,6 +100,7 @@ export class AuthService {
         password,
         firstName: '',
         lastName: '',
+        roleId: 'default-role', // Rol por defecto para nuevos usuarios
       });
 
       // Generar tokens
@@ -122,6 +124,7 @@ export class AuthService {
           firstName: newUser.firstName,
           lastName: newUser.lastName,
           isActive: newUser.isActive,
+          roleId: newUser.roleId,
           permissions: newUser.role?.permissions || [], // RBAC: Permisos del rol
           createdAt: newUser.createdAt,
           updatedAt: newUser.updatedAt,
@@ -294,6 +297,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       isActive: user.isActive,
+      roleId: user.roleId,
       permissions: user.role?.permissions || [], // RBAC: Permisos del rol
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

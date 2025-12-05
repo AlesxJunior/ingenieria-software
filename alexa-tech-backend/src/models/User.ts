@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 // Tipo interno que incluye la contraseña para el modelo
 interface UserWithPassword extends User {
   password: string;
+  permissions?: string[]; // Opcional para retrocompatibilidad
 }
 
 // Simulación de base de datos en memoria (temporal)
@@ -18,6 +19,7 @@ const users: UserWithPassword[] = [
     lastName: 'User',
     password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // admin123
     isActive: true,
+    roleId: 'admin-role',
     permissions: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -30,6 +32,7 @@ const users: UserWithPassword[] = [
     lastName: 'User',
     password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // supervisor123
     isActive: true,
+    roleId: 'supervisor-role',
     permissions: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -42,6 +45,7 @@ const users: UserWithPassword[] = [
     lastName: 'User',
     password: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO.G', // vendedor123
     isActive: true,
+    roleId: 'vendedor-role',
     permissions: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -122,9 +126,9 @@ export class UserModel {
       firstName: userData.firstName,
       lastName: userData.lastName,
       password: hashedPassword,
-
+      roleId: userData.roleId,
       isActive: true,
-      permissions: userData.permissions || [],
+      permissions: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -185,13 +189,9 @@ export class UserModel {
       firstName: updateData.firstName || user.firstName,
       lastName: updateData.lastName || user.lastName,
       password: hashedPassword,
-
+      roleId: updateData.roleId || user.roleId,
       isActive:
         updateData.isActive !== undefined ? updateData.isActive : user.isActive,
-      permissions:
-        updateData.permissions !== undefined
-          ? updateData.permissions
-          : user.permissions,
       updatedAt: new Date(),
     };
 
@@ -262,6 +262,7 @@ export class UserModel {
       firstName: user.firstName,
       lastName: user.lastName,
       isActive: user.isActive,
+      roleId: user.roleId,
       permissions: user.permissions || [],
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
