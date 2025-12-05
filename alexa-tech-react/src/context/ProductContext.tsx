@@ -55,16 +55,20 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       const response = await apiService.getProducts(filters, { signal });
       if (response.success && response.data) {
         const mapped = response.data.products.map((p: any) => ({
-          id: p.codigo || p.id || p._id || String(Date.now()),
+          id: p.id || p._id || String(Date.now()),  // ✅ CORREGIDO: usar id real del backend
           productCode: p.codigo,
           productName: p.nombre,
-          category: p.categoria,
+          category: typeof p.categoria === 'object' && p.categoria?.nombre 
+            ? p.categoria.nombre  // ✅ Si es objeto, extraer nombre
+            : p.categoria || 'Sin categoría',  // ✅ Si es string o null, usar directamente
           price: p.precioVenta,
           initialStock: p.stock,
           currentStock: p.stock,
           minStock: p.minStock ?? undefined,
           status: (typeof p.stock === 'number' && p.stock > 0) ? 'disponible' : 'agotado',
-          unit: p.unidadMedida,
+          unit: typeof p.unidadMedida === 'object' && p.unidadMedida?.nombre 
+            ? p.unidadMedida.nombre  // ✅ Si es objeto, extraer nombre
+            : p.unidadMedida || 'UND',  // ✅ Si es string o null, usar directamente
           isActive: !!p.estado,
           createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
           updatedAt: p.updatedAt ? new Date(p.updatedAt) : new Date(),

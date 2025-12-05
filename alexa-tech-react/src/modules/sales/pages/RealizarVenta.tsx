@@ -13,7 +13,6 @@ import { useConfiguracion } from '../../configuracion/context/ConfiguracionConte
 import type { ComprobanteData, MetodoPagoData } from '../../configuracion/services/configuracionApi';
 import { PaymentProcessModal, type PaymentConfirmData } from '../components/PaymentProcessModal';
 import { QuickClientModal } from '../components/QuickClientModal';
-import { ConvertProviderModal } from '../components/ConvertProviderModal';
 
 // 🎨 DISEÑO SIGUIENDO EL BOCETO HTML
 const SalesContainer = styled.div`
@@ -458,18 +457,6 @@ const ClientDocument = styled.span`
   font-size: 12px;
 `;
 
-const ProviderBadge = styled.span`
-  display: inline-block;
-  background: #fff3e0;
-  color: #e65100;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
-  border: 1px solid #ffe0b2;
-`;
-
 // 🆕 Modal de confirmación de pago
 const ModalOverlay = styled.div`
   position: fixed;
@@ -786,10 +773,6 @@ const RealizarVenta: React.FC = () => {
   // @ts-ignore - tempClientData is read, setter may be used in future
   const [tempClientData, setTempClientData] = useState<Client | null>(null);
 
-  // 🆕 Estados para modal de conversión de proveedor
-  const [showConvertProviderModal, setShowConvertProviderModal] = useState(false);
-  const [providerToConvert, setProviderToConvert] = useState<Client | null>(null);
-
   // Fecha y hora actual
   const currentDate = new Date().toISOString().split('T')[0];
   const currentTime = new Date().toTimeString().slice(0, 5);
@@ -804,7 +787,7 @@ const RealizarVenta: React.FC = () => {
      product.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Filtrar clientes - Mostrar Cliente y Ambos primero, luego Proveedores con advertencia
+  // Filtrar clientes
   const filteredClients = clients.filter((client: Client) => {
     if (!clientSearchTerm) return false;
     const searchLower = clientSearchTerm.toLowerCase();
@@ -813,10 +796,6 @@ const RealizarVenta: React.FC = () => {
       : `${client.nombres || ''} ${client.apellidos || ''}`.trim().toLowerCase();
     const document = (client.numeroDocumento || '').toLowerCase();
     return name.includes(searchLower) || document.includes(searchLower);
-  }).sort((a, b) => {
-    // Ordenar: Cliente y Ambos primero, Proveedor al final
-    const orderMap = { 'Cliente': 1, 'Ambos': 1, 'Proveedor': 2 };
-    return orderMap[a.tipoEntidad] - orderMap[b.tipoEntidad];
   });
 
   // \u2705 SOLUCI\u00d3N: Mostrar datos temporales si existen, sino buscar en la lista
@@ -1062,18 +1041,8 @@ const RealizarVenta: React.FC = () => {
     addNotification('info', 'Carrito Limpio', 'Se eliminaron todos los productos');
   };
 
-  // Seleccionar cliente con validación de tipo de entidad
+  // Seleccionar cliente
   const handleSelectClient = (client: Client) => {
-    // ✅ Validar si es proveedor
-    if (client.tipoEntidad === 'Proveedor') {
-      setProviderToConvert(client);
-      setShowConvertProviderModal(true);
-      setClientSearchTerm('');
-      setShowClientDropdown(false);
-      return;
-    }
-
-    // ✅ Cliente o Ambos - permitir selección
     setSelectedClient(client.id);
     setClientSearchTerm('');
     setShowClientDropdown(false);
@@ -1083,24 +1052,6 @@ const RealizarVenta: React.FC = () => {
   const handleClearClient = () => {
     setSelectedClient('');
     setClientSearchTerm('');
-  };
-
-  // 🆕 Handler para cuando se convierte un proveedor
-  const handleProviderConverted = async (updatedClient: Client) => {
-    console.log('✅ Proveedor convertido:', updatedClient);
-    
-    // Esperar un momento para que el contexto termine de actualizar
-    // (updateClient ya llamó a loadClients internamente)
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Seleccionar el cliente recién convertido
-    setSelectedClient(updatedClient.id);
-    
-    addNotification(
-      'success',
-      'Entidad Convertida',
-      `${updatedClient.razonSocial || updatedClient.nombres} ahora puede realizar ventas`
-    );
   };
 
   // 🆕 Handler para cuando se crea un cliente desde el modal rápido
@@ -1605,9 +1556,6 @@ const RealizarVenta: React.FC = () => {
                         {client.tipoDocumento === 'RUC'
                           ? client.razonSocial
                           : `${client.nombres} ${client.apellidos}`}
-                        {client.tipoEntidad === 'Proveedor' && (
-                          <ProviderBadge>⚠️ Proveedor</ProviderBadge>
-                        )}
                       </ClientName>
                       <ClientDocument>
                         {client.tipoDocumento}: {client.numeroDocumento}
@@ -2034,17 +1982,6 @@ const RealizarVenta: React.FC = () => {
         onClose={() => setShowQuickClientModal(false)}
         onClientCreated={handleQuickClientCreated}
         initialSearchTerm={clientSearchTerm}
-      />
-
-      {/* 🆕 Modal de Conversión de Proveedor */}
-      <ConvertProviderModal
-        isOpen={showConvertProviderModal}
-        onClose={() => {
-          setShowConvertProviderModal(false);
-          setProviderToConvert(null);
-        }}
-        provider={providerToConvert}
-        onConverted={handleProviderConverted}
       />
     </Layout>
   );

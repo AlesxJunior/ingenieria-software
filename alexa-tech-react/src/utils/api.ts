@@ -106,7 +106,7 @@ class ApiService {
     fechaEntregaEstimada?: string;
     descuento?: number;
   }): Promise<ApiResponse<any>> {
-    return this.request('/compras', {
+    return this.request('/compras/ordenes', {
       method: 'POST',
       body: JSON.stringify(purchaseData),
     });
@@ -133,7 +133,7 @@ class ApiService {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/compras?${queryString}` : '/compras';
+    const endpoint = queryString ? `/compras/ordenes?${queryString}` : '/compras/ordenes';
     return this.request<{ purchases: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET' });
   }
 
@@ -162,7 +162,7 @@ class ApiService {
   }
 
   async getPurchaseById(id: string): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}`, { method: 'GET' });
+    return this.request(`/compras/ordenes/${id}`, { method: 'GET' });
   }
 
   async updatePurchase(id: string, purchaseData: {
@@ -181,21 +181,21 @@ class ApiService {
     fechaEntregaEstimada?: string;
     descuento?: number;
   }): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}`, {
+    return this.request(`/compras/ordenes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(purchaseData),
     });
   }
 
   async updatePurchaseStatus(id: string, estado: 'Pendiente' | 'Recibida' | 'Cancelada'): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}/status`, {
+    return this.request(`/compras/ordenes/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
     });
   }
 
   async deletePurchase(id: string): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}`, {
+    return this.request(`/compras/ordenes/${id}`, {
       method: 'DELETE',
     });
   }

@@ -288,7 +288,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/gestion-caja') || isActive('/historial-caja') || isActive('/ventas/realizar') || isActive('/ventas/lista') || isActive('/ventas/cotizaciones')}>
+          <NavItem $isActive={isActive('/gestion-caja') || isActive('/historial-caja') || isActive('/ventas/realizar') || isActive('/ventas/lista') || isActive('/ventas/cotizaciones') || isActive('/ventas/asistente-ia')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('ventas'); }}>
               <i className="fas fa-cash-register"></i>
               <span>Ventas</span>
@@ -317,6 +317,11 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               <SubMenuItem $isActive={isActive('/ventas/cotizaciones')}>
                 <Link to="/ventas/cotizaciones" onClick={handleItemClick}>
                   <h3>Cotizaciones</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/ventas/asistente-ia')}>
+                <Link to="/ventas/asistente-ia" onClick={handleItemClick}>
+                  <h3>🤖 Asistente de Ventas IA</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>
@@ -371,9 +376,14 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               <span>Compras</span>
             </a>
             <SubMenu $isOpen={openMenus.compras}>
-              <SubMenuItem $isActive={isActive('/compras')}>
-                <Link to="/compras" onClick={handleItemClick}>
-                  <h3>Lista de Compras</h3>
+              <SubMenuItem $isActive={isActive('/compras/ordenes')}>
+                <Link to="/compras/ordenes" onClick={handleItemClick}>
+                  <h3>Órdenes de Compra</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/compras/recepciones')}>
+                <Link to="/compras/recepciones" onClick={handleItemClick}>
+                  <h3>Recepciones</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>

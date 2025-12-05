@@ -654,15 +654,15 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
           })),
         }
       : {
-          // ✅ CAMBIO: También enviar como array para pago único
+          // ✅ Pago único
           formaPago: selectedMethod,
           montoRecibido: isEfectivo ? montoRecibidoNum : undefined,
           referencia: requiresReference ? referencia : undefined,
           cambio: showCambio ? cambio : undefined,
-          // ✅ Enviar array de 1 elemento
+          // ✅ CORRECCIÓN: monto del pago es el total de la venta, NO el monto recibido
           payments: [{
             metodoPago: selectedMethod,
-            monto: isEfectivo ? montoRecibidoNum : Number(total),
+            monto: Number(total), // Siempre el total de la venta
             referencia: requiresReference ? referencia : undefined,
           }],
         };

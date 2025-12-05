@@ -29,13 +29,15 @@ const RealizarVenta = lazy(() => import('./modules/sales/pages/RealizarVenta'));
 const ListaVentas = lazy(() => import('./modules/sales/pages/ListaVentas'));
 const DetalleVenta = lazy(() => import('./modules/sales/pages/DetalleVenta'));
 const Cotizaciones = lazy(() => import('./modules/sales/pages/Cotizaciones'));
+const AsistenteVentas = lazy(() => import('./modules/sales/pages/AsistenteVentas'));
 const ListaUsuarios = lazy(() => import('./modules/users/pages/ListaUsuarios'));
 const CrearUsuario = lazy(() => import('./modules/users/pages/CrearUsuario'));
 const EditarUsuario = lazy(() => import('./modules/users/pages/EditarUsuario'));
 const PerfilUsuario = lazy(() => import('./modules/users/pages/PerfilUsuario'));
 const ListaRoles = lazy(() => import('./modules/users/pages/ListaRoles'));
 const AuditoriaLogs = lazy(() => import('./pages/AuditoriaLogs'));
-const ListaCompras = lazy(() => import('./modules/purchases/pages/ListaCompras'));
+const PurchaseOrdersPage = lazy(() => import('./modules/purchases/pages/PurchaseOrdersPage'));
+const PurchaseReceiptsPage = lazy(() => import('./modules/purchases/pages/PurchaseReceiptsPage'));
 const ListadoStock = lazy(() => import('./modules/inventory/pages/Inventario/ListadoStock'));
 const Kardex = lazy(() => import('./modules/inventory/pages/Inventario/Kardex'));
 const ListaAlmacenes = lazy(() => import('./modules/inventory/pages/Inventario/ListaAlmacenes'));
@@ -159,6 +161,11 @@ function App() {
                         <Cotizaciones />
                       </ProtectedRoute>
                     } />
+                    <Route path="/ventas/asistente-ia" element={
+                      <ProtectedRoute requiredPermission="sales.create">
+                        <AsistenteVentas />
+                      </ProtectedRoute>
+                    } />
                     <Route path="/usuarios" element={
                         <ProtectedRoute requiredPermission="users.read">
                           <ListaUsuarios />
@@ -190,9 +197,35 @@ function App() {
                     </ProtectedRoute>
                   } />
                   {/* Aquí se pueden agregar más rutas según se vayan migrando las páginas */}
-                  <Route path="/compras" element={
+                  {/* Módulo de Compras - Redirección principal */}
+                  <Route path="/compras" element={<Navigate to="/compras/ordenes" replace />} />
+
+                  {/* Módulo de Compras - Órdenes */}
+                  <Route path="/compras/ordenes" element={
                     <ProtectedRoute requiredPermission="purchases.read">
-                      <ListaCompras />
+                      <PurchaseOrdersPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/compras/ordenes/:id" element={
+                    <ProtectedRoute requiredPermission="purchases.read">
+                      <PurchaseOrdersPage />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Módulo de Compras - Recepciones */}
+                  <Route path="/compras/recepciones" element={
+                    <ProtectedRoute requiredPermission="purchases.read">
+                      <PurchaseReceiptsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/compras/recepciones/crear" element={
+                    <ProtectedRoute requiredPermission="purchases.create">
+                      <PurchaseReceiptsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/compras/recepciones/:id" element={
+                    <ProtectedRoute requiredPermission="purchases.read">
+                      <PurchaseReceiptsPage />
                     </ProtectedRoute>
                   } />
 
