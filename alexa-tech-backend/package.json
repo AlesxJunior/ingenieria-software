@@ -48,10 +48,16 @@
   "description": "Backend API para el sistema de gestión empresarial Alexa Tech",
   "dependencies": {
     "@alexa-tech/shared": "file:../shared",
+    "@google/generative-ai": "^0.24.1",
+    "@nestjs/common": "^11.1.9",
+    "@nestjs/core": "^11.1.9",
+    "@nestjs/platform-express": "^11.1.9",
     "@prisma/client": "^6.16.2",
-    "@types/pdfkit": "^0.17.3",
+    "@types/pdfkit": "^0.17.4",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
@@ -61,7 +67,9 @@
     "morgan": "^1.10.1",
     "node-fetch": "^2.7.0",
     "pdfkit": "^0.17.2",
-    "prisma": "^6.16.2"
+    "prisma": "^6.16.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
