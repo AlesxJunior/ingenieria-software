@@ -1,0 +1,476 @@
+{
+  "fecha": "2026-01-07T06:53:04.784Z",
+  "totalProductos": 60,
+  "productosOk": 11,
+  "discrepancias": 49,
+  "detalleDiscrepancias": [
+    {
+      "codigo": "ACC-BAL-001",
+      "nombre": "Balun Pasivo Video UTP",
+      "stockLegacy": 9,
+      "stockReal": 0,
+      "diferencia": -9,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-BIO-001",
+      "nombre": "Lector Biométrico Huella + RFID",
+      "stockLegacy": 54,
+      "stockReal": 0,
+      "diferencia": -54,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-CER-001",
+      "nombre": "Cerradura Electromagnética 280kg",
+      "stockLegacy": 3,
+      "stockReal": 0,
+      "diferencia": -3,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-CER-002",
+      "nombre": "Cerradura Electromagnética 600kg",
+      "stockLegacy": 6,
+      "stockReal": 0,
+      "diferencia": -6,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-HDD-001",
+      "nombre": "Disco Duro Seagate SkyHawk 2TB",
+      "stockLegacy": 21,
+      "stockReal": 0,
+      "diferencia": -21,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-HDD-002",
+      "nombre": "Disco Duro WD Purple 4TB",
+      "stockLegacy": 44,
+      "stockReal": 0,
+      "diferencia": -44,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-LEC-001",
+      "nombre": "Lector RFID 125kHz Standalone",
+      "stockLegacy": 7,
+      "stockReal": 0,
+      "diferencia": -7,
+      "almacenes": []
+    },
+    {
+      "codigo": "ACC-TAR-001",
+      "nombre": "Tarjetas RFID 125kHz x50",
+      "stockLegacy": 43,
+      "stockReal": 0,
+      "diferencia": -43,
+      "almacenes": []
+    },
+    {
+      "codigo": "ALR-MAG-001",
+      "nombre": "Sensor Magnético Puerta/Ventana",
+      "stockLegacy": 1,
+      "stockReal": 0,
+      "diferencia": -1,
+      "almacenes": []
+    },
+    {
+      "codigo": "ALR-PIR-001",
+      "nombre": "Sensor PIR Detector de Movimiento",
+      "stockLegacy": 8,
+      "stockReal": 0,
+      "diferencia": -8,
+      "almacenes": []
+    },
+    {
+      "codigo": "ALR-SIR-001",
+      "nombre": "Sirena Exterior 120dB",
+      "stockLegacy": 4,
+      "stockReal": 0,
+      "diferencia": -4,
+      "almacenes": []
+    },
+    {
+      "codigo": "ALR-TEC-001",
+      "nombre": "Teclado Alarma LCD 32 Zonas",
+      "stockLegacy": 5,
+      "stockReal": 0,
+      "diferencia": -5,
+      "almacenes": []
+    },
+    {
+      "codigo": "AP-TPL-001",
+      "nombre": "Access Point TP-Link EAP245 AC1750",
+      "stockLegacy": 43,
+      "stockReal": 1367,
+      "diferencia": 1324,
+      "almacenes": [
+        {
+          "warehouseId": "WH-SECUNDARIO",
+          "cantidad": 90
+        },
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 1277
+        }
+      ]
+    },
+    {
+      "codigo": "AP-UBI-001",
+      "nombre": "Access Point Ubiquiti UniFi U6 Lite",
+      "stockLegacy": 43,
+      "stockReal": 1021,
+      "diferencia": 978,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 1021
+        }
+      ]
+    },
+    {
+      "codigo": "CAM-DAH-002",
+      "nombre": "Cámara IP Dahua IPC-HDW1230T 2MP Domo",
+      "stockLegacy": 20,
+      "stockReal": 34,
+      "diferencia": 14,
+      "almacenes": [
+        {
+          "warehouseId": "WH-SECUNDARIO",
+          "cantidad": 14
+        },
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 20
+        }
+      ]
+    },
+    {
+      "codigo": "CAM-EZV-001",
+      "nombre": "Cámara WiFi Ezviz C6N 1080p",
+      "stockLegacy": 20,
+      "stockReal": 31,
+      "diferencia": 11,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 31
+        }
+      ]
+    },
+    {
+      "codigo": "CAM-HIK-001",
+      "nombre": "Cámara IP Hikvision DS-2CD1023G2-IU 2MP",
+      "stockLegacy": 20,
+      "stockReal": 34,
+      "diferencia": 14,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 34
+        }
+      ]
+    },
+    {
+      "codigo": "CAM-HIK-002",
+      "nombre": "Cámara IP Hikvision DS-2CD1043G2-I 4MP",
+      "stockLegacy": 20,
+      "stockReal": 40,
+      "diferencia": 20,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 40
+        }
+      ]
+    },
+    {
+      "codigo": "CAM-HIK-003",
+      "nombre": "Cámara IP Hikvision DS-2CD2T43G2-2I 4MP",
+      "stockLegacy": 20,
+      "stockReal": 154,
+      "diferencia": 134,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 80
+        },
+        {
+          "warehouseId": "cmiqi0jrr0006o1robaeziix9",
+          "cantidad": 74
+        }
+      ]
+    },
+    {
+      "codigo": "CAM-PTZ-001",
+      "nombre": "Cámara PTZ Hikvision DS-2DE2A404IW-DE3 4MP",
+      "stockLegacy": 20,
+      "stockReal": 43,
+      "diferencia": 23,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 43
+        }
+      ]
+    },
+    {
+      "codigo": "CBL-COA-001",
+      "nombre": "Cable Coaxial RG59 95% Caja 305m",
+      "stockLegacy": 200,
+      "stockReal": 0,
+      "diferencia": -200,
+      "almacenes": []
+    },
+    {
+      "codigo": "CBL-UTP-001",
+      "nombre": "Cable UTP Cat 5e Exterior Caja 305m",
+      "stockLegacy": 21,
+      "stockReal": 0,
+      "diferencia": -21,
+      "almacenes": []
+    },
+    {
+      "codigo": "CBL-UTP-002",
+      "nombre": "Cable UTP Cat 6 Exterior Caja 305m",
+      "stockLegacy": 530,
+      "stockReal": 0,
+      "diferencia": -530,
+      "almacenes": []
+    },
+    {
+      "codigo": "CBL-UTP-MT",
+      "nombre": "Cable UTP Cat 5e por Metro",
+      "stockLegacy": 400,
+      "stockReal": 100,
+      "diferencia": -300,
+      "almacenes": [
+        {
+          "warehouseId": "WH-SECUNDARIO",
+          "cantidad": 100
+        }
+      ]
+    },
+    {
+      "codigo": "CONN-BNC",
+      "nombre": "Conector BNC x50 unidades",
+      "stockLegacy": 4,
+      "stockReal": 0,
+      "diferencia": -4,
+      "almacenes": []
+    },
+    {
+      "codigo": "CONN-RJ45",
+      "nombre": "Conector RJ45 Cat 5e x100 unidades",
+      "stockLegacy": 5,
+      "stockReal": 0,
+      "diferencia": -5,
+      "almacenes": []
+    },
+    {
+      "codigo": "DVR-DAH-001",
+      "nombre": "XVR Dahua XVR1B08 8CH",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "DVR-HIK-001",
+      "nombre": "DVR Hikvision DS-7108HQHI-K1 8CH",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "DVR-HIK-002",
+      "nombre": "DVR Hikvision DS-7116HQHI-K1 16CH",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "FTE-12V-10A",
+      "nombre": "Fuente de Poder 12V 10A Centralizada",
+      "stockLegacy": 23,
+      "stockReal": 0,
+      "diferencia": -23,
+      "almacenes": []
+    },
+    {
+      "codigo": "FTE-12V-1A",
+      "nombre": "Fuente de Poder 12V 1A",
+      "stockLegacy": 5,
+      "stockReal": 0,
+      "diferencia": -5,
+      "almacenes": []
+    },
+    {
+      "codigo": "FTE-12V-2A",
+      "nombre": "Fuente de Poder 12V 2A",
+      "stockLegacy": 43,
+      "stockReal": 0,
+      "diferencia": -43,
+      "almacenes": []
+    },
+    {
+      "codigo": "LIC-VMS-001",
+      "nombre": "Licencia VMS Milestone 8 Cámaras",
+      "stockLegacy": 66,
+      "stockReal": 0,
+      "diferencia": -66,
+      "almacenes": []
+    },
+    {
+      "codigo": "LIC-VMS-002",
+      "nombre": "Licencia IVMS-4200 Hikvision",
+      "stockLegacy": 76,
+      "stockReal": 0,
+      "diferencia": -76,
+      "almacenes": []
+    },
+    {
+      "codigo": "MON-LED-001",
+      "nombre": "Monitor LED 19\" CCTV HDMI VGA BNC",
+      "stockLegacy": 3,
+      "stockReal": 0,
+      "diferencia": -3,
+      "almacenes": []
+    },
+    {
+      "codigo": "MON-LED-002",
+      "nombre": "Monitor LED 24\" Full HD HDMI VGA",
+      "stockLegacy": 7,
+      "stockReal": 0,
+      "diferencia": -7,
+      "almacenes": []
+    },
+    {
+      "codigo": "NVR-DAH-001",
+      "nombre": "NVR Dahua NVR2108HS-8P-S3 8CH PoE",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "NVR-HIK-001",
+      "nombre": "NVR Hikvision DS-7608NI-K2/8P 8CH PoE",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "NVR-HIK-002",
+      "nombre": "NVR Hikvision DS-7616NI-K2/16P 16CH PoE",
+      "stockLegacy": 17,
+      "stockReal": 0,
+      "diferencia": -17,
+      "almacenes": []
+    },
+    {
+      "codigo": "ROU-MIK-001",
+      "nombre": "Router MikroTik hEX S RB760iGS",
+      "stockLegacy": 65,
+      "stockReal": 0,
+      "diferencia": -65,
+      "almacenes": []
+    },
+    {
+      "codigo": "SW-POE-001",
+      "nombre": "Switch PoE TP-Link TL-SG1008P 8P Gigabit",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "SW-POE-002",
+      "nombre": "Switch PoE Ubiquiti USW-Lite-8-PoE",
+      "stockLegacy": 32,
+      "stockReal": 0,
+      "diferencia": -32,
+      "almacenes": []
+    },
+    {
+      "codigo": "SW-TPL-001",
+      "nombre": "Switch TP-Link TL-SG1008D 8 Puertos Gigabit",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "SW-TPL-002",
+      "nombre": "Switch TP-Link TL-SG1016D 16 Puertos Gigabit",
+      "stockLegacy": 20,
+      "stockReal": 0,
+      "diferencia": -20,
+      "almacenes": []
+    },
+    {
+      "codigo": "TEST-STOCK-001",
+      "nombre": "Producto Test con Stock Inicial",
+      "stockLegacy": 1,
+      "stockReal": 10,
+      "diferencia": 9,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 10
+        }
+      ]
+    },
+    {
+      "codigo": "TEST-STOCK-002",
+      "nombre": "Producto Prueba Stock FK",
+      "stockLegacy": 2,
+      "stockReal": 20,
+      "diferencia": 18,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 20
+        }
+      ]
+    },
+    {
+      "codigo": "TEST-STOCK-003",
+      "nombre": "Producto Prueba Stock FK",
+      "stockLegacy": 19,
+      "stockReal": 29,
+      "diferencia": 10,
+      "almacenes": [
+        {
+          "warehouseId": "WH-PRINCIPAL",
+          "cantidad": 29
+        }
+      ]
+    },
+    {
+      "codigo": "UPS-1500VA",
+      "nombre": "UPS APC Back-UPS 1500VA",
+      "stockLegacy": 6,
+      "stockReal": 0,
+      "diferencia": -6,
+      "almacenes": []
+    },
+    {
+      "codigo": "UPS-650VA",
+      "nombre": "UPS APC Back-UPS 650VA",
+      "stockLegacy": 12,
+      "stockReal": 0,
+      "diferencia": -12,
+      "almacenes": []
+    }
+  ],
+  "estadisticas": {
+    "maxDiscrepancia": 1324,
+    "promedioDiferencia": 88.46938775510205
+  }
+}
