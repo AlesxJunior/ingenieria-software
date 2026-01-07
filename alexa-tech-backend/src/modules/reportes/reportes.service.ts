@@ -200,34 +200,59 @@ class ReportesService {
   /**
    * REPORTE DE COMPRAS
    */
+  /**
+   * REPORTE DE COMPRAS (basado en Recepciones Confirmadas)
+   */
   async getReporteCompras(filtros: ReporteFiltros): Promise<ComprasReporte> {
-    const whereClause: any = {};
+    const whereClause: any = {
+      estado: 'CONFIRMADA', // Solo recepciones confirmadas
+    };
+    
     if (filtros.fechaInicio && filtros.fechaFin) {
-      whereClause.fechaEmision = {
+      whereClause.fechaRecepcion = {
         gte: new Date(filtros.fechaInicio),
         lte: new Date(filtros.fechaFin),
       };
     }
 
-    const compras = await prisma.purchase.findMany({
+    // Obtener recepciones confirmadas (las compras reales)
+    const recepciones = await prisma.purchaseReceipt.findMany({
       where: whereClause,
       include: { 
-        items: { include: { product: true } }
+        items: { 
+          include: { 
+            producto: true,
+            ordenCompraItem: true
+          } 
+        },
+        ordenCompra: { include: { proveedor: true } }
       },
     });
 
-    const totalCompras = compras.length;
-    const comprasTotal = compras.reduce((sum, c) => sum + Number(c.total), 0);
-    const compraMayor = totalCompras > 0 ? Math.max(...compras.map(c => Number(c.total))) : 0;
-    const compraMenor = totalCompras > 0 ? Math.min(...compras.map(c => Number(c.total))) : 0;
+    // Calcular totales de cada recepción
+    const recepcionesConTotal = recepciones.map(r => {
+      const total = r.items.reduce((sum: number, item: any) => sum + (Number(item.cantidadRecibida || 0) * Number(item.ordenCompraItem?.precioUnitario || 0)), 0);
+      return {
+        ...r,
+        totalCalculado: total,
+        proveedorId: r.ordenCompra?.proveedorId || null,
+        almacenId: r.almacenId,
+      };
+    });
 
+    const totalCompras = recepcionesConTotal.length;
+    const comprasTotal = recepcionesConTotal.reduce((sum, r) => sum + r.totalCalculado, 0);
+    const compraMayor = totalCompras > 0 ? Math.max(...recepcionesConTotal.map(r => r.totalCalculado)) : 0;
+    const compraMenor = totalCompras > 0 ? Math.min(...recepcionesConTotal.map(r => r.totalCalculado)) : 0;
+
+    // Compras por día
     const comprasPorDiaMap = new Map<string, { cantidad: number; total: number }>();
-    compras.forEach(c => {
-      const fecha = c.fechaEmision.toISOString().split('T')[0] || '';
+    recepcionesConTotal.forEach(r => {
+      const fecha = r.fechaRecepcion.toISOString().split('T')[0] || '';
       const current = comprasPorDiaMap.get(fecha);
       comprasPorDiaMap.set(fecha, {
         cantidad: (current?.cantidad || 0) + 1,
-        total: (current?.total || 0) + Number(c.total)
+        total: (current?.total || 0) + r.totalCalculado
       });
     });
 
@@ -239,19 +264,23 @@ class ReportesService {
 
     // Top productos comprados
     const productosMap = new Map<string, any>();
-    compras.forEach(compra => {
-      compra.items.forEach((item: any) => {
-        const key = item.productCodigo;
+    recepcionesConTotal.forEach(recepcion => {
+      recepcion.items.forEach((item: any) => {
+        const key = item.productoId;
         const existing = productosMap.get(key);
+        const precioUnitario = Number(item.ordenCompraItem?.precioUnitario || 0);
+        const cantidad = item.cantidadRecibida || 0;
+        const subtotal = cantidad * precioUnitario;
+        
         if (existing) {
-          existing.cantidadComprada += item.cantidad;
-          existing.totalComprado += Number(item.subtotal);
+          existing.cantidadComprada += cantidad;
+          existing.totalComprado += subtotal;
         } else {
           productosMap.set(key, {
-            productoId: item.productCodigo,
-            nombreProducto: item.product?.nombre || item.nombreProducto || 'Desconocido',
-            cantidadComprada: item.cantidad,
-            totalComprado: Number(item.subtotal),
+            productoId: item.productoId,
+            nombreProducto: item.producto?.nombre || 'Desconocido',
+            cantidadComprada: cantidad,
+            totalComprado: subtotal,
           });
         }
       });
@@ -261,8 +290,8 @@ class ReportesService {
       .sort((a, b) => b.totalComprado - a.totalComprado)
       .slice(0, 10);
 
-    // Obtener proveedores únicos de las compras y consultar sus datos reales
-    const proveedorIds = [...new Set(compras.map(c => c.proveedorId).filter(Boolean))];
+    // Obtener proveedores únicos
+    const proveedorIds = [...new Set(recepcionesConTotal.map(r => r.proveedorId).filter(Boolean) as string[])];
     const proveedoresData = await prisma.client.findMany({
       where: {
         id: { in: proveedorIds }
@@ -272,22 +301,19 @@ class ReportesService {
         razonSocial: true,
         nombres: true,
         apellidos: true,
-        numeroDocumento: true,
-        tipoDocumento: true
       }
     });
 
-    // Mapear proveedores
     const proveedoresMap = new Map(proveedoresData.map(p => [p.id, p]));
 
     // Agrupar compras por proveedor
     const comprasPorProveedorMap = new Map<string, { cantidadCompras: number; totalCompras: number }>();
-    compras.forEach(c => {
-      const key = c.proveedorId || 'sin-proveedor';
+    recepcionesConTotal.forEach(r => {
+      const key = r.proveedorId || 'sin-proveedor';
       const current = comprasPorProveedorMap.get(key);
       comprasPorProveedorMap.set(key, {
         cantidadCompras: (current?.cantidadCompras || 0) + 1,
-        totalCompras: (current?.totalCompras || 0) + Number(c.total)
+        totalCompras: (current?.totalCompras || 0) + r.totalCalculado
       });
     });
 
@@ -305,12 +331,12 @@ class ReportesService {
 
     // Compras por almacén
     const comprasPorAlmacenMap = new Map<string, { cantidadCompras: number; totalCompras: number }>();
-    compras.forEach(c => {
-      const key = c.almacenId || 'sin-almacen';
+    recepcionesConTotal.forEach(r => {
+      const key = r.almacenId || 'sin-almacen';
       const current = comprasPorAlmacenMap.get(key);
       comprasPorAlmacenMap.set(key, {
         cantidadCompras: (current?.cantidadCompras || 0) + 1,
-        totalCompras: (current?.totalCompras || 0) + Number(c.total)
+        totalCompras: (current?.totalCompras || 0) + r.totalCalculado
       });
     });
 
@@ -330,23 +356,13 @@ class ReportesService {
       porcentaje: comprasTotal > 0 ? (data.totalCompras / comprasTotal) * 100 : 0
     }));
 
-    // Compras por estado
-    const comprasPorEstadoMap = new Map<string, { cantidad: number; total: number }>();
-    compras.forEach(c => {
-      const estado = c.estado || 'Sin estado';
-      const current = comprasPorEstadoMap.get(estado);
-      comprasPorEstadoMap.set(estado, {
-        cantidad: (current?.cantidad || 0) + 1,
-        total: (current?.total || 0) + Number(c.total)
-      });
-    });
-
-    const comprasPorEstado = Array.from(comprasPorEstadoMap.entries()).map(([estado, data]) => ({
-      estado,
-      cantidad: data.cantidad,
-      total: data.total,
-      porcentaje: comprasTotal > 0 ? (data.total / comprasTotal) * 100 : 0
-    }));
+    // Compras por estado (de las recepciones todas son CONFIRMADA, pero podríamos mostrar el estado de la OC)
+    const comprasPorEstado = [{
+      estado: 'Recibida (Confirmada)',
+      cantidad: totalCompras,
+      total: comprasTotal,
+      porcentaje: 100
+    }];
 
     return {
       resumen: {
@@ -368,12 +384,11 @@ class ReportesService {
    * REPORTE DE INVENTARIO
    */
   async getReporteInventario(filtros: ReporteFiltros): Promise<InventarioReporte> {
-    // 1. Obtener todos los productos con sus datos básicos
-    const productos = await prisma.product.findMany({
+    // 1. Obtener todos los productos con sus datos básicos y stock real
+    const productosRaw = await prisma.product.findMany({
       select: {
         id: true,
         nombre: true,
-        stock: true,
         precioVenta: true,
         estado: true,
         minStock: true,
@@ -382,14 +397,29 @@ class ReportesService {
           select: {
             nombre: true
           }
+        },
+        stockByWarehouses: {
+          select: {
+            quantity: true
+          }
         }
       }
+    });
+
+    // Calcular stock real agregado para cada producto
+    const productos = productosRaw.map(p => {
+      const stock = p.stockByWarehouses.reduce((sum: number, s: any) => sum + s.quantity, 0);
+      return {
+        ...p,
+        stock,
+        stockByWarehouses: undefined
+      };
     });
 
     const totalProductos = productos.length;
     const productosActivos = productos.filter(p => p.estado).length;
 
-    // Calcular valor total del inventario (Stock * Precio Venta)
+    // Calcular valor total del inventario (Stock Real * Precio Venta)
     // NOTA: Idealmente sería Costo, pero usamos Precio Venta por ahora
     const valorTotalInventario = productos.reduce((sum, p) => sum + (p.stock * Number(p.precioVenta)), 0);
 
@@ -436,18 +466,34 @@ class ReportesService {
       };
     });
 
-    // 3. Productos en alerta (stock bajo)
-    const productosEnAlertaDetalle = productos
-      .filter(p => p.minStock && p.stock <= p.minStock)
-      .map(p => ({
-        productoId: p.id,
-        nombreProducto: p.nombre,
-        stockActual: p.stock,
-        stockMinimo: p.minStock || 0,
-        stockMaximo: 0, // No implementado a\u00fan
-        almacenId: 'general',
-        nombreAlmacen: 'General'
-      }))
+    // 3. Productos en alerta (stock bajo) - usar stockByWarehouse como la página de alertas
+    const stockByWarehouseConAlertas = await prisma.stockByWarehouse.findMany({
+      where: filtros.almacenId ? { warehouseId: filtros.almacenId } : undefined,
+      include: {
+        product: true,
+        warehouse: true
+      }
+    });
+
+    const productosEnAlertaDetalle = stockByWarehouseConAlertas
+      .filter(s => {
+        const minStock = s.minStock ?? s.product.minStock ?? 0;
+        return minStock > 0 && s.quantity < minStock;
+      })
+      .map(s => {
+        const minStock = s.minStock ?? s.product.minStock ?? 0;
+        const tipoAlerta = s.quantity <= Math.floor(minStock * 0.5) ? 'CRITICO' : 'BAJO';
+        return {
+          productoId: s.productId,
+          nombreProducto: s.product.nombre,
+          stockActual: s.quantity,
+          stockMinimo: minStock,
+          stockMaximo: 0, // No implementado aún
+          almacenId: s.warehouseId,
+          nombreAlmacen: s.warehouse.nombre,
+          tipoAlerta
+        };
+      })
       .sort((a, b) => a.stockActual - b.stockActual);
 
     const productosConStock = productos.filter(p => p.stock > 0).length;

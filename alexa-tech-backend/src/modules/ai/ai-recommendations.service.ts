@@ -109,14 +109,21 @@ export class AIRecommendationsService {
       const clienteContext = await this.getClientContext(clienteId);
       pasosAnalisis.push({
         paso: 1,
-        titulo: '🔍 Investigando Perfil del Cliente',
+        titulo: 'Investigando Perfil del Cliente',
         descripcion: `Analizando información del cliente para entender su ubicación, historial de compras y necesidades específicas`,
         datos: {
           cliente: clienteContext.nombre,
           documento: clienteContext.numeroDocumento,
           ubicacion: `${clienteContext.ubicacion.distrito}, ${clienteContext.ubicacion.provincia}, ${clienteContext.ubicacion.departamento}`,
           totalCompras: clienteContext.historialCompras.length,
-          ultimaCompra: clienteContext.historialCompras[0]?.fecha || 'Sin compras previas',
+          ultimaCompra: clienteContext.historialCompras[0]?.createdAt 
+            ? new Date(clienteContext.historialCompras[0].createdAt).toLocaleDateString('es-PE', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })
+            : 'Sin compras previas',
+          ticketPromedio: clienteContext.historial.ticketPromedio.toFixed(2),
           tiempoAnalisis: `${Date.now() - startTime1}ms`
         },
         timestamp: new Date().toISOString()
@@ -131,7 +138,7 @@ export class AIRecommendationsService {
       );
       pasosAnalisis.push({
         paso: 2,
-        titulo: '🌦️ Análisis Climático y Geográfico',
+        titulo: 'Análisis Climático y Geográfico',
         descripcion: `Investigando condiciones ambientales de ${clienteContext.ubicacion.departamento} para determinar requisitos técnicos específicos`,
         datos: {
           clima: locationInsights.clima,
@@ -151,7 +158,7 @@ export class AIRecommendationsService {
       );
       pasosAnalisis.push({
         paso: 3,
-        titulo: '📦 Búsqueda Inteligente en Inventario',
+        titulo: 'Búsqueda Inteligente en Inventario',
         descripcion: `Escaneando ${consulta} en base de datos con algoritmo de búsqueda avanzada (normalización de texto, palabras clave)`,
         datos: {
           consulta: consulta,
@@ -172,7 +179,7 @@ export class AIRecommendationsService {
       if (productosRelevantes.length === 0) {
         pasosAnalisis.push({
           paso: 4,
-          titulo: '⚠️ Inventario Insuficiente',
+          titulo: 'Inventario Insuficiente',
           descripcion: 'No se encontraron productos en stock. Generando recomendaciones generales basadas en análisis climático',
           datos: {
             sugerencia: 'Agregar productos al inventario para obtener recomendaciones específicas'
@@ -208,7 +215,7 @@ export class AIRecommendationsService {
 
       pasosAnalisis.push({
         paso: 4,
-        titulo: '🧠 Análisis con Inteligencia Artificial',
+        titulo: 'Análisis con Inteligencia Artificial',
         descripcion: 'Consultando a Gemini AI para generar recomendaciones personalizadas basadas en todos los datos recopilados',
         datos: {
           modelo: 'gemini-2.5-flash',
@@ -224,7 +231,37 @@ export class AIRecommendationsService {
       });
 
       console.log('🧠 [AI] Consultando Gemini AI...');
-      const result = await model.generateContent(prompt);
+      
+      // Implementar reintentos para manejar errores 503 (Service Overloaded)
+      let result;
+      let lastError;
+      const maxRetries = 3;
+      const retryDelay = 2000; // 2 segundos entre reintentos
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🔄 [AI] Intento ${attempt}/${maxRetries}...`);
+          result = await model.generateContent(prompt);
+          console.log('✅ [AI] Respuesta recibida exitosamente');
+          break; // Éxito, salir del loop
+        } catch (error: any) {
+          lastError = error;
+          const is503 = error?.status === 503 || error?.message?.includes('503') || error?.message?.includes('overloaded');
+          
+          if (is503 && attempt < maxRetries) {
+            console.log(`⚠️ [AI] Servicio sobrecargado (503). Reintentando en ${retryDelay/1000}s... (${attempt}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+          } else {
+            // Último intento fallido o error diferente a 503
+            throw error;
+          }
+        }
+      }
+      
+      if (!result) {
+        throw lastError; // Si todos los reintentos fallaron
+      }
+      
       const response = result.response;
       const aiText = response.text();
 
@@ -241,7 +278,7 @@ export class AIRecommendationsService {
       const startTime5 = Date.now();
       pasosAnalisis.push({
         paso: 5,
-        titulo: '📊 Procesando Resultados',
+        titulo: 'Procesando Resultados',
         descripcion: 'Estructurando y validando las recomendaciones generadas por la IA',
         datos: {
           estado: 'Parseando JSON...',
@@ -251,6 +288,9 @@ export class AIRecommendationsService {
 
       // Parsear respuesta JSON
       const aiResponse = this.parseAIResponse(aiText);
+
+      // 🔧 Enriquecer productos complementarios con datos reales de la BD
+      const enrichedComplementarios = await this.enrichComplementaryProducts(aiResponse.productosComplementarios);
 
       // Actualizar paso 5 con resultado final
       if (pasosAnalisis[4]) {
@@ -269,6 +309,7 @@ export class AIRecommendationsService {
 
       return {
         ...aiResponse,
+        productosComplementarios: enrichedComplementarios,
         pasosAnalisis,
         contextoCliente: {
           ubicacion: `${clienteContext.ubicacion.distrito}, ${clienteContext.ubicacion.departamento}`,
@@ -276,13 +317,23 @@ export class AIRecommendationsService {
           historialCompras: clienteContext.historialCompras.length
         }
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [AI] Error generando recomendaciones:', error);
-      throw new Error(
-        `Error al generar recomendaciones: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
+      
+      // Mensajes de error más amigables según el tipo
+      let userMessage = 'Error al generar recomendaciones';
+      
+      if (error?.status === 503 || error?.message?.includes('503') || error?.message?.includes('overloaded')) {
+        userMessage = 'El servicio de IA está temporalmente sobrecargado. Por favor, inténtalo nuevamente en unos segundos.';
+      } else if (error?.status === 429) {
+        userMessage = 'Límite de solicitudes alcanzado. Por favor, espera un momento antes de reintentar.';
+      } else if (error?.message?.includes('API key')) {
+        userMessage = 'Error de configuración de API. Contacta al administrador del sistema.';
+      } else if (error instanceof Error) {
+        userMessage = `Error al generar recomendaciones: ${error.message}`;
+      }
+      
+      throw new Error(userMessage);
     }
   }
 
@@ -424,20 +475,127 @@ export class AIRecommendationsService {
       include: {
         categoria: true,
         unidadMedida: true,
+        stockByWarehouses: {
+          select: {
+            quantity: true
+          }
+        }
       },
       take: 20, // Top 20 productos relevantes
     });
 
-    return productos.map((p) => ({
-      id: p.id,
-      codigo: p.codigo,
-      nombre: p.nombre,
-      descripcion: p.descripcion,
-      categoria: p.categoria?.nombre || p.categoria_legacy || 'General',
-      precio: Number(p.precioVenta),
-      precioVenta: Number(p.precioVenta),
-      stock: p.stock,
-    }));
+    return productos.map((p) => {
+      // Calcular stock real agregado de todos los almacenes
+      const stock = p.stockByWarehouses.reduce((sum: number, s: any) => sum + s.quantity, 0);
+      
+      return {
+        id: p.id,
+        codigo: p.codigo,
+        nombre: p.nombre,
+        descripcion: p.descripcion,
+        categoria: p.categoria?.nombre || p.categoria_legacy || 'General',
+        precio: Number(p.precioVenta),
+        precioVenta: Number(p.precioVenta),
+        stock,
+      };
+    });
+  }
+
+  /**
+   * Enriquece productos complementarios con datos reales de la BD
+   */
+  private async enrichComplementaryProducts(
+    productosComplementarios: Array<{ nombre: string; razon: string }>
+  ): Promise<any[]> {
+    const enriched = [];
+
+    for (const producto of productosComplementarios) {
+      try {
+        console.log(`🔍 [AI] Buscando producto complementario: "${producto.nombre}"`);
+        
+        // Intentar extraer el código del producto del nombre si viene entre paréntesis
+        const codigoMatch = producto.nombre.match(/\(Código:\s*([^)]+)\)/i);
+        const codigo = codigoMatch?.[1]?.trim() || null;
+        
+        // Limpiar el nombre (quitar el código si existe)
+        const nombreLimpio = producto.nombre.replace(/\s*\(Código:.*?\)/i, '').trim();
+
+        // Buscar el producto en la BD por código o nombre
+        let productoDB;
+        
+        if (codigo) {
+          // Primero intentar buscar por código
+          productoDB = await prisma.product.findFirst({
+            where: {
+              codigo: codigo,
+              estado: true
+            },
+            include: {
+              stockByWarehouses: {
+                select: {
+                  quantity: true
+                }
+              }
+            }
+          });
+          console.log(`🔍 [AI] Búsqueda por código "${codigo}":`, productoDB ? 'Encontrado ✓' : 'No encontrado ✗');
+        }
+
+        if (!productoDB) {
+          // Si no se encontró por código, buscar por nombre
+          productoDB = await prisma.product.findFirst({
+            where: {
+              nombre: {
+                contains: nombreLimpio,
+                mode: 'insensitive'
+              },
+              estado: true
+            },
+            include: {
+              stockByWarehouses: {
+                select: {
+                  quantity: true
+                }
+              }
+            }
+          });
+          console.log(`🔍 [AI] Búsqueda por nombre "${nombreLimpio}":`, productoDB ? 'Encontrado ✓' : 'No encontrado ✗');
+        }
+
+        if (productoDB) {
+          // Calcular stock total
+          const stock = productoDB.stockByWarehouses.reduce((sum, s) => sum + s.quantity, 0);
+
+          enriched.push({
+            productoId: productoDB.id,
+            nombre: productoDB.nombre,
+            precio: Number(productoDB.precioVenta),
+            stock,
+            razones: [producto.razon]
+          });
+          console.log(`✅ [AI] Producto enriquecido:`, {
+            nombre: productoDB.nombre,
+            precio: Number(productoDB.precioVenta),
+            stock
+          });
+        } else {
+          // Si no se encuentra el producto, incluirlo sin datos de BD
+          console.warn(`⚠️ [AI] Producto complementario no encontrado en BD: ${producto.nombre}`);
+          enriched.push({
+            productoId: `temp-${Date.now()}-${Math.random()}`,
+            nombre: producto.nombre,
+            precio: 0,
+            stock: 0,
+            razones: [producto.razon]
+          });
+        }
+      } catch (error) {
+        console.error(`❌ [AI] Error enriqueciendo producto ${producto.nombre}:`, error);
+      }
+    }
+
+    console.log(`📊 [AI] Total productos complementarios enriquecidos: ${enriched.length}`);
+    return enriched;
   }
 
   /**
@@ -465,7 +623,16 @@ CONSULTA DEL CLIENTE:
 "${consulta}"
 
 PRODUCTOS DISPONIBLES EN STOCK:
-${productos.length > 0 ? JSON.stringify(productos, null, 2) : '⚠️ NO HAY PRODUCTOS ACTUALMENTE EN INVENTARIO que coincidan con la búsqueda'}
+${productos.length > 0 
+  ? productos.map((p, idx) => `
+${idx + 1}. ${p.nombre} (Código: ${p.codigo})
+   - Precio: S/ ${p.precio.toFixed(2)}
+   - Stock disponible: ${p.stock} unidades
+   - Categoría: ${p.categoria}
+   ${p.descripcion ? `- Descripción: ${p.descripcion}` : ''}
+   - ID: ${p.id}
+`).join('\n')
+  : '⚠️ NO HAY PRODUCTOS ACTUALMENTE EN INVENTARIO que coincidan con la búsqueda'}
 
 ${
   productos.length === 0
@@ -489,12 +656,15 @@ RECOMENDACIONES CLIMÁTICAS PARA LA ZONA:
 ${locationInsights.recomendaciones.join(', ')}
 
 INSTRUCCIONES:
-1. Analiza CUIDADOSAMENTE el clima y condiciones de la ubicación del cliente
-2. Recomienda productos que SE AJUSTEN específicamente a esas condiciones
-3. Explica CLARAMENTE por qué cada producto es adecuado para el clima/zona
-4. Incluye advertencias si hay productos que NO son recomendables para esa zona
-5. Sugiere productos complementarios si es relevante
-6. Proporciona tips específicos para la ubicación
+1. Lee DETENIDAMENTE las DESCRIPCIONES de cada producto (si están disponibles) para entender sus características reales
+2. Analiza CUIDADOSAMENTE el clima y condiciones de la ubicación del cliente
+3. Recomienda productos que SE AJUSTEN específicamente a esas condiciones BASÁNDOTE en sus descripciones
+4. NO inventes características que no están en la descripción del producto
+5. Si un producto NO tiene descripción detallada, basa tu recomendación solo en su nombre y categoría
+6. Explica CLARAMENTE por qué cada producto es adecuado para el clima/zona usando información REAL del producto
+7. Incluye advertencias si hay productos que NO son recomendables para esa zona
+8. Sugiere productos complementarios si es relevante
+9. Proporciona tips específicos para la ubicación
 
 FORMATO DE RESPUESTA (JSON):
 Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura:
@@ -541,16 +711,21 @@ Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura:
   ]
 }
 
-IMPORTANTE:
+IMPORTANTE - REGLAS CRÍTICAS:
+- ⚠️ USA ÚNICAMENTE información de las DESCRIPCIONES de productos. NO inventes especificaciones técnicas
+- ⚠️ Si un producto NO menciona una característica en su descripción, NO asumas que la tiene
+- ⚠️ Ejemplo: Si la descripción NO dice "IP67", NO recomiendes ese producto para uso exterior
+- ⚠️ Sé HONESTO: Si ningún producto cumple con los requisitos, dilo claramente
 - Menciona SIEMPRE aspectos relacionados al clima/ubicación del cliente
-- Si el clima es húmedo/lluvioso: enfatiza protección IP67/IP68, anti-corrosión
-- Si es frío/altura: enfatiza calefactores, rango de temperatura amplio
-- Si es caluroso/desértico: enfatiza resistencia térmica, protección contra polvo
-- Si es costero: enfatiza protección contra salitre, anti-corrosión
-- Si es selva: enfatiza sellado hermético, anti-hongos
-- Sé específico con modelos y características técnicas
+- Si el clima es húmedo/lluvioso: busca productos cuyas descripciones mencionen protección IP67/IP68, anti-corrosión
+- Si es frío/altura: busca productos con rango de temperatura amplio en su descripción
+- Si es caluroso/desértico: busca resistencia térmica y protección contra polvo en la descripción
+- Si es costero: busca protección contra salitre y anti-corrosión mencionados en la descripción
+- Si es selva: busca sellado hermético y resistencia a humedad en la descripción
+- Sé específico citando características REALES de las descripciones
 - Usa lenguaje técnico pero comprensible
 - Prioriza productos que REALMENTE estén en la lista de disponibles
+- Si la descripción está vacía, menciona que necesitas más información técnica del producto
 
 Responde SOLO con el JSON, sin texto adicional antes ni después.`;
   }

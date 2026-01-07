@@ -149,20 +149,9 @@ export const quoteInvoiceService = {
     doc
       .font('Helvetica-Bold')
       .text('ESTADO:', 50, startY + 30)
-      .font('Helvetica');
-
-    // Color según estado
-    const estado = data.quote.estado;
-    let estadoColor = '#000000';
-    if (estado === 'Pendiente') estadoColor = '#F39C12';
-    if (estado === 'Convertida') estadoColor = '#27AE60';
-    if (estado === 'Vencida') estadoColor = '#E74C3C';
-    if (estado === 'Cancelada') estadoColor = '#95A5A6';
-
-    doc
-      .fillColor(estadoColor)
-      .text(estado, 180, startY + 30)
-      .fillColor('#000000');
+      .font('Helvetica')
+      .fillColor('#000000')
+      .text(data.quote.estado, 180, startY + 30);
 
     doc
       .font('Helvetica-Bold')

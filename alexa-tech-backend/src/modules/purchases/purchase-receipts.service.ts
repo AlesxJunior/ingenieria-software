@@ -33,7 +33,9 @@ interface CreatePurchaseReceiptItemDto {
 }
 
 interface ConfirmReceiptDto {
-  inspeccionadoPorId: string;
+  inspeccionadoPorId?: string;
+  fechaInspeccion?: string;
+  observaciones?: string;
 }
 
 // ============================================
@@ -42,31 +44,90 @@ interface ConfirmReceiptDto {
 
 @Injectable()
 export class PurchaseReceiptsService {
+  // Configuración: Permitir hasta 10% de sobre-entrega
+  private readonly TOLERANCIA_SOBRE_RECEPCION = 1.10; // 110%
+
   /**
-   * Generar código único para RC (RC-2025-0001)
+   * Generar código único para RC usando serie configurable
    */
   private async generateReceiptCode(): Promise<string> {
-    const year = new Date().getFullYear();
-    const prefix = `RC-${year}-`;
-
-    const lastReceipt = await prisma.purchaseReceipt.findFirst({
+    // Buscar configuración de serie para Recepción de Compra
+    const comprobante = await prisma.comprobanteType.findFirst({
       where: {
-        codigo: {
-          startsWith: prefix,
-        },
-      },
-      orderBy: {
-        codigo: 'desc',
+        tipo: 'recepcion-compra',
+        activo: true,
+        predeterminado: true,
       },
     });
 
-    let nextNumber = 1;
-    if (lastReceipt && lastReceipt.codigo) {
-      const lastNumber = parseInt(lastReceipt.codigo.split('-')[2] || '0');
-      nextNumber = lastNumber + 1;
+    if (!comprobante) {
+      throw new Error('No se encontró serie activa para Recepción de Compra. Configure una en el módulo de Configuración.');
     }
 
-    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    // Validar que no se agotó la numeración
+    if (comprobante.numeroActual >= comprobante.numeroFin) {
+      throw new Error(`Serie ${comprobante.serie} agotada. Configure una nueva serie en Configuración.`);
+    }
+
+    // Incrementar el número actual
+    const nuevoNumero = comprobante.numeroActual + 1;
+    await prisma.comprobanteType.update({
+      where: { id: comprobante.id },
+      data: { numeroActual: nuevoNumero },
+    });
+
+    // Formato: SERIE-XXXX (ej: RC25-0001)
+    const codigo = `${comprobante.serie}-${nuevoNumero.toString().padStart(4, '0')}`;
+    return codigo;
+  }
+
+  /**
+   * Calcular estado de orden basado en items y recepciones activas
+   */
+  private calcularEstadoOrden(
+    items: any[],
+    recepciones: any[]
+  ): 'CONFIRMADA' | 'EN_RECEPCION' | 'PARCIAL' | 'COMPLETADA' {
+    // Si no hay recepciones activas, es CONFIRMADA
+    if (recepciones.length === 0) {
+      return 'CONFIRMADA';
+    }
+
+    // Calcular totales recibidos por producto
+    const recibidosPorProducto = new Map<string, number>();
+    
+    for (const recepcion of recepciones) {
+      for (const item of recepcion.items) {
+        const actual = recibidosPorProducto.get(item.productoId) || 0;
+        recibidosPorProducto.set(item.productoId, actual + item.cantidadAceptada);
+      }
+    }
+
+    // Verificar si todos los items están completos
+    let todosCompletos = true;
+    let algunoRecibido = false;
+
+    for (const item of items) {
+      const recibido = recibidosPorProducto.get(item.productoId) || 0;
+      const pendiente = item.cantidadOrdenada - recibido;
+
+      if (recibido > 0) {
+        algunoRecibido = true;
+      }
+
+      if (pendiente > 0) {
+        todosCompletos = false;
+      }
+    }
+
+    // Determinar estado
+    if (todosCompletos) {
+      return 'COMPLETADA';
+    } else if (algunoRecibido) {
+      return 'PARCIAL';
+    } else {
+      return 'EN_RECEPCION';
+    }
   }
 
   /**
@@ -76,31 +137,9 @@ export class PurchaseReceiptsService {
     item: CreatePurchaseReceiptItemDto,
     ocItem: any
   ): void {
-    // cantidadAceptada + cantidadRechazada debe = cantidadRecibida
-    if (item.cantidadAceptada + item.cantidadRechazada !== item.cantidadRecibida) {
-      throw new Error(
-        `Item ${item.productoId}: La suma de aceptados (${item.cantidadAceptada}) y rechazados (${item.cantidadRechazada}) debe ser igual a recibidos (${item.cantidadRecibida})`
-      );
-    }
-
-    // No puede recibir más de lo pendiente
-    const cantidadPendiente = ocItem.cantidadPendiente;
-    if (item.cantidadRecibida > cantidadPendiente) {
-      throw new Error(
-        `Item ${item.productoId}: Se intenta recibir ${item.cantidadRecibida} pero solo hay ${cantidadPendiente} pendientes`
-      );
-    }
-
-    // Si hay productos rechazados, debe tener motivo
-    if (item.cantidadRechazada > 0 && !item.motivoRechazo) {
-      throw new Error(
-        `Item ${item.productoId}: Debe especificar el motivo de rechazo`
-      );
-    }
-
     // Validar cantidades positivas
-    if (item.cantidadRecibida <= 0) {
-      throw new Error('La cantidad recibida debe ser mayor a 0');
+    if (item.cantidadRecibida < 0) {
+      throw new Error('La cantidad recibida no puede ser negativa');
     }
     if (item.cantidadAceptada < 0) {
       throw new Error('La cantidad aceptada no puede ser negativa');
@@ -108,14 +147,64 @@ export class PurchaseReceiptsService {
     if (item.cantidadRechazada < 0) {
       throw new Error('La cantidad rechazada no puede ser negativa');
     }
+
+    // cantidadRecibida debe ser mayor a 0 para crear la recepción
+    if (item.cantidadRecibida === 0) {
+      throw new Error(`Item ${item.productoId}: La cantidad recibida debe ser mayor a 0. Si no recibió este producto, no lo incluya en la recepción.`);
+    }
+
+    // cantidadAceptada + cantidadRechazada debe = cantidadRecibida
+    if (item.cantidadAceptada + item.cantidadRechazada !== item.cantidadRecibida) {
+      throw new Error(
+        `Item ${item.productoId}: La suma de aceptados (${item.cantidadAceptada}) y rechazados (${item.cantidadRechazada}) debe ser igual a recibidos (${item.cantidadRecibida})`
+      );
+    }
+
+    // Validar sobre-recepción: Permitir hasta 110% de la cantidad ordenada
+    const cantidadOrdenada = ocItem.cantidadOrdenada;
+    const cantidadPendiente = ocItem.cantidadPendiente;
+    const limiteMaximo = Math.ceil(cantidadOrdenada * this.TOLERANCIA_SOBRE_RECEPCION);
+    const totalAcumulado = ocItem.cantidadRecibida + item.cantidadRecibida;
+
+    if (totalAcumulado > limiteMaximo) {
+      throw new Error(
+        `Item ${item.productoId}: Excede el límite permitido. Ordenado: ${cantidadOrdenada}, ` +
+        `Ya recibido: ${ocItem.cantidadRecibida}, Intentando recibir: ${item.cantidadRecibida}. ` +
+        `Total: ${totalAcumulado} (Máximo permitido: ${limiteMaximo}, 110% de lo ordenado)`
+      );
+    }
+
+    // Advertencia si supera el 100% pero está dentro del 110%
+    if (item.cantidadRecibida > cantidadPendiente) {
+      const porcentajeSobre = ((totalAcumulado / cantidadOrdenada) * 100).toFixed(1);
+      console.log(
+        `[createReceipt] ⚠️ SOBRE-RECEPCIÓN: Item ${item.productoId} - ` +
+        `Recibiendo ${item.cantidadRecibida} pero pendiente: ${cantidadPendiente}. ` +
+        `Total acumulado: ${totalAcumulado}/${cantidadOrdenada} (${porcentajeSobre}%)`
+      );
+    }
+
+    // Si hay productos rechazados, debe tener motivo
+    if (item.cantidadRechazada > 0 && !item.motivoRechazo) {
+      throw new Error(
+        `Item ${item.productoId}: Debe especificar el motivo de rechazo cuando hay productos rechazados`
+      );
+    }
   }
 
   /**
    * Crear nueva Recepción de Compra
    */
   async create(data: CreatePurchaseReceiptDto) {
+    console.log('[createReceipt] Iniciando creación de recepción:', {
+      ordenCompraId: data.ordenCompraId,
+      almacenId: data.almacenId,
+      itemsCount: data.items?.length
+    });
+
     // Validaciones
     if (!data.items || data.items.length === 0) {
+      console.log('[createReceipt] ERROR: Sin items');
       throw new Error('La recepción debe tener al menos un item');
     }
 
@@ -128,13 +217,36 @@ export class PurchaseReceiptsService {
     });
 
     if (!ordenCompra) {
+      console.log('[createReceipt] ERROR: Orden de compra no encontrada:', data.ordenCompraId);
       throw new Error('Orden de compra no encontrada');
     }
 
+    console.log('[createReceipt] Orden de compra encontrada:', {
+      codigo: ordenCompra.codigo,
+      estado: ordenCompra.estado,
+      almacenDestinoId: ordenCompra.almacenDestinoId
+    });
+
     // Validar que la OC esté en estado válido
     if (!['CONFIRMADA', 'EN_RECEPCION', 'PARCIAL'].includes(ordenCompra.estado)) {
+      console.log('[createReceipt] ERROR: Estado inválido:', ordenCompra.estado);
       throw new Error(
         `La orden de compra está en estado ${ordenCompra.estado}. Solo se pueden crear recepciones para órdenes CONFIRMADAS, EN_RECEPCION o PARCIAL`
+      );
+    }
+
+    // Validar que no exista otra recepción PENDIENTE para esta orden
+    const recepcionPendiente = await prisma.purchaseReceipt.findFirst({
+      where: {
+        ordenCompraId: data.ordenCompraId,
+        estado: 'PENDIENTE',
+      },
+    });
+
+    if (recepcionPendiente) {
+      console.log('[createReceipt] ERROR: Ya existe una recepción PENDIENTE:', recepcionPendiente.codigo);
+      throw new Error(
+        `Ya existe una recepción PENDIENTE (${recepcionPendiente.codigo}) para esta orden. Debe confirmarla o cancelarla antes de crear una nueva.`
       );
     }
 
@@ -143,11 +255,22 @@ export class PurchaseReceiptsService {
       where: { id: data.almacenId },
     });
 
+    console.log('[createReceipt] Almacén encontrado:', {
+      id: almacen?.id,
+      nombre: almacen?.nombre,
+      activo: almacen?.activo
+    });
+
     if (!almacen || !almacen.activo) {
+      console.log('[createReceipt] ERROR: Almacén no encontrado o inactivo');
       throw new Error('Almacén no encontrado o inactivo');
     }
 
     if (data.almacenId !== ordenCompra.almacenDestinoId) {
+      console.log('[createReceipt] ERROR: Almacén no coincide:', {
+        recepcion: data.almacenId,
+        ordenCompra: ordenCompra.almacenDestinoId
+      });
       throw new Error(
         'El almacén de recepción debe coincidir con el almacén destino de la orden de compra'
       );
@@ -159,35 +282,50 @@ export class PurchaseReceiptsService {
     });
 
     if (!usuario) {
+      console.log('[createReceipt] ERROR: Usuario no encontrado:', data.recibidoPorId);
       throw new Error('Usuario no encontrado');
     }
 
+    console.log('[createReceipt] Usuario encontrado:', usuario.email);
+
     // Validar items
+    console.log('[createReceipt] Validando items...');
     for (const item of data.items) {
       const ocItem = ordenCompra.items.find((i) => i.id === item.ordenCompraItemId);
 
       if (!ocItem) {
+        console.log('[createReceipt] ERROR: Item no encontrado:', item.ordenCompraItemId);
         throw new Error(
           `Item de orden de compra ${item.ordenCompraItemId} no encontrado`
         );
       }
 
-      this.validateReceiptItem(item, ocItem);
+      try {
+        this.validateReceiptItem(item, ocItem);
+      } catch (error: any) {
+        console.log('[createReceipt] ERROR en validación de item:', error.message);
+        throw error;
+      }
     }
+
+    console.log('[createReceipt] ✅ Todas las validaciones pasadas. Generando código...');
 
     // Generar código
     const codigo = await this.generateReceiptCode();
+    console.log('[createReceipt] Código generado:', codigo);
 
-    // Determinar si es recepción completa
+    // Determinar si es recepción completa (incluye sobre-recepción)
     let esRecepcionCompleta = true;
     for (const item of data.items) {
       const ocItem = ordenCompra.items.find((i) => i.id === item.ordenCompraItemId);
       if (ocItem) {
+        // Si hay cantidad pendiente positiva después de esta recepción, es parcial
         const nuevoPendiente = ocItem.cantidadPendiente - item.cantidadRecibida;
         if (nuevoPendiente > 0) {
           esRecepcionCompleta = false;
           break;
         }
+        // Si queda pendiente <= 0, significa que ya se recibió todo o más (sobre-recepción)
       }
     }
 
@@ -281,6 +419,9 @@ export class PurchaseReceiptsService {
    * Confirmar recepción y actualizar stock
    */
   async confirm(id: string, data: ConfirmReceiptDto) {
+    console.log(`[confirmReceipt] Iniciando confirmación de recepción ID: ${id}`);
+    console.log(`[confirmReceipt] Data recibida:`, JSON.stringify(data, null, 2));
+    
     const recepcion = await prisma.purchaseReceipt.findUnique({
       where: { id },
       include: {
@@ -300,16 +441,50 @@ export class PurchaseReceiptsService {
     });
 
     if (!recepcion) {
+      console.log(`[confirmReceipt] ERROR: Recepción ${id} no encontrada`);
       throw new Error('Recepción no encontrada');
     }
 
+    console.log(`[confirmReceipt] Recepción ${recepcion.codigo} encontrada. Estado: ${recepcion.estado}, Items: ${recepcion.items.length}`);
+
     if (recepcion.estado !== 'PENDIENTE') {
+      console.log(`[confirmReceipt] ERROR: Estado inválido: ${recepcion.estado}`);
       throw new Error('La recepción ya fue confirmada o cancelada');
     }
 
-    // Validar que el inspector exista
+    // Validar que la recepción tenga items
+    if (!recepcion.items || recepcion.items.length === 0) {
+      console.log(`[confirmReceipt] ERROR: Recepción ${recepcion.codigo} no tiene items`);
+      throw new Error('La recepción no tiene items. No se puede confirmar una recepción vacía.');
+    }
+
+    // Validar que al menos un item tenga cantidad recibida
+    const tieneProductosRecibidos = recepcion.items.some(item => item.cantidadRecibida > 0);
+    const cantidadesResumen = recepcion.items.map(item => ({
+      producto: item.producto?.nombre || 'Desconocido',
+      cantidadRecibida: item.cantidadRecibida,
+      cantidadAceptada: item.cantidadAceptada,
+      cantidadRechazada: item.cantidadRechazada
+    }));
+    
+    console.log(`[confirmReceipt] Cantidades de items:`, JSON.stringify(cantidadesResumen, null, 2));
+    
+    if (!tieneProductosRecibidos) {
+      console.log(`[confirmReceipt] ERROR: Ningún item tiene cantidadRecibida > 0`);
+      throw new Error('No hay productos recibidos. Ingrese las cantidades antes de confirmar.');
+    }
+    
+    console.log(`[confirmReceipt] ✅ Validaciones pasadas. Procediendo a confirmar...`);
+
+    // Validar que el inspector exista (si se proporciona, sino usar el recibidoPorId)
+    const inspectorId = data.inspeccionadoPorId || recepcion.recibidoPorId;
+    
+    if (!inspectorId) {
+      throw new Error('Se requiere un inspector para confirmar la recepción');
+    }
+    
     const inspector = await prisma.user.findUnique({
-      where: { id: data.inspeccionadoPorId },
+      where: { id: inspectorId },
     });
 
     if (!inspector) {
@@ -323,7 +498,7 @@ export class PurchaseReceiptsService {
         where: { id },
         data: {
           estado: 'CONFIRMADA',
-          inspeccionadoPorId: data.inspeccionadoPorId,
+          inspeccionadoPorId: inspectorId,
           fechaInspeccion: new Date(),
         },
       });
@@ -374,7 +549,7 @@ export class PurchaseReceiptsService {
               stockAfter: stockAfter,
               reason: 'Recepción de Compra',
               documentRef: `OC: ${recepcion.ordenCompra.codigo}, RC: ${recepcion.codigo}`,
-              userId: data.inspeccionadoPorId,
+              userId: inspectorId,
               recepcionCompraId: recepcion.id,
             },
           });
@@ -405,25 +580,39 @@ export class PurchaseReceiptsService {
         }
       }
 
-      // 3. Verificar si la OC está completada
+      // 3. Verificar si la OC está completada (incluye sobre-recepción)
       const ocItems = await tx.purchaseOrderItem.findMany({
         where: { ordenCompraId: recepcion.ordenCompraId },
       });
 
+      // Considerar completo si pendiente <= 0 (incluye sobre-recepción)
       const todosRecibidos = ocItems.every(
-        (item) => item.cantidadPendiente === 0
+        (item) => item.cantidadPendiente <= 0
+      );
+
+      const haySobreRecepcion = ocItems.some(
+        (item) => item.cantidadRecibida > item.cantidadOrdenada
       );
 
       // 4. Actualizar estado de OC
       if (todosRecibidos) {
+        console.log(
+          `[confirmReceipt] ✅ Orden COMPLETADA. ` +
+          `${haySobreRecepcion ? '⚠️ Incluye sobre-recepción en algunos items' : ''}`
+        );
         await tx.purchaseOrder.update({
           where: { id: recepcion.ordenCompraId },
           data: {
             estado: 'COMPLETADA',
             fechaEntregaReal: new Date(),
+            observaciones: haySobreRecepcion
+              ? (recepcion.ordenCompra.observaciones || '') +
+                '\n[SISTEMA] Orden completada con sobre-recepción en algunos items.'
+              : recepcion.ordenCompra.observaciones,
           },
         });
       } else {
+        console.log(`[confirmReceipt] Orden en estado PARCIAL. Aún hay items pendientes.`);
         await tx.purchaseOrder.update({
           where: { id: recepcion.ordenCompraId },
           data: {
@@ -530,6 +719,7 @@ export class PurchaseReceiptsService {
           ordenCompra: {
             select: {
               codigo: true,
+              almacenDestinoId: true,
               proveedor: {
                 select: {
                   razonSocial: true,
@@ -541,6 +731,7 @@ export class PurchaseReceiptsService {
           },
           almacen: {
             select: {
+              id: true,
               codigo: true,
               nombre: true,
             },
@@ -558,6 +749,13 @@ export class PurchaseReceiptsService {
                 select: {
                   codigo: true,
                   nombre: true,
+                },
+              },
+              ordenCompraItem: {
+                select: {
+                  cantidadOrdenada: true,
+                  cantidadRecibida: true,
+                  cantidadPendiente: true,
                 },
               },
             },
@@ -641,13 +839,49 @@ export class PurchaseReceiptsService {
       throw new Error('Solo se pueden cancelar recepciones en estado PENDIENTE');
     }
 
-    return prisma.purchaseReceipt.update({
+    // Cancelar recepción y recalcular estado de la orden
+    const recepcionCancelada = await prisma.purchaseReceipt.update({
       where: { id },
       data: {
         estado: 'CANCELADA',
         deletedAt: new Date(),
       },
     });
+
+    // Recalcular el estado de la orden de compra
+    const ordenId = recepcion.ordenCompraId;
+    const orden = await prisma.purchaseOrder.findUnique({
+      where: { id: ordenId },
+      include: {
+        items: true,
+        recepciones: {
+          where: {
+            estado: { in: ['PENDIENTE', 'CONFIRMADA'] }, // Solo recepciones activas
+          },
+          include: { items: true },
+        },
+      },
+    });
+
+    if (orden) {
+      // Si no hay recepciones activas, volver a CONFIRMADA
+      if (orden.recepciones.length === 0) {
+        await prisma.purchaseOrder.update({
+          where: { id: ordenId },
+          data: { estado: 'CONFIRMADA' },
+        });
+      }
+      // Si hay recepciones, recalcular estado basado en cantidades
+      else {
+        const estadoCalculado = this.calcularEstadoOrden(orden.items, orden.recepciones);
+        await prisma.purchaseOrder.update({
+          where: { id: ordenId },
+          data: { estado: estadoCalculado },
+        });
+      }
+    }
+
+    return recepcionCancelada;
   }
 
   /**

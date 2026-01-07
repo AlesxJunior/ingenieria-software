@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database';
-import { productService } from '../../services/productService';
+import { productService } from '../products/products.service';
 import { AuditService } from '../../services/auditService';
 import { inventoryService } from '../../services/inventoryService';
 
@@ -49,7 +49,7 @@ interface Sale {
   usuarioId: string;
   fechaEmision: string;
   tipoComprobante: string;
-  formaPago: string;
+  formaPago: string | null;
   subtotal: number;
   igv: number;
   total: number;
@@ -287,7 +287,7 @@ export const salesService = {
       }));
 
       // El formaPago principal será el del primer pago (para mantener compatibilidad)
-      formaPagoPrincipal = data.payments[0].metodoPago;
+      formaPagoPrincipal = data.payments?.[0]?.metodoPago ?? 'Efectivo';
 
       console.log('💳 Pagos múltiples detectados:', {
         cantidad: data.payments.length,

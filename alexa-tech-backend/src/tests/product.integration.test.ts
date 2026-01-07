@@ -13,9 +13,10 @@ import prisma from '../config/database';
  * - GET /api/products/:codigo - Get product by codigo
  * - PUT/PATCH /api/products/:codigo - Update product
  * - PATCH /api/products/:codigo/status - Change product status
+ * - DELETE /api/products/:codigo - Delete product (soft delete)
  *
  * Authentication Pattern: Uses /api/auth/register for real tokens
- * Permission-based middleware: products.create, products.read, products.update
+ * Permission-based middleware: products.create, products.read, products.update, products.delete
  */
 
 describe('Product Routes Integration Tests', () => {
@@ -538,6 +539,88 @@ describe('Product Routes Integration Tests', () => {
         .patch(`/api/products/${testProductCodigo}/status`)
         .set('Authorization', `Bearer ${limitedToken}`)
         .send({ estado: false });
+
+      expect(response.status).toBe(403);
+    });
+  });
+
+  // ============================================================================
+  // DELETE /api/products/:codigo - Eliminar Producto (Soft Delete)
+  // ============================================================================
+  describe('DELETE /api/products/:codigo', () => {
+    beforeEach(async () => {
+      const product = await prisma.product.create({
+        data: {
+          codigo: 'PROD-DELETE',
+          nombre: 'Delete Test Product',
+          categoria: 'Test',
+          precioVenta: 40,
+          stock: 30,
+          minStock: 5,
+          estado: true,
+          unidadMedida: 'Unidad',
+        },
+      });
+      testProductCodigo = product.codigo;
+    });
+
+    it('should soft delete product successfully', async () => {
+      const response = await request(app)
+        .delete(`/api/products/${testProductCodigo}`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.estado).toBe(false);
+      expect(response.body.message).toContain('eliminado');
+
+      // Verificar que el producto aún existe pero está inactivo
+      const product = await prisma.product.findUnique({
+        where: { codigo: testProductCodigo },
+      });
+      expect(product).toBeTruthy();
+      expect(product?.estado).toBe(false);
+    });
+
+    it('should return 404 for non-existent product', async () => {
+      const fakeCodigo = 'PROD-NONEXISTENT';
+      const response = await request(app)
+        .delete(`/api/products/${fakeCodigo}`)
+        .set('Authorization', `Bearer ${authToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should fail without authentication', async () => {
+      const response = await request(app).delete(`/api/products/${testProductCodigo}`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should fail without products.delete permission', async () => {
+      const limitedUserData = {
+        username: 'nodelete',
+        email: 'nodelete@test.com',
+        password: 'Test123!',
+        confirmPassword: 'Test123!',
+      };
+
+      const regResponse = await request(app)
+        .post('/api/auth/register')
+        .send(limitedUserData);
+
+      const limitedToken = regResponse.body.data.accessToken;
+
+      // Solo products.read
+      await prisma.user.update({
+        where: { id: regResponse.body.data.user.id },
+        data: { permissions: ['products.read'] },
+      });
+
+      const response = await request(app)
+        .delete(`/api/products/${testProductCodigo}`)
+        .set('Authorization', `Bearer ${limitedToken}`);
 
       expect(response.status).toBe(403);
     });

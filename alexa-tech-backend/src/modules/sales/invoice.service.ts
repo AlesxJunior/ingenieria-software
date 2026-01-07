@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 import { salesService } from './sales.service';
 import { prisma } from '../../config/database';
 import { configuracionService } from '../configuracion/configuracion.service';
@@ -224,7 +225,7 @@ export const invoiceService = {
     const paymentsEndY = this.generatePaymentsSection(doc, invoiceData, totalsEndY);
 
     // QR y Footer - usar posición dinámica
-    this.generateFooter(doc, invoiceData, paymentsEndY);
+    await this.generateFooter(doc, invoiceData, paymentsEndY);
 
     // Finalizar documento
     doc.end();
@@ -239,73 +240,45 @@ export const invoiceService = {
     // === LADO IZQUIERDO: Datos de la empresa ===
     const leftColumnWidth = 280;
     
-    // Nombre comercial (grande)
+    // Nombre de la empresa (grande y negrita)
     doc
-      .fontSize(16)
+      .fontSize(20)
       .font('Helvetica-Bold')
-      .fillColor('#1a1a2e')
-      .text(data.company.nombre, margin, 40, { width: leftColumnWidth });
+      .fillColor('#000000')
+      .text(data.company.razonSocial || data.company.nombre, margin, 50, { width: leftColumnWidth });
     
-    // Razón social (si es diferente)
-    let currentY = 60;
-    if (data.company.razonSocial && data.company.razonSocial !== data.company.nombre) {
-      doc
-        .fontSize(9)
-        .font('Helvetica')
-        .fillColor('#666666')
-        .text(data.company.razonSocial, margin, currentY, { width: leftColumnWidth });
-      currentY += 15;
-    }
+    // RUC
+    let currentY = 75;
+    doc
+      .fontSize(10)
+      .font('Helvetica')
+      .fillColor('#000000')
+      .text(`RUC: ${data.company.ruc}`, margin, currentY, { width: leftColumnWidth });
+    currentY += 15;
     
     // Dirección
     doc
-      .fontSize(9)
-      .font('Helvetica')
-      .fillColor('#333333')
       .text(data.company.direccion, margin, currentY, { width: leftColumnWidth });
-    currentY += 12;
+    currentY += 15;
     
-    // Ubigeo (Departamento - Provincia - Distrito)
-    if (data.company.departamento) {
-      doc
-        .text(`${data.company.distrito || ''} - ${data.company.provincia || ''} - ${data.company.departamento || ''}`, margin, currentY);
-      currentY += 12;
-    }
+    // Teléfono
+    doc.text(`Tel: ${data.company.telefono || ''}`, margin, currentY);
+    currentY += 15;
     
-    // Teléfono y Email
-    doc.text(`Teléfono: ${data.company.telefono}`, margin, currentY);
-    currentY += 12;
-    doc.text(`Email: ${data.company.email}`, margin, currentY);
+    // Email
+    doc.text(data.company.email || '', margin, currentY);
     
-    // === LADO DERECHO: Recuadro del comprobante (estilo SUNAT) ===
-    const boxWidth = 180;
-    const boxHeight = 90;
+    // === LADO DERECHO: Recuadro del comprobante ===
+    const boxWidth = 165;
+    const boxHeight = 80;
     const boxX = pageWidth - margin - boxWidth;
-    const boxY = 35;
+    const boxY = 50;
     
-    // Recuadro con borde rojo (estilo SUNAT)
+    // Recuadro con borde negro
     doc
       .rect(boxX, boxY, boxWidth, boxHeight)
-      .lineWidth(2)
-      .strokeColor('#c41e3a')
-      .stroke();
-    
-    // RUC (parte superior del recuadro)
-    doc
-      .fontSize(11)
-      .font('Helvetica-Bold')
-      .fillColor('#c41e3a')
-      .text(`R.U.C. ${data.company.ruc}`, boxX, boxY + 12, {
-        width: boxWidth,
-        align: 'center',
-      });
-    
-    // Línea separadora
-    doc
-      .moveTo(boxX + 10, boxY + 30)
-      .lineTo(boxX + boxWidth - 10, boxY + 30)
       .lineWidth(1)
-      .strokeColor('#c41e3a')
+      .strokeColor('#000000')
       .stroke();
     
     // Tipo de comprobante
@@ -317,35 +290,29 @@ export const invoiceService = {
     if (esFactura) {
       tipoTexto = 'FACTURA ELECTRÓNICA';
     } else if (esBoleta) {
-      tipoTexto = 'BOLETA DE VENTA ELECTRÓNICA';
+      tipoTexto = 'BOLETA ELECTRÓNICA';
     }
     
     doc
-      .fontSize(10)
+      .fontSize(12)
       .font('Helvetica-Bold')
-      .fillColor('#c41e3a')
-      .text(tipoTexto, boxX, boxY + 40, {
+      .fillColor('#000000')
+      .text(tipoTexto, boxX, boxY + 15, {
         width: boxWidth,
         align: 'center',
       });
     
     // Serie y Número
     doc
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#1a1a2e')
-      .text(data.sale.codigoVenta, boxX, boxY + 60, {
+      .fontSize(10)
+      .font('Helvetica')
+      .fillColor('#000000')
+      .text(data.sale.codigoVenta, boxX, boxY + 35, {
         width: boxWidth,
         align: 'center',
       });
     
-    // Línea separadora debajo del header
-    doc
-      .moveTo(margin, 145)
-      .lineTo(pageWidth - margin, 145)
-      .lineWidth(0.5)
-      .strokeColor('#cccccc')
-      .stroke();
+    doc.moveDown(3);
   },
 
   generateCustomerInfo(doc: PDFDocumentType, data: InvoiceData) {
@@ -361,23 +328,11 @@ export const invoiceService = {
       boxHeight = 45 + (data.payments.length * 10);
     }
     
-    doc
-      .rect(margin, startY, pageWidth - (margin * 2), boxHeight)
-      .lineWidth(0.5)
-      .strokeColor('#dddddd')
-      .stroke();
-    
-    // Fondo gris claro para el encabezado
-    doc
-      .rect(margin, startY, pageWidth - (margin * 2), 18)
-      .fillColor('#f5f5f5')
-      .fill();
-    
     // Título
     doc
       .fontSize(9)
       .font('Helvetica-Bold')
-      .fillColor('#333333')
+      .fillColor('#000000')
       .text('DATOS DEL ADQUIRENTE O USUARIO', margin + 10, startY + 4);
     
     // Fecha de emisión (derecha)
@@ -401,18 +356,18 @@ export const invoiceService = {
       doc
         .fontSize(8)
         .font('Helvetica-Bold')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text(data.client.tipoDocumento + ':', col1, dataY);
       
       doc
         .font('Helvetica')
-        .fillColor('#333333')
+        .fillColor('#000000')
         .text(data.client.documento, col1 + 30, dataY);
       
       // Columna 2: Método(s) de pago
       doc
         .font('Helvetica-Bold')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text('MÉTODO(S) DE PAGO:', col2, dataY);
       
       // ✅ Mostrar todos los métodos de pago con sus montos
@@ -423,7 +378,7 @@ export const invoiceService = {
           if (payment) {
             doc
               .font('Helvetica')
-              .fillColor('#333333')
+              .fillColor('#000000')
               .text(payment.metodoPago, col2 + 100, dataY);
           }
         } else {
@@ -435,7 +390,7 @@ export const invoiceService = {
               doc
                 .font('Helvetica')
                 .fontSize(8)
-                .fillColor('#333333')
+                .fillColor('#000000')
                 .text(metodoPagoText, col2 + 100, paymentY);
               paymentY += 10;
             }
@@ -445,30 +400,30 @@ export const invoiceService = {
         // ⚠️ Sin datos de pago (no debería ocurrir con nueva lógica)
         doc
           .font('Helvetica')
-          .fillColor('#999999')
+          .fillColor('#000000')
           .text('Sin información', col2 + 100, dataY);
       }
       
       // Fila 2: Razón social / Nombre
       doc
         .font('Helvetica-Bold')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text('APELLIDOS Y NOMBRES / RAZÓN SOCIAL:', col1, dataY + 15);
       
       doc
         .font('Helvetica')
-        .fillColor('#333333')
+        .fillColor('#000000')
         .text(data.client.nombre, col1 + 180, dataY + 15, { width: 330 });
       
       // Fila 3: Dirección
       doc
         .font('Helvetica-Bold')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text('DIRECCIÓN:', col1, dataY + 30);
       
       doc
         .font('Helvetica')
-        .fillColor('#333333')
+        .fillColor('#000000')
         .text(data.client.direccion, col1 + 55, dataY + 30, { width: 450 });
     } else {
       // Cliente general (CLIENTE VARIOS)
@@ -479,14 +434,14 @@ export const invoiceService = {
       doc
         .fontSize(9)
         .font('Helvetica')
-        .fillColor('#333333')
+        .fillColor('#000000')
         .text('CLIENTE VARIOS', col1, dataY);
       
       // ✅ Mostrar métodos de pago (SIEMPRE existen con nueva lógica)
       doc
         .fontSize(8)
         .font('Helvetica-Bold')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text('MÉTODO(S) DE PAGO:', col2, dataY);
       
       if (data.payments && data.payments.length === 1) {
@@ -495,7 +450,7 @@ export const invoiceService = {
         if (payment) {
           doc
             .font('Helvetica')
-            .fillColor('#333333')
+            .fillColor('#000000')
             .text(payment.metodoPago, col2 + 100, dataY);
         }
       } else if (data.payments && data.payments.length > 1) {
@@ -507,7 +462,7 @@ export const invoiceService = {
             doc
               .font('Helvetica')
               .fontSize(8)
-              .fillColor('#333333')
+              .fillColor('#000000')
               .text(metodoPagoText, col2 + 100, paymentY);
             paymentY += 10;
           }
@@ -534,16 +489,17 @@ export const invoiceService = {
       total: { x: margin + 465, width: 60 },
     };
     
-    // Header de la tabla con fondo
+    // Header de la tabla con borde
     doc
       .rect(margin, tableTop, pageWidth - (margin * 2), 20)
-      .fillColor('#1a1a2e')
-      .fill();
+      .lineWidth(1)
+      .strokeColor('#000000')
+      .stroke();
     
     doc
       .fontSize(8)
       .font('Helvetica-Bold')
-      .fillColor('#ffffff');
+      .fillColor('#000000');
     
     doc.text('ITEM', columns.item.x + 5, tableTop + 6, { width: columns.item.width, align: 'center' });
     doc.text('CÓDIGO', columns.codigo.x, tableTop + 6, { width: columns.codigo.width, align: 'center' });
@@ -555,7 +511,7 @@ export const invoiceService = {
     
     // Items
     let position = tableTop + 25;
-    doc.font('Helvetica').fontSize(8).fillColor('#333333');
+    doc.font('Helvetica').fontSize(8).fillColor('#000000');
     
     data.sale.items.forEach((item: any, index: number) => {
       // Verificar si hay espacio suficiente, si no, agregar nueva página
@@ -566,10 +522,11 @@ export const invoiceService = {
         // Re-dibujar header de tabla en nueva página
         doc
           .rect(margin, 40, pageWidth - (margin * 2), 20)
-          .fillColor('#1a1a2e')
-          .fill();
+          .lineWidth(1)
+          .strokeColor('#000000')
+          .stroke();
         
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000');
         doc.text('ITEM', columns.item.x + 5, 46, { width: columns.item.width, align: 'center' });
         doc.text('CÓDIGO', columns.codigo.x, 46, { width: columns.codigo.width, align: 'center' });
         doc.text('DESCRIPCIÓN', columns.descripcion.x, 46, { width: columns.descripcion.width, align: 'left' });
@@ -578,22 +535,14 @@ export const invoiceService = {
         doc.text('P. UNIT.', columns.precioUnit.x, 46, { width: columns.precioUnit.width, align: 'center' });
         doc.text('TOTAL', columns.total.x, 46, { width: columns.total.width, align: 'center' });
         
-        doc.font('Helvetica').fontSize(8).fillColor('#333333');
+        doc.font('Helvetica').fontSize(8).fillColor('#000000');
         position = 70;
-      }
-      
-      // Fila alternada
-      if (index % 2 === 0) {
-        doc
-          .rect(margin, position - 3, pageWidth - (margin * 2), 18)
-          .fillColor('#f9f9f9')
-          .fill();
       }
       
       const productCode = item.productCode || item.producto?.codigo || 'N/A';
       const unidadMedida = item.producto?.unidadMedida || 'UND';
       
-      doc.fillColor('#333333');
+      doc.fillColor('#000000');
       doc.text((index + 1).toString().padStart(2, '0'), columns.item.x + 5, position, { width: columns.item.width, align: 'center' });
       doc.text(productCode, columns.codigo.x, position, { width: columns.codigo.width, align: 'center' });
       doc.text(item.nombreProducto, columns.descripcion.x, position, { width: columns.descripcion.width, align: 'left' });
@@ -610,7 +559,7 @@ export const invoiceService = {
       .moveTo(margin, position + 5)
       .lineTo(pageWidth - margin, position + 5)
       .lineWidth(1)
-      .strokeColor('#1a1a2e')
+      .strokeColor('#000000')
       .stroke();
     
     return position + 15;
@@ -625,42 +574,25 @@ export const invoiceService = {
     // Usar posición dinámica (añadir pequeño espacio después de la tabla)
     let position = startY + 5;
     
-    // Monto en letras (recuadro)
+    // Monto en letras
     const montoLetras = numeroALetras(data.sale.total);
-    
-    doc
-      .rect(margin, position, 300, 35)
-      .lineWidth(0.5)
-      .strokeColor('#dddddd')
-      .stroke();
-    
-    doc
-      .rect(margin, position, 300, 15)
-      .fillColor('#f5f5f5')
-      .fill();
     
     doc
       .fontSize(7)
       .font('Helvetica-Bold')
-      .fillColor('#666666')
+      .fillColor('#000000')
       .text('IMPORTE EN LETRAS', margin + 5, position + 3);
     
     doc
       .fontSize(7)
       .font('Helvetica')
-      .fillColor('#333333')
+      .fillColor('#000000')
       .text(montoLetras, margin + 5, position + 18, { width: 290 });
     
     // Totales (lado derecho)
     const totalsStartY = position;
     
-    // Fondo para totales
-    doc
-      .rect(totalsX - 10, totalsStartY, 210, 80)
-      .fillColor('#f8f8f8')
-      .fill();
-    
-    doc.fontSize(9).font('Helvetica').fillColor('#333333');
+    doc.fontSize(9).font('Helvetica').fillColor('#000000');
     
     // Op. Gravada
     doc
@@ -698,7 +630,7 @@ export const invoiceService = {
       doc
         .fontSize(9)
         .font('Helvetica')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text('REDONDEO:', totalsX, currentY)
         .text(`S/ ${redondeo >= 0 ? '+' : ''}${redondeo.toFixed(2)}`, valuesX, currentY, { width: 60, align: 'right' });
     }
@@ -709,7 +641,7 @@ export const invoiceService = {
       .moveTo(totalsX, currentY)
       .lineTo(pageWidth - margin, currentY)
       .lineWidth(1)
-      .strokeColor('#1a1a2e')
+      .strokeColor('#000000')
       .stroke();
     
     // TOTAL (destacado)
@@ -717,7 +649,7 @@ export const invoiceService = {
     doc
       .fontSize(11)
       .font('Helvetica-Bold')
-      .fillColor('#1a1a2e')
+      .fillColor('#000000')
       .text('IMPORTE TOTAL:', totalsX, currentY)
       .text(`S/ ${data.sale.total.toFixed(2)}`, valuesX - 10, currentY, { width: 70, align: 'right' });
     
@@ -726,12 +658,12 @@ export const invoiceService = {
       doc
         .fontSize(8)
         .font('Helvetica-Bold')
-        .fillColor('#666666')
+        .fillColor('#000000')
         .text('OBSERVACIONES:', margin, currentY + 30);
       
       doc
         .font('Helvetica')
-        .fillColor('#333333')
+        .fillColor('#000000')
         .text(data.sale.observaciones, margin, currentY + 42, { width: 290 });
     }
     
@@ -758,21 +690,16 @@ export const invoiceService = {
     doc
       .fontSize(9)
       .font('Helvetica-Bold')
-      .fillColor('#1a1a2e')
+      .fillColor('#000000')
       .text('DETALLE DE PAGOS', margin, position);
     
     position += 15;
     
     // Tabla de pagos
     doc
-      .rect(margin, position, pageWidth - (margin * 2), 18)
-      .fillColor('#e8e8e8')
-      .fill();
-    
-    doc
       .fontSize(8)
       .font('Helvetica-Bold')
-      .fillColor('#333333');
+      .fillColor('#000000');
     
     doc.text('MÉTODO', margin + 10, position + 5, { width: 150 });
     doc.text('REFERENCIA', margin + 170, position + 5, { width: 200 });
@@ -781,17 +708,10 @@ export const invoiceService = {
     position += 20;
     
     data.payments.forEach((payment, index) => {
-      if (index % 2 === 0) {
-        doc
-          .rect(margin, position - 2, pageWidth - (margin * 2), 16)
-          .fillColor('#f9f9f9')
-          .fill();
-      }
-      
       doc
         .fontSize(8)
         .font('Helvetica')
-        .fillColor('#333333');
+        .fillColor('#000000');
       
       doc.text(payment.metodoPago, margin + 10, position, { width: 150 });
       doc.text(payment.referencia || '-', margin + 170, position, { width: 200 });
@@ -805,13 +725,13 @@ export const invoiceService = {
       .moveTo(margin, position + 2)
       .lineTo(pageWidth - margin, position + 2)
       .lineWidth(0.5)
-      .strokeColor('#cccccc')
+      .strokeColor('#000000')
       .stroke();
     
     return position + 10;
   },
 
-  generateFooter(doc: PDFDocumentType, data: InvoiceData, startY: number) {
+  async generateFooter(doc: PDFDocumentType, data: InvoiceData, startY: number) {
     const pageWidth = doc.page.width;
     const margin = 40;
     
@@ -823,33 +743,42 @@ export const invoiceService = {
       footerY = 50;
     }
     
-    // Área del QR (simulado como recuadro con código)
+    // Área del QR
     const qrSize = 60;
     const qrX = margin;
     const qrY = footerY;
     
-    // Recuadro para QR
-    doc
-      .rect(qrX, qrY, qrSize, qrSize)
-      .lineWidth(1)
-      .strokeColor('#333333')
-      .stroke();
-    
-    // Simulación de QR (texto)
+    // Generar QR real
     const hashQR = generarHashQR(data);
-    doc
-      .fontSize(6)
-      .font('Helvetica')
-      .fillColor('#666666')
-      .text('QR SUNAT', qrX + 5, qrY + 5, { width: qrSize - 10, align: 'center' })
-      .text(hashQR, qrX + 5, qrY + 45, { width: qrSize - 10, align: 'center' });
+    try {
+      const qrDataUrl = await QRCode.toDataURL(hashQR, { 
+        width: qrSize * 3, // Mayor resolución
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      const base64Data = qrDataUrl.split(',')[1];
+      if (base64Data) {
+        const qrBuffer = Buffer.from(base64Data, 'base64');
+        doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
+      }
+    } catch (error) {
+      // Si falla, mostrar el hash como texto
+      doc
+        .fontSize(6)
+        .font('Helvetica')
+        .fillColor('#000000')
+        .text(hashQR, qrX + 5, qrY + 5, { width: qrSize - 10 });
+    }
     
     // Información junto al QR
     const infoX = qrX + qrSize + 15;
     doc
       .fontSize(7)
       .font('Helvetica')
-      .fillColor('#666666')
+      .fillColor('#000000')
       .text('Representación impresa de la', infoX, qrY + 5)
       .text(`${data.sale.tipoComprobante.toUpperCase()} ELECTRÓNICA`, infoX, qrY + 15)
       .text('Autorizado mediante Resolución', infoX, qrY + 30)
@@ -865,14 +794,14 @@ export const invoiceService = {
       .moveTo(margin, footerY + qrSize + 10)
       .lineTo(pageWidth - margin, footerY + qrSize + 10)
       .lineWidth(0.5)
-      .strokeColor('#cccccc')
+      .strokeColor('#000000')
       .stroke();
     
     // Mensaje final
     doc
       .fontSize(8)
       .font('Helvetica')
-      .fillColor('#333333')
+      .fillColor('#000000')
       .text(
         'Gracias por su preferencia. Consulte su comprobante electrónico en www.sunat.gob.pe',
         margin,
@@ -882,7 +811,7 @@ export const invoiceService = {
     
     doc
       .fontSize(7)
-      .fillColor('#999999')
+      .fillColor('#000000')
       .text(
         `Documento generado el ${new Date().toLocaleString('es-PE')} | Sistema de Facturación Electrónica`,
         margin,

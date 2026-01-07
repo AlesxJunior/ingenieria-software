@@ -49,4 +49,11 @@ router.patch(
   movementReasonController.toggle,
 );
 
+// POST /api/movement-reasons/:id/activate - Activar motivo
+router.post(
+  '/:id/activate',
+  requirePermission('inventory.update'),
+  movementReasonController.activate,
+);
+
 export default router;

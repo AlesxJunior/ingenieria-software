@@ -228,6 +228,37 @@ export const ProductController = {
       );
     }
   },
+
+  async delete(req: AuthenticatedRequest, res: Response) {
+    try {
+      // Permisos verificados a nivel de ruta mediante middleware
+
+      const codigo = req.params?.codigo as string;
+      const userId = req.user?.userId;
+      
+      // Soft delete: marcar como inactivo (estado = false)
+      const product = await productService.deleteByCodigo(codigo, userId);
+      
+      return ResponseHelper.success(
+        res,
+        product,
+        'Producto eliminado exitosamente',
+      );
+    } catch (error: any) {
+      if (error?.code === 'P2025') {
+        return ResponseHelper.notFound(
+          res,
+          'Producto no encontrado para eliminación',
+        );
+      }
+      return ResponseHelper.error(
+        res,
+        'Error al eliminar producto',
+        500,
+        error?.message || String(error),
+      );
+    }
+  },
 };
 
 export default ProductController;

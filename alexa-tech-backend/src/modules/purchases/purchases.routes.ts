@@ -60,8 +60,12 @@ router.get(
       const filters: any = {};
       if (req.query.estado) filters.estado = req.query.estado;
       if (req.query.proveedorId) filters.proveedorId = req.query.proveedorId as string;
-      if (req.query.fechaInicio) filters.fechaInicio = new Date(req.query.fechaInicio as string);
-      if (req.query.fechaFin) filters.fechaFin = new Date(req.query.fechaFin as string);
+      if (req.query.fechaInicio) filters.fechaDesde = new Date(req.query.fechaInicio as string);
+      if (req.query.fechaFin) filters.fechaHasta = new Date(req.query.fechaFin as string);
+      
+      // ✅ Agregar paginación
+      if (req.query.page) filters.page = parseInt(req.query.page as string, 10);
+      if (req.query.limit) filters.limit = parseInt(req.query.limit as string, 10);
       
       const result = await purchasesService.findAll(filters);
       res.json({ success: true, ...result });
@@ -144,10 +148,13 @@ router.delete(
   requirePermission('purchases.delete'),
   async (req: any, res: Response) => {
     try {
+      console.log(`🗑️ [DELETE Route] Orden ID: ${req.params.id}`);
       if (!req.params.id) throw new Error('ID requerido');
       
+      console.log(`🗑️ [DELETE Route] Buscando orden...`);
       // Obtener orden para validar
       const orden = await purchasesService.findOne(req.params.id);
+      console.log(`🗑️ [DELETE Route] Orden encontrada: ${orden.codigo}, Estado: ${orden.estado}`);
       
       // Validar que se puede cancelar
       const estadosPermitidos = ['PENDIENTE', 'ENVIADA'];
@@ -155,10 +162,12 @@ router.delete(
         throw new Error(`No se puede cancelar una orden en estado ${orden.estado}. Solo se pueden cancelar órdenes en estado PENDIENTE o ENVIADA.`);
       }
       
-      const { motivo = 'Cancelada por usuario' } = req.body;
+      const motivo = req.body?.motivo || 'Cancelada por usuario';
+      console.log(`🗑️ [DELETE Route] Motivo: ${motivo}`);
       
       // Cambiar estado a CANCELADA
       await purchasesService.updateStatus(req.params.id, 'CANCELADA', motivo);
+      console.log(`✅ [DELETE Route] Estado cambiado a CANCELADA`);
       
       res.json({ 
         success: true, 
@@ -166,6 +175,10 @@ router.delete(
         data: { estado: 'CANCELADA' }
       });
     } catch (error: any) {
+      console.error(`❌ [DELETE Route] Error:`, {
+        message: error?.message,
+        stack: error?.stack?.split('\n').slice(0, 3).join('\n'),
+      });
       res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
   }
@@ -196,8 +209,12 @@ router.get(
       const filters: any = {};
       if (req.query.estado) filters.estado = req.query.estado;
       if (req.query.ordenCompraId) filters.ordenCompraId = req.query.ordenCompraId as string;
-      if (req.query.fechaInicio) filters.fechaInicio = new Date(req.query.fechaInicio as string);
-      if (req.query.fechaFin) filters.fechaFin = new Date(req.query.fechaFin as string);
+      if (req.query.fechaInicio) filters.fechaDesde = new Date(req.query.fechaInicio as string);
+      if (req.query.fechaFin) filters.fechaHasta = new Date(req.query.fechaFin as string);
+      
+      // ✅ Agregar paginación
+      if (req.query.page) filters.page = parseInt(req.query.page as string, 10);
+      if (req.query.limit) filters.limit = parseInt(req.query.limit as string, 10);
       
       const result = await purchaseReceiptsService.findAll(filters);
       res.json({ success: true, ...result });

@@ -115,6 +115,11 @@ model User {
   recepcionesRecibidas    PurchaseReceipt[]  @relation("RCRecibidoPor")
   recepcionesInspeccionadas PurchaseReceipt[] @relation("RCInspeccionadoPor")
   facturasRegistradas     PurchaseInvoice[]  @relation("FacturaRegistradaPor")
+  
+  // Relaciones - Módulo de Inventario (Transferencias)
+  transfersSolicitados StockTransfer[] @relation("TransferSolicitante")
+  transfersAprobados   StockTransfer[] @relation("TransferAprobador")
+  transfersRecibidos   StockTransfer[] @relation("TransferReceptor")
 
   @@map("users")
 }
@@ -296,6 +301,7 @@ model Product {
   // Relaciones de inventario
   stockByWarehouses  StockByWarehouse[]
   inventoryMovements InventoryMovement[]
+  stockTransfers     StockTransfer[]
   
   // Relaciones - Módulo de Compras
   solicitudItems      PurchaseRequestItem[] @relation("SolicitudProducto")
@@ -477,6 +483,22 @@ model MovementReason {
   @@map("movement_reasons")
 }
 
+// ============================================
+// ENUMS PARA TRANSFERENCIAS
+// ============================================
+
+enum TransferStatus {
+  PENDIENTE   // Creada, esperando aprobación
+  APROBADO    // Aprobada, lista para enviar
+  ENVIADO     // En tránsito
+  RECIBIDO    // Completada
+  CANCELADO   // Cancelada
+}
+
+// ============================================
+// MÓDULO DE INVENTARIO
+// ============================================
+
 model Warehouse {
   id        String   @id @default(cuid())
   codigo    String   @unique
@@ -490,6 +512,8 @@ model Warehouse {
   // Relaciones de inventario
   stockByWarehouses  StockByWarehouse[]
   inventoryMovements InventoryMovement[]
+  transfersFrom      StockTransfer[]     @relation("TransferFrom")
+  transfersTo        StockTransfer[]     @relation("TransferTo")
   
   // Relaciones - Módulo de Compras
   solicitudesCompra PurchaseRequest[] @relation("SolicitudAlmacenDestino")
@@ -504,7 +528,7 @@ model StockByWarehouse {
   productId   String
   warehouseId String
   quantity    Int      @default(0) @map("cantidad")
-  minStock    Int?     @map("stockMinimo")
+  minStock    Int?     @map("stockMinimo") /// @deprecated Usar Product.minStock en su lugar
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -537,8 +561,61 @@ model InventoryMovement {
   // Relación con recepción de compra (opcional)
   recepcionCompra   PurchaseReceipt? @relation("RecepcionMovimientos", fields: [recepcionCompraId], references: [id], onDelete: SetNull)
   recepcionCompraId String?
+  
+  // Relación con transferencias
+  transferSalida  StockTransfer? @relation("TransferSalida")
+  transferEntrada StockTransfer? @relation("TransferEntrada")
 
   @@map("inventory_movements")
+}
+
+model StockTransfer {
+  id                  String         @id @default(cuid())
+  codigo              String         @unique // TRF-2025-001
+  
+  // Producto y cantidad
+  productId           String
+  product             Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  cantidad            Int
+  
+  // Almacenes origen y destino
+  warehouseFromId     String
+  warehouseFrom       Warehouse      @relation("TransferFrom", fields: [warehouseFromId], references: [id], onDelete: Restrict)
+  
+  warehouseToId       String
+  warehouseTo         Warehouse      @relation("TransferTo", fields: [warehouseToId], references: [id], onDelete: Restrict)
+  
+  // Estado y observaciones
+  estado              TransferStatus @default(PENDIENTE)
+  observaciones       String?
+  motivoTransferencia String?
+  
+  // Workflow: Solicitante
+  solicitadoPor       String
+  solicitante         User           @relation("TransferSolicitante", fields: [solicitadoPor], references: [id], onDelete: Restrict)
+  
+  // Workflow: Aprobador (opcional)
+  aprobadoPor         String?
+  aprobador           User?          @relation("TransferAprobador", fields: [aprobadoPor], references: [id], onDelete: SetNull)
+  fechaAprobacion     DateTime?
+  
+  // Workflow: Receptor (opcional)
+  recibidoPor         String?
+  receptor            User?          @relation("TransferReceptor", fields: [recibidoPor], references: [id], onDelete: SetNull)
+  fechaRecepcion      DateTime?
+  
+  // Referencias a movimientos de inventario
+  movimientoSalidaId  String?        @unique
+  movimientoSalida    InventoryMovement? @relation("TransferSalida", fields: [movimientoSalidaId], references: [id], onDelete: SetNull)
+  
+  movimientoEntradaId String?        @unique
+  movimientoEntrada   InventoryMovement? @relation("TransferEntrada", fields: [movimientoEntradaId], references: [id], onDelete: SetNull)
+  
+  // Timestamps
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  
+  @@map("stock_transfers")
 }
 
 // ============================================
@@ -839,8 +916,7 @@ enum PurchaseOrderStatus {
   CONFIRMADA    // Proveedor confirmó
   EN_RECEPCION  // Llegó mercancía, en proceso de recepción
   PARCIAL       // Recepción parcial
-  COMPLETADA    // Todo recibido
-  CERRADA       // Cerrada y facturada
+  COMPLETADA    // Todo recibido (estado final)
   CANCELADA     // Cancelada
 }
 

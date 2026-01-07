@@ -56,6 +56,7 @@ export interface ClientFilters {
   tipoEntidad?: TipoEntidad | 'Cliente' | 'Proveedor' | 'Ambos';
   fechaDesde?: string;
   fechaHasta?: string;
+  includeInactive?: boolean;
 }
 
 export const clientService = {
@@ -230,9 +231,12 @@ export const clientService = {
   // Obtener todos los clientes con filtros
   async getClients(filters: ClientFilters = {}): Promise<Client[]> {
     try {
-      const where: Prisma.ClientWhereInput = {
-        isActive: true,
-      };
+      const where: Prisma.ClientWhereInput = {};
+
+      // Solo filtrar por activos si includeInactive no está activado
+      if (!filters.includeInactive) {
+        where.isActive = true;
+      }
 
       // Filtro de búsqueda por nombres, apellidos, razón social, email o documento
       if (filters.search) {

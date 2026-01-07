@@ -43,10 +43,25 @@ export class ResponseHelper {
     errors: any[],
     message: string = 'Errores de validación',
   ): Response {
+    // Formatear errores correctamente
+    let formattedError: any;
+    
+    if (Array.isArray(errors)) {
+      // Si los elementos son objetos con estructura { field, message }
+      if (errors.length > 0 && typeof errors[0] === 'object' && errors[0].message) {
+        formattedError = errors.map(err => `${err.field || 'campo'}: ${err.message}`).join(', ');
+      } else {
+        // Si son strings directamente
+        formattedError = errors.join(', ');
+      }
+    } else {
+      formattedError = errors;
+    }
+
     const response: ApiResponse = {
       success: false,
       message,
-      error: Array.isArray(errors) ? errors.join(', ') : errors,
+      error: formattedError,
     };
 
     logger.warn(`Validation Error: ${message}`, { errors });

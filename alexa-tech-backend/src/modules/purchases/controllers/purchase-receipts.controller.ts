@@ -120,7 +120,7 @@ export class PurchaseReceiptsController {
   }
 
   /**
-   * POST /purchases/recepciones/:id/confirmar
+   * PATCH /purchases/recepciones/:id/confirmar
    * Confirmar recepción y actualizar stock automáticamente
    * Requiere: ADMIN, ALMACEN_GESTOR, COMPRAS_GESTOR
    * IMPORTANTE: Esta operación es atómica y actualiza:
@@ -130,7 +130,7 @@ export class PurchaseReceiptsController {
    * - Cantidades en PurchaseOrderItem (recibida, pendiente)
    * - Estado de PurchaseOrder (PARCIAL o COMPLETADA)
    */
-  @Post(':id/confirmar')
+  @Patch(':id/confirmar')
   @Roles('ADMIN', 'ALMACEN_GESTOR', 'COMPRAS_GESTOR')
   async confirm(@Param('id') id: string, @Body() confirmDto: ConfirmReceiptDto) {
     try {

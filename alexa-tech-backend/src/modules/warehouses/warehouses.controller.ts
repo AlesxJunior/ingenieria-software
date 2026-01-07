@@ -195,6 +195,32 @@ export const WarehouseController = {
       'Almacén desactivado exitosamente',
     );
   }),
+
+  // POST /almacenes/:id/activate - Activar almacén
+  activate: asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+
+    // Verificar que existe
+    const existingWarehouse = await prisma.warehouse.findUnique({
+      where: { id },
+    });
+
+    if (!existingWarehouse) {
+      return ResponseHelper.error(res, 'Almacén no encontrado', 404);
+    }
+
+    // Activar almacén
+    const warehouse = await prisma.warehouse.update({
+      where: { id },
+      data: { activo: true },
+    });
+
+    return ResponseHelper.success(
+      res,
+      warehouse,
+      'Almacén activado exitosamente',
+    );
+  }),
 };
 
 export default WarehouseController;

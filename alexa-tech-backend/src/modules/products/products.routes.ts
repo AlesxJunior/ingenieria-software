@@ -23,4 +23,7 @@ router.patch('/:codigo', requirePermission('products.update'), ProductController
 // RF-17: Estado de productos (activo/inactivo)
 router.patch('/:codigo/status', requirePermission('products.update'), ProductController.updateStatus);
 
+// RF-18: Eliminar producto (soft delete)
+router.delete('/:codigo', requirePermission('products.delete'), ProductController.delete);
+
 export default router;

@@ -78,6 +78,15 @@ router.patch(
   ClientController.patchClient,
 );
 
+// DELETE /entidades/:id - Eliminar (soft delete) una entidad
+// Requiere permiso específico para eliminar entidades
+router.delete(
+  '/:id',
+  requirePermission('clients.delete'),
+  rateLimiter({ windowMs: 15 * 60 * 1000, max: 20 }), // 20 deletions per 15 minutes
+  ClientController.deleteClient,
+);
+
 // POST /entidades/:id/reactivate - Reactivar una entidad eliminada
 // Requiere permiso específico para editar entidades
 router.post(

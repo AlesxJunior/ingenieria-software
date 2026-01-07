@@ -78,6 +78,11 @@ export class QuoteService {
       throw new Error('La cotización debe tener al menos un producto');
     }
 
+    // Obtener configuración de empresa para IGV
+    const empresa = await prisma.company.findFirst();
+    const igvActivo = empresa?.igvActivo ?? true; // Por defecto true si no hay configuración
+    const igvPorcentaje = Number(empresa?.igvPorcentaje ?? 18); // Convertir a número, por defecto 18%
+    
     // Validar y calcular totales
     let subtotal = 0;
     const quoteItems = [];
@@ -112,8 +117,8 @@ export class QuoteService {
       });
     }
 
-    // Calcular IGV y total
-    const igv = subtotal * 0.18;
+    // Calcular IGV y total según configuración de empresa
+    const igv = igvActivo ? subtotal * (igvPorcentaje / 100) : 0;
     const total = subtotal + igv;
 
     // Calcular fecha de vencimiento

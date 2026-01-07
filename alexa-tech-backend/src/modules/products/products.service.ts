@@ -106,16 +106,47 @@ export const productService = {
       const updated = await tx.product.update({
         where: { id: product.id },
         data: { stock: total, updatedAt: new Date() },
+        include: {
+          stockByWarehouses: {
+            select: { quantity: true }
+          }
+        }
       });
 
-      return updated;
+      // Calculate real stock from all warehouses
+      const totalStock = updated.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+      return {
+        ...updated,
+        initialStock: totalStock,
+        currentStock: totalStock,
+        stockByWarehouses: undefined
+      };
     });
   },
 
   async findByCodigo(codigo: string) {
-    return prisma.product.findUnique({
+    const product = await prisma.product.findUnique({
       where: { codigo },
+      include: {
+        stockByWarehouses: {
+          select: {
+            quantity: true
+          }
+        }
+      }
     });
+
+    if (!product) return null;
+
+    // Calcular stock real agregado de todos los almacenes
+    const totalStock = product.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+
+    return {
+      ...product,
+      initialStock: totalStock,
+      currentStock: totalStock,
+      stockByWarehouses: undefined
+    };
   },
 
   async updateByCodigo(
@@ -150,7 +181,7 @@ export const productService = {
     }
 
     // No actualizar stock directamente aquí; se gestiona por inventario
-    return prisma.product.update({
+    const updated = await prisma.product.update({
       where: { codigo },
       data: {
         nombre: data.nombre,
@@ -163,18 +194,72 @@ export const productService = {
         usuarioActualizacion: userId ?? null,
         updatedAt: new Date(),
       },
+      include: {
+        stockByWarehouses: {
+          select: { quantity: true }
+        }
+      }
     });
+
+    // Calculate real stock from all warehouses
+    const totalStock = updated.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+    return {
+      ...updated,
+      initialStock: totalStock,
+      currentStock: totalStock,
+      stockByWarehouses: undefined
+    };
   },
 
   async updateStatusByCodigo(codigo: string, estado: boolean, userId?: string) {
-    return prisma.product.update({
+    const updated = await prisma.product.update({
       where: { codigo },
       data: {
         estado,
         usuarioActualizacion: userId ?? null,
         updatedAt: new Date(),
       },
+      include: {
+        stockByWarehouses: {
+          select: { quantity: true }
+        }
+      }
     });
+
+    // Calculate real stock from all warehouses
+    const totalStock = updated.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+    return {
+      ...updated,
+      initialStock: totalStock,
+      currentStock: totalStock,
+      stockByWarehouses: undefined
+    };
+  },
+
+  async deleteByCodigo(codigo: string, userId?: string) {
+    // Soft delete: marcar como inactivo
+    const deleted = await prisma.product.update({
+      where: { codigo },
+      data: {
+        estado: false,
+        usuarioActualizacion: userId ?? null,
+        updatedAt: new Date(),
+      },
+      include: {
+        stockByWarehouses: {
+          select: { quantity: true }
+        }
+      }
+    });
+
+    // Calculate real stock from all warehouses
+    const totalStock = deleted.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+    return {
+      ...deleted,
+      initialStock: totalStock,
+      currentStock: totalStock,
+      stockByWarehouses: undefined
+    };
   },
 
   async list(filters: {
@@ -214,7 +299,7 @@ export const productService = {
       if (filters.maxStock != null) where.stock.lte = Number(filters.maxStock);
     }
 
-    return prisma.product.findMany({ 
+    const products = await prisma.product.findMany({ 
       where, 
       orderBy: { nombre: 'asc' },
       include: {
@@ -223,8 +308,22 @@ export const productService = {
         },
         unidadMedida: {
           select: { id: true, codigo: true, nombre: true }
+        },
+        stockByWarehouses: {
+          select: { quantity: true }
         }
       }
+    });
+
+    // Calculate real stock from all warehouses
+    return products.map(product => {
+      const totalStock = product.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+      return {
+        ...product,
+        initialStock: totalStock,
+        currentStock: totalStock,
+        stockByWarehouses: undefined
+      };
     });
   },
 
@@ -277,13 +376,31 @@ export const productService = {
           },
           unidadMedida: {
             select: { id: true, codigo: true, nombre: true }
+          },
+          stockByWarehouses: {
+            select: {
+              quantity: true
+            }
           }
         }
       }),
       prisma.product.count({ where }),
     ]);
 
-    return { products, total };
+    // Calcular stock real agregado de todos los almacenes
+    const productsWithRealStock = products.map(product => {
+      const totalStock = product.stockByWarehouses.reduce((sum: number, stock: any) => sum + stock.quantity, 0);
+      
+      return {
+        ...product,
+        initialStock: totalStock, // Campo que usa el frontend
+        currentStock: totalStock, // Alias para compatibilidad
+        // Eliminar la relación stockByWarehouses del response para no enviar datos innecesarios
+        stockByWarehouses: undefined
+      };
+    });
+
+    return { products: productsWithRealStock, total };
   },
 };
 

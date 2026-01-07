@@ -56,30 +56,37 @@ interface FilterPurchaseOrderDto {
 @Injectable()
 export class PurchasesService {
   /**
-   * Generar código único para OC (OC-2025-0001)
+   * Generar código único para OC usando serie configurable
    */
   private async generatePurchaseOrderCode(): Promise<string> {
-    const year = new Date().getFullYear();
-    const prefix = `OC-${year}-`;
-
-    const lastOrder = await prisma.purchaseOrder.findFirst({
+    // Buscar configuración de serie para Orden de Compra
+    const comprobante = await prisma.comprobanteType.findFirst({
       where: {
-        codigo: {
-          startsWith: prefix,
-        },
-      },
-      orderBy: {
-        codigo: 'desc',
+        tipo: 'orden-compra',
+        activo: true,
+        predeterminado: true,
       },
     });
 
-    let nextNumber = 1;
-    if (lastOrder && lastOrder.codigo) {
-      const lastNumber = parseInt(lastOrder.codigo.split('-')[2] || '0');
-      nextNumber = lastNumber + 1;
+    if (!comprobante) {
+      throw new Error('No se encontró serie activa para Orden de Compra. Configure una en el módulo de Configuración.');
     }
 
-    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+    // Validar que no se agotó la numeración
+    if (comprobante.numeroActual >= comprobante.numeroFin) {
+      throw new Error(`Serie ${comprobante.serie} agotada. Configure una nueva serie en Configuración.`);
+    }
+
+    // Incrementar el número actual
+    const nuevoNumero = comprobante.numeroActual + 1;
+    await prisma.comprobanteType.update({
+      where: { id: comprobante.id },
+      data: { numeroActual: nuevoNumero },
+    });
+
+    // Formato: SERIE-XXXX (ej: OC25-0001)
+    const codigo = `${comprobante.serie}-${nuevoNumero.toString().padStart(4, '0')}`;
+    return codigo;
   }
 
   /**
@@ -437,16 +444,31 @@ export class PurchasesService {
    * Actualizar Orden de Compra (solo si está en estado PENDIENTE)
    */
   async update(id: string, data: UpdatePurchaseOrderDto) {
-    const ordenCompra = await this.findOne(id);
+    try {
+      console.log(`📝 [Service UPDATE] Iniciando actualización de orden ${id}`);
+      console.log(`📝 [Service UPDATE] Data recibida:`, JSON.stringify(data, null, 2));
+      
+      const ordenCompra = await this.findOne(id);
+      console.log(`📝 [Service UPDATE] Orden encontrada: ${ordenCompra.codigo}, Estado: ${ordenCompra.estado}`);
 
-    if (ordenCompra.estado !== 'PENDIENTE') {
-      throw new Error(
-        'Solo se pueden editar órdenes de compra en estado PENDIENTE'
-      );
+      if (ordenCompra.estado !== 'PENDIENTE') {
+        console.log(`❌ [Service UPDATE] Estado no permitido: ${ordenCompra.estado}`);
+        throw new Error(
+          'Solo se pueden editar órdenes de compra en estado PENDIENTE'
+        );
+      }
+    } catch (error: any) {
+      console.error(`❌ [Service UPDATE] Error al iniciar update:`, {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack?.split('\n').slice(0, 5).join('\n'),
+      });
+      throw error;
     }
 
     // Validaciones similares a create
     if (data.items && data.items.length > 0) {
+      console.log(`📝 [Service UPDATE] Validando ${data.items.length} items...`);
       // Validar productos
       for (const item of data.items) {
         const producto = await prisma.product.findUnique({
@@ -454,24 +476,31 @@ export class PurchasesService {
         });
 
         if (!producto || !producto.estado) {
+          console.log(`❌ [Service UPDATE] Producto inválido: ${item.productoId}`);
           throw new Error(`Producto ${item.productoId} no encontrado o inactivo`);
         }
       }
 
+      console.log(`📝 [Service UPDATE] Calculando totales...`);
       // Calcular nuevos totales
       const totals = this.calculateOrderTotals(data.items);
+      console.log(`📝 [Service UPDATE] Totales:`, totals);
 
+      console.log(`📝 [Service UPDATE] Iniciando transacción...`);
       // Actualizar con transacción
       const updatedOC = await prisma.$transaction(async (tx) => {
+        console.log(`📝 [Service UPDATE TX] Eliminando items existentes...`);
         // Eliminar items existentes
         await tx.purchaseOrderItem.deleteMany({
           where: { ordenCompraId: id },
         });
 
+        console.log(`📝 [Service UPDATE TX] Items eliminados, creando nuevos...`);
         // Crear nuevos items
         if (data.items && data.items.length > 0) {
           for (const item of data.items) {
             const itemTotals = this.calculateItemTotals(item);
+            console.log(`📝 [Service UPDATE TX] Creando item producto ${item.productoId}...`);
 
           await tx.purchaseOrderItem.create({
             data: {
@@ -520,10 +549,12 @@ export class PurchasesService {
         });
       });
 
+      console.log(`✅ [Service UPDATE] Transacción exitosa`);
       return updatedOC;
     }
 
     // Si no hay items, solo actualizar campos básicos
+    console.log(`📝 [Service UPDATE] Sin items, actualizando solo campos básicos...`);
     return prisma.purchaseOrder.update({
       where: { id },
       data: {
@@ -563,18 +594,17 @@ export class PurchasesService {
     console.log(`[updateStatus] ID: ${id}, Estado actual: ${ordenCompra.estado}, Nuevo estado: ${newStatus}, Observaciones: ${observaciones}`);
 
     // Validar transiciones de estado permitidas
-    const validTransitions: Record<PurchaseOrderStatus, PurchaseOrderStatus[]> = {
+    const validTransitions: { [key: string]: PurchaseOrderStatus[] } = {
       PENDIENTE: ['ENVIADA', 'CANCELADA'],
       ENVIADA: ['CONFIRMADA', 'CANCELADA'],
-      CONFIRMADA: ['EN_RECEPCION', 'CANCELADA'],
-      EN_RECEPCION: ['PARCIAL', 'COMPLETADA'],
+      CONFIRMADA: ['CANCELADA'],  // ← NO permite transición manual, solo crear recepción
+      EN_RECEPCION: ['PARCIAL', 'COMPLETADA'],  // ← Actualizado automáticamente por recepciones
       PARCIAL: ['EN_RECEPCION', 'COMPLETADA'],
-      COMPLETADA: ['CERRADA'],
-      CERRADA: [],
-      CANCELADA: [],
+      COMPLETADA: [] as PurchaseOrderStatus[],  // ← Estado final, no permite más transiciones
+      CANCELADA: [] as PurchaseOrderStatus[],
     };
 
-    const allowedTransitions = validTransitions[ordenCompra.estado];
+    const allowedTransitions = (validTransitions[ordenCompra.estado] || []) as PurchaseOrderStatus[];
 
     if (!allowedTransitions.includes(newStatus)) {
       throw new Error(
@@ -602,7 +632,7 @@ export class PurchasesService {
     }
 
     // Actualizar aprobadoPor si se proporciona userId
-    if (userId && ['CONFIRMADA', 'CERRADA'].includes(newStatus)) {
+    if (userId && newStatus === 'CONFIRMADA') {
       updateData.aprobadoPorId = userId;
     }
 
@@ -624,20 +654,52 @@ export class PurchasesService {
   /**
    * Eliminar Orden de Compra (soft delete)
    */
-  async delete(id: string) {
-    const ordenCompra = await this.findOne(id);
+  async delete(id: string, userId?: string) {
+    try {
+      console.log(`🗑️ [Service] Buscando orden ${id} para eliminar...`);
+      const ordenCompra = await this.findOne(id);
+      console.log(`✅ [Service] Orden encontrada: ${ordenCompra.codigo}, Estado: ${ordenCompra.estado}`);
 
-    // Solo se pueden eliminar OC en estado PENDIENTE
-    if (ordenCompra.estado !== 'PENDIENTE') {
-      throw new Error('Solo se pueden eliminar órdenes en estado PENDIENTE');
+      // Solo se pueden eliminar OC en estado PENDIENTE
+      if (ordenCompra.estado !== 'PENDIENTE') {
+        console.log(`❌ [Service] Estado no permitido: ${ordenCompra.estado}`);
+        throw new Error('Solo se pueden eliminar órdenes en estado PENDIENTE');
+      }
+
+      // Verificar si tiene recepciones asociadas
+      console.log(`🔍 [Service] Verificando recepciones para orden ${id}...`);
+      const recepciones = await prisma.purchaseReceipt.findMany({
+        where: { ordenCompraId: id },
+      });
+      console.log(`📦 [Service] Recepciones encontradas: ${recepciones.length}`);
+
+      if (recepciones.length > 0) {
+        console.log(`❌ [Service] No se puede eliminar - tiene ${recepciones.length} recepciones`);
+        throw new Error('No se puede eliminar una orden con recepciones asociadas. Cancele las recepciones primero.');
+      }
+
+      console.log(`💾 [Service] Ejecutando soft delete...`);
+      const result = await prisma.purchaseOrder.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
+      console.log(`✅ [Service] Soft delete exitoso para orden ${id}`);
+      return result;
+    } catch (error: any) {
+      console.error(`❌ [Service] Error en delete:`, {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+      });
+      // Si es un error de Prisma por restricciones de FK
+      if (error.code === 'P2003' || error.code === 'P2014') {
+        throw new Error('No se puede eliminar la orden porque tiene registros relacionados (recepciones, facturas, etc.)');
+      }
+      // Re-lanzar el error original
+      throw error;
     }
-
-    return prisma.purchaseOrder.update({
-      where: { id },
-      data: {
-        deletedAt: new Date(),
-      },
-    });
   }
 
   /**
@@ -793,23 +855,9 @@ export class PurchasesService {
     doc
       .font('Helvetica-Bold')
       .text('ESTADO:', 50, startY + 30)
-      .font('Helvetica');
-
-    // Color según estado
-    let estadoColor = '#000000';
-    if (orden.estado === 'PENDIENTE') estadoColor = '#F39C12';
-    if (orden.estado === 'ENVIADA') estadoColor = '#3498DB';
-    if (orden.estado === 'CONFIRMADA') estadoColor = '#9B59B6';
-    if (orden.estado === 'EN_RECEPCION') estadoColor = '#1ABC9C';
-    if (orden.estado === 'RECEPCIONADA') estadoColor = '#16A085';
-    if (orden.estado === 'PARCIALMENTE_RECIBIDA') estadoColor = '#F1C40F';
-    if (orden.estado === 'COMPLETADA') estadoColor = '#27AE60';
-    if (orden.estado === 'CANCELADA') estadoColor = '#E74C3C';
-
-    doc
-      .fillColor(estadoColor)
-      .text(orden.estado.replace(/_/g, ' '), 200, startY + 30)
-      .fillColor('#000000');
+      .font('Helvetica')
+      .fillColor('#000000')
+      .text(orden.estado.replace(/_/g, ' '), 200, startY + 30);
 
     doc
       .font('Helvetica-Bold')

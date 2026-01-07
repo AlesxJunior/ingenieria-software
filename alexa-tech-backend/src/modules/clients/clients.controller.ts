@@ -307,6 +307,7 @@ export class ClientController {
         tipoEntidad,
         fechaDesde,
         fechaHasta,
+        includeInactive,
       } = req.query;
       const currentUser = req.user;
 
@@ -368,6 +369,10 @@ export class ClientController {
 
         if (fechaHasta) {
           filters.fechaHasta = fechaHasta as string;
+        }
+
+        if (includeInactive === 'true') {
+          filters.includeInactive = true;
         }
 
         // Obtener entidades comerciales
@@ -715,6 +720,75 @@ export class ClientController {
 
   // PATCH /clients/:id - Actualización parcial de un cliente
   static patchClient = ClientController.updateClient;
+
+  // DELETE /clients/:id - Eliminar (soft delete) un cliente
+  static deleteClient = asyncHandler(
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      const { id } = req.params;
+      const currentUser = req.user;
+
+      // Validar que el ID esté presente
+      if (!id) {
+        sendValidationError(res, [
+          'El ID de la entidad comercial es requerido',
+        ]);
+        return;
+      }
+
+      if (!currentUser) {
+        sendUnauthorized(res, 'Usuario no autenticado');
+        return;
+      }
+
+      try {
+        const deletedClient = await clientService.softDeleteClient(
+          id,
+          currentUser.userId,
+        );
+
+        logger.info(
+          `Usuario ${currentUser.userId} eliminó la entidad comercial ${id}`,
+          {
+            userId: currentUser.userId,
+            clientId: id,
+            clientEmail: deletedClient.email,
+          },
+        );
+
+        sendSuccess(
+          res,
+          { client: deletedClient },
+          'Entidad comercial eliminada exitosamente',
+        );
+      } catch (error: any) {
+        logger.error('Error al eliminar entidad comercial:', error);
+
+        if (
+          error.message.includes('Cliente no encontrado') ||
+          error.message.includes('Entidad comercial no encontrada')
+        ) {
+          const message =
+            typeof error.message === 'string'
+              ? error.message.replace(/Cliente/gi, 'Entidad comercial')
+              : 'Entidad comercial no encontrada';
+          sendNotFound(res, message);
+          return;
+        }
+
+        if (error.message.includes('ya está desactivado')) {
+          sendValidationError(res, [
+            { field: 'id', message: 'La entidad comercial ya está desactivada' },
+          ]);
+          return;
+        }
+
+        sendError(
+          res,
+          'Error interno del servidor al eliminar la entidad comercial',
+        );
+      }
+    },
+  );
 
   // POST /clients/:id/reactivate - Reactivar un cliente
   static reactivateClient = asyncHandler(

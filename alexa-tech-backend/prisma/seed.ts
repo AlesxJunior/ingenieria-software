@@ -1,17 +1,17 @@
 import { PrismaClient, TipoEntidad } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { seedCashRegisters } from './seedCashRegisters';
+import { seedPurchases } from './seedPurchases';
 
 const prisma = new PrismaClient();
 
 // ============================================================================
-// PERMISOS DEL SISTEMA - ACTUALIZADOS (Nov 2025)
+// PERMISOS DEL SISTEMA - ACTUALIZADOS (Enero 2026)
 // ============================================================================
-// Permisos consolidados eliminando redundancias y alineados con el código
-// - Eliminados: commercial_entities.* (reemplazados por clients.*)
-// - Eliminados: configuration.* (reemplazado por system.settings)
-// - Eliminados: invoicing.* (módulo no implementado)
-// - Eliminados: permisos no usados (cash-sessions.delete, users.delete, etc.)
+// Permisos optimizados y alineados con el código
+// - commercial_entities.* reemplazados por clients.*
+// - Agregados: warehouses.* para control de almacenes
+// - Eliminados: permisos obsoletos no implementados
 
 const ADMIN_PERMISSIONS = [
   // Dashboard
@@ -43,6 +43,12 @@ const ADMIN_PERMISSIONS = [
   // Inventario
   'inventory.read',
   'inventory.update',
+  
+  // Almacenes
+  'warehouses.create',
+  'warehouses.read',
+  'warehouses.update',
+  'warehouses.delete',
   
   // Compras
   'purchases.create',
@@ -95,6 +101,11 @@ const SUPERVISOR_PERMISSIONS = [
   // Inventario
   'inventory.read',
   'inventory.update',
+  
+  // Almacenes (sin delete)
+  'warehouses.create',
+  'warehouses.read',
+  'warehouses.update',
   
   // Compras
   'purchases.create',
@@ -155,6 +166,9 @@ const CAJERO_PERMISSIONS = [
   
   // Inventario (solo lectura)
   'inventory.read',
+  
+  // Cajas Registradoras (lectura para ver las cajas disponibles)
+  'cash-registers.read',
   
   // Sesiones de Caja
   'cash-sessions.create',
@@ -524,7 +538,11 @@ async function main() {
   console.log('\n3. Poblando cajas registradoras...');
   await seedCashRegisters();
 
-  console.log('\n✅ Seed completado exitosamente - Sistema basado en permisos + Ubigeo Perú');
+  // Seed del módulo de compras
+  console.log('\n4. Poblando módulo de compras...');
+  await seedPurchases();
+
+  console.log('\n✅ Seed completado exitosamente - Sistema basado en permisos + Ubigeo Perú + Módulo Compras');
 }
 
 main()

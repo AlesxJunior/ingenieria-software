@@ -119,76 +119,53 @@ export const creditNoteInvoiceService = {
     doc
       .fontSize(20)
       .font('Helvetica-Bold')
-      .text(data.company.nombre, 50, 50, { align: 'left' })
+      .fillColor('#000000')
+      .text(data.company.nombre.toUpperCase(), 50, 50, { align: 'left' })
       .fontSize(10)
       .font('Helvetica')
       .text(`RUC: ${data.company.ruc}`, 50, 75)
       .text(data.company.direccion, 50, 90)
-      .text(`Tel: ${data.company.telefono}`, 50, 105)
+      .text(`Tel: ${data.company.telefono || ''}`, 50, 105)
       .text(data.company.email, 50, 120);
 
-    // Recuadro destacado de NC (derecha)
+    // Recuadro de NC (derecha)
     const boxX = 380;
     const boxY = 50;
     const boxWidth = 165;
-    const boxHeight = 100;
+    const boxHeight = 80;
 
     doc
       .rect(boxX, boxY, boxWidth, boxHeight)
-      .lineWidth(2)
-      .strokeColor('#E74C3C') // Rojo para destacar
-      .stroke()
-      .strokeColor('black')
-      .lineWidth(1);
+      .lineWidth(1)
+      .strokeColor('#000000')
+      .stroke();
 
     doc
-      .fontSize(14)
+      .fontSize(12)
       .font('Helvetica-Bold')
-      .fillColor('#E74C3C')
+      .fillColor('#000000')
       .text('NOTA DE CRÉDITO', boxX, boxY + 15, {
         width: boxWidth,
         align: 'center',
       })
-      .fillColor('black')
-      .fontSize(11)
-      .text(data.creditNote.codigoVenta, boxX, boxY + 40, {
+      .fontSize(10)
+      .font('Helvetica')
+      .text(data.creditNote.codigoVenta, boxX, boxY + 35, {
         width: boxWidth,
         align: 'center',
-      })
-      .fontSize(9)
-      .font('Helvetica')
-      .text(
-        `Motivo: ${this.getReasonLabel(data.creditNote.creditNoteReason)}`,
-        boxX,
-        boxY + 60,
-        {
-          width: boxWidth,
-          align: 'center',
-        }
-      )
-      .text(
-        `Estado: ${this.getStatusLabel(data.creditNote.creditNoteStatus)}`,
-        boxX,
-        boxY + 75,
-        {
-          width: boxWidth,
-          align: 'center',
-        }
-      );
+      });
 
     doc.moveDown(3);
   },
 
   generateCreditNoteInfo(doc: PDFDocumentType, data: CreditNoteInvoiceData) {
-    const startY = 170;
+    const startY = 150;
 
     doc
-      .fontSize(11)
-      .font('Helvetica-Bold')
-      .fillColor('#E74C3C')
-      .text('DOCUMENTO QUE SE MODIFICA:', 50, startY)
-      .fillColor('black')
       .fontSize(10)
+      .font('Helvetica-Bold')
+      .fillColor('#000000')
+      .text('DOCUMENTO QUE SE MODIFICA:', 50, startY)
       .font('Helvetica')
       .text(
         `${data.originalSale.tipoComprobante}: ${data.originalSale.codigoVenta}`,
@@ -311,24 +288,21 @@ export const creditNoteInvoiceService = {
       const productCode = item.product?.codigo || item.productCode || item.productId || 'N/A';
 
       doc
+        .fillColor('#000000')
         .text(productCode, itemCodeX, position, { width: 60 })
         .text(item.nombreProducto, descriptionX, position, { width: 220 })
-        .fillColor('#E74C3C')
-        .text(`-${item.cantidad}`, quantityX, position, {
+        .text(Math.abs(item.cantidad).toString(), quantityX, position, {
           width: 50,
           align: 'right',
         })
-        .fillColor('black')
-        .text(`S/ ${Number(item.precioUnitario).toFixed(2)}`, priceX, position, {
+        .text(`S/ ${Number(Math.abs(item.precioUnitario)).toFixed(2)}`, priceX, position, {
           width: 60,
           align: 'right',
         })
-        .fillColor('#E74C3C')
-        .text(`-S/ ${Number(item.subtotal).toFixed(2)}`, amountX, position, {
+        .text(`S/ ${Number(Math.abs(item.subtotal)).toFixed(2)}`, amountX, position, {
           width: 55,
           align: 'right',
-        })
-        .fillColor('black');
+        });
 
       position += 20;
     });
@@ -345,26 +319,23 @@ export const creditNoteInvoiceService = {
 
     // Subtotal
     doc
+      .fillColor('#000000')
       .text('SUBTOTAL:', 380, position, { width: 100, align: 'right' })
-      .fillColor('#E74C3C')
       .font('Helvetica')
-      .text(`-S/ ${Number(data.creditNote.subtotal).toFixed(2)}`, 490, position, {
+      .text(`S/ ${Number(Math.abs(data.creditNote.subtotal)).toFixed(2)}`, 490, position, {
         width: 55,
         align: 'right',
-      })
-      .fillColor('black');
+      });
 
     // IGV
     doc
       .font('Helvetica-Bold')
       .text('IGV (18%):', 380, position + 20, { width: 100, align: 'right' })
-      .fillColor('#E74C3C')
       .font('Helvetica')
-      .text(`-S/ ${Number(data.creditNote.igv).toFixed(2)}`, 490, position + 20, {
+      .text(`S/ ${Number(Math.abs(data.creditNote.igv)).toFixed(2)}`, 490, position + 20, {
         width: 55,
         align: 'right',
-      })
-      .fillColor('black');
+      });
 
     // Total
     doc
@@ -374,12 +345,10 @@ export const creditNoteInvoiceService = {
         width: 100,
         align: 'right',
       })
-      .fillColor('#E74C3C')
-      .text(`S/ ${Number(data.creditNote.total).toFixed(2)}`, 490, position + 45, {
+      .text(`S/ ${Number(Math.abs(data.creditNote.total)).toFixed(2)}`, 490, position + 45, {
         width: 55,
         align: 'right',
-      })
-      .fillColor('black');
+      });
   },
 
   generateFooter(doc: PDFDocumentType, data: CreditNoteInvoiceData) {
@@ -406,7 +375,7 @@ export const creditNoteInvoiceService = {
       doc
         .fontSize(9)
         .font('Helvetica-Bold')
-        .fillColor('#3498DB')
+        .fillColor('#000000')
         .text(
           '💳 VALE - Este documento representa un crédito a favor del cliente.',
           50,
@@ -417,17 +386,17 @@ export const creditNoteInvoiceService = {
           align: 'center',
           width: 495,
         })
-        .fillColor('black');
+        .fillColor('#000000');
     } else if (data.creditNote.creditNoteStatus === 'Reembolsada') {
       doc
         .fontSize(9)
         .font('Helvetica-Bold')
-        .fillColor('#27AE60')
+        .fillColor('#000000')
         .text('✅ REEMBOLSADO - El monto ha sido devuelto al cliente.', 50, footerY, {
           align: 'center',
           width: 495,
         })
-        .fillColor('black');
+        .fillColor('#000000');
     }
 
     doc

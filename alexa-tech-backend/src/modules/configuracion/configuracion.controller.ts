@@ -169,10 +169,17 @@ export class ConfiguracionController {
 
   async getAllCategories(req: Request, res: Response): Promise<Response> {
     try {
-      const activo = req.query.activo === 'true';
-      const categories = activo 
-        ? await configuracionService.getActiveCategories()
-        : await configuracionService.getAllCategories();
+      const activoParam = req.query.activo;
+      let categories;
+      
+      if (activoParam === 'true') {
+        categories = await configuracionService.getActiveCategories();
+      } else if (activoParam === 'false') {
+        categories = await configuracionService.getInactiveCategories();
+      } else {
+        categories = await configuracionService.getAllCategories();
+      }
+      
       return ResponseHelper.success(res, categories, 'Categorías obtenidas exitosamente');
     } catch (error: any) {
       return ResponseHelper.error(res, 'Error al obtener categorías', error.message);
@@ -270,10 +277,17 @@ export class ConfiguracionController {
 
   async getAllUnits(req: Request, res: Response): Promise<Response> {
     try {
-      const activo = req.query.activo === 'true';
-      const units = activo 
-        ? await configuracionService.getActiveUnits()
-        : await configuracionService.getAllUnits();
+      const activoParam = req.query.activo;
+      let units;
+      
+      if (activoParam === 'true') {
+        units = await configuracionService.getActiveUnits();
+      } else if (activoParam === 'false') {
+        units = await configuracionService.getInactiveUnits();
+      } else {
+        units = await configuracionService.getAllUnits();
+      }
+      
       return ResponseHelper.success(res, units, 'Unidades obtenidas exitosamente');
     } catch (error: any) {
       return ResponseHelper.error(res, 'Error al obtener unidades de medida', error.message);

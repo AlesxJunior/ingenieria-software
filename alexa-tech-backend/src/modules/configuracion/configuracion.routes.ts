@@ -10,9 +10,9 @@ router.use(authenticate);
 // ==========================================
 // EMPRESA
 // ==========================================
+// Lectura: Permitida para todos los usuarios autenticados (necesario para documentos/reportes)
 router.get(
   '/empresa',
-  requirePermission('system.settings'),
   (req, res) => configuracionController.getEmpresa(req, res)
 );
 
@@ -25,15 +25,14 @@ router.put(
 // ==========================================
 // TIPOS DE COMPROBANTES
 // ==========================================
+// Lectura: Permitida para todos los usuarios autenticados (necesario para ventas)
 router.get(
   '/comprobantes',
-  requirePermission('system.settings'),
   (req, res) => configuracionController.getAllComprobantes(req, res)
 );
 
 router.get(
   '/comprobantes/:id',
-  requirePermission('system.settings'),
   (req, res) => configuracionController.getComprobanteById(req, res)
 );
 
@@ -58,15 +57,14 @@ router.delete(
 // ==========================================
 // MÉTODOS DE PAGO
 // ==========================================
+// Lectura: Permitida para todos los usuarios autenticados (necesario para ventas)
 router.get(
   '/metodos-pago',
-  requirePermission('system.settings'),
   (req, res) => configuracionController.getAllMetodosPago(req, res)
 );
 
 router.get(
   '/metodos-pago/:id',
-  requirePermission('system.settings'),
   (req, res) => configuracionController.getMetodoPagoById(req, res)
 );
 

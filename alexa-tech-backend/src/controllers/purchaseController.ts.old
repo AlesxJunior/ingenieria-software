@@ -208,6 +208,8 @@ export const PurchaseController = {
       }
       const id = String(req.params?.id);
       const userId = req.user?.userId as string;
+      console.log(`📝 [Controller UPDATE] Orden ${id}, Usuario: ${userId}`);
+      console.log(`📝 [Controller UPDATE] Body:`, JSON.stringify(req.body, null, 2));
 
       const purchase = await purchaseService.update(
         id,
@@ -258,12 +260,18 @@ export const PurchaseController = {
         userId,
       );
 
+      console.log(`✅ [Controller UPDATE] Actualización exitosa`);
       return ResponseHelper.success(
         res,
         purchase,
         'Orden de compra actualizada',
       );
     } catch (error: any) {
+      console.error(`❌ [Controller UPDATE] Error:`, {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack?.split('\n').slice(0, 5).join('\n'),
+      });
       return ResponseHelper.error(
         res,
         'Error al actualizar orden de compra',
@@ -319,13 +327,20 @@ export const PurchaseController = {
     try {
       const id = String(req.params?.id);
       const userId = req.user?.userId as string;
+      console.log(`🗑️ [Controller DELETE] Intentando eliminar orden ${id} por usuario ${userId}`);
       await purchaseService.delete(id, userId);
+      console.log(`✅ [Controller DELETE] Orden ${id} eliminada exitosamente`);
       return ResponseHelper.success(
         res,
         { id },
         'Orden de compra eliminada',
       );
     } catch (error: any) {
+      console.error(`❌ [Controller DELETE] Error al eliminar orden ${req.params?.id}:`, {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack?.split('\n').slice(0, 3).join('\n'),
+      });
       return ResponseHelper.error(
         res,
         'Error al eliminar orden de compra',

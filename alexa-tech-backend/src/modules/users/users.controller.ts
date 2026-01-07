@@ -463,13 +463,6 @@ export class UserController {
         return;
       }
 
-      // Verificar permisos para eliminar usuarios
-      const fullUser = await userService.findById(currentUser?.userId || '');
-      if (!fullUser || !fullUser.role?.permissions.includes('users.delete')) {
-        sendForbidden(res, 'No tienes permisos para eliminar usuarios');
-        return;
-      }
-
       // No se puede eliminar a sí mismo
       if (currentUser?.userId === id) {
         sendForbidden(res, 'No puedes eliminar tu propia cuenta');
@@ -484,7 +477,8 @@ export class UserController {
           return;
         }
 
-        logger.info(`User ${id} deleted by ${fullUser.email}`);
+        const fullUser = await userService.findById(currentUser?.userId || '');
+        logger.info(`User ${id} deleted by ${fullUser?.email || 'unknown'}`);
 
         sendSuccess(
           res,

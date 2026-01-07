@@ -230,6 +230,14 @@ export class ConfiguracionService {
     return categories as ProductCategoryResponse[];
   }
 
+  async getInactiveCategories(): Promise<ProductCategoryResponse[]> {
+    const categories = await prisma.productCategory.findMany({
+      where: { activo: false },
+      orderBy: { nombre: 'asc' },
+    });
+    return categories as ProductCategoryResponse[];
+  }
+
   async getCategoryById(id: string): Promise<ProductCategoryResponse | null> {
     const category = await prisma.productCategory.findUnique({
       where: { id },
@@ -378,6 +386,14 @@ export class ConfiguracionService {
   async getActiveUnits(): Promise<UnitOfMeasureResponse[]> {
     const units = await prisma.unitOfMeasure.findMany({
       where: { activo: true },
+      orderBy: { nombre: 'asc' },
+    });
+    return units as UnitOfMeasureResponse[];
+  }
+
+  async getInactiveUnits(): Promise<UnitOfMeasureResponse[]> {
+    const units = await prisma.unitOfMeasure.findMany({
+      where: { activo: false },
       orderBy: { nombre: 'asc' },
     });
     return units as UnitOfMeasureResponse[];

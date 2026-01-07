@@ -39,17 +39,24 @@ export interface RoleWithUsers extends RoleResponse {
   }[];
 }
 
-// Permisos válidos del sistema (33 permisos únicos)
+// Permisos válidos del sistema (43 permisos únicos)
 export const VALID_PERMISSIONS = [
   // Dashboard (1)
   'dashboard.read',
   
-  // Usuarios (3)
+  // Usuarios (4)
   'users.create',
   'users.read',
   'users.update',
+  'users.delete',
   
-  // Clientes (4)
+  // Roles (4)
+  'roles.create',
+  'roles.read',
+  'roles.update',
+  'roles.delete',
+  
+  // Clientes/Entidades Comerciales (4)
   'clients.create',
   'clients.read',
   'clients.update',
@@ -71,6 +78,12 @@ export const VALID_PERMISSIONS = [
   'inventory.read',
   'inventory.update',
   
+  // Almacenes (4)
+  'warehouses.create',
+  'warehouses.read',
+  'warehouses.update',
+  'warehouses.delete',
+  
   // Compras (4)
   'purchases.create',
   'purchases.read',
@@ -83,18 +96,21 @@ export const VALID_PERMISSIONS = [
   'cash-registers.update',
   'cash-registers.delete',
   
-  // Sesiones de Caja (3)
+  // Sesiones de Caja (4)
   'cash-sessions.create',
   'cash-sessions.read',
   'cash-sessions.update',
+  'cash-sessions.delete',
   
-  // Sistema (1)
-  'system.settings',
+  // Configuración (2)
+  'settings.read',
+  'settings.update',
   
-  // Reportes (3)
-  'reports.sales',
-  'reports.inventory',
-  'reports.financial',
+  // Auditoría (1)
+  'audit.read',
+  
+  // Reportes (1)
+  'reports.read',
 ] as const;
 
 export type Permission = typeof VALID_PERMISSIONS[number];
