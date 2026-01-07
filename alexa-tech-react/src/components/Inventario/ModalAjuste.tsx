@@ -217,7 +217,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
         });
         setMotivosAjuste(motivos);
       } catch (error) {
-        console.error('Error al cargar motivos de ajuste:', error);
+        console.error('❌ Error al cargar motivos de ajuste:', error);
         // Si falla, no bloqueamos el formulario
       } finally {
         setLoadingMotivos(false);

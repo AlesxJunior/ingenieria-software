@@ -1,34 +1,35 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY } from '../styles/theme';
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
 
 const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f0f2f5;
+  background-color: ${COLORS.neutral[50]};
 `;
 
 const LoadingSpinner = styled.div`
   width: 50px;
   height: 50px;
-  border: 5px solid #e3e3e3;
-  border-top: 5px solid #0047b3;
+  border: 5px solid ${COLORS.neutral[200]};
+  border-top: 5px solid ${COLOR_SCALES.primary[600]};
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  animation: ${spin} 1s linear infinite;
 `;
 
 const LoadingText = styled.p`
-  margin-top: 20px;
-  color: #666;
-  font-size: 16px;
+  margin-top: ${SPACING.xl};
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
 `;
 
 interface ProtectedRouteProps {

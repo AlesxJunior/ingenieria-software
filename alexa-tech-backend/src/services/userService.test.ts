@@ -1,23 +1,31 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrismaClient, User } from '@prisma/client';
-import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 import { userService } from './userService';
 import { prisma } from '../config/database';
 import * as bcrypt from 'bcrypt';
 import { config } from '../config'; // Import config
 
-jest.mock('../config/database', () => ({
+vi.mock('../config/database', () => ({
   __esModule: true,
-  prisma: mockDeep<PrismaClient>(),
+  prisma: {
+    user: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+    },
+  },
 }));
 
-jest.mock('bcrypt');
+vi.mock('bcrypt');
 
-const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;
+const prismaMock = prisma as any;
 
 describe('User Service', () => {
   beforeEach(() => {
-    mockReset(prismaMock);
-    (bcrypt.hash as jest.Mock).mockClear();
+    vi.clearAllMocks();
   });
 
   describe('findById', () => {
@@ -79,7 +87,7 @@ describe('User Service', () => {
     it('should create a new user successfully', async () => {
       // Arrange: No existing user, hash resolves, create resolves
       prismaMock.user.findUnique.mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
+      (bcrypt.hash as vi.Mock).mockResolvedValue('hashed_password');
       prismaMock.user.create.mockResolvedValue(createdUser);
 
       // Act
@@ -281,7 +289,7 @@ describe('User Service', () => {
       const passwordUpdate = { password: 'newpassword123' };
       const updatedUser = { ...existingUser, password: 'hashed_new_password' };
       prismaMock.user.findUnique.mockResolvedValue(existingUser);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_new_password');
+      (bcrypt.hash as vi.Mock).mockResolvedValue('hashed_new_password');
       prismaMock.user.update.mockResolvedValue(updatedUser);
 
       await userService.update('user-123', passwordUpdate);
@@ -310,7 +318,7 @@ describe('User Service', () => {
     };
 
     it('should return true for a correct password', async () => {
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.compare as vi.Mock).mockResolvedValue(true);
 
       const result = await userService.verifyPassword(user, 'password123');
 
@@ -319,7 +327,7 @@ describe('User Service', () => {
     });
 
     it('should return false for an incorrect password', async () => {
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      (bcrypt.compare as vi.Mock).mockResolvedValue(false);
 
       const result = await userService.verifyPassword(user, 'wrongpassword');
 

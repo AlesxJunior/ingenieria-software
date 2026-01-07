@@ -3,16 +3,19 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { media } from '../styles/breakpoints';
 import SidebarContent from './SidebarContent';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY, SHADOWS, TRANSITIONS } from '../styles/theme';
 
 const SidebarContainer = styled.aside`
   width: 250px;
-  background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
-  color: #ffffff;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, ${COLOR_SCALES.primary[900]} 0%, ${COLOR_SCALES.primary[800]} 50%, ${COLOR_SCALES.primary[700]} 100%);
+  color: ${COLORS.neutral.white};
+  box-shadow: ${SHADOWS.md};
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
+  min-height: 0;
+  position: sticky;
+  top: 0;
   
   ${media.tablet} {
     display: none;
@@ -21,16 +24,16 @@ const SidebarContainer = styled.aside`
 
 const SidebarHeader = styled.div`
   text-align: center;
-  padding: 20px 20px 20px;
+  padding: ${SPACING.xl} ${SPACING.xl} ${SPACING.xl};
   border-bottom: 1px solid rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
   background: rgba(30, 58, 138, 0.3);
 
   h2 {
     margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    color: #ffffff;
+    font-size: ${TYPOGRAPHY.fontSize['2xl']};
+    font-weight: ${TYPOGRAPHY.fontWeight.bold};
+    color: ${COLORS.neutral.white};
   }
 `;
 
@@ -38,7 +41,7 @@ const TitleLink = styled(Link)`
   text-decoration: none;
   color: inherit;
   display: block;
-  transition: all 0.3s ease;
+  transition: ${TRANSITIONS.default};
   
   &:hover {
     transform: scale(1.05);

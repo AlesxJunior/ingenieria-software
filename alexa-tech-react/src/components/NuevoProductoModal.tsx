@@ -5,12 +5,14 @@ import { useNotification } from '../context/NotificationContext';
 import { apiService } from '../utils/api';
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from '../utils/productOptions';
 import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../constants/warehouses';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
+import { Button as SharedButton } from './shared/Button';
 
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: ${SPACING.lg};
+  margin-bottom: ${SPACING.xl};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -22,59 +24,37 @@ const FormGroup = styled.div`
   flex-direction: column;
 
   label {
-    font-size: 13px;
-    color: #555;
-    font-weight: 500;
-    margin-bottom: 6px;
+    font-size: ${TYPOGRAPHY.fontSize.xs};
+    color: ${COLORS.text.secondary};
+    font-weight: ${TYPOGRAPHY.fontWeight.medium};
+    margin-bottom: ${SPACING.sm};
   }
 
   input, select {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 14px;
+    padding: ${SPACING.md} ${SPACING.lg};
+    border: 1px solid ${COLORS.neutral[300]};
+    border-radius: ${BORDER_RADIUS.md};
+    font-size: ${TYPOGRAPHY.fontSize.sm};
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: ${TRANSITIONS.default};
   }
 
   input:focus, select:focus {
-    border-color: #0047b3;
+    border-color: ${COLOR_SCALES.primary[500]};
   }
 
   .error {
-    color: #e74c3c;
-    font-size: 12px;
-    margin-top: 5px;
+    color: ${COLOR_SCALES.danger[500]};
+    font-size: ${TYPOGRAPHY.fontSize.xs};
+    margin-top: ${SPACING.xs};
   }
 `;
 
 const Actions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  ${props => props.$variant === 'primary' ? `
-    background-color: #0047b3;
-    color: white;
-
-    &:hover { background-color: #003a92; }
-    &:disabled { background-color: #8fa8d6; cursor: not-allowed; }
-  ` : `
-    background-color: #6c757d;
-    color: white;
-    &:hover { background-color: #5a6268; }
-  `}
+  gap: ${SPACING.lg};
 `;
 
 interface ProductFormData {

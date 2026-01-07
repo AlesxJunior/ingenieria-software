@@ -1,30 +1,46 @@
-
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrismaClient, Client } from '@prisma/client';
-import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 import { clientService, CreateClientData } from './entidadService';
 import { prisma } from '../config/database';
 import { AuditService } from './auditService';
 
-jest.mock('../config/database', () => ({
+vi.mock('../config/database', () => ({
   __esModule: true,
-  prisma: mockDeep<PrismaClient>(),
-}));
-
-jest.mock('./auditService', () => ({
-  __esModule: true,
-  AuditService: {
-    createAuditLog: jest.fn().mockResolvedValue(undefined),
+  prisma: {
+    client: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    departamento: {
+      findUnique: vi.fn(),
+    },
+    provincia: {
+      findUnique: vi.fn(),
+    },
+    distrito: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
-const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;
+vi.mock('./auditService', () => ({
+  __esModule: true,
+  AuditService: {
+    createAuditLog: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
-beforeEach(() => {
-  mockReset(prismaMock);
-  (AuditService.createAuditLog as jest.Mock).mockClear();
-});
+const prismaMock = prisma as any;
 
 describe('Client Service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should create a new client with DNI successfully', async () => {
     const clientDniData: CreateClientData = {
       tipoEntidad: 'Cliente',

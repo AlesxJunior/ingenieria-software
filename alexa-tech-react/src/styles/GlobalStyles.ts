@@ -1,10 +1,8 @@
 import styled, { createGlobalStyle } from 'styled-components';
 import { media } from './breakpoints';
+import { TYPOGRAPHY, COLORS } from './theme';
 
 export const GlobalStyles = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
-
   * {
     margin: 0;
     padding: 0;
@@ -12,9 +10,9 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f0f2f5;
-    color: #333;
+    font-family: ${TYPOGRAPHY.fontFamily};
+    background-color: ${COLORS.background};
+    color: ${COLORS.text};
     
     ${media.mobile} {
       font-size: 14px;

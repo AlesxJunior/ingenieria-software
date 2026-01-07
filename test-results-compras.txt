@@ -1,0 +1,98 @@
+﻿[34m
+🚀 INICIANDO TESTING E2E - MÓDULO DE COMPRAS
+[0m
+[34m═══════════════════════════════════════════════
+[0m
+[33m
+📍 PASO 1: Autenticación de Usuario[0m
+[32m✅ Login exitoso[0m
+[36mℹ️  Usuario: admin@alexatech.com[0m
+[36mℹ️  Token obtenido: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...[0m
+[33m
+📍 PASO 2: Crear Orden de Compra - Estado Inicial: PENDIENTE[0m
+[31m❌ Creación falló: Ruta no encontrada: GET /api/entidades-comerciales?tipoEntidad=Proveedor&activo=true&limit=1[0m
+node : {
+En línea: 1 Carácter: 80
++ ... ARE\ingenieria-software"; node 
+test-purchase-flow-e2e.js 2>&1 | 
+Out-F ...
++                               
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: ({:String) [], RemoteExcep  
+  tion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
+  success: false,
+  message: 'Ruta no encontrada: GET /a
+pi/entidades-comerciales?tipoEntidad=P
+roveedor&activo=true&limit=1',
+  code: 'ROUTE_NOT_FOUND',
+  stack: 'AppError: Ruta no 
+encontrada: GET /api/entidades-comerci
+ales?tipoEntidad=Proveedor&activo=true
+&limit=1\n' +
+    '    at notFoundHandler (C:\\Users
+\\nesto\\OneDrive\\Escritorio\\PROYECT
+O SOTFWARE\\ingenieria-software\\alexa
+-tech-backend\\src\\middleware\\errorH
+andler.ts:128:17)\n' +
+    '    at Layer.handleRequest (C:\\U
+sers\\nesto\\OneDrive\\Escritorio\\PRO
+YECTO SOTFWARE\\ingenieria-software\\a
+lexa-tech-backend\\node_modules\\route
+r\\lib\\layer.js:152:17)\n' +
+    '    at trimPrefix (C:\\Users\\nes
+to\\OneDrive\\Escritorio\\PROYECTO SOT
+FWARE\\ingenieria-software\\alexa-tech
+-backend\\node_modules\\router\\index.
+js:342:13)\n' +
+    '    at C:\\Users\\nesto\\OneDrive
+\\Escritorio\\PROYECTO SOTFWARE\\ingen
+ieria-software\\alexa-tech-backend\\no
+de_modules\\router\\index.js:297:9\n' 
++
+    '    at processParams (C:\\Users\\
+nesto\\OneDrive\\Escritorio\\PROYECTO 
+SOTFWARE\\ingenieria-software\\alexa-t
+ech-backend\\node_modules\\router\\ind
+ex.js:582:12)\n' +
+    '    at next (C:\\Users\\nesto\\On
+eDrive\\Escritorio\\PROYECTO SOTFWARE\
+\ingenieria-software\\alexa-tech-backe
+nd\\node_modules\\router\\index.js:291
+:5)\n' +
+    '    at C:\\Users\\nesto\\OneDrive
+\\Escritorio\\PROYECTO SOTFWARE\\ingen
+ieria-software\\alexa-tech-backend\\no
+de_modules\\router\\index.js:688:15\n'
+ +
+    '    at next (C:\\Users\\nesto\\On
+eDrive\\Escritorio\\PROYECTO SOTFWARE\
+\ingenieria-software\\alexa-tech-backe
+nd\\node_modules\\router\\index.js:276
+:14)\n' +
+    '    at Function.handle (C:\\Users
+\\nesto\\OneDrive\\Escritorio\\PROYECT
+O SOTFWARE\\ingenieria-software\\alexa
+-tech-backend\\node_modules\\router\\i
+ndex.js:186:3)\n' +
+    '    at router (C:\\Users\\nesto\\
+OneDrive\\Escritorio\\PROYECTO SOTFWAR
+E\\ingenieria-software\\alexa-tech-bac
+kend\\node_modules\\router\\index.js:6
+0:12)'
+}
+[31m
+⚠️  Test "Crear Orden (PENDIENTE)" FALLÓ - Deteniendo ejecución
+[0m
+[34m
+═══════════════════════════════════════════════[0m
+[34m📊 RESULTADOS FINALES:[0m
+[36mTotal: 2[0m
+[32mPasados: 1[0m
+[31mFallados: 1[0m
+[31m
+❌ ALGUNOS TESTS FALLARON
+[0m

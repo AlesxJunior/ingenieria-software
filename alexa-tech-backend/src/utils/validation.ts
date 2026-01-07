@@ -173,6 +173,26 @@ export const validateRegisterRequest = (data: any): ValidationResult => {
 export const validateUserUpdate = (data: any): ValidationResult => {
   const validator = new Validator();
 
+  // ❌ RBAC: Rechazar campo permissions (migración completa a RBAC)
+  if ('permissions' in data) {
+    (validator as any).errors.push({
+      field: 'permissions',
+      message: 'El campo "permissions" ya no es válido. Use "roleId" para asignar permisos mediante roles.',
+      value: data.permissions,
+    });
+  }
+
+  // ✅ RBAC: roleId opcional en update (puede no cambiar)
+  if (data.roleId !== undefined) {
+    if (!data.roleId || typeof data.roleId !== 'string' || data.roleId.trim() === '') {
+      (validator as any).errors.push({
+        field: 'roleId',
+        message: 'roleId debe ser un ID válido (string no vacío)',
+        value: data.roleId,
+      });
+    }
+  }
+
   if (data.username !== undefined) {
     validator.username(data.username);
   }
@@ -198,6 +218,25 @@ export const validateUserUpdate = (data: any): ValidationResult => {
 
 export const validateUserCreate = (data: any): ValidationResult => {
   const validator = new Validator();
+
+  // ❌ RBAC: Rechazar campo permissions (migración completa a RBAC)
+  if ('permissions' in data) {
+    (validator as any).errors.push({
+      field: 'permissions',
+      message: 'El campo "permissions" ya no es válido. Use "roleId" para asignar permisos mediante roles.',
+      value: data.permissions,
+    });
+  }
+
+  // ✅ RBAC: roleId OBLIGATORIO en creación de usuarios
+  validator.required(data.roleId, 'roleId');
+  if (data.roleId && (typeof data.roleId !== 'string' || data.roleId.trim() === '')) {
+    (validator as any).errors.push({
+      field: 'roleId',
+      message: 'roleId debe ser un ID válido (string no vacío)',
+      value: data.roleId,
+    });
+  }
 
   validator
     .username(data.username)

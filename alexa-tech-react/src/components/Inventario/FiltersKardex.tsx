@@ -1,23 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../styles/theme';
 import type { KardexFilters } from '../../types/inventario';
 import { WAREHOUSE_OPTIONS } from '../../constants/warehouses';
 import { inventarioApi } from '../../services/inventarioApi';
 import { apiService } from '../../utils/api';
 
 const FiltersContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
+  background: ${COLORS.background};
+  padding: ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.lg};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: ${SPACING.md};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -27,7 +27,7 @@ const FiltersGrid = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: ${SPACING.xs};
 `;
 
 const Label = styled.label<{ $required?: boolean }>`
@@ -117,10 +117,13 @@ const ErrorMessage = styled.span`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.md};
   justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: ${SPACING.lg};
 
   @media (max-width: 768px) {
+    width: 100%;
     justify-content: stretch;
     
     button {
@@ -163,9 +166,11 @@ interface FiltersKardexProps {
   onFilterChange: (filters: KardexFilters) => void;
   loading?: boolean;
   defaultWarehouseId?: string;
+  onExport?: () => void;
+  exportando?: boolean;
 }
 
-const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading = false, defaultWarehouseId }) => {
+const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading = false, defaultWarehouseId, onExport, exportando = false }) => {
   const [filters, setFilters] = useState<KardexFilters>({
     warehouseId: '',
     productId: '',
@@ -503,6 +508,18 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
         >
           {loading ? 'Buscando...' : 'Buscar'}
         </Button>
+        {onExport && (
+          <Button 
+            type="button" 
+            $variant="primary" 
+            onClick={onExport}
+            disabled={exportando || loading}
+            style={{ background: '#28a745' }}
+            data-testid="kardex-filter-export"
+          >
+            {exportando ? 'Exportando...' : 'Exportar a Excel'}
+          </Button>
+        )}
       </ButtonGroup>
     </FiltersContainer>
   );

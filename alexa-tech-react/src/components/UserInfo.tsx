@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
 import { media } from '../styles/breakpoints';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY, BORDER_RADIUS, SHADOWS, TRANSITIONS } from '../styles/theme';
 
 const UserInfoContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  gap: ${SPACING.lg};
+  padding: ${SPACING.sm} ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.md};
+  transition: ${TRANSITIONS.default};
   margin-left: auto; /* Fuerza la alineación a la derecha */
   
   &:hover {
@@ -26,15 +27,15 @@ const UserInfoContainer = styled.div`
 const UserAvatar = styled.div`
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: ${BORDER_RADIUS.full};
+  background: linear-gradient(135deg, ${COLOR_SCALES.primary[500]}, ${COLOR_SCALES.primary[700]});
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 16px;
-  color: white;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  color: ${COLORS.neutral.white};
+  box-shadow: ${SHADOWS.md};
 `;
 
 const UserDetails = styled.div`
@@ -44,10 +45,10 @@ const UserDetails = styled.div`
 `;
 
 const UserName = styled.div`
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 2px;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.primary};
+  margin-bottom: ${SPACING.xs};
 `;
 
 const UserInfoLink = styled(Link)`
@@ -55,7 +56,7 @@ const UserInfoLink = styled(Link)`
   color: inherit;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: ${SPACING.lg};
 `;
 
 const UserInfo: React.FC = () => {

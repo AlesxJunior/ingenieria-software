@@ -56,6 +56,7 @@ export interface ClientFilters {
   tipoEntidad?: TipoEntidad | 'Cliente' | 'Proveedor' | 'Ambos';
   fechaDesde?: string;
   fechaHasta?: string;
+  includeInactive?: boolean;
 }
 
 export const clientService = {
@@ -230,9 +231,12 @@ export const clientService = {
   // Obtener todos los clientes con filtros
   async getClients(filters: ClientFilters = {}): Promise<Client[]> {
     try {
-      const where: Prisma.ClientWhereInput = {
-        isActive: true,
-      };
+      const where: Prisma.ClientWhereInput = {};
+
+      // Solo filtrar por activos si includeInactive no está activado
+      if (!filters.includeInactive) {
+        where.isActive = true;
+      }
 
       // Filtro de búsqueda por nombres, apellidos, razón social, email o documento
       if (filters.search) {
@@ -351,18 +355,18 @@ export const clientService = {
 
       // Preparar datos para actualización
       const updateData: any = {};
-      if (data.tipoEntidad)
+      if (data.tipoEntidad !== undefined)
         updateData.tipoEntidad = data.tipoEntidad as TipoEntidad;
-      if (data.tipoDocumento) updateData.tipoDocumento = data.tipoDocumento;
-      if (data.numeroDocumento)
+      if (data.tipoDocumento !== undefined) updateData.tipoDocumento = data.tipoDocumento;
+      if (data.numeroDocumento !== undefined)
         updateData.numeroDocumento = data.numeroDocumento.trim();
-      if (data.email) updateData.email = data.email.toLowerCase().trim();
-      if (data.telefono) updateData.telefono = data.telefono.trim();
-      if (data.direccion) updateData.direccion = data.direccion.trim();
+      if (data.email !== undefined) updateData.email = data.email.toLowerCase().trim();
+      if (data.telefono !== undefined) updateData.telefono = data.telefono.trim();
+      if (data.direccion !== undefined) updateData.direccion = data.direccion.trim();
       // Ubigeo
-      if (data.departamentoId) updateData.departamentoId = data.departamentoId;
-      if (data.provinciaId) updateData.provinciaId = data.provinciaId;
-      if (data.distritoId) updateData.distritoId = data.distritoId;
+      if (data.departamentoId !== undefined) updateData.departamentoId = data.departamentoId;
+      if (data.provinciaId !== undefined) updateData.provinciaId = data.provinciaId;
+      if (data.distritoId !== undefined) updateData.distritoId = data.distritoId;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
       // Campos condicionales según tipo de documento
@@ -538,6 +542,52 @@ export const clientService = {
       });
     } catch (error) {
       console.error('Error al obtener cliente por documento:', error);
+      throw error;
+    }
+  },
+
+  // Soft delete de un cliente (marcar como inactivo)
+  async softDeleteClient(id: string, userId?: string): Promise<Client> {
+    try {
+      // Verificar que el cliente existe
+      const existingClient = await prisma.client.findUnique({
+        where: { id },
+      });
+
+      if (!existingClient) {
+        throw new Error('Cliente no encontrado');
+      }
+
+      if (!existingClient.isActive) {
+        throw new Error('El cliente ya está desactivado');
+      }
+
+      // Soft delete: marcar como inactivo
+      const deletedClient = await prisma.client.update({
+        where: { id },
+        data: {
+          isActive: false,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Registrar auditoría
+      if (userId) {
+        await AuditService.createAuditLog({
+          action: 'DELETE_CLIENT',
+          userId,
+          targetId: id,
+          details: `Cliente ${deletedClient.tipoDocumento} ${deletedClient.numeroDocumento} eliminado (soft delete): ${
+            deletedClient.tipoDocumento === 'RUC'
+              ? deletedClient.razonSocial || ''
+              : `${deletedClient.nombres || ''} ${deletedClient.apellidos || ''}`.trim()
+          }`,
+        });
+      }
+
+      return deletedClient;
+    } catch (error) {
+      console.error('Error al eliminar cliente:', error);
       throw error;
     }
   },

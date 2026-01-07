@@ -1,0 +1,24 @@
+{
+  "name": "@alexa-tech/shared",
+  "version": "1.0.0",
+  "description": "Código compartido entre backend y frontend del proyecto AlexaTech",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rimraf dist"
+  },
+  "keywords": [
+    "shared",
+    "common",
+    "types",
+    "alexa-tech"
+  ],
+  "author": "AlexaTech Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "rimraf": "^5.0.5"
+  }
+}

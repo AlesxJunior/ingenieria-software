@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi, beforeAll, afterAll } from 'vitest';
 import { 
   InventoryService, 
   ValidationError, 
@@ -14,36 +14,36 @@ import { Prisma } from '@prisma/client';
 // ============================================================================
 
 // Mock de Prisma
-jest.mock('../config/database', () => ({
+vi.mock('../config/database', () => ({
   prisma: {
     product: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-      findMany: jest.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
     },
     warehouse: {
-      findUnique: jest.fn(),
+      findUnique: vi.fn(),
     },
     user: {
-      findUnique: jest.fn(),
+      findUnique: vi.fn(),
     },
     stockByWarehouse: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      upsert: jest.fn(),
-      aggregate: jest.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      upsert: vi.fn(),
+      aggregate: vi.fn(),
     },
     inventoryMovement: {
-      findMany: jest.fn(),
-      count: jest.fn(),
-      create: jest.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
     },
-    $transaction: jest.fn(),
-    $queryRaw: jest.fn(),
+    $transaction: vi.fn(),
+    $queryRaw: vi.fn(),
   },
 }));
 
-const mockPrisma = prisma as jest.Mocked<typeof prisma>;
+const mockPrisma = prisma as any;
 
 // ============================================================================
 // DATOS DE PRUEBA
@@ -113,6 +113,7 @@ const mockInventoryMovement = {
   stockBefore: 50,
   stockAfter: 55,
   reason: 'ErrorConteo',
+  reasonId: null,
   userId: 'user-123',
   documentRef: null,
   createdAt: new Date(),
@@ -130,7 +131,7 @@ describe('InventoryService', () => {
 
   beforeEach(() => {
     inventoryService = new InventoryService();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   // ==========================================================================
@@ -300,23 +301,25 @@ describe('InventoryService', () => {
     });
 
     it('should successfully adjust stock with positive quantity', async () => {
-      mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(mockStockByWarehouse);
+      mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(mockStockByWarehouse as any);
       
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      // @ts-ignore
+      const mockTransaction = vi.fn().mockImplementation(async (callback: any) => {
         return await callback({
           stockByWarehouse: {
-            upsert: jest.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 55 }),
-            aggregate: jest.fn().mockResolvedValue({ _sum: { quantity: 155 } }),
+            upsert: vi.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 55 }),
+            aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 155 } }),
           },
           inventoryMovement: {
-            create: jest.fn().mockResolvedValue(mockInventoryMovement),
+            create: vi.fn().mockResolvedValue(mockInventoryMovement),
           },
           product: {
-            update: jest.fn().mockResolvedValue({ ...mockProduct, stock: 155 }),
+            update: vi.fn().mockResolvedValue({ ...mockProduct, stock: 155 }),
           },
         });
       });
       
+      // @ts-ignore
       mockPrisma.$transaction.mockImplementation(mockTransaction);
 
       const result = await inventoryService.ajustarStock(
@@ -331,24 +334,24 @@ describe('InventoryService', () => {
     });
 
     it('should successfully adjust stock with negative quantity', async () => {
-      mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(mockStockByWarehouse);
+      mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(mockStockByWarehouse as any);
       
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      const mockTransaction = vi.fn().mockImplementation(async (callback: any) => {
         return await callback({
           stockByWarehouse: {
-            upsert: jest.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 45 }),
-            aggregate: jest.fn().mockResolvedValue({ _sum: { quantity: 95 } }),
+            upsert: vi.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 45 } as any),
+            aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 95 } } as any),
           },
           inventoryMovement: {
-            create: jest.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: -5, stockAfter: 45 }),
+            create: vi.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: -5, stockAfter: 45 } as any),
           },
           product: {
-            update: jest.fn().mockResolvedValue({ ...mockProduct, stock: 95 }),
+            update: vi.fn().mockResolvedValue({ ...mockProduct, stock: 95 } as any),
           },
-        });
+        } as any);
       });
       
-      mockPrisma.$transaction.mockImplementation(mockTransaction);
+      mockPrisma.$transaction.mockImplementation(mockTransaction as any);
 
       const result = await inventoryService.ajustarStock(
         { productId: 'prod-123', warehouseId: 'wh-123', cantidadAjuste: -5 },
@@ -364,17 +367,17 @@ describe('InventoryService', () => {
     it('should create new stock record when none exists', async () => {
       mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(null);
       
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         return await callback({
           stockByWarehouse: {
-            upsert: jest.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 10 }),
-            aggregate: jest.fn().mockResolvedValue({ _sum: { quantity: 110 } }),
+            upsert: vi.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 10 }),
+            aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 110 } }),
           },
           inventoryMovement: {
-            create: jest.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: 10, stockBefore: 0, stockAfter: 10 }),
+            create: vi.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: 10, stockBefore: 0, stockAfter: 10 }),
           },
           product: {
-            update: jest.fn().mockResolvedValue({ ...mockProduct, stock: 110 }),
+            update: vi.fn().mockResolvedValue({ ...mockProduct, stock: 110 }),
           },
         });
       });
@@ -406,17 +409,17 @@ describe('InventoryService', () => {
     it('should handle very large positive adjustments', async () => {
       mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(mockStockByWarehouse);
       
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         return await callback({
           stockByWarehouse: {
-            upsert: jest.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 1000050 }),
-            aggregate: jest.fn().mockResolvedValue({ _sum: { quantity: 1000100 } }),
+            upsert: vi.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 1000050 }),
+            aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 1000100 } }),
           },
           inventoryMovement: {
-            create: jest.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: 1000000 }),
+            create: vi.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: 1000000 }),
           },
           product: {
-            update: jest.fn().mockResolvedValue({ ...mockProduct, stock: 1000100 }),
+            update: vi.fn().mockResolvedValue({ ...mockProduct, stock: 1000100 }),
           },
         });
       });
@@ -435,17 +438,17 @@ describe('InventoryService', () => {
     it('should handle adjustment that brings stock to exactly zero', async () => {
       mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(mockStockByWarehouse);
       
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         return await callback({
           stockByWarehouse: {
-            upsert: jest.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 0 }),
-            aggregate: jest.fn().mockResolvedValue({ _sum: { quantity: 50 } }),
+            upsert: vi.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 0 }),
+            aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 50 } }),
           },
           inventoryMovement: {
-            create: jest.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: -50, stockAfter: 0 }),
+            create: vi.fn().mockResolvedValue({ ...mockInventoryMovement, quantity: -50, stockAfter: 0 }),
           },
           product: {
-            update: jest.fn().mockResolvedValue({ ...mockProduct, stock: 50 }),
+            update: vi.fn().mockResolvedValue({ ...mockProduct, stock: 50 }),
           },
         });
       });
@@ -463,25 +466,25 @@ describe('InventoryService', () => {
 
     it('should handle product with null minStock', async () => {
       const productWithNullMinStock = { ...mockProduct, minStock: null };
-      mockPrisma.product.findUnique.mockResolvedValue(productWithNullMinStock);
+      mockPrisma.product.findUnique.mockResolvedValue(productWithNullMinStock as any);
       mockPrisma.stockByWarehouse.findUnique.mockResolvedValue(null);
       
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      const mockTransaction = vi.fn().mockImplementation(async (callback) => {
         return await callback({
           stockByWarehouse: {
-            upsert: jest.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 10, minStock: null }),
-            aggregate: jest.fn().mockResolvedValue({ _sum: { quantity: 110 } }),
+            upsert: vi.fn().mockResolvedValue({ ...mockStockByWarehouse, quantity: 10, minStock: null } as any),
+            aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 110 } } as any),
           },
           inventoryMovement: {
-            create: jest.fn().mockResolvedValue(mockInventoryMovement),
+            create: vi.fn().mockResolvedValue(mockInventoryMovement as any),
           },
           product: {
-            update: jest.fn().mockResolvedValue(productWithNullMinStock),
+            update: vi.fn().mockResolvedValue(productWithNullMinStock as any),
           },
-        });
+        } as any);
       });
       
-      mockPrisma.$transaction.mockImplementation(mockTransaction);
+      mockPrisma.$transaction.mockImplementation(mockTransaction as any);
 
       const result = await inventoryService.ajustarStock(
         { productId: 'prod-123', warehouseId: 'wh-123', cantidadAjuste: 10 },
@@ -545,23 +548,26 @@ describe('InventoryService', () => {
       it('should return paginated stock data', async () => {
         const mockStockRecords = [
           {
+            id: 'stock-1',
             productId: 'prod-123',
             warehouseId: 'wh-123',
             quantity: 50,
             minStock: 10,
+            createdAt: new Date(),
+            updatedAt: new Date(),
             product: mockProduct,
             warehouse: mockWarehouse,
           },
         ];
 
-        mockPrisma.stockByWarehouse.findMany.mockResolvedValue(mockStockRecords);
+        mockPrisma.stockByWarehouse.findMany.mockResolvedValue(mockStockRecords as any);
 
         const result = await inventoryService.getStock({ page: 1, pageSize: 20 });
 
         expect(result).toHaveLength(1);
-        expect(result[0].productId).toBe('prod-123');
-        expect(result[0].cantidad).toBe(50);
-        expect(result[0].estado).toBe('NORMAL');
+        expect(result[0]?.productId).toBe('prod-123');
+        expect(result[0]?.cantidad).toBe(50);
+        expect(result[0]?.estado).toBe('NORMAL');
       });
 
       it('should filter by warehouse', async () => {
@@ -652,14 +658,23 @@ describe('InventoryService', () => {
         const mockProducts = [
           {
             id: 'prod-123',
+            createdAt: new Date(),
+            updatedAt: new Date(),
             codigo: 'P001',
+            nombre: 'Product 1',
+            descripcion: null,
+            categoria: 'Category 1',
+            precioVenta: 100,
             stock: 100,
+            minStock: null,
             trackInventory: true,
+            usuarioCreacion: 'user-123',
+            usuarioActualizacion: null,
             stockByWarehouses: [
               { quantity: 30 },
               { quantity: 40 },
             ],
-          },
+          } as any,
         ];
 
         mockPrisma.product.findMany.mockResolvedValue(mockProducts);
@@ -675,14 +690,23 @@ describe('InventoryService', () => {
         const mockProducts = [
           {
             id: 'prod-123',
+            createdAt: new Date(),
+            updatedAt: new Date(),
             codigo: 'P001',
+            nombre: 'Product 1',
+            descripcion: null,
+            categoria: 'Category 1',
+            precioVenta: 100,
             stock: 70,
+            minStock: null,
             trackInventory: true,
+            usuarioCreacion: 'user-123',
+            usuarioActualizacion: null,
             stockByWarehouses: [
               { quantity: 30 },
               { quantity: 40 },
             ],
-          },
+          } as any,
         ];
 
         mockPrisma.product.findMany.mockResolvedValue(mockProducts);

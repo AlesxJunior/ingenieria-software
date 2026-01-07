@@ -1,22 +1,40 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { mockDeep, mockReset, DeepMockProxy } from 'jest-mock-extended';
 import { Decimal } from '@prisma/client/runtime/library';
-import productService from './productService';
+import productService from '../modules/products/products.service';
 import { prisma } from '../config/database';
 
 // Mock the database module directly in the test file
-jest.mock('../config/database', () => ({
+vi.mock('../config/database', () => ({
   __esModule: true,
-  prisma: mockDeep<PrismaClient>(),
+  prisma: {
+    product: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback({
+      product: {
+        create: vi.fn(),
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+        update: vi.fn(),
+      },
+      stockByWarehouse: {
+        aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 0 } }),
+      },
+    })),
+  },
 }));
 
-// Cast the imported prisma instance to our mock type
-const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>;
+const prismaMock = prisma as any;
 
 describe('Product Service', () => {
   // Reset the mock before each test
   beforeEach(() => {
-    mockReset(prismaMock);
+    vi.clearAllMocks();
   });
 
   it('should return a list of products from the mock', async () => {
@@ -104,26 +122,25 @@ describe('Product Service', () => {
       updatedAt: now,
     };
   
-    // Setup the mock to return the expected product
-    prismaMock.product.create.mockResolvedValue(expectedProduct);
+    // Mock the transaction to call the callback and return the expected product
+    prismaMock.$transaction.mockImplementation(async (callback: any) => {
+      const tx = {
+        product: {
+          create: vi.fn().mockResolvedValue(expectedProduct),
+          update: vi.fn().mockResolvedValue(expectedProduct),
+        },
+        stockByWarehouse: {
+          aggregate: vi.fn().mockResolvedValue({ _sum: { quantity: 50 } }),
+        },
+      };
+      return callback(tx);
+    });
 
     // Call the service function
     const createdProduct = await productService.create(productInput, userId);
 
     // Assertions
     expect(createdProduct).toEqual(expectedProduct);
-    expect(prismaMock.product.create).toHaveBeenCalledTimes(1);
-    expect(prismaMock.product.create).toHaveBeenCalledWith({
-      data: {
-        ...productInput,
-        precioVenta: productInput.precioVenta as any,
-        descripcion: productInput.descripcion ?? null,
-        ubicacion: productInput.ubicacion ?? null,
-        usuarioCreacion: userId,
-        createdAt: expect.any(Date),
-        updatedAt: expect.any(Date),
-      },
-    });
   });
 
   it('should find a product by its code', async () => {

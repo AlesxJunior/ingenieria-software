@@ -238,4 +238,30 @@ export const movementReasonController = {
       `Motivo ${reason.activo ? 'activado' : 'desactivado'} exitosamente`,
     );
   }),
+
+  // POST /api/movement-reasons/:id/activate - Activar motivo
+  activate: asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+
+    const existingReason = await prisma.movementReason.findUnique({
+      where: { id },
+    });
+
+    if (!existingReason) {
+      return ResponseHelper.error(res, 'Motivo no encontrado', 404);
+    }
+
+    const reason = await prisma.movementReason.update({
+      where: { id },
+      data: {
+        activo: true,
+      },
+    });
+
+    return ResponseHelper.success(
+      res,
+      reason,
+      'Motivo activado exitosamente',
+    );
+  }),
 };

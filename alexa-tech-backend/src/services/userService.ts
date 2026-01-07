@@ -1,13 +1,16 @@
-import { User } from '@prisma/client';
+import { User, Prisma, Role } from '@prisma/client';
 import { prisma } from '../config/database';
 import { UserCreateInput, UserUpdateInput } from '../types';
 import * as bcrypt from 'bcrypt';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 
+// Tipo para usuario con rol incluido (RBAC)
+type UserWithRole = User & { role: Role };
+
 export class UserService {
   // Crear un nuevo usuario
-  async create(userData: UserCreateInput): Promise<User> {
+  async create(userData: UserCreateInput): Promise<UserWithRole> {
     try {
       // Verificar si el email ya existe
       const existingUserByEmail = await prisma.user.findUnique({
@@ -33,6 +36,15 @@ export class UserService {
         config.bcryptRounds,
       );
 
+      // Verificar que el rol existe
+      const roleExists = await prisma.role.findUnique({
+        where: { id: userData.roleId },
+      });
+
+      if (!roleExists) {
+        throw new Error('El rol especificado no existe');
+      }
+
       // Crear el usuario
       const user = await prisma.user.create({
         data: {
@@ -41,7 +53,10 @@ export class UserService {
           password: hashedPassword,
           firstName: userData.firstName,
           lastName: userData.lastName,
-          permissions: userData.permissions || [],
+          roleId: userData.roleId, // RBAC: Asignar rol obligatorio
+        },
+        include: {
+          role: true, // Incluir datos del rol en la respuesta
         },
       });
 
@@ -54,10 +69,13 @@ export class UserService {
   }
 
   // Obtener usuario por ID
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<UserWithRole | null> {
     try {
       return await prisma.user.findUnique({
         where: { id },
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por ID:', error);
@@ -66,10 +84,13 @@ export class UserService {
   }
 
   // Obtener usuario por email
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<UserWithRole | null> {
     try {
       return await prisma.user.findUnique({
         where: { email },
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por email:', error);
@@ -78,10 +99,13 @@ export class UserService {
   }
 
   // Obtener usuario por username
-  async findByUsername(username: string): Promise<User | null> {
+  async findByUsername(username: string): Promise<UserWithRole | null> {
     try {
       return await prisma.user.findUnique({
         where: { username },
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
     } catch (error) {
       logger.error('Error obteniendo usuario por username:', error);
@@ -90,7 +114,7 @@ export class UserService {
   }
 
   // Actualizar usuario
-  async update(id: string, userData: UserUpdateInput): Promise<User | null> {
+  async update(id: string, userData: UserUpdateInput): Promise<UserWithRole | null> {
     try {
       // Verificar si el usuario existe
       const existingUser = await prisma.user.findUnique({
@@ -138,6 +162,9 @@ export class UserService {
       const updatedUser = await prisma.user.update({
         where: { id },
         data: updateData,
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
 
       logger.info(`Usuario actualizado: ${updatedUser.email}`);
@@ -184,11 +211,14 @@ export class UserService {
   }
 
   // Obtener usuarios activos
-  async findActiveUsers(): Promise<User[]> {
+  async findActiveUsers(): Promise<UserWithRole[]> {
     try {
       return await prisma.user.findMany({
         where: { isActive: true },
         orderBy: { createdAt: 'desc' },
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
     } catch (error) {
       logger.error('Error obteniendo usuarios activos:', error);
@@ -202,7 +232,7 @@ export class UserService {
     search?: string;
     limit?: number;
     offset?: number;
-  }): Promise<User[]> {
+  }): Promise<UserWithRole[]> {
     try {
       const { filters = {}, search, limit = 10, offset = 0 } = options;
 
@@ -224,6 +254,9 @@ export class UserService {
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
+        include: {
+          role: true, // ⭐ Incluir rol para RBAC
+        },
       });
     } catch (error) {
       logger.error('Error obteniendo usuarios con filtros:', error);
@@ -286,7 +319,7 @@ export class UserService {
     limit?: number;
     search?: string;
     isActive?: boolean;
-  }): Promise<{ users: User[]; total: number }> {
+  }): Promise<{ users: UserWithRole[]; total: number }> {
     try {
       const { page = 1, limit = 10, search, isActive } = options;
       const offset = (page - 1) * limit;
@@ -314,6 +347,9 @@ export class UserService {
           orderBy: { createdAt: 'desc' },
           take: limit,
           skip: offset,
+          include: {
+            role: true, // ⭐ Incluir rol para RBAC
+          },
         }),
         prisma.user.count({
           where: whereConditions,

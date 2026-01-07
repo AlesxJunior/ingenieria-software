@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
 import { useClients } from '../context/ClientContext';
 import UbigeoSelector from './UbigeoSelector';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 interface ClienteFormData {
   tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
@@ -46,54 +47,54 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  padding: ${SPACING['3xl']};
   max-width: 900px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: ${SHADOWS.xl};
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: ${SPACING['3xl']};
 `;
 
 const Title = styled.h2`
-  color: #2c3e50;
+  color: ${COLORS.text.primary};
   margin: 0;
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const CloseButton = styled.button`
-  background: #6c757d;
-  color: white;
+  background: ${COLORS.neutral[500]};
+  color: ${COLORS.neutral.white};
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: ${SPACING.sm} ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.md};
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  transition: ${TRANSITIONS.default};
 
   &:hover {
-    background: #5a6268;
+    background: ${COLORS.neutral[600]};
   }
 `;
 
 const Form = styled.form`
   display: grid;
-  gap: 1.5rem;
+  gap: ${SPACING['2xl']};
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: ${SPACING.lg};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;

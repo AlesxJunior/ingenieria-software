@@ -1,30 +1,31 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 const NotificationWrapper = styled.div`
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: ${SPACING.xl};
+  right: ${SPACING.xl};
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: ${SPACING.md};
   max-width: 400px;
 `;
 
 const NotificationCard = styled.div<{ $type: 'success' | 'error' | 'warning' | 'info' }>`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 16px;
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.medium};
+  box-shadow: ${SHADOWS.large};
+  padding: ${SPACING.lg};
   border-left: 4px solid ${props => {
     switch (props.$type) {
-      case 'success': return '#28a745';
-      case 'error': return '#dc3545';
-      case 'warning': return '#ffc107';
-      case 'info': return '#17a2b8';
-      default: return '#6c757d';
+      case 'success': return COLORS.success;
+      case 'error': return COLORS.danger;
+      case 'warning': return COLORS.warning;
+      case 'info': return COLORS.info;
+      default: return COLORS.border;
     }
   }};
   animation: slideIn 0.3s ease-out;
@@ -51,43 +52,44 @@ const NotificationHeader = styled.div`
 
 const NotificationTitle = styled.h4<{ $type: 'success' | 'error' | 'warning' | 'info' }>`
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   color: ${props => {
     switch (props.$type) {
-      case 'success': return '#155724';
-      case 'error': return '#721c24';
-      case 'warning': return '#856404';
-      case 'info': return '#0c5460';
-      default: return '#495057';
+      case 'success': return COLORS.successText;
+      case 'error': return COLORS.dangerText;
+      case 'warning': return COLORS.warningText;
+      case 'info': return COLORS.infoText;
+      default: return COLORS.text;
     }
   }};
 `;
 
 const NotificationMessage = styled.p`
   margin: 0;
-  font-size: 13px;
-  color: #6c757d;
-  line-height: 1.4;
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  color: ${COLORS.textLight};
+  line-height: ${TYPOGRAPHY.lineHeight.normal};
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
-  color: #6c757d;
+  color: ${COLORS.textLight};
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
   padding: 0;
-  margin-left: 10px;
+  margin-left: ${SPACING.md};
+  transition: color ${TRANSITIONS.fast};
 
   &:hover {
-    color: #495057;
+    color: ${COLORS.text};
   }
 `;
 
 const NotificationIcon = styled.span<{ $type: 'success' | 'error' | 'warning' | 'info' }>`
-  margin-right: 8px;
+  margin-right: ${SPACING.sm};
   font-size: 16px;
 
   &::before {
@@ -102,11 +104,11 @@ const NotificationIcon = styled.span<{ $type: 'success' | 'error' | 'warning' | 
     }};
     color: ${props => {
       switch (props.$type) {
-        case 'success': return '#28a745';
-        case 'error': return '#dc3545';
-        case 'warning': return '#ffc107';
-        case 'info': return '#17a2b8';
-        default: return '#6c757d';
+        case 'success': return COLORS.success;
+        case 'error': return COLORS.danger;
+        case 'warning': return COLORS.warning;
+        case 'info': return COLORS.info;
+        default: return COLORS.textLight;
       }
     }};
   }

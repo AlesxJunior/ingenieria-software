@@ -53,8 +53,10 @@ const startServer = async (): Promise<void> => {
       }
     });
 
-    // Configurar timeout del servidor
-    server.timeout = 30000; // 30 segundos
+    // Configurar timeout del servidor (aumentado para IA)
+    server.timeout = 120000; // 120 segundos (2 minutos) para peticiones de IA
+    server.keepAliveTimeout = 120000; // Keep-alive timeout
+    server.headersTimeout = 120000; // Headers timeout
 
     // Manejo de errores del servidor
     server.on('error', (error: NodeJS.ErrnoException) => {

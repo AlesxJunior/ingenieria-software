@@ -5,16 +5,16 @@ const getApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
+
   // Detectar automáticamente la IP del servidor basándose en la URL actual
   const currentHost = window.location.hostname;
   const apiPort = 3001;
-  
+
   // Si estamos en localhost, mantener localhost
   if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
     return `http://localhost:${apiPort}/api`;
   }
-  
+
   // Si estamos en una IP específica, usar esa misma IP para la API
   return `http://${currentHost}:${apiPort}/api`;
 };
@@ -32,6 +32,8 @@ export interface ApiResponse<T = any> {
 export interface LoginRequest {
   email: string;
   password: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface RegisterRequest {
@@ -104,7 +106,7 @@ class ApiService {
     fechaEntregaEstimada?: string;
     descuento?: number;
   }): Promise<ApiResponse<any>> {
-    return this.request('/compras', {
+    return this.request('/compras/ordenes', {
       method: 'POST',
       body: JSON.stringify(purchaseData),
     });
@@ -131,12 +133,36 @@ class ApiService {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/compras?${queryString}` : '/compras';
+    const endpoint = queryString ? `/compras/ordenes?${queryString}` : '/compras/ordenes';
     return this.request<{ purchases: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET' });
   }
 
+  // ==== Ventas ====
+  async getSales(params?: {
+    estado?: 'Pendiente' | 'Completada' | 'Cancelada';
+    cashSessionId?: string;
+    clienteId?: string;
+    almacenId?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+    q?: string;
+  }): Promise<ApiResponse<{ sales: any[] }>> {
+    const queryParams = new URLSearchParams();
+    if (params?.estado) queryParams.append('estado', params.estado);
+    if (params?.cashSessionId) queryParams.append('cashSessionId', params.cashSessionId);
+    if (params?.clienteId) queryParams.append('clienteId', params.clienteId);
+    if (params?.almacenId) queryParams.append('almacenId', params.almacenId);
+    if (params?.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params?.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+    if (params?.q) queryParams.append('q', params.q);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/sales?${queryString}` : '/sales';
+    return this.request<{ sales: any[] }>(endpoint, { method: 'GET' });
+  }
+
   async getPurchaseById(id: string): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}`, { method: 'GET' });
+    return this.request(`/compras/ordenes/${id}`, { method: 'GET' });
   }
 
   async updatePurchase(id: string, purchaseData: {
@@ -155,21 +181,21 @@ class ApiService {
     fechaEntregaEstimada?: string;
     descuento?: number;
   }): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}`, {
+    return this.request(`/compras/ordenes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(purchaseData),
     });
   }
 
-  async updatePurchaseStatus(id: string, estado: 'Pendiente' | 'Recibida' | 'Cancelada'): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}/status`, {
+  async updatePurchaseStatus(id: string, estado: string): Promise<ApiResponse<any>> {
+    return this.request(`/compras/ordenes/${id}/estado`, {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
     });
   }
 
   async deletePurchase(id: string): Promise<ApiResponse<any>> {
-    return this.request(`/compras/${id}`, {
+    return this.request(`/compras/ordenes/${id}`, {
       method: 'DELETE',
     });
   }
@@ -184,7 +210,9 @@ class ApiService {
     maxPrecio?: number;
     minStock?: number;
     maxStock?: number;
-  }, options?: RequestInit): Promise<ApiResponse<{ products: any[]; total: number; filters: Record<string, any> }>> {
+    page?: number;
+    limit?: number;
+  }, options?: RequestInit): Promise<ApiResponse<{ products: any[]; total: number; filters: Record<string, any>; pagination?: any }>> {
     const queryParams = new URLSearchParams();
     if (params?.categoria) queryParams.append('categoria', params.categoria);
     if (typeof params?.estado === 'boolean') queryParams.append('estado', String(params.estado));
@@ -194,10 +222,12 @@ class ApiService {
     if (typeof params?.maxPrecio === 'number') queryParams.append('maxPrecio', String(params.maxPrecio));
     if (typeof params?.minStock === 'number') queryParams.append('minStock', String(params.minStock));
     if (typeof params?.maxStock === 'number') queryParams.append('maxStock', String(params.maxStock));
+    if (typeof params?.page === 'number') queryParams.append('page', String(params.page));
+    if (typeof params?.limit === 'number') queryParams.append('limit', String(params.limit));
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/productos?${queryString}` : '/productos';
-    return this.request<{ products: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET', ...(options || {}) });
+    return this.request<{ products: any[]; total: number; filters: Record<string, any>; pagination?: any }>(endpoint, { method: 'GET', ...(options || {}) });
   }
 
   // Obtener producto por código
@@ -230,6 +260,13 @@ class ApiService {
     });
   }
 
+  // Eliminar producto (soft delete)
+  async deleteProduct(codigo: string): Promise<ApiResponse<any>> {
+    return this.request(`/productos/${codigo}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Método genérico para hacer peticiones
   private async request<T>(
     endpoint: string,
@@ -256,7 +293,7 @@ class ApiService {
       if (options.body) {
         const maybeStr = typeof options.body === 'string' ? options.body : String(options.body);
         let parsed: any = maybeStr;
-        try { parsed = JSON.parse(maybeStr as string); } catch {}
+        try { parsed = JSON.parse(maybeStr as string); } catch (_err) { console.log('Body no JSON'); }
         console.log('Datos:', parsed);
       }
     } catch (e) {
@@ -289,7 +326,7 @@ class ApiService {
           localStorage.removeItem('authToken');
           localStorage.removeItem('alexatech_token');
           localStorage.removeItem('alexatech_refresh_token');
-        } catch {}
+        } catch (_err) { console.log('Error limpiando tokens'); }
         console.log('401 Unauthorized: limpiando tokens');
         // Evitar bucles de redirección: no redirigir si ya estamos en /login
         if (!window.location.pathname.includes('/login')) {
@@ -389,7 +426,7 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/users?${queryString}` : '/users';
-    
+
     return this.request(endpoint);
   }
 
@@ -443,6 +480,12 @@ class ApiService {
     });
   }
 
+  async deleteUser(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async changePassword(id: string, currentPassword: string, newPassword: string): Promise<ApiResponse<any>> {
     return this.request(`/users/${id}/change-password`, {
       method: 'PATCH',
@@ -469,6 +512,7 @@ class ApiService {
     departamentoId?: string;
     provinciaId?: string;
     distritoId?: string;
+    includeInactive?: boolean;
   }): Promise<ApiResponse<{
     clients: any[];
     pagination: {
@@ -490,16 +534,17 @@ class ApiService {
     if (params?.departamentoId) queryParams.append('departamentoId', params.departamentoId);
     if (params?.provinciaId) queryParams.append('provinciaId', params.provinciaId);
     if (params?.distritoId) queryParams.append('distritoId', params.distritoId);
+    if (params?.includeInactive !== undefined) queryParams.append('includeInactive', params.includeInactive.toString());
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/entidades?${queryString}` : '/entidades';
-    
+
     return this.request(endpoint);
   }
 
   async getClientById(id: string): Promise<ApiResponse<any>> {
-     return this.request(`/entidades/${id}`);
-   }
+    return this.request(`/entidades/${id}`);
+  }
 
   // ==== Ubigeo ====
   async getDepartamentos(): Promise<ApiResponse<Array<{ id: string; nombre: string }>>> {
@@ -586,10 +631,9 @@ class ApiService {
   }
 
   async deleteClient(id: string): Promise<ApiResponse<any>> {
-    // Soft delete vía actualización de estado (isActive: false)
+    // Soft delete vía endpoint DELETE
     return this.request(`/entidades/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ isActive: false })
+      method: 'DELETE',
     });
   }
 
@@ -615,6 +659,102 @@ class ApiService {
     return this.request<T>(endpoint, {
       method: 'GET',
     });
+  }
+
+  // Método POST genérico
+  async post<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Método PUT genérico
+  async put<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Método PATCH genérico
+  async patch<T = any>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Método DELETE genérico
+  async delete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==== REPORTES ====
+  async getReporteVentas(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+    almacenId?: string;
+    usuarioId?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+    if (params.almacenId) queryParams.append('almacenId', params.almacenId);
+    if (params.usuarioId) queryParams.append('usuarioId', params.usuarioId);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/ventas?${queryString}`);
+  }
+
+  async getReporteCompras(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/compras?${queryString}`);
+  }
+
+  async getReporteInventario(params: {
+    almacenId?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.almacenId) queryParams.append('almacenId', params.almacenId);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/inventario?${queryString}`);
+  }
+
+  async getReporteFinanciero(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/financiero?${queryString}`);
+  }
+
+  async getReporteCaja(params: {
+    fechaInicio?: string;
+    fechaFin?: string;
+    cajaId?: string;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.fechaInicio) queryParams.append('fechaInicio', params.fechaInicio);
+    if (params.fechaFin) queryParams.append('fechaFin', params.fechaFin);
+    if (params.cajaId) queryParams.append('cajaId', params.cajaId);
+
+    const queryString = queryParams.toString();
+    return this.request(`/reportes/caja?${queryString}`);
   }
 }
 

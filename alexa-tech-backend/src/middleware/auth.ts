@@ -56,7 +56,7 @@ export const requirePermission = (...requiredPermissions: string[]) => {
     }
 
     try {
-      // Obtener el usuario completo con permisos
+      // Obtener el usuario completo con permisos y rol
       const user = await userService.findById(req.user.userId);
 
       if (!user) {
@@ -64,24 +64,35 @@ export const requirePermission = (...requiredPermissions: string[]) => {
         return;
       }
 
+      // ⭐ RBAC: Obtener permisos del rol del usuario
+      if (!user.role) {
+        logger.warn('User has no assigned role', { userId: user.id });
+        sendForbidden(res, 'El usuario no tiene un rol asignado');
+        return;
+      }
+
+      const userPermissions = user.role.permissions;
+
       const hasPermission = PermissionUtils.hasAnyPermission(
-        user.permissions,
+        userPermissions,
         requiredPermissions,
       );
 
-      // --- GEMINI DEBUG LOG ---
+      // --- DEBUG LOG ---
       console.log('[DEBUG] requirePermission Check:', {
         userId: user.id,
-        userPermissions: user.permissions,
+        roleId: user.roleId,
+        roleName: user.role.name,
+        userPermissions: userPermissions,
         requiredPermissions: requiredPermissions,
         hasPermission: hasPermission
       });
-      // --- END GEMINI DEBUG LOG ---
+      // --- END DEBUG LOG ---
 
       if (!hasPermission) {
         logger.warn('Permission authorization failed', {
           userId: req.user.userId,
-          userPermissions: user.permissions,
+          userPermissions: userPermissions, // RBAC: permisos del rol
           requiredPermissions,
           endpoint: req.path,
         });
@@ -125,15 +136,22 @@ export const requireAllPermissions = (...requiredPermissions: string[]) => {
         return;
       }
 
+      // RBAC: Obtener permisos del rol
+      if (!user.role) {
+        logger.warn('User has no assigned role', { userId: user.id });
+        sendForbidden(res, 'El usuario no tiene un rol asignado');
+        return;
+      }
+
       const hasAllPermissions = PermissionUtils.hasAllPermissions(
-        user.permissions,
+        user.role.permissions,
         requiredPermissions,
       );
 
       if (!hasAllPermissions) {
         logger.warn('All permissions authorization failed', {
           userId: req.user.userId,
-          userPermissions: user.permissions,
+          userPermissions: user.role.permissions,
           requiredPermissions,
           endpoint: req.path,
         });
@@ -207,8 +225,15 @@ export const requireOwnerOrAdmin = (userIdParam: string = 'id') => {
         return;
       }
 
+      // RBAC: Obtener permisos del rol
+      if (!user.role) {
+        logger.warn('User has no assigned role', { userId: user.id });
+        sendForbidden(res, 'El usuario no tiene un rol asignado');
+        return;
+      }
+
       const hasAdminPermissions = PermissionUtils.hasAnyPermission(
-        user.permissions,
+        user.role.permissions,
         ['users.update', 'users.delete', 'system.settings'],
       );
 
@@ -216,7 +241,7 @@ export const requireOwnerOrAdmin = (userIdParam: string = 'id') => {
         logger.warn('Owner/Admin authorization failed', {
           currentUserId,
           requestedUserId,
-          userPermissions: user.permissions,
+          userPermissions: user.role.permissions,
           endpoint: req.path,
         });
         sendForbidden(res, 'Solo puedes acceder a tu propia información');
@@ -273,6 +298,52 @@ export const optionalAuth = async (
   }
 };
 
+// Middleware especial para autenticación con token en query string (para PDFs)
+export const authenticateWithQueryToken = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    // Intentar obtener token del header primero
+    let token = '';
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+      console.log('🔑 Token from header:', token.substring(0, 20) + '...');
+    } else if (req.query.token) {
+      // Si no hay header, intentar obtener del query string
+      token = req.query.token as string;
+      console.log('🔑 Token from query:', token.substring(0, 20) + '...');
+    }
+
+    if (!token) {
+      console.log('❌ No token found in header or query');
+      console.log('Query params:', req.query);
+      console.log('Headers:', req.headers);
+      sendUnauthorized(res, 'Token de acceso requerido');
+      return;
+    }
+
+    // Verificar el token
+    const decoded = jwtService.verifyAccessToken(token);
+
+    // Agregar información del usuario al request
+    req.user = decoded;
+
+    logger.auth('Token verified (query)', decoded.userId, decoded.email);
+    next();
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Token inválido';
+    console.error('❌ Token verification failed:', errorMessage);
+    logger.warn('Authentication failed (query)', { error: errorMessage });
+    sendUnauthorized(res, errorMessage);
+  }
+};
+
+// Export all middlewares
 export default {
   authenticate,
   requirePermission,
@@ -281,4 +352,6 @@ export default {
   requireSupervisor,
   requireOwnerOrAdmin,
   optionalAuth,
+  authenticateWithQueryToken,
 };
+

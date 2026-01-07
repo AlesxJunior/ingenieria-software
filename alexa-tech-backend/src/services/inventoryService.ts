@@ -173,7 +173,8 @@ export const inventoryService = {
     ]);
 
     let rows: StockByWarehouseRow[] = records.map((r) => {
-      const minStock = r.minStock ?? r.product.minStock ?? null;
+      // ✅ Usar SOLO Product.minStock (stock mínimo único por producto)
+      const minStock = r.product.minStock ?? null;
       const estado = calcularEstado(r.quantity, minStock);
       return {
         stockByWarehouseId: r.id,
@@ -290,8 +291,32 @@ export const inventoryService = {
     const delta = body.adjustmentDirection === 'INCREMENT' ? cantidad : -cantidad;
     const stockAfter = stockBefore + delta;
 
+    // ✅ VALIDACIÓN CRÍTICA: Rechazar stock negativo
     if (stockAfter < 0) {
-      throw new Error('El ajuste resultaría en stock negativo');
+      console.error(`[INVENTARIO] ❌ Intento de stock negativo bloqueado:`, {
+        productId: body.productId,
+        productName: product.nombre,
+        warehouseId: body.warehouseId,
+        stockBefore,
+        delta,
+        stockAfter,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+      throw new Error(`Stock insuficiente. Stock actual: ${stockBefore}, Cantidad a disminuir: ${Math.abs(delta)}. El resultado sería negativo.`);
+    }
+
+    // ✅ LOG DE ADVERTENCIA: Ajustes grandes
+    if (cantidad > 100) {
+      console.warn(`[INVENTARIO] ⚠️ Ajuste de gran magnitud detectado en ajustarStock:`, {
+        productId: body.productId,
+        productName: product.nombre,
+        warehouseId: body.warehouseId,
+        cantidad,
+        direction: body.adjustmentDirection,
+        userId,
+        timestamp: new Date().toISOString()
+      });
     }
 
     const minStock = existing?.minStock ?? product.minStock ?? null;
@@ -344,9 +369,20 @@ export const inventoryService = {
       throw new Error('Cantidad ajuste no puede ser 0');
     }
 
+    // ✅ LOG DE ADVERTENCIA: Ajustes grandes
+    const absCantidad = Math.abs(cantidad);
+    if (absCantidad > 100) {
+      console.warn(`[INVENTARIO] ⚠️ Ajuste de gran magnitud detectado:`, {
+        productId,
+        warehouseId,
+        cantidad,
+        userId,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     // Derivar dirección y valor absoluto
     const direction: 'INCREMENT' | 'DECREMENT' = cantidad > 0 ? 'INCREMENT' : 'DECREMENT';
-    const absCantidad = Math.abs(cantidad);
 
     // Reutilizar la lógica robusta de ajustarStock
     return this.ajustarStock(
@@ -447,31 +483,170 @@ export const inventoryService = {
     return movimientosCreados;
   },
 
-  async getAlertas(): Promise<Array<{ productId: string; codigo: string; nombre: string; almacen: string; cantidad: number; stockMinimo: number; tipoAlerta: 'CRITICO' | 'BAJO'; }>> {
+  async applySaleSalida(saleId: string, items: Array<{ productId: string; cantidad: number }>, warehouseId: string, userId?: string) {
+    if (!saleId) throw new Error('saleId es requerido');
+    if (!warehouseId) throw new Error('warehouseId es requerido');
+    if (!items || !Array.isArray(items) || items.length === 0) throw new Error('items es requerido');
+
+    // Validar almacén
+    const warehouse = await prisma.warehouse.findUnique({ where: { id: warehouseId } });
+    if (!warehouse) throw new Error('Warehouse no encontrado');
+
+    // Buscar motivo de salida por venta
+    const saleReason = await prisma.movementReason.findFirst({
+      where: { 
+        codigo: 'SAL-VENTA',
+        activo: true
+      }
+    });
+
+    const now = new Date();
+
+    const movimientosCreados: Array<{
+      id: string;
+      productId: string;
+      cantidad: number;
+      stockAntes: number;
+      stockDespues: number;
+    }> = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const it of items) {
+        const product = await tx.product.findUnique({ where: { id: it.productId } });
+        if (!product) throw new Error('Producto no encontrado');
+        if (product.trackInventory === false) continue; // saltar si no lleva inventario
+
+        const existing = await tx.stockByWarehouse.findUnique({
+          where: { productId_warehouseId: { productId: it.productId, warehouseId } },
+        });
+        const stockBefore = existing?.quantity ?? 0;
+        const stockAfter = stockBefore - Number(it.cantidad);
+
+        if (stockAfter < 0) {
+          throw new Error(`Stock insuficiente para producto ${product.nombre}. Stock actual: ${stockBefore}, Requerido: ${it.cantidad}`);
+        }
+
+        await tx.stockByWarehouse.upsert({
+          where: { productId_warehouseId: { productId: it.productId, warehouseId } },
+          update: { quantity: stockAfter, updatedAt: now },
+          create: {
+            productId: it.productId,
+            warehouseId,
+            quantity: stockAfter,
+            minStock: existing?.minStock ?? product.minStock ?? undefined,
+            createdAt: now,
+            updatedAt: now,
+          },
+        });
+
+        const movement = await tx.inventoryMovement.create({
+          data: {
+            productId: it.productId,
+            warehouseId,
+            type: 'SALIDA',
+            quantity: Number(it.cantidad),
+            stockBefore,
+            stockAfter,
+            reason: `Venta ${saleId}`,
+            reasonId: saleReason?.id ?? null,
+            documentRef: saleId,
+            userId,
+            createdAt: now,
+          },
+        });
+
+        movimientosCreados.push({ 
+          id: movement.id, 
+          productId: it.productId, 
+          cantidad: Number(it.cantidad), 
+          stockAntes: stockBefore, 
+          stockDespues: stockAfter 
+        });
+      }
+
+      // Recalcular stock global por cada producto tocado
+      const productIds = Array.from(new Set(items.map((i) => i.productId)));
+      for (const pid of productIds) {
+        const agg = await tx.stockByWarehouse.aggregate({ where: { productId: pid }, _sum: { quantity: true } });
+        const total = agg._sum.quantity ?? 0;
+        await tx.product.update({ where: { id: pid }, data: { stock: total, updatedAt: now } });
+      }
+    }, { isolationLevel: 'Serializable' as any });
+
+    return movimientosCreados;
+  },
+
+  async getAlertas(): Promise<Array<{ 
+    productId: string; 
+    codigo: string; 
+    nombre: string; 
+    almacen: string; 
+    almacenId: string;
+    cantidad: number; 
+    stockMinimo: number; 
+    tipoAlerta: 'CRITICO' | 'BAJO';
+    porcentaje: number;
+    diferenciaUnidades: number;
+  }>> {
+    // Obtener todos los stocks con productos que gestionan inventario y tienen minStock configurado
     const records = await prisma.stockByWarehouse.findMany({
+      where: {
+        product: {
+          trackInventory: true,
+          estado: true,
+        }
+      },
       include: { product: true, warehouse: true },
-      take: 100,
       orderBy: { updatedAt: 'desc' },
     });
 
-    const alertas: Array<{ productId: string; codigo: string; nombre: string; almacen: string; cantidad: number; stockMinimo: number; tipoAlerta: 'CRITICO' | 'BAJO'; }> = [];
+    const alertas: Array<{ 
+      productId: string; 
+      codigo: string; 
+      nombre: string; 
+      almacen: string; 
+      almacenId: string;
+      cantidad: number; 
+      stockMinimo: number; 
+      tipoAlerta: 'CRITICO' | 'BAJO';
+      porcentaje: number;
+      diferenciaUnidades: number;
+    }> = [];
 
     for (const r of records) {
-      const minStock = r.minStock ?? r.product.minStock ?? 0;
-      if (r.quantity < minStock) {
-        const tipoAlerta: 'CRITICO' | 'BAJO' = r.quantity <= Math.floor(minStock * 0.5) ? 'CRITICO' : 'BAJO';
+      // ✅ Usar SOLO Product.minStock
+      const minStock = r.product.minStock ?? 0;
+      
+      // Solo generar alertas si hay minStock configurado
+      if (minStock <= 0) continue;
+
+      // Calcular estado usando la misma lógica que calcularEstado()
+      const estado = calcularEstado(r.quantity, minStock);
+      
+      if (estado === 'CRITICO' || estado === 'BAJO') {
+        const porcentaje = Math.round((r.quantity / minStock) * 100);
+        const diferenciaUnidades = minStock - r.quantity;
+        
         alertas.push({
           productId: r.productId,
           codigo: r.product.codigo,
           nombre: r.product.nombre,
           almacen: r.warehouse.nombre,
+          almacenId: r.warehouseId,
           cantidad: r.quantity,
           stockMinimo: minStock,
-          tipoAlerta,
+          tipoAlerta: estado,
+          porcentaje,
+          diferenciaUnidades: Math.max(0, diferenciaUnidades),
         });
       }
     }
 
-    return alertas.slice(0, 100);
+    // Ordenar: CRÍTICO primero, luego por porcentaje ascendente
+    return alertas.sort((a, b) => {
+      if (a.tipoAlerta === 'CRITICO' && b.tipoAlerta !== 'CRITICO') return -1;
+      if (a.tipoAlerta !== 'CRITICO' && b.tipoAlerta === 'CRITICO') return 1;
+      return a.porcentaje - b.porcentaje;
+    });
   },
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { media } from '../styles/breakpoints';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY, SHADOWS, TRANSITIONS } from '../styles/theme';
 
 const MobileNavContainer = styled.div`
   display: none;
@@ -13,10 +14,10 @@ const MobileNavContainer = styled.div`
     left: 0;
     right: 0;
     z-index: 1000;
-    background: linear-gradient(90deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
-    color: white;
-    padding: 10px 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(90deg, ${COLOR_SCALES.primary[900]} 0%, ${COLOR_SCALES.primary[800]} 50%, ${COLOR_SCALES.primary[700]} 100%);
+    color: ${COLORS.neutral.white};
+    padding: ${SPACING.md} ${SPACING.lg};
+    box-shadow: ${SHADOWS.md};
   }
 `;
 
@@ -28,12 +29,12 @@ const MobileNavHeader = styled.div`
 
 const Logo = styled.h2`
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
+  font-size: ${TYPOGRAPHY.fontSize.xl};
+  font-weight: ${TYPOGRAPHY.fontWeight.bold};
+  color: ${COLORS.neutral.white};
   
   ${media.mobile} {
-    font-size: 18px;
+    font-size: ${TYPOGRAPHY.fontSize.lg};
   }
 `;
 
@@ -41,7 +42,7 @@ const TitleLink = styled(Link)`
   text-decoration: none;
   color: inherit;
   display: block;
-  transition: all 0.3s ease;
+  transition: ${TRANSITIONS.default};
   
   &:hover {
     transform: scale(1.05);
@@ -56,10 +57,10 @@ const TitleLink = styled(Link)`
 const MenuButton = styled.button`
   background: none;
   border: none;
-  color: white;
-  font-size: 24px;
+  color: ${COLORS.neutral.white};
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
   cursor: pointer;
-  padding: 5px;
+  padding: ${SPACING.xs};
   
   &:hover {
     opacity: 0.8;
@@ -83,9 +84,9 @@ const MobileMenuContent = styled.div<{ $isOpen: boolean }>`
   left: ${props => props.$isOpen ? '0' : '-100%'};
   width: 280px;
   height: 100vh;
-  background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 50%, #1d4ed8 100%);
+  background: linear-gradient(180deg, ${COLOR_SCALES.primary[900]} 0%, ${COLOR_SCALES.primary[800]} 50%, ${COLOR_SCALES.primary[700]} 100%);
   z-index: 1002;
-  transition: left 0.3s ease;
+  transition: ${TRANSITIONS.default};
   overflow-y: auto;
   
   ${media.mobile} {

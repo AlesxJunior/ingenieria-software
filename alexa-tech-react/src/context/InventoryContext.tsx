@@ -96,7 +96,7 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
     try {
       console.log('🔍 [InventoryContext] Fetching stock with filters:', filters);
       console.log('🔍 [InventoryContext] User authenticated:', isAuthenticated);
-      console.log('🔍 [InventoryContext] User permissions:', user?.permissions);
+      console.log('🔍 [InventoryContext] User permissions:', user?.role?.permissions);
       
       const response = await inventarioApi.getStock(filters);
       console.log('✅ [InventoryContext] getStock response:', response);
@@ -145,7 +145,7 @@ export const InventoryProvider: React.FC<InventoryProviderProps> = ({ children }
     try {
       console.log('🔍 [InventoryContext] Fetching kardex with filters:', filters);
       console.log('🔍 [InventoryContext] User authenticated:', isAuthenticated);
-      console.log('🔍 [InventoryContext] User permissions:', user?.permissions);
+      console.log('🔍 [InventoryContext] User permissions:', user?.role?.permissions);
       
       const response = await inventarioApi.getKardex(filters);
       console.log('✅ [InventoryContext] getKardex response:', response);

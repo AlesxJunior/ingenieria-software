@@ -196,7 +196,7 @@ const ListaCompras: React.FC = () => {
   const [limit, setLimit] = useState<number>(10);
   const [total, setTotal] = useState<number>(0);
 
-  const fetchPurchases = async () => {
+  const fetchPurchases = async (showErrorNotification: boolean = true) => {
     try {
       setIsLoading(true);
       const params = {
@@ -213,12 +213,14 @@ const ListaCompras: React.FC = () => {
       if (response.success && response.data) {
         setPurchases(response.data.purchases as Purchase[]);
         setTotal(response.data.total || 0);
-      } else {
-        showError(response.message || 'Error al cargar las compras');
+      } else if (showErrorNotification) {
+        showError('Error al cargar', response.message || 'No se pudieron cargar las compras');
       }
     } catch (err) {
       console.error('Error fetching purchases:', err);
-      showError('Error al cargar las compras');
+      if (showErrorNotification) {
+        showError('Error al cargar', 'No se pudieron cargar las compras');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -241,7 +243,7 @@ const ListaCompras: React.FC = () => {
 
   const handleNewPurchase = () => {
     openModal(
-      <NuevaCompraModal onClose={() => { closeModal(); fetchPurchases(); }} />,
+      <NuevaCompraModal onClose={() => { closeModal(); fetchPurchases(false); }} />,
       'Registrar Compra',
       'large'
     );
@@ -249,7 +251,7 @@ const ListaCompras: React.FC = () => {
 
   const handleEditPurchase = (purchase: Purchase) => {
     openModal(
-      <NuevaCompraModal purchase={purchase} onClose={() => { closeModal(); fetchPurchases(); }} />,
+      <NuevaCompraModal purchase={purchase} onClose={() => { closeModal(); fetchPurchases(false); }} />,
       'Editar Compra',
       'large'
     );
@@ -269,7 +271,7 @@ const ListaCompras: React.FC = () => {
         purchaseId={purchase.id}
         currentStatus={purchase.estado}
         onClose={() => { closeModal(); }}
-        onUpdated={() => { fetchPurchases(); }}
+        onUpdated={() => { fetchPurchases(false); }}
       />,
       'Cambiar Estado',
       'medium'
@@ -281,8 +283,8 @@ const ListaCompras: React.FC = () => {
       if (!window.confirm('¿Eliminar esta compra? Esta acción no se puede deshacer.')) return;
       const response = await apiService.deletePurchase(purchaseId);
       if (!response.success) throw new Error(response.message || 'Error al eliminar compra');
-      showSuccess('Compra eliminada');
-      await fetchPurchases();
+      showSuccess('Compra Eliminada', 'La orden de compra se eliminó correctamente');
+      await fetchPurchases(false);
     } catch (err) {
       console.error('Error deleting purchase:', err);
       showError('No se pudo eliminar la compra');
@@ -380,7 +382,7 @@ const ListaCompras: React.FC = () => {
                     <ActionButton data-testid="view-purchase" $color="#2980b9" onClick={() => handleViewPurchase(p.id)}>Ver</ActionButton>
                     <ActionButton data-testid="edit-purchase" $color="#8e44ad" onClick={() => handleEditPurchase(p)}>Editar</ActionButton>
                     <ActionButton data-testid="delete-purchase" $color="#c0392b" onClick={() => handleDeletePurchase(p.id)}>Eliminar</ActionButton>
-                    {p.estado === 'Pendiente' && (
+                    {p.estado === 'PENDIENTE' && (
                       <ActionButton data-testid="change-status" $color="#27ae60" onClick={() => openChangeStatus(p)}>Cambiar Estado</ActionButton>
                     )}
                   </Td>
