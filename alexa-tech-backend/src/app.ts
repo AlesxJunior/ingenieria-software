@@ -43,6 +43,16 @@ const corsOptions = {
       }
     }
 
+    // Permitir Vercel deployments (production y preview)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+
+    // Permitir Netlify deployments (si se usa en el futuro)
+    if (origin.endsWith('.netlify.app')) {
+      return callback(null, true);
+    }
+
     // En producción o si no coincide con IPs privadas, usar configuración específica
     if (origin === config.corsOrigin) {
       return callback(null, true);
