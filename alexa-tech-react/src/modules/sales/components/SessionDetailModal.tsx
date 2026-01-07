@@ -3,6 +3,8 @@ import styled from 'styled-components';
 import { useSales } from '../context/SalesContext';
 import type { CashSession } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, Z_INDEX } from '../../../styles/theme';
+import { Button as SharedButton } from '../../../components/shared/Button';
 
 interface SessionDetailModalProps {
   sessionId: string;
@@ -197,9 +199,9 @@ export const SessionDetailModal: React.FC<SessionDetailModalProps> = ({ sessionI
         </ModalBody>
 
         <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
+          <SharedButton $variant="outline" onClick={onClose}>
             Cerrar
-          </Button>
+          </SharedButton>
         </ModalFooter>
       </ModalContainer>
     </Overlay>

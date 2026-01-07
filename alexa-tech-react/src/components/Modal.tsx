@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import styled from 'styled-components';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -16,13 +17,13 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContainer = styled.div<{ $size?: 'small' | 'medium' | 'large' | 'fullscreen' }>`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.xl};
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  margin: 20px;
+  margin: ${SPACING.xl};
   
   ${props => {
     switch (props.$size) {
@@ -41,9 +42,9 @@ const ModalContainer = styled.div<{ $size?: 'small' | 'medium' | 'large' | 'full
 `;
 
 const ModalHeader = styled.div`
-  padding: 24px 24px 0 24px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 24px;
+  padding: ${SPACING['2xl']} ${SPACING['2xl']} 0 ${SPACING['2xl']};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  margin-bottom: ${SPACING['2xl']};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -51,29 +52,29 @@ const ModalHeader = styled.div`
 
 const ModalTitle = styled.h2`
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.primary};
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
   cursor: pointer;
-  color: #6b7280;
-  padding: 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  color: ${COLORS.text.secondary};
+  padding: ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.md};
+  transition: ${TRANSITIONS.default};
   
   &:hover {
-    background-color: #f3f4f6;
-    color: #374151;
+    background-color: ${COLORS.neutral[100]};
+    color: ${COLORS.text.primary};
   }
 `;
 
 const ModalContent = styled.div`
-  padding: 0 24px 24px 24px;
+  padding: 0 ${SPACING['2xl']} ${SPACING['2xl']} ${SPACING['2xl']};
 `;
 
 interface ModalProps {

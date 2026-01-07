@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { checkPasswordRequirements, getPasswordRequirements } from '../utils/validation';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 interface PasswordRequirementsProps {
   password: string;
@@ -8,13 +9,13 @@ interface PasswordRequirementsProps {
 }
 
 const RequirementsContainer = styled.div<{ $show: boolean }>`
-  margin-top: 8px;
-  padding: 12px;
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  font-size: 12px;
-  transition: all 0.3s ease;
+  margin-top: ${SPACING.sm};
+  padding: ${SPACING.lg};
+  background-color: ${COLORS.neutral[50]};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  transition: ${TRANSITIONS.default};
   opacity: ${props => props.$show ? 1 : 0};
   max-height: ${props => props.$show ? '200px' : '0'};
   overflow: hidden;
@@ -23,8 +24,8 @@ const RequirementsContainer = styled.div<{ $show: boolean }>`
 const RequirementItem = styled.div<{ $met: boolean }>`
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
-  color: ${props => props.$met ? '#28a745' : '#6c757d'};
+  margin-bottom: ${SPACING.xs};
+  color: ${props => props.$met ? COLOR_SCALES.success[500] : COLORS.text.secondary};
   
   &:last-child {
     margin-bottom: 0;
@@ -32,9 +33,9 @@ const RequirementItem = styled.div<{ $met: boolean }>`
 `;
 
 const RequirementIcon = styled.span<{ $met: boolean }>`
-  margin-right: 8px;
-  font-weight: bold;
-  color: ${props => props.$met ? '#28a745' : '#dc3545'};
+  margin-right: ${SPACING.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.bold};
+  color: ${props => props.$met ? COLOR_SCALES.success[500] : COLOR_SCALES.danger[500]};
 `;
 
 const RequirementText = styled.span<{ $met: boolean }>`

@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS } from '../../../styles/theme';
 
 interface PermissionsPreviewProps {
   permissions: string[];
@@ -9,88 +10,88 @@ interface PermissionsPreviewProps {
 }
 
 const Container = styled.div`
-  margin: 1rem 0;
+  margin: ${SPACING.md} 0;
 `;
 
 const Title = styled.h4`
-  color: #2c3e50;
-  font-size: 0.95rem;
-  margin-bottom: 0.75rem;
-  font-weight: 600;
+  color: ${COLORS.text.primary};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  margin-bottom: ${SPACING.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const PermissionsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.5rem;
+  gap: ${SPACING.xs};
   max-height: 300px;
   overflow-y: auto;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  padding: ${SPACING.md};
+  background: ${COLORS.background.secondary};
+  border-radius: ${BORDER_RADIUS.md};
+  border: 1px solid ${COLORS.border.light};
 `;
 
 const ModuleGroup = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: ${SPACING.md};
 `;
 
 const ModuleTitle = styled.div`
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.85rem;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.small};
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 2px solid #3498db;
+  margin-bottom: ${SPACING.xs};
+  padding-bottom: ${SPACING.xs};
+  border-bottom: 2px solid ${COLORS.primary};
 `;
 
 const PermissionBadge = styled.span`
   display: inline-flex;
   align-items: center;
-  padding: 0.4rem 0.75rem;
+  padding: ${SPACING.xs} ${SPACING.sm};
   background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  color: #495057;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid ${COLORS.border.medium};
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  color: ${COLORS.text.secondary};
+  box-shadow: ${SHADOWS.sm};
   
   &::before {
     content: '✓';
     display: inline-block;
     width: 16px;
     height: 16px;
-    margin-right: 0.5rem;
-    background: #27ae60;
+    margin-right: ${SPACING.xs};
+    background: ${COLORS.success};
     color: white;
-    border-radius: 50%;
-    font-size: 0.7rem;
+    border-radius: ${BORDER_RADIUS.full};
+    font-size: ${TYPOGRAPHY.fontSize.xs};
     line-height: 16px;
     text-align: center;
-    font-weight: bold;
+    font-weight: ${TYPOGRAPHY.fontWeight.bold};
   }
 `;
 
 const EmptyState = styled.div`
-  padding: 2rem;
+  padding: ${SPACING.xl};
   text-align: center;
-  color: #6c757d;
+  color: ${COLORS.text.muted};
   font-style: italic;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px dashed #dee2e6;
+  background: ${COLORS.background.secondary};
+  border-radius: ${BORDER_RADIUS.md};
+  border: 1px dashed ${COLORS.border.medium};
 `;
 
 const Counter = styled.div`
   display: inline-block;
-  background: #3498db;
+  background: ${COLORS.primary};
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-left: 0.5rem;
+  padding: ${SPACING.xs} ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.full};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin-left: ${SPACING.xs};
 `;
 
 // Mapeo de permisos a nombres legibles y módulos

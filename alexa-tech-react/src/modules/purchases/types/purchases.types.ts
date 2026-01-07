@@ -7,7 +7,7 @@
 // ENUMS (Union Types para compatibilidad erasableSyntaxOnly)
 // ==========================================
 
-export type PurchaseOrderStatus = 'PENDIENTE' | 'ENVIADA' | 'CONFIRMADA' | 'EN_RECEPCION' | 'PARCIAL' | 'COMPLETADA' | 'CERRADA' | 'CANCELADA';
+export type PurchaseOrderStatus = 'PENDIENTE' | 'ENVIADA' | 'CONFIRMADA' | 'EN_RECEPCION' | 'PARCIAL' | 'COMPLETADA' | 'CANCELADA';
 export type PurchaseReceiptStatus = 'PENDIENTE' | 'INSPECCION' | 'CONFIRMADA' | 'CANCELADA';
 export type PurchaseInvoiceStatus = 'PENDIENTE' | 'PAGADA' | 'VENCIDA' | 'ANULADA';
 
@@ -19,7 +19,6 @@ export const PurchaseOrderStatusValues = {
   EN_RECEPCION: 'EN_RECEPCION' as const,
   PARCIAL: 'PARCIAL' as const,
   COMPLETADA: 'COMPLETADA' as const,
-  CERRADA: 'CERRADA' as const,
   CANCELADA: 'CANCELADA' as const,
 } as const;
 
@@ -118,6 +117,12 @@ export interface PurchaseReceiptItem {
     codigo: string;
     nombre: string;
   };
+  ordenCompraItemId: string;
+  ordenCompraItem?: {
+    cantidadOrdenada: number;
+    cantidadRecibida: number;
+    cantidadPendiente: number;
+  };
   cantidadRecibida: number;
   cantidadAceptada: number;
   cantidadRechazada: number;
@@ -129,7 +134,14 @@ export interface PurchaseReceipt {
   codigo: string;
   ordenCompraId: string;
   ordenCompra?: PurchaseOrder;
-  fecha: string;
+  almacenId: string;
+  almacen?: {
+    id: string;
+    codigo: string;
+    nombre: string;
+  };
+  fechaRecepcion: string;
+  fecha?: string;
   estado: PurchaseReceiptStatus;
   observaciones?: string;
   recibidoPorId: string;
@@ -326,7 +338,6 @@ export const PURCHASE_ORDER_STATUS_LABELS: Record<PurchaseOrderStatus, string> =
   EN_RECEPCION: 'En Recepción',
   PARCIAL: 'Parcial',
   COMPLETADA: 'Completada',
-  CERRADA: 'Cerrada',
   CANCELADA: 'Cancelada',
 };
 
@@ -337,7 +348,6 @@ export const PURCHASE_ORDER_STATUS_COLORS: Record<PurchaseOrderStatus, string> =
   EN_RECEPCION: '#6f42c1',  // Púrpura
   PARCIAL: '#fd7e14',       // Naranja
   COMPLETADA: '#28a745',    // Verde
-  CERRADA: '#6c757d',       // Gris
   CANCELADA: '#dc3545',     // Rojo
 };
 
@@ -349,8 +359,8 @@ export const PURCHASE_RECEIPT_STATUS_LABELS: Record<PurchaseReceiptStatus, strin
 };
 
 export const PURCHASE_RECEIPT_STATUS_COLORS: Record<PurchaseReceiptStatus, string> = {
-  PENDIENTE: 'warning',
-  INSPECCION: 'info',
-  CONFIRMADA: 'success',
-  CANCELADA: 'error',
+  PENDIENTE: '#ffc107',     // Amarillo (warning)
+  INSPECCION: '#17a2b8',    // Cyan (info)
+  CONFIRMADA: '#28a745',    // Verde (success)
+  CANCELADA: '#dc3545',     // Rojo (error)
 };

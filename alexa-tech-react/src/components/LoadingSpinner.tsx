@@ -1,5 +1,6 @@
 import React from 'react';
 import styled, { keyframes } from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY } from '../styles/theme';
 
 const spin = keyframes`
   0% { transform: rotate(0deg); }
@@ -12,22 +13,22 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 200px;
-  padding: 2rem;
+  padding: ${SPACING['3xl']};
 `;
 
 const Spinner = styled.div`
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  border: 4px solid ${COLORS.neutral[200]};
+  border-top: 4px solid ${COLOR_SCALES.primary[500]};
   border-radius: 50%;
   animation: ${spin} 1s linear infinite;
-  margin-bottom: 1rem;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const LoadingText = styled.p`
-  color: #666;
-  font-size: 0.9rem;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   margin: 0;
 `;
 

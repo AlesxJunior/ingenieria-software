@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from '../../../styles/theme';
+import { Button, Input, Select, Label } from '../../../components/shared';
 import { purchaseOrderService } from '../services';
 import type {
   PurchaseOrder,
@@ -36,75 +38,86 @@ interface FormData {
   fechaEntregaEsperada?: string; // Fecha ISO string
   moneda?: string; // 'PEN' | 'USD'
   condicionesPago?: string;
-  items: Array<CreatePurchaseOrderItemDto & { incluyeIGV?: boolean }>;  // ✅ Agregado incluyeIGV
+  items: Array<CreatePurchaseOrderItemDto & { 
+    incluyeIGV?: boolean;
+    cantidadRecibida?: number;
+    cantidadPendiente?: number;
+    cantidadAceptada?: number;
+    cantidadRechazada?: number;
+  }>;
   observaciones?: string;
 }
 
 // ==================== STYLED COMPONENTS ====================
 
 const Container = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  max-width: 1200px;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING['2xl']};
+  box-shadow: ${SHADOWS.md};
+  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
+  max-height: 90vh;
+  overflow-y: auto;
   
   ${media.mobile} {
-    padding: 16px;
+    padding: ${SPACING.lg};
+    max-width: 100vw;
+    max-height: 95vh;
   }
 `;
 
 const Header = styled.div`
-  margin-bottom: 24px;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 16px;
+  margin-bottom: ${SPACING['2xl']};
+  border-bottom: 2px solid ${COLORS.neutral[200]};
+  padding-bottom: ${SPACING.lg};
 `;
 
 const Title = styled.h2`
-  font-size: 24px;
-  color: #333;
-  margin: 0 0 8px 0;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  color: ${COLORS.text.primary};
+  margin: 0 0 ${SPACING.sm} 0;
   
   ${media.mobile} {
-    font-size: 20px;
+    font-size: ${TYPOGRAPHY.fontSize.xl};
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 14px;
-  color: #666;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.secondary};
   margin: 0;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: ${SPACING['2xl']};
 `;
 
 const Section = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: ${SPACING.lg};
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 18px;
-  color: #333;
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  color: ${COLORS.text.primary};
   margin: 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: ${SPACING.sm};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
   
   ${media.mobile} {
-    font-size: 16px;
+    font-size: ${TYPOGRAPHY.fontSize.base};
   }
 `;
 
 const Row = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
+  gap: ${SPACING.lg};
   
   ${media.mobile} {
     grid-template-columns: 1fr;
@@ -114,69 +127,12 @@ const Row = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
-`;
-
-const Label = styled.label`
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
+  gap: ${SPACING.xs};
 `;
 
 const RequiredMark = styled.span`
-  color: #dc3545;
-  margin-left: 4px;
-`;
-
-const Select = styled.select<{ $error?: boolean }>`
-  padding: 10px 12px;
-  border: 1px solid ${props => props.$error ? '#dc3545' : '#ddd'};
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  background-color: white;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const Input = styled.input<{ $error?: boolean }>`
-  padding: 10px 12px;
-  border: 1px solid ${props => props.$error ? '#dc3545' : '#ddd'};
-  border-radius: 5px;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const TextArea = styled.textarea`
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  min-height: 80px;
-  resize: vertical;
-  font-family: inherit;
-
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-  }
+  color: ${COLOR_SCALES.danger[500]};
+  margin-left: ${SPACING.xs};
 `;
 
 const ErrorText = styled.span`
@@ -185,6 +141,27 @@ const ErrorText = styled.span`
   display: block;
   margin-top: 2px;
   font-weight: 500;
+`;
+
+const TextArea = styled.textarea`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  font-family: ${TYPOGRAPHY.fontFamily};
+  resize: vertical;
+  min-height: 80px;
+  
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primary};
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+  
+  &:disabled {
+    background-color: ${COLORS.background};
+    cursor: not-allowed;
+  }
 `;
 
 const ItemsSection = styled.div`
@@ -217,72 +194,121 @@ const ItemsTable = styled.div`
   border: 1px solid #ddd;
   border-radius: 5px;
   overflow-x: auto;
+  
+  ${media.mobile} {
+    border: none;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
+  table-layout: fixed;
+  min-width: 900px;
+  
+  ${media.mobile} {
+    display: block;
+    min-width: unset;
+  }
 `;
 
 const Thead = styled.thead`
-  background-color: #f8f9fa;
+  background-color: ${COLORS.neutral[50]};
+  
+  ${media.mobile} {
+    display: none;
+  }
 `;
 
 const Th = styled.th`
-  padding: 12px;
+  padding: ${SPACING.md} ${SPACING.sm};
   text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #dee2e6;
-  white-space: nowrap;
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.secondary};
+  border-bottom: 2px solid ${COLORS.neutral[200]};
 `;
 
-const Tbody = styled.tbody``;
+const Tbody = styled.tbody`
+  ${media.mobile} {
+    display: block;
+  }
+`;
 
 const Tr = styled.tr`
-  border-bottom: 1px solid #dee2e6;
-
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  
   &:hover {
-    background-color: #f8f9fa;
+    background-color: ${COLORS.neutral[50]};
+  }
+  
+  ${media.mobile} {
+    display: block;
+    margin-bottom: ${SPACING.lg};
+    border: 1px solid ${COLORS.neutral[200]};
+    border-radius: ${BORDER_RADIUS.md};
   }
 `;
 
 const Td = styled.td`
-  padding: 8px 12px;
+  padding: ${SPACING.sm};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  
+  ${media.mobile} {
+    display: block;
+    padding: ${SPACING.sm} ${SPACING.md};
+    text-align: right;
+    
+    &:before {
+      content: attr(data-label);
+      float: left;
+      font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+      color: ${COLORS.text.secondary};
+    }
+  }
 `;
 
 const ItemInput = styled.input<{ $error?: boolean }>`
   width: 100%;
-  padding: 6px 8px;
+  padding: 7px 8px;
   border: 1px solid ${props => props.$error ? '#dc3545' : '#ddd'};
   border-radius: 4px;
   font-size: 13px;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
     border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
+    box-shadow: 0 0 0 2px ${props => props.$error ? 'rgba(220,53,69,0.1)' : 'rgba(0,123,255,0.1)'};
   }
 `;
 
 const ItemSelect = styled.select<{ $error?: boolean }>`
   width: 100%;
-  padding: 6px 8px;
+  padding: 7px 8px;
   border: 1px solid ${props => props.$error ? '#dc3545' : '#ddd'};
   border-radius: 4px;
   font-size: 13px;
   cursor: pointer;
   background-color: ${props => props.$error ? '#fff5f5' : 'white'};
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:focus {
     outline: none;
     border-color: ${props => props.$error ? '#dc3545' : '#007bff'};
+    box-shadow: 0 0 0 2px ${props => props.$error ? 'rgba(220,53,69,0.1)' : 'rgba(0,123,255,0.1)'};
   }
   
   &:disabled {
     background-color: #f5f5f5;
     cursor: not-allowed;
+  }
+  
+  option {
+    padding: 8px;
+    white-space: normal;
   }
 `;
 
@@ -337,47 +363,34 @@ const Actions = styled.div`
   }
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 12px 24px;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: ${props => props.$variant === 'secondary' ? '#6c757d' : '#007bff'};
-  color: white;
-
-  &:hover:not(:disabled) {
-    background-color: ${props => props.$variant === 'secondary' ? '#5a6268' : '#0056b3'};
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  ${media.mobile} {
-    width: 100%;
-  }
-`;
 
 const QuickAddButton = styled.button`
-  padding: 10px 14px;
+  padding: 0;
   background-color: #28a745;
   color: white;
   border: none;
-  border-radius: 5px;
-  font-size: 16px;
+  border-radius: 4px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
-  min-width: 45px;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
   
   &:hover:not(:disabled) {
     background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
   }
   
   &:disabled {
@@ -437,6 +450,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
   const actualMode = mode || (order ? 'edit' : 'create');
   const isEditMode = actualMode === 'edit';
   const isViewMode = actualMode === 'view';
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isReadOnly = isViewMode;
 
   // Estados
@@ -444,12 +458,16 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
     proveedorId: order?.proveedorId || '',
     almacenDestinoId: order?.almacenDestinoId || '',
     fechaEntregaEsperada: order?.fechaEntregaEsperada ? new Date(order.fechaEntregaEsperada).toISOString().split('T')[0] : '',
-    moneda: order?.moneda || 'PEN',
+    moneda: (order as any)?.moneda || 'PEN',
     condicionesPago: order?.condicionesPago || '',
     items: order?.items?.map(item => ({ 
       productoId: item.productoId,
       cantidad: item.cantidadOrdenada || item.cantidad || 0,
       cantidadOrdenada: item.cantidadOrdenada || item.cantidad || 0,
+      cantidadRecibida: item.cantidadRecibida || 0,
+      cantidadPendiente: item.cantidadPendiente || 0,
+      cantidadAceptada: item.cantidadAceptada || 0,
+      cantidadRechazada: item.cantidadRechazada || 0,
       precioUnitario: item.precioUnitario,
       descuento: item.descuento || 0,
       incluyeIGV: item.incluyeIGV ?? false,  // ✅ Respetar valor exacto del backend (false si es false)
@@ -533,8 +551,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
         
       case 'CONFIRMADA':
       case 'EN_RECEPCION':
-      case 'RECEPCIONADA':
-      case 'PARCIALMENTE_RECIBIDA':
+      case 'PARCIAL':
         return ['observaciones'];
         
       case 'COMPLETADA':
@@ -576,7 +593,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
   const handleAddItem = () => {
     const newItem: CreatePurchaseOrderItemDto & { incluyeIGV?: boolean } = {
       productoId: '',
-      cantidad: 0,
+      cantidadOrdenada: 0,
       precioUnitario: 0,
       incluyeIGV: false,  // ✅ Por defecto SIN IGV (usuario decide)
       observaciones: '',
@@ -720,6 +737,16 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
     try {
       let result: PurchaseOrder;
 
+      // ✅ Mapear items al formato correcto del backend (usado en CREATE y UPDATE)
+      const mappedItems = formData.items.map(item => ({
+        productoId: item.productoId,
+        cantidadOrdenada: item.cantidadOrdenada || 0,
+        precioUnitario: item.precioUnitario,
+        descuento: item.descuento || 0,
+        incluyeIGV: item.incluyeIGV ?? false,
+        especificaciones: item.observaciones || undefined,
+      }));
+
       if (isEditMode && order) {
         const updateData: UpdatePurchaseOrderDto = {
           proveedorId: formData.proveedorId,
@@ -727,7 +754,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
           fechaEntregaEsperada: formData.fechaEntregaEsperada ? new Date(formData.fechaEntregaEsperada).toISOString() : undefined,
           moneda: formData.moneda,
           condicionesPago: formData.condicionesPago,
-          items: formData.items,
+          items: mappedItems,  // ✅ Usar items mapeados
           observaciones: formData.observaciones,
         };
 
@@ -739,15 +766,6 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
           `La orden ${result.codigo} se actualizó correctamente con ${result.items?.length || 0} productos`
         );
       } else {
-        // ✅ Mapear items al formato correcto del backend
-        const mappedItems = formData.items.map(item => ({
-          productoId: item.productoId,
-          cantidadOrdenada: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          descuento: item.descuento || 0,
-          incluyeIGV: item.incluyeIGV ?? false,  // ✅ Incluir campo IGV
-          especificaciones: item.observaciones || undefined,
-        }));
         
         const createData: CreatePurchaseOrderDto = {
           proveedorId: formData.proveedorId,
@@ -836,7 +854,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
               <Select
                 value={formData.proveedorId}
                 onChange={(e) => handleInputChange('proveedorId', e.target.value)}
-                $error={!!errors.proveedorId}
+                $hasError={!!errors.proveedorId}
                 disabled={!isFieldEditable('proveedorId') || loading}
               >
                 <option value="">Seleccione un proveedor</option>
@@ -857,7 +875,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
               <Select
                 value={formData.almacenDestinoId}
                 onChange={(e) => handleInputChange('almacenDestinoId', e.target.value)}
-                $error={!!errors.almacenDestinoId}
+                $hasError={!!errors.almacenDestinoId}
                 disabled={!isFieldEditable('almacenDestinoId') || loading}
               >
                 <option value="">Seleccione un almacén</option>
@@ -942,32 +960,38 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
                   <tr>
                     <Th>Producto</Th>
                     <Th>Unidad</Th>
-                    <Th>Cantidad</Th>
+                    <Th>Cantidad Ordenada</Th>
+                    {isViewMode && order && ['EN_RECEPCION', 'PARCIAL', 'COMPLETADA'].includes(order.estado) && (
+                      <>
+                        <Th>Recibida</Th>
+                        <Th>Pendiente</Th>
+                      </>
+                    )}
                     <Th>Precio Unit.</Th>
-                    <Th>IGV</Th>
-                    <Th>Subtotal</Th>
-                    <Th>IGV Monto</Th>
-                    <Th>Total</Th>
-                    <Th>Obs.</Th>
-                    <Th>Acciones</Th>
+                    <Th>Incluye IGV</Th>
+                    {!isViewMode && <Th>Acciones</Th>}
                   </tr>
                 </Thead>
                 <Tbody>
                   {formData.items.map((item, index) => {
                     const totals = calculateItemTotals(item);
+                    const showReceiptInfo = isViewMode && order && ['EN_RECEPCION', 'PARCIAL', 'COMPLETADA'].includes(order.estado);
+                    const recibida = item.cantidadRecibida || 0;
+                    const pendiente = item.cantidadPendiente || 0;
+                    
                     return (
                       <Tr key={index}>
-                        <Td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                        <Td data-label="Producto">
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', width: '100%' }}>
                               <ItemSelect
                                 value={item.productoId}
                                 onChange={(e) => handleItemChange(index, 'productoId', e.target.value)}
                                 disabled={!isItemsEditable() || loading}
                                 $error={!!errors[`item_${index}_producto`]}
-                                style={{ flex: 1 }}
+                                style={{ flex: '1 1 0', minWidth: 0, maxWidth: '100%' }}
                               >
-                                <option value="">Seleccione...</option>
+                                <option value="">Seleccione un producto...</option>
                                 {activeProducts.map(product => (
                                   <option key={product.id} value={product.id}>
                                     {product.productCode} - {product.productName}
@@ -991,7 +1015,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
                             )}
                           </div>
                         </Td>
-                        <Td>
+                        <Td data-label="Unidad">
                           <small style={{ color: '#666' }}>
                             {item.productoId ? (() => {
                               const product = activeProducts.find(p => p.id === item.productoId);  // ✅ Solo comparar por id
@@ -1004,23 +1028,42 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
                             })() : '-'}
                           </small>
                         </Td>
-                        <Td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <ItemInput
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={item.cantidad || ''}
-                              onChange={(e) => handleItemChange(index, 'cantidad', Number(e.target.value))}
-                              $error={!!errors[`item_${index}_cantidad`]}
-                              disabled={!isItemsEditable() || loading}
-                            />
-                            {errors[`item_${index}_cantidad`] && (
-                              <ErrorText>{errors[`item_${index}_cantidad`]}</ErrorText>
-                            )}
-                          </div>
+                        <Td data-label={showReceiptInfo ? "Cantidad Ordenada" : "Cantidad"}>
+                          {isViewMode ? (
+                            <strong>{item.cantidadOrdenada || 0}</strong>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <ItemInput
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={item.cantidad || ''}
+                                onChange={(e) => handleItemChange(index, 'cantidad', Number(e.target.value))}
+                                $error={!!errors[`item_${index}_cantidad`]}
+                                disabled={!isItemsEditable() || loading}
+                              />
+                              {errors[`item_${index}_cantidad`] && (
+                                <ErrorText>{errors[`item_${index}_cantidad`]}</ErrorText>
+                              )}
+                            </div>
+                          )}
                         </Td>
-                        <Td>
+                        {showReceiptInfo && (
+                          <>
+                            <Td data-label="Recibida">
+                              <strong style={{ color: recibida > 0 ? '#10b981' : '#6b7280' }}>
+                                {recibida}
+                              </strong>
+                            </Td>
+                            <Td data-label="Pendiente">
+                              <strong style={{ color: pendiente > 0 ? '#f59e0b' : '#10b981' }}>
+                                {pendiente}
+                              </strong>
+                              {pendiente === 0 && <span style={{ marginLeft: '4px', fontSize: '0.9em' }}>✓</span>}
+                            </Td>
+                          </>
+                        )}
+                        <Td data-label="Precio Unit.">
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <ItemInput
                               type="number"
@@ -1036,7 +1079,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
                             )}
                           </div>
                         </Td>
-                        <Td>
+                        <Td data-label="Incluye IGV">
                           <CheckboxWrapper>
                             <input
                               type="checkbox"
@@ -1047,29 +1090,17 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
                             <label>{item.incluyeIGV !== false ? 'Sí' : 'No'}</label>
                           </CheckboxWrapper>
                         </Td>
-                        <Td>{formatCurrency(totals.subtotal)}</Td>
-                        <Td style={{ color: totals.igv > 0 ? '#28a745' : '#999' }}>
-                          {formatCurrency(totals.igv)}
-                        </Td>
-                        <Td><strong>{formatCurrency(totals.total)}</strong></Td>
-                        <Td>
-                          <ItemInput
-                            type="text"
-                            value={item.observaciones || ''}
-                            onChange={(e) => handleItemChange(index, 'observaciones', e.target.value)}
-                            placeholder="Opcional"
-                            disabled={!isItemsEditable() || loading}
-                          />
-                        </Td>
-                        <Td>
-                          <RemoveButton
-                            type="button"
-                            onClick={() => handleRemoveItem(index)}
-                            disabled={!isItemsEditable() || loading}
-                          >
-                            Quitar
-                          </RemoveButton>
-                        </Td>
+                        {!isViewMode && (
+                          <Td data-label="Acciones">
+                            <RemoveButton
+                              type="button"
+                              onClick={() => handleRemoveItem(index)}
+                              disabled={!isItemsEditable() || loading}
+                            >
+                              Quitar
+                            </RemoveButton>
+                          </Td>
+                        )}
                       </Tr>
                     );
                   })}
@@ -1078,6 +1109,65 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
             </ItemsTable>
           )}
 
+          {/* Resumen de Recepciones */}
+          {isViewMode && order && ['EN_RECEPCION', 'PARCIAL', 'COMPLETADA'].includes(order.estado) && (() => {
+            const totalOrdenado = formData.items.reduce((sum, item) => sum + (item.cantidadOrdenada || 0), 0);
+            const totalRecibido = formData.items.reduce((sum, item) => sum + (item.cantidadRecibida || 0), 0);
+            const totalPendiente = formData.items.reduce((sum, item) => sum + (item.cantidadPendiente || 0), 0);
+            const progreso = totalOrdenado > 0 ? Math.round((totalRecibido / totalOrdenado) * 100) : 0;
+            
+            return (
+              <div style={{ 
+                backgroundColor: '#f8f9fa', 
+                padding: '16px', 
+                borderRadius: '8px', 
+                marginTop: '16px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <h4 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '16px' }}>📦 Resumen de Recepciones</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total Ordenado</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#333' }}>
+                      {totalOrdenado}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total Recibido</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
+                      {totalRecibido}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Total Pendiente</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
+                      {totalPendiente}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Progreso</div>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#6366f1' }}>
+                      {progreso}%
+                    </div>
+                  </div>
+                </div>
+                {order.estado === 'PARCIAL' && totalRecibido === 0 && (
+                  <div style={{ 
+                    marginTop: '12px', 
+                    padding: '8px 12px', 
+                    backgroundColor: '#fef3c7', 
+                    border: '1px solid #fbbf24',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: '#92400e'
+                  }}>
+                    ⚠️ El estado es PARCIAL pero no se detectaron recepciones. Verifique la sincronización de datos.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Resumen */}
           <Summary>
             <SummaryRow>
@@ -1085,7 +1175,7 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
               <strong>{formData.items.length}</strong>
             </SummaryRow>
             <SummaryRow>
-              <span>Unidades totales:</span>
+              <span>Unidades totales ordenadas:</span>
               <strong>{formData.items.reduce((sum, item) => sum + (item.cantidad || 0), 0)}</strong>
             </SummaryRow>
             <SummaryRow>
@@ -1127,31 +1217,11 @@ const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
       {/* Modal de Nuevo Producto */}
       {showNewProductModal && (
         <NuevoProductoModal
-          onClose={() => {
+          onClose={async () => {
+            // ✅ Recargar productos al cerrar
+            await loadProducts();
             setShowNewProductModal(false);
             setNewProductTargetIndex(null);
-          }}
-          onSuccess={async (newProduct: any) => {
-            try {
-              // ✅ Recargar productos desde el contexto
-              await loadProducts();
-              
-              // ✅ Esperar un momento para que el contexto se actualice
-              setTimeout(() => {
-                // Seleccionar el nuevo producto en el item actual
-                if (newProductTargetIndex !== null) {
-                  const productId = newProduct.id || newProduct.productCode;
-                  handleItemChange(newProductTargetIndex, 'productoId', productId);
-                }
-              }, 500);
-              
-              setShowNewProductModal(false);
-              setNewProductTargetIndex(null);
-              showNotification('success', 'Éxito', 'Producto creado y agregado automáticamente');
-            } catch (error) {
-              console.error('Error al agregar producto:', error);
-              showNotification('error', 'Error', 'Producto creado pero no se pudo agregar a la orden');
-            }
           }}
         />
       )}

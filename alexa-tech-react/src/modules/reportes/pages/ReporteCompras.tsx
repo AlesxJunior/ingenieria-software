@@ -2,218 +2,179 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { apiService } from '../../../utils/api';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button, 
+  Input, 
+  FiltersCard, 
+  SummaryCard, 
+  SummaryCards, 
+  CardTitle, 
+  CardValue,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  StatusBadge,
+  EmptyState,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyText
+} from '../../../components/shared';
 
+// Helpers
 const formatCurrency = (num: number | undefined) => {
   if (num === undefined || num === null || isNaN(num)) return 'S/ 0.00';
   return `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const formatDateInput = (d: Date) => d.toISOString().slice(0, 10);
 const formatDMY = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+const formatDateInput = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// ============================================================================
+// ESTILOS ESPECÍFICOS DE REPORTES
+// ============================================================================
+
 const Container = styled.div`
-  padding: 2rem;
+  padding: ${SPACING['2xl']};
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
 `;
 
-const TabsContainer = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+const PageTitle = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
 `;
 
-const TabsHeader = styled.div`
-  display: flex;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-`;
-
-const Tab = styled.button<{ active: boolean }>`
-  padding: 1rem 1.5rem;
-  border: none;
-  background: ${props => props.active ? 'white' : 'transparent'};
-  color: ${props => props.active ? '#2563eb' : '#6b7280'};
-  font-weight: ${props => props.active ? '600' : '500'};
-  font-size: 0.875rem;
-  cursor: pointer;
-  border-bottom: 2px solid ${props => props.active ? '#2563eb' : 'transparent'};
-  transition: all 0.2s;
-  
-  &:hover {
-    background-color: ${props => props.active ? 'white' : '#f3f4f6'};
-    color: ${props => props.active ? '#2563eb' : '#1f2937'};
-  }
-`;
-
-const TabContent = styled.div`
-  padding: 1.5rem;
-`;
-
-// Título se renderiza desde Layout
-
-const FiltersContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: ${SPACING.lg};
 `;
 
-const FormGroup = styled.div`
+const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
+  gap: ${SPACING.xs};
 `;
 
-const Label = styled.label`
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
+const FilterLabel = styled.label`
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.textLight};
 `;
 
-const Input = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  &:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.125);
-  }
+const FilterButtonsRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: ${SPACING.md};
+  margin-top: ${SPACING.lg};
 `;
 
-const Select = styled.select`
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  &:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.125);
-  }
+const TabsContainer = styled.div`
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  border: 1px solid ${COLORS.border};
+  overflow: hidden;
 `;
 
-const Button = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
+const TabsHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid ${COLORS.border};
+  background-color: ${COLORS.background};
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  padding: ${SPACING.md} ${SPACING.xl};
   border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: ${props => props.$active ? COLORS.white : 'transparent'};
+  color: ${props => props.$active ? COLORS.primary : COLORS.textLight};
+  font-weight: ${props => props.$active ? TYPOGRAPHY.fontWeight.semibold : TYPOGRAPHY.fontWeight.medium};
+  font-size: ${TYPOGRAPHY.fontSize.small};
   cursor: pointer;
-  transition: background-color 0.2s;
+  border-bottom: 2px solid ${props => props.$active ? COLORS.primary : 'transparent'};
+  transition: ${TRANSITIONS.normal};
+  margin-bottom: -1px;
   
   &:hover {
-    background-color: #1d4ed8;
-  }
-  
-  &:disabled {
-    background-color: #9ca3af;
-    cursor: not-allowed;
+    background-color: ${props => props.$active ? COLORS.white : COLORS.borderLight};
+    color: ${props => props.$active ? COLORS.primary : COLORS.text};
   }
 `;
 
-const ExportButton = styled(Button)`
-  background-color: #10b981;
-  
-  &:hover:not(:disabled) {
-    background-color: #059669;
-  }
+const TabContent = styled.div`
+  padding: ${SPACING.xl};
 `;
 
 const Section = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  background: ${COLORS.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.large};
+  border: 1px solid ${COLORS.border};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 1rem;
+  font-size: ${TYPOGRAPHY.fontSize.h3};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
+  margin: 0 0 ${SPACING.lg} 0;
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
+const PercentageBadge = styled.span`
+  padding: 0.25rem 0.5rem;
+  background: ${COLORS.primaryLight};
+  color: ${COLORS.primary};
+  border-radius: ${BORDER_RADIUS.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-size: ${TYPOGRAPHY.fontSize.small};
 `;
 
-const Th = styled.th`
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+const RankBadge = styled.span<{ $rank: number }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: ${props => props.$rank <= 3 ? COLOR_SCALES.warning[100] : COLORS.borderLight};
+  color: ${props => props.$rank <= 3 ? COLOR_SCALES.warning[600] : COLORS.textLight};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
 `;
 
-const Td = styled.td`
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6b7280;
-`;
-
-const SummaryCards = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const SummaryCard = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-`;
-
-const CardTitle = styled.h3`
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-`;
-
-const CardValue = styled.p`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1a1a1a;
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-`;
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
 
 const ReporteCompras: React.FC = () => {
-  const [fechaInicio, setFechaInicio] = useState('');
-  const [fechaFin, setFechaFin] = useState('');
+  // Usar un rango más amplio para incluir todas las compras (mes de noviembre completo)
+  const [fechaInicio, setFechaInicio] = useState(formatDateInput(new Date(2025, 10, 1))); // 01/11/2025
+  const [fechaFin, setFechaFin] = useState(formatDateInput(new Date()));
   const [loading, setLoading] = useState(false);
   const [reporteData, setReporteData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'resumen' | 'detalles' | 'analisis'>('resumen');
@@ -239,6 +200,11 @@ const ReporteCompras: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLimpiar = () => {
+    setFechaInicio(formatDateInput(new Date(2025, 10, 1))); // 01/11/2025
+    setFechaFin(formatDateInput(new Date()));
   };
 
   const handleExportar = () => {
@@ -319,259 +285,250 @@ const ReporteCompras: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const getEstadoVariant = (estado: string) => {
+    switch (estado) {
+      case 'Recibida': return 'success';
+      case 'Pendiente': return 'warning';
+      default: return 'default';
+    }
+  };
+
   return (
     <Layout title="Reporte de Compras">
       <Container>
-        <Header>
-          <div />
-          <ExportButton onClick={handleExportar} disabled={!reporteData || loading}>
-            📊 Exportar Reporte
-          </ExportButton>
-        </Header>
+        <PageHeader>
+          <div>
+            <PageTitle>Reporte de Compras</PageTitle>
+            <PageSubtitle>Análisis de compras, proveedores y productos más adquiridos</PageSubtitle>
+          </div>
+          <Button $variant="success" onClick={handleExportar} disabled={!reporteData || loading}>
+            Exportar Reporte
+          </Button>
+        </PageHeader>
 
-        <FiltersContainer>
+        <FiltersCard>
           <FiltersGrid>
-            <FormGroup>
-              <Label>Fecha Inicio</Label>
+            <FilterGroup>
+              <FilterLabel>Fecha Inicio</FilterLabel>
               <Input
                 type="date"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
               />
-            </FormGroup>
-            <FormGroup>
-              <Label>Fecha Fin</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Fecha Fin</FilterLabel>
               <Input
                 type="date"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
               />
-            </FormGroup>
+            </FilterGroup>
           </FiltersGrid>
-          <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-            <Button onClick={handleBuscar} disabled={loading}>
-              {loading ? 'Generando...' : '🔍 Generar Reporte'}
+          <FilterButtonsRow>
+            <Button $variant="secondary" onClick={handleLimpiar}>
+              Limpiar
             </Button>
-          </div>
-        </FiltersContainer>
+            <Button $variant="primary" onClick={handleBuscar} disabled={loading}>
+              {loading ? 'Generando...' : 'Generar Reporte'}
+            </Button>
+          </FilterButtonsRow>
+        </FiltersCard>
 
-        {loading && <EmptyState>Cargando reporte...</EmptyState>}
+        {loading && (
+          <EmptyState>
+            <EmptyIcon>⏳</EmptyIcon>
+            <EmptyTitle>Cargando reporte...</EmptyTitle>
+          </EmptyState>
+        )}
 
         {!loading && !reporteData && (
-          <EmptyState>No hay datos disponibles. Seleccione un rango de fechas y haga clic en "Generar Reporte".</EmptyState>
+          <EmptyState>
+            <EmptyIcon>📦</EmptyIcon>
+            <EmptyTitle>Sin datos disponibles</EmptyTitle>
+            <EmptyText>Seleccione un rango de fechas y haga clic en "Generar Reporte".</EmptyText>
+          </EmptyState>
         )}
 
         {!loading && reporteData && (
-          <>
-            <TabsContainer>
-              <TabsHeader>
-                <Tab active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
-                  📊 Resumen General
-                </Tab>
-                <Tab active={activeTab === 'detalles'} onClick={() => setActiveTab('detalles')}>
-                  📋 Detalles por Período
-                </Tab>
-                <Tab active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
-                  📈 Top Productos
-                </Tab>
-              </TabsHeader>
+          <TabsContainer>
+            <TabsHeader>
+              <Tab $active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
+                Resumen General
+              </Tab>
+              <Tab $active={activeTab === 'detalles'} onClick={() => setActiveTab('detalles')}>
+                Detalles por Período
+              </Tab>
+              <Tab $active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
+                Top Productos
+              </Tab>
+            </TabsHeader>
 
-              <TabContent>
-                {activeTab === 'resumen' && (
-                  <>
-                    <SummaryCards>
-                      <SummaryCard>
-                        <CardTitle>Total Compras</CardTitle>
-                        <CardValue>{formatCurrency(reporteData.resumen?.totalCompras)}</CardValue>
-                      </SummaryCard>
-                      <SummaryCard>
-                        <CardTitle>Cantidad de Compras</CardTitle>
-                        <CardValue>{reporteData.resumen?.cantidadCompras || 0}</CardValue>
-                      </SummaryCard>
-                      <SummaryCard>
-                        <CardTitle>Compra Promedio</CardTitle>
-                        <CardValue>{formatCurrency(reporteData.resumen?.compraPromedio)}</CardValue>
-                      </SummaryCard>
-                      <SummaryCard>
-                        <CardTitle>Compra Máxima</CardTitle>
-                        <CardValue>{formatCurrency(reporteData.resumen?.compraMayor)}</CardValue>
-                      </SummaryCard>
-                    </SummaryCards>
-                  </>
-                )}
+            <TabContent>
+              {activeTab === 'resumen' && (
+                <>
+                  <SummaryCards>
+                    <SummaryCard>
+                      <CardTitle>Total Compras</CardTitle>
+                      <CardValue>{formatCurrency(reporteData.resumen?.totalCompras)}</CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Cantidad de Compras</CardTitle>
+                      <CardValue>{reporteData.resumen?.cantidadCompras || 0}</CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Compra Promedio</CardTitle>
+                      <CardValue>{formatCurrency(reporteData.resumen?.compraPromedio)}</CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Compra Máxima</CardTitle>
+                      <CardValue>{formatCurrency(reporteData.resumen?.comprasMayor)}</CardValue>
+                    </SummaryCard>
+                  </SummaryCards>
+                </>
+              )}
 
-                {activeTab === 'detalles' && (
-                  <>
-                    <Section>
-                      <SectionTitle>📅 Compras por Día</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Fecha</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(reporteData.comprasPorDia || []).map((c: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>{formatDMY(c.fecha)}</Td>
-                                <Td>{c.cantidad || 0}</Td>
-                                <Td>{formatCurrency(c.total)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
+              {activeTab === 'detalles' && (
+                <>
+                  <Section>
+                    <SectionTitle>Compras por Día</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Fecha</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {(reporteData.comprasPorDia || []).map((c: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td>{formatDMY(c.fecha)}</Td>
+                              <Td>{c.cantidad || 0}</Td>
+                              <Td>{formatCurrency(c.total)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
 
-                    <Section>
-                      <SectionTitle>🏢 Compras por Proveedor</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Proveedor</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total Comprado</Th>
-                              <Th>Porcentaje</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(reporteData.comprasPorProveedor || []).map((p: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td style={{ fontWeight: 500 }}>{p.nombreProveedor || 'Sin nombre'}</Td>
-                                <Td>{p.cantidadCompras || 0}</Td>
-                                <Td>{formatCurrency(p.totalCompras)}</Td>
-                                <Td>
-                                  <span style={{ 
-                                    padding: '0.25rem 0.5rem', 
-                                    background: '#3b82f620', 
-                                    color: '#2563eb',
-                                    borderRadius: '0.25rem',
-                                    fontWeight: 600
-                                  }}>
-                                    {(p.porcentaje || 0).toFixed(1)}%
-                                  </span>
-                                </Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
+                  <Section>
+                    <SectionTitle>Compras por Proveedor</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Proveedor</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total Comprado</Th>
+                            <Th>Porcentaje</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {(reporteData.comprasPorProveedor || []).map((p: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td style={{ fontWeight: 500 }}>{p.nombreProveedor || 'Sin nombre'}</Td>
+                              <Td>{p.cantidadCompras || 0}</Td>
+                              <Td>{formatCurrency(p.totalCompras)}</Td>
+                              <Td>
+                                <PercentageBadge>{(p.porcentaje || 0).toFixed(1)}%</PercentageBadge>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
 
-                    <Section>
-                      <SectionTitle>📦 Compras por Almacén</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Almacén</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(reporteData.comprasPorAlmacen || []).map((a: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>{a.nombreAlmacen || 'Sin almacén'}</Td>
-                                <Td>{a.cantidadCompras || 0}</Td>
-                                <Td>{formatCurrency(a.totalCompras)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
+                  <Section>
+                    <SectionTitle>Compras por Almacén</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Almacén</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {(reporteData.comprasPorAlmacen || []).map((a: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td>{a.nombreAlmacen || 'Sin almacén'}</Td>
+                              <Td>{a.cantidadCompras || 0}</Td>
+                              <Td>{formatCurrency(a.totalCompras)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
 
-                    <Section>
-                      <SectionTitle>📊 Compras por Estado</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Estado</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total</Th>
-                              <Th>Porcentaje</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(reporteData.comprasPorEstado || []).map((e: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>
-                                  <span style={{
-                                    padding: '0.25rem 0.5rem',
-                                    borderRadius: '0.25rem',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 500,
-                                    background: e.estado === 'Recibida' ? '#10b98120' : e.estado === 'Pendiente' ? '#f59e0b20' : '#6b728020',
-                                    color: e.estado === 'Recibida' ? '#059669' : e.estado === 'Pendiente' ? '#d97706' : '#374151'
-                                  }}>
-                                    {e.estado}
-                                  </span>
-                                </Td>
-                                <Td>{e.cantidad || 0}</Td>
-                                <Td>{formatCurrency(e.total)}</Td>
-                                <Td>{(e.porcentaje || 0).toFixed(1)}%</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
-                  </>
-                )}
+                  <Section>
+                    <SectionTitle>Compras por Estado</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Estado</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total</Th>
+                            <Th>Porcentaje</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {(reporteData.comprasPorEstado || []).map((e: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td>
+                                <StatusBadge variant={getEstadoVariant(e.estado)} dot>
+                                  {e.estado}
+                                </StatusBadge>
+                              </Td>
+                              <Td>{e.cantidad || 0}</Td>
+                              <Td>{formatCurrency(e.total)}</Td>
+                              <Td>{(e.porcentaje || 0).toFixed(1)}%</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
+                </>
+              )}
 
-                {activeTab === 'analisis' && (
-                  <>
-                    <Section>
-                      <SectionTitle>🏆 Top 10 Productos Más Comprados</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>#</Th>
-                              <Th>Producto</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total Comprado</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(reporteData.topProductosComprados || []).map((p: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>
-                                  <span style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '1.5rem',
-                                    height: '1.5rem',
-                                    borderRadius: '50%',
-                                    background: idx < 3 ? '#f59e0b20' : '#e5e7eb',
-                                    color: idx < 3 ? '#d97706' : '#6b7280',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem'
-                                  }}>
-                                    {idx + 1}
-                                  </span>
-                                </Td>
-                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto || 'Sin nombre'}</Td>
-                                <Td>{p.cantidadComprada || 0}</Td>
-                                <Td>{formatCurrency(p.totalComprado)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
-                  </>
-                )}
-              </TabContent>
-            </TabsContainer>
-          </>
+              {activeTab === 'analisis' && (
+                <>
+                  <Section>
+                    <SectionTitle>Top 10 Productos Más Comprados</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>#</Th>
+                            <Th>Producto</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total Comprado</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {(reporteData.topProductosComprados || []).map((p: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td><RankBadge $rank={idx + 1}>{idx + 1}</RankBadge></Td>
+                              <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto || 'Sin nombre'}</Td>
+                              <Td>{p.cantidadComprada || 0}</Td>
+                              <Td>{formatCurrency(p.totalComprado)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
+                </>
+              )}
+            </TabContent>
+          </TabsContainer>
         )}
       </Container>
     </Layout>

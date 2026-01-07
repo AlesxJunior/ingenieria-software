@@ -2,287 +2,235 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { apiService } from '../../../utils/api';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button, 
+  Input, 
+  Select,
+  FiltersCard, 
+  SummaryCard, 
+  SummaryCards, 
+  CardTitle, 
+  CardValue,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  StatusBadge,
+  EmptyState,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyText
+} from '../../../components/shared';
 
+// Helpers
 const formatDateInput = (d: Date) => d.toISOString().slice(0, 10);
 const formatDMY = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+// ============================================================================
+// ESTILOS ESPECÍFICOS DE REPORTES
+// ============================================================================
+
 const Container = styled.div`
-  padding: 2rem;
+  padding: ${SPACING['2xl']};
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 2rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
 `;
 
-// Tabs
-const TabsContainer = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+const PageTitle = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
 `;
 
-const TabsHeader = styled.div`
-  display: flex;
-  border-bottom: 2px solid #e5e7eb;
-  background-color: #f9fafb;
-  border-radius: 0.5rem 0.5rem 0 0;
-`;
-
-const Tab = styled.button<{ $active: boolean }>`
-  flex: 1;
-  padding: 1rem;
-  border: none;
-  background: ${props => props.$active ? 'white' : 'transparent'};
-  border-bottom: 3px solid ${props => props.$active ? '#2563eb' : 'transparent'};
-  color: ${props => props.$active ? '#2563eb' : '#6b7280'};
-  font-weight: ${props => props.$active ? '600' : '500'};
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: ${props => props.$active ? '0' : '3px'};
-
-  &:hover {
-    background: ${props => props.$active ? 'white' : '#f3f4f6'};
-  }
-`;
-
-const TabContent = styled.div`
-  padding: 1.5rem;
-`;
-
-// Título se renderiza desde Layout
-
-const FiltersContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: ${SPACING.lg};
 `;
 
-const FormGroup = styled.div`
+const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
+  gap: ${SPACING.xs};
 `;
 
-const Label = styled.label`
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
+const FilterLabel = styled.label`
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.textLight};
 `;
 
-const Input = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  &:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.125);
-  }
+const FilterButtonsRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: ${SPACING.md};
+  margin-top: ${SPACING.lg};
 `;
 
-const Select = styled.select`
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  &:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.125);
-  }
-`;
-
-const Button = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: #1d4ed8;
-  }
-`;
-
-const ExportButton = styled(Button)`
-  background-color: #10b981;
-  
-  &:hover {
-    background-color: #059669;
-  }
-`;
-
-const SummaryCards = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const SummaryCard = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-`;
-
-const CardTitle = styled.h3`
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-`;
-
-const CardValue = styled.p`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1a1a1a;
-`;
-
-const TableContainer = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+const TabsContainer = styled.div`
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  border: 1px solid ${COLORS.border};
   overflow: hidden;
 `;
 
-const Table = styled.table`
-  width: 100%;
+const TabsHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid ${COLORS.border};
+  background-color: ${COLORS.background};
 `;
 
-const TableHeader = styled.th`
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+const Tab = styled.button<{ $active: boolean }>`
+  padding: ${SPACING.md} ${SPACING.xl};
+  border: none;
+  background: ${props => props.$active ? COLORS.white : 'transparent'};
+  color: ${props => props.$active ? COLORS.primary : COLORS.textLight};
+  font-weight: ${props => props.$active ? TYPOGRAPHY.fontWeight.semibold : TYPOGRAPHY.fontWeight.medium};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  cursor: pointer;
+  border-bottom: 2px solid ${props => props.$active ? COLORS.primary : 'transparent'};
+  transition: ${TRANSITIONS.normal};
+  margin-bottom: -1px;
+  
+  &:hover {
+    background-color: ${props => props.$active ? COLORS.white : COLORS.borderLight};
+    color: ${props => props.$active ? COLORS.primary : COLORS.text};
+  }
 `;
 
-const TableCell = styled.td`
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  border-bottom: 1px solid #e5e7eb;
+const TabContent = styled.div`
+  padding: ${SPACING.xl};
 `;
 
-const TypeBadge = styled.span<{ type: string }>`
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background-color: ${props => {
-    switch (props.type) {
-      case 'INGRESO': return '#10B98120';
-      case 'EGRESO': return '#EF444420';
-      case 'APERTURA': return '#3B82F620';
-      case 'CIERRE': return '#8B5CF620';
-      default: return '#6B728020';
-    }
-  }};
-  color: ${props => {
-    switch (props.type) {
-      case 'INGRESO': return '#059669';
-      case 'EGRESO': return '#DC2626';
-      case 'APERTURA': return '#2563EB';
-      case 'CIERRE': return '#7C3AED';
-      default: return '#374151';
-    }
-  }};
+const Section = styled.div`
+  background: ${COLORS.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.large};
+  border: 1px solid ${COLORS.border};
+  margin-bottom: ${SPACING.xl};
 `;
 
-const RankBadge = styled.span<{ rank: number }>`
+const SectionTitle = styled.h3`
+  font-size: ${TYPOGRAPHY.fontSize.h3};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
+  margin: 0 0 ${SPACING.lg} 0;
+`;
+
+const RankBadge = styled.span<{ $rank: number }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  font-weight: 700;
-  font-size: 0.75rem;
+  font-weight: ${TYPOGRAPHY.fontWeight.bold};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
   background: ${props => {
-    if (props.rank === 1) return 'linear-gradient(135deg, #FFD700, #FFA500)';
-    if (props.rank === 2) return 'linear-gradient(135deg, #C0C0C0, #A8A8A8)';
-    if (props.rank === 3) return 'linear-gradient(135deg, #CD7F32, #B87333)';
-    return '#e5e7eb';
+    if (props.$rank === 1) return 'linear-gradient(135deg, #FFD700, #FFA500)';
+    if (props.$rank === 2) return 'linear-gradient(135deg, #C0C0C0, #A8A8A8)';
+    if (props.$rank === 3) return 'linear-gradient(135deg, #CD7F32, #B87333)';
+    return COLORS.borderLight;
   }};
-  color: ${props => props.rank <= 3 ? 'white' : '#6b7280'};
-  box-shadow: ${props => props.rank <= 3 ? '0 2px 4px rgba(0,0,0,0.2)' : 'none'};
-  margin-right: 0.5rem;
+  color: ${props => props.$rank <= 3 ? 'white' : COLORS.textLight};
+  box-shadow: ${props => props.$rank <= 3 ? '0 2px 4px rgba(0,0,0,0.2)' : 'none'};
 `;
 
 const ChartContainer = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  padding: ${SPACING.xl};
+  border: 1px solid ${COLORS.border};
+  margin-bottom: ${SPACING.lg};
 `;
 
 const ChartTitle = styled.h4`
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 1rem;
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
+  margin: 0 0 ${SPACING.lg} 0;
 `;
 
-const ChartBar = styled.div<{ percentage: number; color: string }>`
+const ChartBar = styled.div<{ $percentage: number; $color: string }>`
   display: flex;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: ${SPACING.md};
 
   .label {
     width: 120px;
-    font-size: 0.875rem;
-    color: #374151;
-    font-weight: 500;
+    font-size: ${TYPOGRAPHY.fontSize.small};
+    color: ${COLORS.text};
+    font-weight: ${TYPOGRAPHY.fontWeight.medium};
   }
 
   .bar-container {
     flex: 1;
     height: 24px;
-    background: #f3f4f6;
-    border-radius: 4px;
+    background: ${COLORS.background};
+    border-radius: ${BORDER_RADIUS.small};
     overflow: hidden;
     position: relative;
   }
 
   .bar-fill {
     height: 100%;
-    width: ${props => props.percentage}%;
-    background: ${props => props.color};
+    width: ${props => props.$percentage}%;
+    background: ${props => props.$color};
     transition: width 0.3s ease;
-    border-radius: 4px;
+    border-radius: ${BORDER_RADIUS.small};
   }
 
   .value {
-    margin-left: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #374151;
-    min-width: 80px;
+    margin-left: ${SPACING.md};
+    font-size: ${TYPOGRAPHY.fontSize.small};
+    font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+    color: ${COLORS.text};
+    min-width: 100px;
     text-align: right;
   }
 `;
+
+const GridTwo = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: ${SPACING.lg};
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const IngresosValue = styled.span`
+  color: ${COLOR_SCALES.success[600]};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+`;
+
+const EgresosValue = styled.span`
+  color: ${COLOR_SCALES.danger[600]};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+`;
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
 interface MovimientoCaja {
   cajaId: string;
@@ -322,10 +270,14 @@ interface CajaReporte {
   }[];
 }
 
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
+
 const ReporteCaja: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'resumen' | 'movimientos' | 'analisis'>('resumen');
-  const [fechaInicio, setFechaInicio] = useState(formatDateInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-  const [fechaFin, setFechaFin] = useState(formatDateInput(new Date()));
+  const [fechaInicio, setFechaInicio] = useState(formatDateInput(new Date(2025, 11, 1))); // Diciembre 2025
+  const [fechaFin, setFechaFin] = useState(formatDateInput(new Date(2025, 11, 31)));
   const [tipo, setTipo] = useState('');
   const [usuario, setUsuario] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
@@ -356,12 +308,20 @@ const ReporteCaja: React.FC = () => {
     }
   };
 
+  const handleLimpiar = () => {
+    setFechaInicio(formatDateInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+    setFechaFin(formatDateInput(new Date()));
+    setTipo('');
+    setUsuario('');
+    setMetodoPago('');
+    setConcepto('');
+  };
+
   const handleExportar = () => {
     if (!reporteData) return;
 
     const BOM = '\uFEFF';
     
-    // Preparar encabezado con filtros aplicados
     let header = `Reporte de Movimientos de Caja\n`;
     header += `Período Analizado:\t${fechaInicio || 'Todas las fechas'}\tal\t${fechaFin || 'Hoy'}\n`;
     if (tipo) header += `Tipo de Movimiento:\t${tipo}\n`;
@@ -370,17 +330,14 @@ const ReporteCaja: React.FC = () => {
     if (concepto) header += `Concepto Filtrado:\t${concepto}\n`;
     header += `Fecha de Generación:\t${new Date().toLocaleString('es-PE')}\n\n`;
 
-    // Resumen
     header += `=== RESUMEN GENERAL ===\n`;
     header += `Total Efectivo\tTotal Tarjeta\tTotal Transferencia\tTotal Otros\tTotal General\n`;
     header += `S/ ${reporteData.resumen.totalEfectivo.toFixed(2)}\tS/ ${reporteData.resumen.totalTarjeta.toFixed(2)}\tS/ ${reporteData.resumen.totalTransferencia.toFixed(2)}\tS/ ${reporteData.resumen.totalOtros.toFixed(2)}\tS/ ${reporteData.resumen.totalGeneral.toFixed(2)}\n\n`;
 
-    // Estado de cajas
     header += `=== ESTADO DE CAJAS ===\n`;
     header += `Cajas Abiertas\tCajas Cerradas\n`;
     header += `${reporteData.resumen.cajasAbiertas}\t${reporteData.resumen.cajasCerradas}\n\n`;
 
-    // Análisis por Usuario
     const movimientosPorUsuario = calcularMovimientosPorUsuario();
     header += `=== TOP 10 USUARIOS CON MÁS MOVIMIENTOS ===\n`;
     header += `Posición\tUsuario\tTotal Movimientos\tMonto Total\n`;
@@ -389,7 +346,6 @@ const ReporteCaja: React.FC = () => {
     });
     header += `\n`;
 
-    // Análisis por Método de Pago
     header += `=== DISTRIBUCIÓN POR MÉTODO DE PAGO ===\n`;
     header += `Método\tTransacciones\tMonto Total\tPorcentaje\n`;
     reporteData.movimientosPorMetodo.forEach(m => {
@@ -397,7 +353,6 @@ const ReporteCaja: React.FC = () => {
     });
     header += `\n`;
 
-    // Detalle de movimientos por caja
     header += `=== DETALLE DE MOVIMIENTOS POR CAJA ===\n`;
     const csvContent = [
       'Caja\tUsuario\tApertura\tIngresos\tEgresos\tCierre\tEstado\tFecha Apertura\tFecha Cierre',
@@ -433,7 +388,7 @@ const ReporteCaja: React.FC = () => {
     
     return {
       totalIngresos,
-      totalEgresos: 0, // Backend no proporciona egresos detallados aún
+      totalEgresos: 0,
       saldoFinal: reporteData.resumen.totalGeneral,
       totalMovimientos: reporteData.movimientosPorCaja.length
     };
@@ -477,37 +432,59 @@ const ReporteCaja: React.FC = () => {
     return reporteData.movimientosPorMetodo;
   };
 
+  const getEstadoVariant = (estado: string) => {
+    switch (estado) {
+      case 'Abierta': return 'info';
+      case 'Cerrada': return 'success';
+      default: return 'default';
+    }
+  };
+
+  const getTipoColor = (tipo: string) => {
+    switch (tipo) {
+      case 'INGRESO': return COLOR_SCALES.success[500];
+      case 'EGRESO': return COLOR_SCALES.danger[500];
+      case 'APERTURA': return COLOR_SCALES.primary[500];
+      case 'CIERRE': return COLOR_SCALES.info[500];
+      default: return COLORS.textLight;
+    }
+  };
+
   const resumen = calcularResumen();
 
   return (
-    <Layout title="Reportes: Caja">
+    <Layout title="Reporte de Caja">
       <Container>
-        <Header>
-          <ExportButton onClick={handleExportar}>
+        <PageHeader>
+          <div>
+            <PageTitle>Reporte de Caja</PageTitle>
+            <PageSubtitle>Análisis de movimientos de caja, ingresos y egresos</PageSubtitle>
+          </div>
+          <Button $variant="success" onClick={handleExportar} disabled={!reporteData || loading}>
             Exportar Reporte
-          </ExportButton>
-        </Header>
+          </Button>
+        </PageHeader>
 
-        <FiltersContainer>
+        <FiltersCard>
           <FiltersGrid>
-            <FormGroup>
-              <Label>Fecha Inicio</Label>
+            <FilterGroup>
+              <FilterLabel>Fecha Inicio</FilterLabel>
               <Input
                 type="date"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
               />
-            </FormGroup>
-            <FormGroup>
-              <Label>Fecha Fin</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Fecha Fin</FilterLabel>
               <Input
                 type="date"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
               />
-            </FormGroup>
-            <FormGroup>
-              <Label>Tipo de Movimiento</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Tipo de Movimiento</FilterLabel>
               <Select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
@@ -518,18 +495,18 @@ const ReporteCaja: React.FC = () => {
                 <option value="APERTURA">Apertura</option>
                 <option value="CIERRE">Cierre</option>
               </Select>
-            </FormGroup>
-            <FormGroup>
-              <Label>Usuario</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Usuario</FilterLabel>
               <Input
                 type="text"
                 placeholder="Buscar por usuario"
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
               />
-            </FormGroup>
-            <FormGroup>
-              <Label>Método de Pago</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Método de Pago</FilterLabel>
               <Select
                 value={metodoPago}
                 onChange={(e) => setMetodoPago(e.target.value)}
@@ -540,215 +517,244 @@ const ReporteCaja: React.FC = () => {
                 <option value="TRANSFERENCIA">Transferencia</option>
                 <option value="CHEQUE">Cheque</option>
               </Select>
-            </FormGroup>
-            <FormGroup>
-              <Label>Concepto</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Concepto</FilterLabel>
               <Input
                 type="text"
                 placeholder="Buscar por concepto"
                 value={concepto}
                 onChange={(e) => setConcepto(e.target.value)}
               />
-            </FormGroup>
+            </FilterGroup>
           </FiltersGrid>
-          <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-            <Button onClick={handleBuscar} disabled={loading}>
+          <FilterButtonsRow>
+            <Button $variant="secondary" onClick={handleLimpiar}>
+              Limpiar
+            </Button>
+            <Button $variant="primary" onClick={handleBuscar} disabled={loading}>
               {loading ? 'Buscando...' : 'Buscar'}
             </Button>
-          </div>
-        </FiltersContainer>
+          </FilterButtonsRow>
+        </FiltersCard>
 
-        <TabsContainer>
-          <TabsHeader>
-            <Tab $active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
-              📊 Resumen General
-            </Tab>
-            <Tab $active={activeTab === 'movimientos'} onClick={() => setActiveTab('movimientos')}>
-              📋 Movimientos Detallados
-            </Tab>
-            <Tab $active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
-              📈 Análisis y Rankings
-            </Tab>
-          </TabsHeader>
+        {loading && (
+          <EmptyState>
+            <EmptyIcon>⏳</EmptyIcon>
+            <EmptyTitle>Cargando reporte...</EmptyTitle>
+          </EmptyState>
+        )}
 
-          <TabContent>
-            {activeTab === 'resumen' && (
-              <>
-                <SummaryCards>
-                  <SummaryCard>
-                    <CardTitle>Total Ingresos</CardTitle>
-                    <CardValue style={{ color: '#059669' }}>S/ {resumen.totalIngresos.toFixed(2)}</CardValue>
-                  </SummaryCard>
-                  <SummaryCard>
-                    <CardTitle>Total Egresos</CardTitle>
-                    <CardValue style={{ color: '#DC2626' }}>S/ {resumen.totalEgresos.toFixed(2)}</CardValue>
-                  </SummaryCard>
-                  <SummaryCard>
-                    <CardTitle>Saldo Final</CardTitle>
-                    <CardValue style={{ color: '#2563eb' }}>S/ {resumen.saldoFinal.toFixed(2)}</CardValue>
-                  </SummaryCard>
-                  <SummaryCard>
-                    <CardTitle>Total Movimientos</CardTitle>
-                    <CardValue>{resumen.totalMovimientos}</CardValue>
-                  </SummaryCard>
-                </SummaryCards>
+        {!loading && !reporteData && (
+          <EmptyState>
+            <EmptyIcon>💰</EmptyIcon>
+            <EmptyTitle>Sin datos disponibles</EmptyTitle>
+            <EmptyText>Seleccione los filtros y haga clic en "Buscar".</EmptyText>
+          </EmptyState>
+        )}
 
-                <ChartContainer>
-                  <ChartTitle>Distribución de Movimientos por Tipo</ChartTitle>
-                  {calcularMovimientosPorTipo().map((tipo) => (
-                    <ChartBar key={tipo.tipo} percentage={tipo.porcentaje} color={
-                      tipo.tipo === 'INGRESO' ? '#10B981' :
-                      tipo.tipo === 'EGRESO' ? '#EF4444' :
-                      tipo.tipo === 'APERTURA' ? '#3B82F6' : '#8B5CF6'
-                    }>
-                      <span className="label">{tipo.tipo}</span>
-                      <div className="bar-container">
-                        <div className="bar-fill"></div>
-                      </div>
-                      <span className="value">S/ {tipo.total.toFixed(2)} ({tipo.porcentaje.toFixed(1)}%)</span>
-                    </ChartBar>
-                  ))}
-                </ChartContainer>
+        {!loading && reporteData && (
+          <TabsContainer>
+            <TabsHeader>
+              <Tab $active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
+                Resumen General
+              </Tab>
+              <Tab $active={activeTab === 'movimientos'} onClick={() => setActiveTab('movimientos')}>
+                Movimientos Detallados
+              </Tab>
+              <Tab $active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
+                Análisis y Rankings
+              </Tab>
+            </TabsHeader>
 
-                <ChartContainer>
-                  <ChartTitle>Distribución por Método de Pago</ChartTitle>
-                  {calcularMovimientosPorMetodoPago().map((metodo) => (
-                    <ChartBar key={metodo.metodoPago} percentage={metodo.porcentaje} color="#6366f1">
-                      <span className="label">{metodo.metodoPago}</span>
-                      <div className="bar-container">
-                        <div className="bar-fill"></div>
-                      </div>
-                      <span className="value">S/ {metodo.montoTotal.toFixed(2)} ({metodo.porcentaje.toFixed(1)}%)</span>
-                    </ChartBar>
-                  ))}
-                </ChartContainer>
-              </>
-            )}
+            <TabContent>
+              {activeTab === 'resumen' && (
+                <>
+                  <SummaryCards>
+                    <SummaryCard>
+                      <CardTitle>Total Ingresos</CardTitle>
+                      <CardValue style={{ color: COLOR_SCALES.success[600] }}>
+                        S/ {resumen.totalIngresos.toFixed(2)}
+                      </CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Total Egresos</CardTitle>
+                      <CardValue style={{ color: COLOR_SCALES.danger[600] }}>
+                        S/ {resumen.totalEgresos.toFixed(2)}
+                      </CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Saldo Final</CardTitle>
+                      <CardValue style={{ color: COLORS.primary }}>
+                        S/ {resumen.saldoFinal.toFixed(2)}
+                      </CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Total Movimientos</CardTitle>
+                      <CardValue>{resumen.totalMovimientos}</CardValue>
+                    </SummaryCard>
+                  </SummaryCards>
 
-            {activeTab === 'movimientos' && (
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <TableHeader>Caja</TableHeader>
-                      <TableHeader>Usuario</TableHeader>
-                      <TableHeader>Apertura</TableHeader>
-                      <TableHeader>Ingresos</TableHeader>
-                      <TableHeader>Egresos</TableHeader>
-                      <TableHeader>Cierre</TableHeader>
-                      <TableHeader>Estado</TableHeader>
-                      <TableHeader>Fecha Apertura</TableHeader>
-                      <TableHeader>Fecha Cierre</TableHeader>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reporteData?.movimientosPorCaja.map((movimiento) => (
-                      <tr key={movimiento.cajaId}>
-                        <TableCell style={{ fontWeight: 600 }}>{movimiento.nombreCaja}</TableCell>
-                        <TableCell>{movimiento.nombreUsuario}</TableCell>
-                        <TableCell>S/ {movimiento.montoApertura.toFixed(2)}</TableCell>
-                        <TableCell style={{ color: '#059669', fontWeight: 600 }}>
-                          S/ {movimiento.totalIngresos.toFixed(2)}
-                        </TableCell>
-                        <TableCell style={{ color: '#DC2626', fontWeight: 600 }}>
-                          S/ {movimiento.totalEgresos.toFixed(2)}
-                        </TableCell>
-                        <TableCell style={{ fontWeight: 600 }}>S/ {movimiento.montoCierre.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <TypeBadge type={movimiento.estado === 'Abierta' ? 'APERTURA' : 'CIERRE'}>
-                            {movimiento.estado}
-                          </TypeBadge>
-                        </TableCell>
-                        <TableCell>{formatDMY(movimiento.fechaApertura)}</TableCell>
-                        <TableCell>{movimiento.fechaCierre ? formatDMY(movimiento.fechaCierre) : '-'}</TableCell>
-                      </tr>
+                  <ChartContainer>
+                    <ChartTitle>Distribución de Movimientos por Tipo</ChartTitle>
+                    {calcularMovimientosPorTipo().map((t) => (
+                      <ChartBar key={t.tipo} $percentage={t.porcentaje} $color={getTipoColor(t.tipo)}>
+                        <span className="label">{t.tipo}</span>
+                        <div className="bar-container">
+                          <div className="bar-fill"></div>
+                        </div>
+                        <span className="value">S/ {t.total.toFixed(2)} ({t.porcentaje.toFixed(1)}%)</span>
+                      </ChartBar>
                     ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
-            )}
+                  </ChartContainer>
 
-            {activeTab === 'analisis' && (
-              <>
-                <ChartContainer>
-                  <ChartTitle>🏆 Top 10 Usuarios con Más Movimientos</ChartTitle>
+                  <ChartContainer>
+                    <ChartTitle>Distribución por Método de Pago</ChartTitle>
+                    {calcularMovimientosPorMetodoPago().map((metodo) => (
+                      <ChartBar key={metodo.metodoPago} $percentage={metodo.porcentaje} $color={COLOR_SCALES.primary[500]}>
+                        <span className="label">{metodo.metodoPago}</span>
+                        <div className="bar-container">
+                          <div className="bar-fill"></div>
+                        </div>
+                        <span className="value">S/ {metodo.montoTotal.toFixed(2)} ({metodo.porcentaje.toFixed(1)}%)</span>
+                      </ChartBar>
+                    ))}
+                  </ChartContainer>
+                </>
+              )}
+
+              {activeTab === 'movimientos' && (
+                <TableContainer>
                   <Table>
-                    <thead>
+                    <Thead>
                       <tr>
-                        <TableHeader style={{ width: '80px' }}>Posición</TableHeader>
-                        <TableHeader>Usuario</TableHeader>
-                        <TableHeader>Total Movimientos</TableHeader>
-                        <TableHeader>Monto Total</TableHeader>
+                        <Th>Caja</Th>
+                        <Th>Usuario</Th>
+                        <Th>Apertura</Th>
+                        <Th>Ingresos</Th>
+                        <Th>Egresos</Th>
+                        <Th>Cierre</Th>
+                        <Th>Estado</Th>
+                        <Th>Fecha Apertura</Th>
+                        <Th>Fecha Cierre</Th>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {calcularMovimientosPorUsuario().slice(0, 10).map((usuario, idx) => (
-                        <tr key={usuario.usuario}>
-                          <TableCell>
-                            <RankBadge rank={idx + 1}>#{idx + 1}</RankBadge>
-                          </TableCell>
-                          <TableCell style={{ fontWeight: idx < 3 ? 600 : 400 }}>{usuario.usuario}</TableCell>
-                          <TableCell>{usuario.cantidad}</TableCell>
-                          <TableCell style={{ fontWeight: 600 }}>S/ {usuario.total.toFixed(2)}</TableCell>
-                        </tr>
+                    </Thead>
+                    <Tbody>
+                      {reporteData?.movimientosPorCaja.map((movimiento) => (
+                        <Tr key={movimiento.cajaId}>
+                          <Td style={{ fontWeight: 600 }}>{movimiento.nombreCaja}</Td>
+                          <Td>{movimiento.nombreUsuario}</Td>
+                          <Td>S/ {movimiento.montoApertura.toFixed(2)}</Td>
+                          <Td>
+                            <IngresosValue>S/ {movimiento.totalIngresos.toFixed(2)}</IngresosValue>
+                          </Td>
+                          <Td>
+                            <EgresosValue>S/ {movimiento.totalEgresos.toFixed(2)}</EgresosValue>
+                          </Td>
+                          <Td style={{ fontWeight: 600 }}>S/ {movimiento.montoCierre.toFixed(2)}</Td>
+                          <Td>
+                            <StatusBadge variant={getEstadoVariant(movimiento.estado)} dot>
+                              {movimiento.estado}
+                            </StatusBadge>
+                          </Td>
+                          <Td>{formatDMY(movimiento.fechaApertura)}</Td>
+                          <Td>{movimiento.fechaCierre ? formatDMY(movimiento.fechaCierre) : '-'}</Td>
+                        </Tr>
                       ))}
-                    </tbody>
+                    </Tbody>
                   </Table>
-                </ChartContainer>
+                </TableContainer>
+              )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <ChartContainer>
-                    <ChartTitle>Resumen por Tipo de Movimiento</ChartTitle>
-                    <Table>
-                      <thead>
-                        <tr>
-                          <TableHeader>Tipo</TableHeader>
-                          <TableHeader>Cantidad</TableHeader>
-                          <TableHeader>Monto Total</TableHeader>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {calcularMovimientosPorTipo().map((tipo) => (
-                          <tr key={tipo.tipo}>
-                            <TableCell>
-                              <TypeBadge type={tipo.tipo}>{tipo.tipo}</TypeBadge>
-                            </TableCell>
-                            <TableCell>{tipo.cantidad}</TableCell>
-                            <TableCell style={{ fontWeight: 600 }}>S/ {tipo.total.toFixed(2)}</TableCell>
+              {activeTab === 'analisis' && (
+                <>
+                  <Section>
+                    <SectionTitle>Top 10 Usuarios con Más Movimientos</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th style={{ width: '80px' }}>Posición</Th>
+                            <Th>Usuario</Th>
+                            <Th>Total Movimientos</Th>
+                            <Th>Monto Total</Th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </ChartContainer>
+                        </Thead>
+                        <Tbody>
+                          {calcularMovimientosPorUsuario().slice(0, 10).map((usuario, idx) => (
+                            <Tr key={usuario.usuario}>
+                              <Td>
+                                <RankBadge $rank={idx + 1}>#{idx + 1}</RankBadge>
+                              </Td>
+                              <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{usuario.usuario}</Td>
+                              <Td>{usuario.cantidad}</Td>
+                              <Td style={{ fontWeight: 600 }}>S/ {usuario.total.toFixed(2)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
 
-                  <ChartContainer>
-                    <ChartTitle>Resumen por Método de Pago</ChartTitle>
-                    <Table>
-                      <thead>
-                        <tr>
-                          <TableHeader>Método</TableHeader>
-                          <TableHeader>Transacciones</TableHeader>
-                          <TableHeader>Monto Total</TableHeader>
-                          <TableHeader>Porcentaje</TableHeader>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {calcularMovimientosPorMetodoPago().map((metodo) => (
-                          <tr key={metodo.metodoPago}>
-                            <TableCell style={{ fontWeight: 500 }}>{metodo.metodoPago}</TableCell>
-                            <TableCell>{metodo.cantidadTransacciones}</TableCell>
-                            <TableCell style={{ fontWeight: 600 }}>S/ {metodo.montoTotal.toFixed(2)}</TableCell>
-                            <TableCell>{metodo.porcentaje.toFixed(1)}%</TableCell>
+                  <GridTwo>
+                    <ChartContainer>
+                      <ChartTitle>Resumen por Tipo de Movimiento</ChartTitle>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Tipo</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Monto Total</Th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </ChartContainer>
-                </div>
-              </>
-            )}
-          </TabContent>
-        </TabsContainer>
+                        </Thead>
+                        <Tbody>
+                          {calcularMovimientosPorTipo().map((t) => (
+                            <Tr key={t.tipo}>
+                              <Td>
+                                <StatusBadge 
+                                  variant={t.tipo === 'INGRESO' ? 'success' : t.tipo === 'EGRESO' ? 'danger' : 'info'} 
+                                  dot
+                                >
+                                  {t.tipo}
+                                </StatusBadge>
+                              </Td>
+                              <Td>{t.cantidad}</Td>
+                              <Td style={{ fontWeight: 600 }}>S/ {t.total.toFixed(2)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </ChartContainer>
+
+                    <ChartContainer>
+                      <ChartTitle>Resumen por Método de Pago</ChartTitle>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Método</Th>
+                            <Th>Transacciones</Th>
+                            <Th>Monto Total</Th>
+                            <Th>%</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {calcularMovimientosPorMetodoPago().map((metodo) => (
+                            <Tr key={metodo.metodoPago}>
+                              <Td style={{ fontWeight: 500 }}>{metodo.metodoPago}</Td>
+                              <Td>{metodo.cantidadTransacciones}</Td>
+                              <Td style={{ fontWeight: 600 }}>S/ {metodo.montoTotal.toFixed(2)}</Td>
+                              <Td>{metodo.porcentaje.toFixed(1)}%</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </ChartContainer>
+                  </GridTwo>
+                </>
+              )}
+            </TabContent>
+          </TabsContainer>
+        )}
       </Container>
     </Layout>
   );

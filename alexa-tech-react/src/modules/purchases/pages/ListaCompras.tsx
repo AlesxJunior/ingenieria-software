@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { Button as SharedButton, Input as SharedInput, Select as SharedSelect } from '../../../components/shared';
 import Layout from '../../../components/Layout';
 import { useClients } from '../../clients/context/ClientContext';
 import { useNotification } from '../../../context/NotificationContext';
@@ -12,75 +14,47 @@ import DetalleCompraModal from '../components/DetalleCompraModal';
 import CambiarEstadoModal from '../../../components/CambiarEstadoModal';
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  box-shadow: ${SHADOWS.sm};
   overflow: hidden;
 `;
 
 const TableHeader = styled.div`
-  background: #f8f9fa;
-  padding: 20px;
-  border-bottom: 1px solid #dee2e6;
+  background: ${COLORS.neutral[50]};
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: ${SPACING.md};
 `;
 
 const Title = styled.h2`
   margin: 0;
-  color: #333;
-  font-size: 24px;
+  color: ${COLORS.text.primary};
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
 `;
 
 const SearchContainer = styled.div`
   display: flex;
-  gap: 12px;
+  gap: ${SPACING.md};
   align-items: center;
   flex-wrap: wrap;
 `;
 
-const SearchInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  min-width: 240px;
-`;
-
-const Select = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
 const DateInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-`;
-
-const PrimaryButton = styled.button`
-  background-color: #0047b3;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  &:hover { background-color: #003a92; }
-`;
-
-const FilterButton = styled.button`
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  &:hover { background-color: #5a6268; }
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  transition: ${TRANSITIONS.default};
+  
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
 `;
 
 const Table = styled.table`
@@ -90,68 +64,84 @@ const Table = styled.table`
 
 const Th = styled.th`
   text-align: left;
-  background: #f1f3f5;
-  padding: 10px 12px;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: 600;
-  color: #555;
+  background: ${COLORS.neutral[100]};
+  padding: ${SPACING.md} ${SPACING.md};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const Td = styled.td`
-  padding: 10px 12px;
-  border-bottom: 1px solid #eee;
-  color: #333;
+  padding: ${SPACING.md} ${SPACING.md};
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  color: ${COLORS.text.primary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const StatusBadge = styled.span<{ status: 'Pendiente' | 'Recibida' | 'Cancelada' }>`
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  color: white;
-  background: ${p => p.status === 'Pendiente' ? '#f39c12' : p.status === 'Recibida' ? '#27ae60' : '#c0392b'};
+  padding: ${SPACING.xs} ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.full};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.neutral.white};
+  background: ${p => p.status === 'Pendiente' ? COLOR_SCALES.warning[500] : p.status === 'Recibida' ? COLOR_SCALES.success[500] : COLOR_SCALES.danger[500]};
 `;
 
 const ActionButton = styled.button<{ $color?: string }>`
-  background-color: ${props => props.$color || '#95a5a6'};
-  color: white;
+  background-color: ${props => props.$color || COLORS.neutral[500]};
+  color: ${COLORS.neutral.white};
   border: none;
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: ${SPACING.xs} ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.sm};
   cursor: pointer;
-  margin-right: 8px;
-  font-size: 12px;
-  &:hover { opacity: 0.9; }
+  margin-right: ${SPACING.sm};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  transition: ${TRANSITIONS.fast};
+  
+  &:hover {
+    opacity: 0.9;
+  }
 `;
 
 const PaginationContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-top: 1px solid #eee;
-  background: #fafafa;
+  padding: ${SPACING.md} ${SPACING.lg};
+  border-top: 1px solid ${COLORS.neutral[100]};
+  background: ${COLORS.neutral[50]};
 `;
 
 const PaginationInfo = styled.span`
-  color: #555;
-  font-size: 14px;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const PaginationControls = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${SPACING.sm};
   align-items: center;
 `;
 
 const PageButton = styled.button`
-  background: #e9ecef;
-  border: 1px solid #dee2e6;
-  color: #333;
-  padding: 6px 10px;
-  border-radius: 4px;
+  background: ${COLORS.neutral[100]};
+  border: 1px solid ${COLORS.neutral[200]};
+  color: ${COLORS.text.primary};
+  padding: ${SPACING.xs} ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.sm};
   cursor: pointer;
-  font-size: 12px;
-  &:disabled { cursor: not-allowed; opacity: 0.6; }
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  transition: ${TRANSITIONS.default};
+  
+  &:hover:not(:disabled) {
+    background: ${COLORS.neutral[200]};
+  }
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 `;
 
 interface PurchaseItem {

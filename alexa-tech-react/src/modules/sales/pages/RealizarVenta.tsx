@@ -9,86 +9,78 @@ import { useQuotes } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { useAuth } from '../../../context/AuthContext';
 import { tokenUtils } from '../../../utils/api';
-import { useConfiguracion } from '../../configuracion/context/ConfiguracionContext'; // ✅ Importar context
+import { useConfiguracion } from '../../configuracion/context/ConfiguracionContext';
 import type { ComprobanteData, MetodoPagoData } from '../../configuracion/services/configuracionApi';
 import { PaymentProcessModal, type PaymentConfirmData } from '../components/PaymentProcessModal';
 import { QuickClientModal } from '../components/QuickClientModal';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { Button as SharedButton } from '../../../components/shared/Button';
+import { Input as SharedInput } from '../../../components/shared/Input';
+import { Select as SharedSelect } from '../../../components/shared/Select';
+import { Label as SharedLabel } from '../../../components/shared/Label';
 
 // 🎨 DISEÑO SIGUIENDO EL BOCETO HTML
 const SalesContainer = styled.div`
-  padding: 24px;
+  padding: 0;
   max-width: 1400px;
   margin: 0 auto;
 `;
 
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
+`;
+
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
+`;
+
+const PageSubtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: ${SPACING.xs} 0 0 0;
+`;
+
 const Card = styled.div`
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
+  background-color: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.lg};
+  box-shadow: ${SHADOWS.sm};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const CardTitle = styled.h3`
   margin-top: 0;
-  margin-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 10px;
-  font-size: 16px;
-  color: #333;
+  margin-bottom: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  padding-bottom: ${SPACING.sm};
+  font-size: ${TYPOGRAPHY.fontSize.md};
+  color: ${COLORS.text.primary};
 `;
 
 // 1. Grid para datos del comprobante
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px 20px;
+  gap: ${SPACING.lg} ${SPACING.xl};
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
-`;
-
-const Label = styled.label`
-  font-weight: 600;
-  font-size: 13px;
-  color: #333;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #1e3a5f;
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
-  cursor: pointer;
-
-  &:focus {
-    outline: none;
-    border-color: #1e3a5f;
-  }
+  gap: ${SPACING.xs};
 `;
 
 const InputWithButton = styled.div`
@@ -348,55 +340,11 @@ const TotalsList = styled.ul`
 const ButtonsColumn = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  width: 100%;
-
-  ${props => {
-    switch (props.$variant) {
-      case 'primary':
-        return `
-          background-color: #28a745;
-          color: white;
-          &:hover { background-color: #218838; }
-        `;
-      case 'secondary':
-        return `
-          background-color: #0d6efd;
-          color: white;
-          &:hover { background-color: #0b5ed7; }
-        `;
-      case 'danger':
-        return `
-          background-color: #dc3545;
-          color: white;
-          &:hover { background-color: #c82333; }
-        `;
-      default:
-        return `
-          background-color: #6c757d;
-          color: white;
-          &:hover { background-color: #5a6268; }
-        `;
-    }
-  }}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  gap: ${SPACING.md};
+  
+  button {
+    justify-content: center;
+    text-align: center;
   }
 `;
 
@@ -455,6 +403,51 @@ const ClientName = styled.strong`
 const ClientDocument = styled.span`
   color: #666;
   font-size: 12px;
+`;
+
+const EntityTypeBadge = styled.span<{ type: string }>`
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+  background-color: ${props => 
+    props.type === 'Cliente' ? '#e3f2fd' : 
+    props.type === 'Ambos' ? '#f3e5f5' : '#fff3e0'};
+  color: ${props => 
+    props.type === 'Cliente' ? '#1976d2' : 
+    props.type === 'Ambos' ? '#7b1fa2' : '#f57c00'};
+`;
+
+const ConvertButton = styled.button`
+  margin-top: 4px;
+  padding: 4px 12px;
+  background-color: #f57c00;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #ef6c00;
+  }
+
+  &:active {
+    background-color: #e65100;
+  }
+`;
+
+const ProviderWarning = styled.div`
+  padding: 8px 12px;
+  background-color: #fff3e0;
+  border-left: 3px solid #f57c00;
+  margin-top: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #e65100;
 `;
 
 // 🆕 Modal de confirmación de pago
@@ -699,7 +692,7 @@ const RealizarVenta: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { products } = useProducts();
-  const { clients, loadClients } = useClients();
+  const { clients, loadClients, updateClient } = useClients();
   const {
     activeCashSession,
     createSale,
@@ -736,6 +729,9 @@ const RealizarVenta: React.FC = () => {
   
   // ✅ Estado para rastrear cotización de origen
   const [sourceQuoteId, setSourceQuoteId] = useState<string | null>(null);
+  
+  // ✅ Estado para observaciones (puede venir del Asistente IA)
+  const [observaciones, setObservaciones] = useState<string>('');
   
   // ✅ Estados locales filtrados (solo activos)
   const [comprobantes, setComprobantes] = useState<ComprobanteData[]>([]);
@@ -787,7 +783,7 @@ const RealizarVenta: React.FC = () => {
      product.productCode.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Filtrar clientes
+  // Filtrar clientes - solo mostrar Cliente y Ambos para ventas
   const filteredClients = clients.filter((client: Client) => {
     if (!clientSearchTerm) return false;
     const searchLower = clientSearchTerm.toLowerCase();
@@ -795,7 +791,24 @@ const RealizarVenta: React.FC = () => {
       ? (client.razonSocial || '').toLowerCase()
       : `${client.nombres || ''} ${client.apellidos || ''}`.trim().toLowerCase();
     const document = (client.numeroDocumento || '').toLowerCase();
-    return name.includes(searchLower) || document.includes(searchLower);
+    const matchesSearch = name.includes(searchLower) || document.includes(searchLower);
+    
+    // Solo mostrar clientes con tipo Cliente o Ambos
+    return matchesSearch && (client.tipoEntidad === 'Cliente' || client.tipoEntidad === 'Ambos');
+  });
+
+  // Filtrar proveedores que coincidan con la búsqueda (para mostrar opción de conversión)
+  const filteredProviders = clients.filter((client: Client) => {
+    if (!clientSearchTerm) return false;
+    const searchLower = clientSearchTerm.toLowerCase();
+    const name = client.tipoDocumento === 'RUC' 
+      ? (client.razonSocial || '').toLowerCase()
+      : `${client.nombres || ''} ${client.apellidos || ''}`.trim().toLowerCase();
+    const document = (client.numeroDocumento || '').toLowerCase();
+    const matchesSearch = name.includes(searchLower) || document.includes(searchLower);
+    
+    // Solo mostrar proveedores puros (no Ambos)
+    return matchesSearch && client.tipoEntidad === 'Proveedor';
   });
 
   // \u2705 SOLUCI\u00d3N: Mostrar datos temporales si existen, sino buscar en la lista
@@ -863,20 +876,34 @@ const RealizarVenta: React.FC = () => {
     }
   }, [selectedClientData]);
 
-  // ✅ Procesar datos de cotización al cargar la página
+  // ✅ Procesar datos de cotización o Asistente IA al cargar la página
   useEffect(() => {
     const state = location.state as any;
     
+    console.log('🔍 RealizarVenta - Location State:', state);
+    console.log('🔍 Productos cargados:', products.length);
+    console.log('🔍 Clientes cargados:', clients.length);
+    
     // Esperar a que los productos y clientes estén cargados
-    if (!state?.fromQuote || !state?.items || state?.items.length === 0) {
+    if (products.length === 0 || clients.length === 0) {
+      console.log('⏳ Esperando a que se carguen productos y clientes...');
       return;
     }
     
-    if (products.length === 0 || clients.length === 0) {
-      return; // Esperar a que los datos estén disponibles
+    // Si no hay datos para cargar, salir
+    if (!state?.fromQuote && !state?.productosPreseleccionados) {
+      console.log('ℹ️ No hay datos de cotización ni asistente IA para cargar');
+      return;
     }
     
-    console.log('📋 Cargando datos desde cotización:', state);
+    // Verificar si hay items para cargar
+    const hasItems = (state?.fromQuote && state?.items?.length > 0) || (state?.productosPreseleccionados?.length > 0);
+    if (!hasItems) {
+      console.log('⚠️ No hay items para cargar');
+      return;
+    }
+    
+    console.log('📋 Cargando datos desde:', state.fromQuote ? 'Cotización' : 'Asistente IA', state);
     
     // ✅ Guardar el ID de la cotización de origen
     if (state.quoteId) {
@@ -884,17 +911,24 @@ const RealizarVenta: React.FC = () => {
       console.log('💾 Cotización de origen guardada:', state.quoteId);
     }
     
-    // Cargar cliente si existe
-    if (state.clienteId) {
-      setSelectedClient(state.clienteId);
-      const cliente = clients.find((c: Client) => c.id === state.clienteId);
+    // Cargar cliente si existe (desde cotización o Asistente IA)
+    const clientId = state.clienteId || state.clientePreseleccionado;
+    if (clientId) {
+      setSelectedClient(clientId);
+      const cliente = clients.find((c: Client) => c.id === clientId);
       if (cliente) {
         setTipoDocumento(cliente.tipoDocumento as 'DNI' | 'RUC' | 'CE' | 'Pasaporte');
       }
     }
     
-    // Cargar items al carrito - los datos ya vienen como números desde Cotizaciones
-    const itemsCarrito: CartItem[] = state.items.map((item: any) => {
+    // Cargar observaciones si vienen del Asistente IA
+    if (state.observaciones) {
+      setObservaciones(state.observaciones);
+    }
+    
+    // Cargar items al carrito - desde Cotización o Asistente IA
+    const itemsToLoad = state.fromQuote ? state.items : state.productosPreseleccionados;
+    const itemsCarrito: CartItem[] = itemsToLoad.map((item: any) => {
       // Buscar producto en la lista para obtener el stock actual
       const producto = products.find((p: Product) => p.id === item.productId);
       
@@ -905,22 +939,25 @@ const RealizarVenta: React.FC = () => {
         precioUnitario: item.precioUnitario,
         stock: producto?.currentStock || 999,
       };
-    }).filter((item: CartItem) => item.stock > 0); // Solo items con stock disponible
+    }).filter((item: CartItem) => item.stock > 0);
     
+    // Cargar items si hay stock disponible
     if (itemsCarrito.length > 0) {
       setCart(itemsCarrito);
       
-      // Mostrar notificación
+      // Mostrar notificación apropiada
+      const origen = state.fromQuote ? 'Cotización' : 'Asistente IA';
+      const referencia = state.fromQuote ? (state.quoteCode || '') : '🤖';
       addNotification(
         'success', 
-        'Cotización Cargada', 
-        `Se cargaron ${itemsCarrito.length} productos de la cotización ${state.quoteCode || ''}`
+        `${origen} Cargada`, 
+        `Se cargaron ${itemsCarrito.length} productos desde ${origen} ${referencia}`
       );
     } else {
       addNotification(
         'warning', 
         'Sin Stock', 
-        'Los productos de la cotización no tienen stock disponible'
+        `Los productos ${state.fromQuote ? 'de la cotización' : 'recomendados'} no tienen stock disponible`
       );
     }
     
@@ -1054,6 +1091,23 @@ const RealizarVenta: React.FC = () => {
     setClientSearchTerm('');
   };
 
+  // Convertir proveedor a "Ambos" para poder realizar venta
+  const handleConvertProviderToAmbos = async (client: Client) => {
+    try {
+      await updateClient(client.id, { tipoEntidad: 'Ambos' });
+      addNotification('success', 'Proveedor convertido', `${client.razonSocial || client.nombres} ahora es Cliente/Proveedor`);
+      // Recargar clientes para actualizar la lista
+      await loadClients();
+      // Seleccionar automáticamente el cliente convertido
+      setSelectedClient(client.id);
+      setClientSearchTerm('');
+      setShowClientDropdown(false);
+    } catch (error) {
+      console.error('Error al convertir proveedor:', error);
+      addNotification('error', 'Error', 'No se pudo convertir el proveedor');
+    }
+  };
+
   // 🆕 Handler para cuando se crea un cliente desde el modal rápido
   const handleQuickClientCreated = async (clientId: string, clientData: any) => {
     console.log('🎯 RealizarVenta: handleQuickClientCreated EJECUTADO');
@@ -1144,7 +1198,7 @@ const RealizarVenta: React.FC = () => {
           cantidad: Number(item.cantidad),
           precioUnitario: Number(item.precioUnitario)
         })),
-        observaciones: '',
+        observaciones: observaciones,
         // 🆕 Incluir payments directamente si existen
         payments: paymentData.payments && paymentData.payments.length > 0
           ? paymentData.payments.map(p => ({
@@ -1176,6 +1230,18 @@ const RealizarVenta: React.FC = () => {
         referenciaPago: paymentData.referencia,
         montoCambio: paymentData.cambio,
       });
+
+      // ✅ Actualizar estado de cotización si viene de una
+      if (sourceQuoteId) {
+        try {
+          await updateQuoteStatus(sourceQuoteId, 'Convertida');
+          console.log('✅ Cotización actualizada a estado Convertida:', sourceQuoteId);
+          setSourceQuoteId(null); // Limpiar referencia
+        } catch (error) {
+          console.error('❌ Error al actualizar cotización:', error);
+          // No bloquear el flujo si falla la actualización
+        }
+      }
 
       // Cerrar modal
       setShowNewPaymentModal(false);
@@ -1488,13 +1554,13 @@ const RealizarVenta: React.FC = () => {
           <AlertCard>
             <h3>⚠️ Caja Cerrada</h3>
             <p>No puedes realizar ventas sin tener una caja abierta.</p>
-            <Button 
+            <SharedButton 
               $variant="primary" 
               onClick={() => navigate('/gestion-caja')}
               style={{ width: 'auto', maxWidth: '300px' }}
             >
               Ir a Gestión de Caja
-            </Button>
+            </SharedButton>
           </AlertCard>
         </SalesContainer>
       </Layout>
@@ -1504,33 +1570,39 @@ const RealizarVenta: React.FC = () => {
   return (
     <Layout title="Realizar Venta">
       <SalesContainer>
+        <Header>
+          <TitleSection>
+            <Title>Realizar Venta</Title>
+            <PageSubtitle>Registro de ventas, selección de productos y procesamiento de pagos</PageSubtitle>
+          </TitleSection>
+        </Header>
         {/* 1. Datos del Comprobante */}
         <Card>
           <CardTitle>1. Datos del Comprobante</CardTitle>
           <FormGrid>
             <FormGroup>
-              <Label htmlFor="tipo-documento">Tipo Documento</Label>
-              <Select 
+              <SharedLabel htmlFor="tipo-documento">Tipo Documento</SharedLabel>
+              <SharedSelect 
                 id="tipo-documento" 
                 value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value as 'DNI' | 'RUC' | 'CE' | 'Pasaporte')}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTipoDocumento(e.target.value as 'DNI' | 'RUC' | 'CE' | 'Pasaporte')}
               >
                 <option value="DNI">DNI</option>
                 <option value="RUC">RUC</option>
                 <option value="CE">C. Extranjería</option>
                 <option value="Pasaporte">Pasaporte</option>
-              </Select>
+              </SharedSelect>
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="numero-documento">N° de Documento</Label>
+              <SharedLabel htmlFor="numero-documento">N° de Documento</SharedLabel>
               <InputWithButton>
-                <Input
+                <SharedInput
                   id="numero-documento"
                   type="text"
                   placeholder="Buscar..."
                   value={clientSearchTerm}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setClientSearchTerm(e.target.value);
                     setShowClientDropdown(e.target.value.length > 0);
                   }}
@@ -1538,30 +1610,70 @@ const RealizarVenta: React.FC = () => {
                 />
                 <SearchButton>🔍</SearchButton>
               </InputWithButton>
-              <Button
+              <SharedButton
                 type="button"
+                $variant="primary"
                 onClick={() => setShowQuickClientModal(true)}
                 style={{ marginTop: '8px', width: '100%' }}
               >
                 + Nuevo Cliente
-              </Button>
-              {showClientDropdown && filteredClients.length > 0 && (
+              </SharedButton>
+              {showClientDropdown && (filteredClients.length > 0 || filteredProviders.length > 0) && (
                 <AutocompleteDropdown>
+                  {/* Mostrar clientes válidos (Cliente o Ambos) */}
                   {filteredClients.map((client: Client) => (
                     <AutocompleteItem
                       key={client.id}
                       onClick={() => handleSelectClient(client)}
                     >
-                      <ClientName>
-                        {client.tipoDocumento === 'RUC'
-                          ? client.razonSocial
-                          : `${client.nombres} ${client.apellidos}`}
-                      </ClientName>
-                      <ClientDocument>
-                        {client.tipoDocumento}: {client.numeroDocumento}
-                      </ClientDocument>
+                      <div>
+                        <ClientName>
+                          {client.tipoDocumento === 'RUC'
+                            ? client.razonSocial
+                            : `${client.nombres} ${client.apellidos}`}
+                          <EntityTypeBadge type={client.tipoEntidad}>
+                            {client.tipoEntidad}
+                          </EntityTypeBadge>
+                        </ClientName>
+                        <ClientDocument>
+                          {client.tipoDocumento}: {client.numeroDocumento}
+                        </ClientDocument>
+                      </div>
                     </AutocompleteItem>
                   ))}
+                  
+                  {/* Mostrar proveedores con opción de conversión */}
+                  {filteredProviders.length > 0 && (
+                    <>
+                      {filteredProviders.map((provider: Client) => (
+                        <AutocompleteItem
+                          key={provider.id}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ backgroundColor: '#fff3e0', cursor: 'default' }}
+                        >
+                          <div>
+                            <ClientName>
+                              {provider.tipoDocumento === 'RUC'
+                                ? provider.razonSocial
+                                : `${provider.nombres} ${provider.apellidos}`}
+                              <EntityTypeBadge type={provider.tipoEntidad}>
+                                {provider.tipoEntidad}
+                              </EntityTypeBadge>
+                            </ClientName>
+                            <ClientDocument>
+                              {provider.tipoDocumento}: {provider.numeroDocumento}
+                            </ClientDocument>
+                            <ProviderWarning>
+                              ⚠️ Este es un proveedor. No se puede realizar venta directamente.
+                            </ProviderWarning>
+                            <ConvertButton onClick={() => handleConvertProviderToAmbos(provider)}>
+                              Convertir a Cliente/Proveedor
+                            </ConvertButton>
+                          </div>
+                        </AutocompleteItem>
+                      ))}
+                    </>
+                  )}
                 </AutocompleteDropdown>
               )}
               {selectedClientData && (
@@ -1582,8 +1694,8 @@ const RealizarVenta: React.FC = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="nombre-cliente">Nombre / Razón Social</Label>
-              <Input
+              <SharedLabel htmlFor="nombre-cliente">Nombre / Razón Social</SharedLabel>
+              <SharedInput
                 id="nombre-cliente"
                 type="text"
                 readOnly
@@ -1599,8 +1711,8 @@ const RealizarVenta: React.FC = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="fecha">Fecha</Label>
-              <Input
+              <SharedLabel htmlFor="fecha">Fecha</SharedLabel>
+              <SharedInput
                 id="fecha"
                 type="date"
                 value={currentDate}
@@ -1609,8 +1721,8 @@ const RealizarVenta: React.FC = () => {
             </FormGroup>
 
             <FormGroup>
-              <Label htmlFor="hora">Hora</Label>
-              <Input
+              <SharedLabel htmlFor="hora">Hora</SharedLabel>
+              <SharedInput
                 id="hora"
                 type="time"
                 value={currentTime}
@@ -1720,7 +1832,7 @@ const RealizarVenta: React.FC = () => {
                       <td>S/ {(item.cantidad * item.precioUnitario).toFixed(2)}</td>
                       <td>
                         <RemoveButton onClick={() => removeFromCart(item.productId)}>
-                          🗑️ Eliminar
+                          Eliminar
                         </RemoveButton>
                       </td>
                     </tr>
@@ -1760,7 +1872,7 @@ const RealizarVenta: React.FC = () => {
             </div>
 
             <ButtonsColumn>
-              <Button
+              <SharedButton
                 $variant="primary"
                 onClick={processSale}
                 disabled={isProcessing || salesLoading || cart.length === 0}
@@ -1770,11 +1882,11 @@ const RealizarVenta: React.FC = () => {
                     <Spinner /> Procesando venta...
                   </>
                 ) : (
-                  <>✓ Procesar Venta</>
+                  <>Procesar Venta</>
                 )}
-              </Button>
+              </SharedButton>
 
-              <Button
+              <SharedButton
                 $variant="secondary"
                 onClick={saveAsQuote}
                 disabled={isProcessing || cart.length === 0}
@@ -1784,25 +1896,25 @@ const RealizarVenta: React.FC = () => {
                     <Spinner /> Guardando cotización...
                   </>
                 ) : (
-                  <>💾 Cotizar Venta</>
+                  <>Cotizar Venta</>
                 )}
-              </Button>
+              </SharedButton>
 
-              <Button
+              <SharedButton
                 $variant="danger"
                 onClick={clearCart}
                 disabled={cart.length === 0 || isProcessing}
               >
-                🗑️ Limpiar Carrito
-              </Button>
+                Limpiar Carrito
+              </SharedButton>
 
               {lastSaleId && (
-                <Button
-                  $variant="secondary"
+                <SharedButton
+                  $variant="outline"
                   onClick={() => downloadInvoice(lastSaleId)}
                 >
                   🖨️ Imprimir Última Venta
-                </Button>
+                </SharedButton>
               )}
             </ButtonsColumn>
           </SummaryGrid>

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import type { MetodoPagoData } from '../../configuracion/services/configuracionApi';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, Z_INDEX, TRANSITIONS } from '../../../styles/theme';
+import { Button as SharedButton } from '../../../components/shared/Button';
+import { Input as SharedInput } from '../../../components/shared/Input';
+import { Select as SharedSelect } from '../../../components/shared/Select';
 
 // ============================================
 // INTERFACES
@@ -77,27 +81,27 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.modal};
   backdrop-filter: blur(4px);
-  padding: 10px;
+  padding: ${SPACING.sm};
 `;
 
 const ModalContainer = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
   width: 100%;
   max-width: 700px;
   max-height: calc(100vh - 20px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: ${SHADOWS.xl};
 `;
 
 const ModalHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 14px 20px;
+  background: #3498db;
+  color: ${COLORS.neutral.white};
+  padding: ${SPACING.md} ${SPACING.lg};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -117,16 +121,16 @@ const ModalHeader = styled.div`
 const CloseButton = styled.button`
   background: rgba(255, 255, 255, 0.2);
   border: none;
-  color: white;
+  color: ${COLORS.neutral.white};
   width: 36px;
   height: 36px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: ${TYPOGRAPHY.fontSize.xl};
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: ${TRANSITIONS.default};
 
   &:hover {
     background: rgba(255, 255, 255, 0.3);
@@ -138,15 +142,15 @@ const ModalBody = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding: 16px;
+  padding: ${SPACING.lg};
   overflow: visible;
 `;
 
 const LeftPanel = styled.div`
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
+  background: ${COLORS.neutral[50]};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.md};
+  margin-bottom: ${SPACING.md};
 `;
 
 const RightPanel = styled.div`
@@ -154,92 +158,92 @@ const RightPanel = styled.div`
 `;
 
 const SectionTitle = styled.h3`
-  margin: 0 0 10px 0;
-  font-size: 0.9rem;
-  color: #374151;
+  margin: 0 0 ${SPACING.sm} 0;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.primary};
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-bottom: 6px;
-  border-bottom: 2px solid #e5e7eb;
+  gap: ${SPACING.xs};
+  padding-bottom: ${SPACING.xs};
+  border-bottom: 2px solid ${COLORS.neutral[200]};
 `;
 
 const InfoCard = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.sm};
+  margin-bottom: ${SPACING.sm};
+  box-shadow: ${SHADOWS.sm};
 `;
 
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 0.8rem;
+  padding: ${SPACING.xs} 0;
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
 
   &:last-child {
     border-bottom: none;
   }
 
   span:first-child {
-    color: #6b7280;
+    color: ${COLORS.text.secondary};
   }
 
   span:last-child {
-    font-weight: 500;
-    color: #1f2937;
+    font-weight: ${TYPOGRAPHY.fontWeight.medium};
+    color: ${COLORS.text.primary};
   }
 `;
 
 const ItemsList = styled.div`
   max-height: 80px;
   overflow-y: auto;
-  margin-bottom: 10px;
+  margin-bottom: ${SPACING.sm};
 `;
 
 const ItemRow = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 4px 8px;
-  background: white;
-  border-radius: 4px;
-  margin-bottom: 4px;
-  font-size: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: ${SPACING.xs} ${SPACING.sm};
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.sm};
+  margin-bottom: ${SPACING.xs};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  box-shadow: ${SHADOWS.xs};
 
   .item-name {
     flex: 1;
-    color: #374151;
+    color: ${COLORS.text.primary};
   }
 
   .item-qty {
-    color: #6b7280;
-    margin: 0 8px;
+    color: ${COLORS.text.secondary};
+    margin: 0 ${SPACING.sm};
   }
 
   .item-total {
-    font-weight: 600;
-    color: #059669;
+    font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+    color: ${COLORS.status.success};
   }
 `;
 
 const TotalsCard = styled.div`
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-radius: 8px;
-  padding: 12px;
-  border: 1px solid #86efac;
+  background: linear-gradient(135deg, ${COLORS.status.successLight} 0%, #dcfce7 100%);
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.md};
+  border: 1px solid ${COLOR_SCALES.success[300]};
 `;
 
 const TotalRow = styled.div<{ $isMain?: boolean }>`
   display: flex;
   justify-content: space-between;
-  padding: ${props => props.$isMain ? '8px 0 0 0' : '4px 0'};
-  font-size: ${props => props.$isMain ? '1.1rem' : '0.85rem'};
-  font-weight: ${props => props.$isMain ? '700' : '400'};
-  color: ${props => props.$isMain ? '#059669' : '#374151'};
-  ${props => props.$isMain && 'border-top: 2px dashed #86efac; margin-top: 6px;'}
+  padding: ${props => props.$isMain ? `${SPACING.sm} 0 0 0` : `${SPACING.xs} 0`};
+  font-size: ${props => props.$isMain ? TYPOGRAPHY.fontSize.lg : TYPOGRAPHY.fontSize.sm};
+  font-weight: ${props => props.$isMain ? TYPOGRAPHY.fontWeight.bold : TYPOGRAPHY.fontWeight.normal};
+  color: ${props => props.$isMain ? COLORS.status.success : COLORS.text.primary};
+  ${props => props.$isMain && `border-top: 2px dashed ${COLOR_SCALES.success[300]}; margin-top: ${SPACING.xs};`}
 `;
 
 const PaymentMethodsGrid = styled.div`
@@ -429,49 +433,12 @@ const PaymentSummary = styled.div<{ $isValid: boolean }>`
 `;
 
 const ModalFooter = styled.div`
-  padding: 12px 20px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  padding: ${SPACING.md} ${SPACING.lg};
+  background: ${COLORS.neutral[50]};
+  border-top: 1px solid ${COLORS.neutral[200]};
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-`;
-
-const Button = styled.button<{ $variant: 'primary' | 'secondary' }>`
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    border: none;
-    color: white;
-
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
-    }
-  ` : `
-    background: white;
-    border: 2px solid #e5e7eb;
-    color: #6b7280;
-
-    &:hover:not(:disabled) {
-      background: #f9fafb;
-      border-color: #d1d5db;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  gap: ${SPACING.md};
 `;
 
 const Spinner = styled.span`
@@ -682,14 +649,14 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
     <ModalOverlay onClick={(e) => e.target === e.currentTarget && !isProcessing && onClose()}>
       <ModalContainer>
         <ModalHeader>
-          <h2>💳 Procesar Pago</h2>
+          <h2>Procesar Pago</h2>
           <CloseButton onClick={onClose} disabled={isProcessing}>×</CloseButton>
         </ModalHeader>
 
         <ModalBody>
           {/* Panel Izquierdo - Resumen de Venta */}
           <LeftPanel>
-            <SectionTitle>📄 Resumen de Venta</SectionTitle>
+            <SectionTitle>Resumen de Venta</SectionTitle>
             
             <InfoCard>
               <InfoRow>
@@ -714,7 +681,7 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
               )}
             </InfoCard>
 
-            <SectionTitle>📦 Productos ({cart.length})</SectionTitle>
+            <SectionTitle>Productos ({cart.length})</SectionTitle>
             <ItemsList>
               {cart.map((item) => (
                 <ItemRow key={item.productId}>
@@ -745,7 +712,7 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
 
           {/* Panel Derecho - Método de Pago */}
           <RightPanel onKeyDown={handleKeyDown}>
-            <SectionTitle>💰 Método de Pago</SectionTitle>
+            <SectionTitle>Método de Pago</SectionTitle>
 
             {!useMultiplePayments && (
               <>
@@ -766,7 +733,7 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
                 {isEfectivo ? (
                   <>
                     <PaymentInputGroup>
-                      <label>💵 Monto Recibido</label>
+                      <label>Monto Recibido</label>
                       <input
                         type="number"
                         step="0.10"
@@ -785,7 +752,7 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
                   </>
                 ) : requiresReference ? (
                   <PaymentInputGroup>
-                    <label>🔢 N° de Operación / Voucher</label>
+                    <label>N° de Operación / Voucher</label>
                     <input
                       type="text"
                       value={referencia}
@@ -805,7 +772,7 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
                 onChange={(e) => setUseMultiplePayments(e.target.checked)}
                 onClick={(e) => e.stopPropagation()}
               />
-              <label>💳 Usar múltiples métodos de pago</label>
+              <label>Usar múltiples métodos de pago</label>
             </MultiplePaymentsToggle>
 
             {useMultiplePayments && (
@@ -867,7 +834,7 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
 
                 <PaymentSummary $isValid={isPagosCompletos}>
                   <span className="label">
-                    {isPagosCompletos ? '✅ Pago completo' : `⚠️ Falta: S/ ${(totalAPagarMultiple - totalPagosMultiples).toFixed(2)}`}
+                    {isPagosCompletos ? 'Pago completo' : `Falta: S/ ${(totalAPagarMultiple - totalPagosMultiples).toFixed(2)}`}
                   </span>
                   <span className="amount">
                     Total: S/ {totalPagosMultiples.toFixed(2)} / S/ {totalAPagarMultiple.toFixed(2)}
@@ -884,18 +851,18 @@ export const PaymentProcessModal: React.FC<PaymentProcessModalProps> = ({
         </ModalBody>
 
         <ModalFooter>
-          <Button $variant="secondary" onClick={onClose} disabled={isProcessing}>
-            ❌ Cancelar
-          </Button>
-          <Button $variant="primary" onClick={handleConfirm} disabled={!canConfirm || isProcessing}>
+          <SharedButton $variant="outline" onClick={onClose} disabled={isProcessing}>
+            Cancelar
+          </SharedButton>
+          <SharedButton $variant="success" onClick={handleConfirm} disabled={!canConfirm || isProcessing}>
             {isProcessing ? (
               <>
                 <Spinner /> Procesando...
               </>
             ) : (
-              <>✅ Confirmar Pago</>
+              <>Confirmar Pago</>
             )}
-          </Button>
+          </SharedButton>
         </ModalFooter>
       </ModalContainer>
     </ModalOverlay>

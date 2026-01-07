@@ -5,12 +5,14 @@ import { useNotification } from '../../../context/NotificationContext';
 import { apiService } from '../../../utils/api';
 import { configuracionApi } from '../../../services/configuracionApi';
 import type { ProductCategory, UnitOfMeasure } from '../../../types/configuracion';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { Button, Input, Select, Label, RequiredMark, ValidationMessage, ButtonGroup } from '../../../components/shared';
 
 const FormGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: ${SPACING.md};
+  margin-bottom: ${SPACING.lg};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -20,61 +22,30 @@ const FormGrid = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
+  gap: ${SPACING.xs};
+`;
 
-  label {
-    font-size: 13px;
-    color: #555;
-    font-weight: 500;
-    margin-bottom: 6px;
-  }
+const Textarea = styled.textarea`
+  width: 100%;
+  padding: ${SPACING.sm};
+  border: 2px solid ${COLORS.border.medium};
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  font-family: ${TYPOGRAPHY.fontFamily};
+  resize: vertical;
+  min-height: 80px;
+  transition: ${TRANSITIONS.normal};
 
-  input, select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 14px;
+  &:focus {
     outline: none;
-    transition: border-color 0.2s ease;
-  }
-
-  input:focus, select:focus {
-    border-color: #0047b3;
-  }
-
-  .error {
-    color: #e74c3c;
-    font-size: 12px;
-    margin-top: 5px;
+    border-color: ${COLORS.primary};
+    box-shadow: 0 0 0 3px ${COLORS.primary}1a;
   }
 `;
 
-const Actions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  ${props => props.$variant === 'primary' ? `
-    background-color: #0047b3;
-    color: white;
-
-    &:hover { background-color: #003a92; }
-    &:disabled { background-color: #8fa8d6; cursor: not-allowed; }
-  ` : `
-    background-color: #6c757d;
-    color: white;
-    &:hover { background-color: #5a6268; }
-  `}
+const CharCounter = styled.small`
+  color: ${COLORS.text.muted};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
 `;
 
 interface EditProductFormData {
@@ -280,17 +251,20 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
     <form onSubmit={handleSubmit}>
       <FormGrid>
         <FormGroup>
-          <label htmlFor="productCode">Código</label>
-          <input id="productCode" name="productCode" type="text" value={formData.productCode} disabled />
+          <Label htmlFor="productCode">Código</Label>
+          <Input id="productCode" name="productCode" type="text" value={formData.productCode} disabled />
         </FormGroup>
         <FormGroup>
-          <label htmlFor="productName">Nombre *</label>
-          <input id="productName" name="productName" type="text" value={formData.productName} onChange={handleInputChange} />
-          {errors.productName && <span className="error">{errors.productName}</span>}
+          <Label htmlFor="productName">
+            Nombre
+            <RequiredMark />
+          </Label>
+          <Input id="productName" name="productName" type="text" value={formData.productName} onChange={handleInputChange} />
+          {errors.productName && <ValidationMessage $type="error">{errors.productName}</ValidationMessage>}
         </FormGroup>
         <FormGroup style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="descripcion">Descripción</label>
-          <textarea 
+          <Label htmlFor="descripcion">Descripción</Label>
+          <Textarea 
             id="descripcion" 
             name="descripcion" 
             rows={3}
@@ -298,54 +272,54 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
             value={formData.descripcion} 
             onChange={handleInputChange}
             placeholder="Descripción detallada del producto (opcional, máx 500 caracteres)"
-            style={{ 
-              resize: 'vertical',
-              minHeight: '80px',
-              fontFamily: 'inherit',
-              padding: '10px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              fontSize: '14px'
-            }}
           />
-          <small style={{ color: '#666', fontSize: '12px' }}>
+          <CharCounter>
             {formData.descripcion.length}/500 caracteres
-          </small>
-          {errors.descripcion && <span className="error">{errors.descripcion}</span>}
+          </CharCounter>
+          {errors.descripcion && <ValidationMessage $type="error">{errors.descripcion}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="category">Categoría *</label>
-          <select id="category" name="category" value={formData.category} onChange={handleInputChange}>
+          <Label htmlFor="category">
+            Categoría
+            <RequiredMark />
+          </Label>
+          <Select id="category" name="category" value={formData.category} onChange={handleInputChange}>
             <option value="">Selecciona una categoría</option>
             {categoryOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
-          </select>
-          {errors.category && <span className="error">{errors.category}</span>}
+          </Select>
+          {errors.category && <ValidationMessage $type="error">{errors.category}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="price">Precio *</label>
-          <input id="price" name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} />
-          {errors.price && <span className="error">{errors.price}</span>}
+          <Label htmlFor="price">
+            Precio
+            <RequiredMark />
+          </Label>
+          <Input id="price" name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} />
+          {errors.price && <ValidationMessage $type="error">{errors.price}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="currentStock">Stock</label>
-          <input id="currentStock" name="currentStock" type="number" min="0" value={formData.currentStock} disabled />
+          <Label htmlFor="currentStock">Stock</Label>
+          <Input id="currentStock" name="currentStock" type="number" min="0" value={formData.currentStock} disabled />
         </FormGroup>
         <FormGroup>
-          <label htmlFor="unit">Unidad *</label>
-          <select id="unit" name="unit" value={formData.unit} onChange={handleInputChange}>
+          <Label htmlFor="unit">
+            Unidad
+            <RequiredMark />
+          </Label>
+          <Select id="unit" name="unit" value={formData.unit} onChange={handleInputChange}>
             <option value="">Selecciona unidad</option>
             {unitOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
-          </select>
-          {errors.unit && <span className="error">{errors.unit}</span>}
+          </Select>
+          {errors.unit && <ValidationMessage $type="error">{errors.unit}</ValidationMessage>}
         </FormGroup>
 
         <FormGroup>
-          <label htmlFor="minStock">Stock Mínimo</label>
-          <input 
+          <Label htmlFor="minStock">Stock Mínimo</Label>
+          <Input 
             id="minStock" 
             name="minStock" 
             type="number" 
@@ -354,13 +328,15 @@ const EditarProductoModal: React.FC<EditarProductoModalProps> = ({ product, onCl
             onChange={handleInputChange}
             placeholder="Opcional: alertas de stock bajo"
           />
-          {errors.minStock && <span className="error">{errors.minStock}</span>}
+          {errors.minStock && <ValidationMessage $type="error">{errors.minStock}</ValidationMessage>}
         </FormGroup>
       </FormGrid>
-      <Actions>
+      <ButtonGroup style={{ justifyContent: 'flex-end' }}>
         <Button type="button" $variant="secondary" onClick={onClose}>Cancelar</Button>
-        <Button type="submit" $variant="primary" disabled={isSubmitting}>{isSubmitting ? 'Guardando...' : 'Guardar cambios'}</Button>
-      </Actions>
+        <Button type="submit" $variant="primary" disabled={isSubmitting}>
+          {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
+        </Button>
+      </ButtonGroup>
     </form>
   );
 };

@@ -2,196 +2,163 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { apiService } from '../../../utils/api';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button, 
+  Input, 
+  FiltersCard, 
+  SummaryCard, 
+  SummaryCards, 
+  CardTitle, 
+  CardValue,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  EmptyState,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyText
+} from '../../../components/shared';
 
+// Helpers
 const formatDateInput = (d: Date) => d.toISOString().slice(0, 10);
 const formatDMY = (dateStr: string) => new Date(dateStr).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const formatCurrency = (num: number) => `S/ ${num.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// ============================================================================
+// ESTILOS ESPECÍFICOS DE REPORTES
+// ============================================================================
+
 const Container = styled.div`
-  padding: 2rem;
+  padding: ${SPACING['2xl']};
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
 `;
 
-const TabsContainer = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+const PageTitle = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
 `;
 
-const TabsHeader = styled.div`
-  display: flex;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-`;
-
-const Tab = styled.button<{ active: boolean }>`
-  padding: 1rem 1.5rem;
-  border: none;
-  background: ${props => props.active ? 'white' : 'transparent'};
-  color: ${props => props.active ? '#2563eb' : '#6b7280'};
-  font-weight: ${props => props.active ? '600' : '500'};
-  font-size: 0.875rem;
-  cursor: pointer;
-  border-bottom: 2px solid ${props => props.active ? '#2563eb' : 'transparent'};
-  transition: all 0.2s;
-  
-  &:hover {
-    background-color: ${props => props.active ? 'white' : '#f3f4f6'};
-    color: ${props => props.active ? '#2563eb' : '#1f2937'};
-  }
-`;
-
-const TabContent = styled.div`
-  padding: 1.5rem;
-`;
-
-const FiltersContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: ${SPACING.lg};
 `;
 
-const FormGroup = styled.div`
+const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
+  gap: ${SPACING.xs};
 `;
 
-const Label = styled.label`
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
+const FilterLabel = styled.label`
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.textLight};
 `;
 
-const Input = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  &:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.125);
-  }
+const FilterButtonsRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: ${SPACING.md};
+  margin-top: ${SPACING.lg};
 `;
 
-const Button = styled.button`
-  padding: 0.5rem 1rem;
-  background-color: #2563eb;
-  color: white;
+const TabsContainer = styled.div`
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  border: 1px solid ${COLORS.border};
+  overflow: hidden;
+`;
+
+const TabsHeader = styled.div`
+  display: flex;
+  border-bottom: 1px solid ${COLORS.border};
+  background-color: ${COLORS.background};
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  padding: ${SPACING.md} ${SPACING.xl};
   border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: ${props => props.$active ? COLORS.white : 'transparent'};
+  color: ${props => props.$active ? COLORS.primary : COLORS.textLight};
+  font-weight: ${props => props.$active ? TYPOGRAPHY.fontWeight.semibold : TYPOGRAPHY.fontWeight.medium};
+  font-size: ${TYPOGRAPHY.fontSize.small};
   cursor: pointer;
-  transition: background-color 0.2s;
+  border-bottom: 2px solid ${props => props.$active ? COLORS.primary : 'transparent'};
+  transition: ${TRANSITIONS.normal};
+  margin-bottom: -1px;
   
   &:hover {
-    background-color: #1d4ed8;
-  }
-  
-  &:disabled {
-    background-color: #9ca3af;
-    cursor: not-allowed;
+    background-color: ${props => props.$active ? COLORS.white : COLORS.borderLight};
+    color: ${props => props.$active ? COLORS.primary : COLORS.text};
   }
 `;
 
-const ExportButton = styled(Button)`
-  background-color: #10b981;
-  
-  &:hover:not(:disabled) {
-    background-color: #059669;
-  }
-`;
-
-const SummaryCards = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const SummaryCard = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-`;
-
-const CardTitle = styled.h3`
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.5rem;
-`;
-
-const CardValue = styled.p`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1a1a1a;
+const TabContent = styled.div`
+  padding: ${SPACING.xl};
 `;
 
 const Section = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  background: ${COLORS.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.large};
+  border: 1px solid ${COLORS.border};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 1rem;
+  font-size: ${TYPOGRAPHY.fontSize.h3};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
+  margin: 0 0 ${SPACING.lg} 0;
 `;
 
-const TableContainer = styled.div`
-  overflow-x: auto;
+const PercentageBadge = styled.span`
+  padding: 0.25rem 0.5rem;
+  background: ${COLORS.primaryLight};
+  color: ${COLORS.primary};
+  border-radius: ${BORDER_RADIUS.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-size: ${TYPOGRAPHY.fontSize.small};
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
+const RankBadge = styled.span<{ $rank: number }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: ${props => props.$rank <= 3 ? COLOR_SCALES.warning[100] : COLORS.borderLight};
+  color: ${props => props.$rank <= 3 ? COLOR_SCALES.warning[600] : COLORS.textLight};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
 `;
 
-const Th = styled.th`
-  padding: 0.75rem 1rem;
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #6b7280;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const Td = styled.td`
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: #1a1a1a;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6b7280;
-`;
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
 
 const ReporteVentas: React.FC = () => {
   const [fechaInicio, setFechaInicio] = useState(formatDateInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
@@ -214,13 +181,20 @@ const ReporteVentas: React.FC = () => {
 
       if (res.success && res.data) {
         setReporteData(res.data);
+      } else {
+        setReporteData(null);
       }
     } catch (e) {
-      console.error('Error cargando reporte ventas', e);
+      console.error('Error cargando reporte ventas:', e);
       setReporteData(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLimpiar = () => {
+    setFechaInicio(formatDateInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+    setFechaFin(formatDateInput(new Date()));
   };
 
   const handleExportar = () => {
@@ -304,260 +278,235 @@ const ReporteVentas: React.FC = () => {
   return (
     <Layout title="Reporte de Ventas">
       <Container>
-        <Header>
-          <div />
-          <ExportButton onClick={handleExportar} disabled={!reporteData || loading}>
-            📊 Exportar Reporte
-          </ExportButton>
-        </Header>
+        <PageHeader>
+          <div>
+            <PageTitle>Reporte de Ventas</PageTitle>
+            <PageSubtitle>Análisis detallado de ventas, productos más vendidos y clientes</PageSubtitle>
+          </div>
+          <Button $variant="success" onClick={handleExportar} disabled={!reporteData || loading}>
+            Exportar Reporte
+          </Button>
+        </PageHeader>
 
-        <FiltersContainer>
+        <FiltersCard>
           <FiltersGrid>
-            <FormGroup>
-              <Label>Fecha Inicio</Label>
+            <FilterGroup>
+              <FilterLabel>Fecha Inicio</FilterLabel>
               <Input
                 type="date"
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
               />
-            </FormGroup>
-            <FormGroup>
-              <Label>Fecha Fin</Label>
+            </FilterGroup>
+            <FilterGroup>
+              <FilterLabel>Fecha Fin</FilterLabel>
               <Input
                 type="date"
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
               />
-            </FormGroup>
+            </FilterGroup>
           </FiltersGrid>
-          <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-            <Button onClick={handleBuscar} disabled={loading}>
-              {loading ? 'Generando...' : '🔍 Generar Reporte'}
+          <FilterButtonsRow>
+            <Button $variant="secondary" onClick={handleLimpiar}>
+              Limpiar
             </Button>
-          </div>
-        </FiltersContainer>
+            <Button $variant="primary" onClick={handleBuscar} disabled={loading}>
+              {loading ? 'Generando...' : 'Generar Reporte'}
+            </Button>
+          </FilterButtonsRow>
+        </FiltersCard>
 
-        {loading && <EmptyState>Cargando reporte...</EmptyState>}
+        {loading && (
+          <EmptyState>
+            <EmptyIcon>⏳</EmptyIcon>
+            <EmptyTitle>Cargando reporte...</EmptyTitle>
+          </EmptyState>
+        )}
 
         {!loading && !reporteData && (
-          <EmptyState>No hay datos disponibles. Seleccione un rango de fechas y haga clic en "Generar Reporte".</EmptyState>
+          <EmptyState>
+            <EmptyIcon>📊</EmptyIcon>
+            <EmptyTitle>Sin datos disponibles</EmptyTitle>
+            <EmptyText>Seleccione un rango de fechas y haga clic en "Generar Reporte".</EmptyText>
+          </EmptyState>
         )}
 
         {!loading && reporteData && (
-          <>
-            <TabsContainer>
-              <TabsHeader>
-                <Tab active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
-                  📊 Resumen General
-                </Tab>
-                <Tab active={activeTab === 'detalles'} onClick={() => setActiveTab('detalles')}>
-                  📋 Detalles por Período
-                </Tab>
-                <Tab active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
-                  📈 Análisis y Rankings
-                </Tab>
-              </TabsHeader>
+          <TabsContainer>
+            <TabsHeader>
+              <Tab $active={activeTab === 'resumen'} onClick={() => setActiveTab('resumen')}>
+                Resumen General
+              </Tab>
+              <Tab $active={activeTab === 'detalles'} onClick={() => setActiveTab('detalles')}>
+                Detalles por Período
+              </Tab>
+              <Tab $active={activeTab === 'analisis'} onClick={() => setActiveTab('analisis')}>
+                Análisis y Rankings
+              </Tab>
+            </TabsHeader>
 
-              <TabContent>
-                {activeTab === 'resumen' && (
-                  <>
-                    <SummaryCards>
-                      <SummaryCard>
-                        <CardTitle>Total Ventas</CardTitle>
-                        <CardValue>{formatCurrency(reporteData.resumen.totalVentas)}</CardValue>
-                      </SummaryCard>
-                      <SummaryCard>
-                        <CardTitle>Cantidad de Ventas</CardTitle>
-                        <CardValue>{reporteData.resumen.cantidadVentas}</CardValue>
-                      </SummaryCard>
-                      <SummaryCard>
-                        <CardTitle>Ticket Promedio</CardTitle>
-                        <CardValue>{formatCurrency(reporteData.resumen.ticketPromedio)}</CardValue>
-                      </SummaryCard>
-                      <SummaryCard>
-                        <CardTitle>Venta Máxima</CardTitle>
-                        <CardValue>{formatCurrency(reporteData.resumen.ventasMayor)}</CardValue>
-                      </SummaryCard>
-                    </SummaryCards>
+            <TabContent>
+              {activeTab === 'resumen' && (
+                <>
+                  <SummaryCards>
+                    <SummaryCard>
+                      <CardTitle>Total Ventas</CardTitle>
+                      <CardValue>{formatCurrency(reporteData.resumen.totalVentas)}</CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Cantidad de Ventas</CardTitle>
+                      <CardValue>{reporteData.resumen.cantidadVentas}</CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Ticket Promedio</CardTitle>
+                      <CardValue>{formatCurrency(reporteData.resumen.ticketPromedio)}</CardValue>
+                    </SummaryCard>
+                    <SummaryCard>
+                      <CardTitle>Venta Máxima</CardTitle>
+                      <CardValue>{formatCurrency(reporteData.resumen.ventasMayor)}</CardValue>
+                    </SummaryCard>
+                  </SummaryCards>
 
-                    <Section>
-                      <SectionTitle>💳 Distribución por Método de Pago</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Método</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total</Th>
-                              <Th>Porcentaje</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reporteData.ventasPorMetodoPago.map((m: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>{m.metodoPago}</Td>
-                                <Td>{m.cantidad}</Td>
-                                <Td>{formatCurrency(m.total)}</Td>
-                                <Td>
-                                  <span style={{ 
-                                    padding: '0.25rem 0.5rem', 
-                                    background: '#3b82f620', 
-                                    color: '#2563eb',
-                                    borderRadius: '0.25rem',
-                                    fontWeight: 600
-                                  }}>
-                                    {m.porcentaje.toFixed(1)}%
-                                  </span>
-                                </Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
-                  </>
-                )}
+                  <Section>
+                    <SectionTitle>Distribución por Método de Pago</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Método</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total</Th>
+                            <Th>Porcentaje</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {reporteData.ventasPorMetodoPago.map((m: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td>{m.metodoPago}</Td>
+                              <Td>{m.cantidad}</Td>
+                              <Td>{formatCurrency(m.total)}</Td>
+                              <Td>
+                                <PercentageBadge>{m.porcentaje.toFixed(1)}%</PercentageBadge>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
+                </>
+              )}
 
-                {activeTab === 'detalles' && (
-                  <>
-                    <Section>
-                      <SectionTitle>📅 Ventas por Día</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Fecha</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reporteData.ventasPorDia.map((v: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>{formatDMY(v.fecha)}</Td>
-                                <Td>{v.cantidad}</Td>
-                                <Td>{formatCurrency(v.total)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
+              {activeTab === 'detalles' && (
+                <>
+                  <Section>
+                    <SectionTitle>Ventas por Día</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Fecha</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {reporteData.ventasPorDia.map((v: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td>{formatDMY(v.fecha)}</Td>
+                              <Td>{v.cantidad}</Td>
+                              <Td>{formatCurrency(v.total)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
 
-                    <Section>
-                      <SectionTitle>👤 Ventas por Vendedor</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>Vendedor</Th>
-                              <Th>Cantidad Ventas</Th>
-                              <Th>Total Ventas</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reporteData.ventasPorVendedor.map((v: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>{v.nombreVendedor}</Td>
-                                <Td>{v.cantidadVentas}</Td>
-                                <Td>{formatCurrency(v.totalVentas)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
-                  </>
-                )}
+                  <Section>
+                    <SectionTitle>Ventas por Vendedor</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>Vendedor</Th>
+                            <Th>Cantidad Ventas</Th>
+                            <Th>Total Ventas</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {reporteData.ventasPorVendedor.map((v: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td>{v.nombreVendedor}</Td>
+                              <Td>{v.cantidadVentas}</Td>
+                              <Td>{formatCurrency(v.totalVentas)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
+                </>
+              )}
 
-                {activeTab === 'analisis' && (
-                  <>
-                    <Section>
-                      <SectionTitle>🏆 Top 10 Productos Más Vendidos</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>#</Th>
-                              <Th>Producto</Th>
-                              <Th>Cantidad</Th>
-                              <Th>Total Vendido</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reporteData.topProductos.map((p: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>
-                                  <span style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '1.5rem',
-                                    height: '1.5rem',
-                                    borderRadius: '50%',
-                                    background: idx < 3 ? '#f59e0b20' : '#e5e7eb',
-                                    color: idx < 3 ? '#d97706' : '#6b7280',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem'
-                                  }}>
-                                    {idx + 1}
-                                  </span>
-                                </Td>
-                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto}</Td>
-                                <Td>{p.cantidadVendida}</Td>
-                                <Td>{formatCurrency(p.totalVendido)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
+              {activeTab === 'analisis' && (
+                <>
+                  <Section>
+                    <SectionTitle>Top 10 Productos Más Vendidos</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>#</Th>
+                            <Th>Producto</Th>
+                            <Th>Cantidad</Th>
+                            <Th>Total Vendido</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {reporteData.topProductos.map((p: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td><RankBadge $rank={idx + 1}>{idx + 1}</RankBadge></Td>
+                              <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{p.nombreProducto}</Td>
+                              <Td>{p.cantidadVendida}</Td>
+                              <Td>{formatCurrency(p.totalVendido)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
 
-                    <Section>
-                      <SectionTitle>👥 Top 10 Clientes</SectionTitle>
-                      <TableContainer>
-                        <Table>
-                          <thead>
-                            <tr>
-                              <Th>#</Th>
-                              <Th>Cliente</Th>
-                              <Th>Cantidad Compras</Th>
-                              <Th>Total Compras</Th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reporteData.topClientes.map((c: any, idx: number) => (
-                              <tr key={idx}>
-                                <Td>
-                                  <span style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '1.5rem',
-                                    height: '1.5rem',
-                                    borderRadius: '50%',
-                                    background: idx < 3 ? '#10b98120' : '#e5e7eb',
-                                    color: idx < 3 ? '#059669' : '#6b7280',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem'
-                                  }}>
-                                    {idx + 1}
-                                  </span>
-                                </Td>
-                                <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{c.nombreCliente}</Td>
-                                <Td>{c.cantidadCompras}</Td>
-                                <Td>{formatCurrency(c.totalCompras)}</Td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </Table>
-                      </TableContainer>
-                    </Section>
-                  </>
-                )}
-              </TabContent>
-            </TabsContainer>
-          </>
+                  <Section>
+                    <SectionTitle>Top 10 Clientes</SectionTitle>
+                    <TableContainer>
+                      <Table>
+                        <Thead>
+                          <tr>
+                            <Th>#</Th>
+                            <Th>Cliente</Th>
+                            <Th>Cantidad Compras</Th>
+                            <Th>Total Compras</Th>
+                          </tr>
+                        </Thead>
+                        <Tbody>
+                          {reporteData.topClientes.map((c: any, idx: number) => (
+                            <Tr key={idx}>
+                              <Td><RankBadge $rank={idx + 1}>{idx + 1}</RankBadge></Td>
+                              <Td style={{ fontWeight: idx < 3 ? 600 : 400 }}>{c.nombreCliente}</Td>
+                              <Td>{c.cantidadCompras}</Td>
+                              <Td>{formatCurrency(c.totalCompras)}</Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  </Section>
+                </>
+              )}
+            </TabContent>
+          </TabsContainer>
         )}
       </Container>
     </Layout>

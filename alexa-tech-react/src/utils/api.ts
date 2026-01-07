@@ -187,8 +187,8 @@ class ApiService {
     });
   }
 
-  async updatePurchaseStatus(id: string, estado: 'Pendiente' | 'Recibida' | 'Cancelada'): Promise<ApiResponse<any>> {
-    return this.request(`/compras/ordenes/${id}/status`, {
+  async updatePurchaseStatus(id: string, estado: string): Promise<ApiResponse<any>> {
+    return this.request(`/compras/ordenes/${id}/estado`, {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
     });
@@ -210,7 +210,9 @@ class ApiService {
     maxPrecio?: number;
     minStock?: number;
     maxStock?: number;
-  }, options?: RequestInit): Promise<ApiResponse<{ products: any[]; total: number; filters: Record<string, any> }>> {
+    page?: number;
+    limit?: number;
+  }, options?: RequestInit): Promise<ApiResponse<{ products: any[]; total: number; filters: Record<string, any>; pagination?: any }>> {
     const queryParams = new URLSearchParams();
     if (params?.categoria) queryParams.append('categoria', params.categoria);
     if (typeof params?.estado === 'boolean') queryParams.append('estado', String(params.estado));
@@ -220,10 +222,12 @@ class ApiService {
     if (typeof params?.maxPrecio === 'number') queryParams.append('maxPrecio', String(params.maxPrecio));
     if (typeof params?.minStock === 'number') queryParams.append('minStock', String(params.minStock));
     if (typeof params?.maxStock === 'number') queryParams.append('maxStock', String(params.maxStock));
+    if (typeof params?.page === 'number') queryParams.append('page', String(params.page));
+    if (typeof params?.limit === 'number') queryParams.append('limit', String(params.limit));
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/productos?${queryString}` : '/productos';
-    return this.request<{ products: any[]; total: number; filters: Record<string, any> }>(endpoint, { method: 'GET', ...(options || {}) });
+    return this.request<{ products: any[]; total: number; filters: Record<string, any>; pagination?: any }>(endpoint, { method: 'GET', ...(options || {}) });
   }
 
   // Obtener producto por código
@@ -253,6 +257,13 @@ class ApiService {
     return this.request(`/productos/${codigo}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ estado }),
+    });
+  }
+
+  // Eliminar producto (soft delete)
+  async deleteProduct(codigo: string): Promise<ApiResponse<any>> {
+    return this.request(`/productos/${codigo}`, {
+      method: 'DELETE',
     });
   }
 
@@ -469,6 +480,12 @@ class ApiService {
     });
   }
 
+  async deleteUser(id: string): Promise<ApiResponse<any>> {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async changePassword(id: string, currentPassword: string, newPassword: string): Promise<ApiResponse<any>> {
     return this.request(`/users/${id}/change-password`, {
       method: 'PATCH',
@@ -495,6 +512,7 @@ class ApiService {
     departamentoId?: string;
     provinciaId?: string;
     distritoId?: string;
+    includeInactive?: boolean;
   }): Promise<ApiResponse<{
     clients: any[];
     pagination: {
@@ -516,6 +534,7 @@ class ApiService {
     if (params?.departamentoId) queryParams.append('departamentoId', params.departamentoId);
     if (params?.provinciaId) queryParams.append('provinciaId', params.provinciaId);
     if (params?.distritoId) queryParams.append('distritoId', params.distritoId);
+    if (params?.includeInactive !== undefined) queryParams.append('includeInactive', params.includeInactive.toString());
 
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/entidades?${queryString}` : '/entidades';
@@ -612,10 +631,9 @@ class ApiService {
   }
 
   async deleteClient(id: string): Promise<ApiResponse<any>> {
-    // Soft delete vía actualización de estado (isActive: false)
+    // Soft delete vía endpoint DELETE
     return this.request(`/entidades/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ isActive: false })
+      method: 'DELETE',
     });
   }
 

@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../context/AuthContext';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 const SidebarNav = styled.nav`
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 20px 0;
+  padding: ${SPACING.xl} 0;
   
   /* Estilos para el scrollbar */
   &::-webkit-scrollbar {
@@ -34,19 +36,19 @@ const SidebarNav = styled.nav`
 `;
 
 const NavItem = styled.li<{ $isActive?: boolean }>`
-  margin-bottom: 5px;
+  margin-bottom: ${SPACING.xs};
 
   a {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
-    color: ${props => props.$isActive ? '#ffffff' : '#ffffff'};
+    padding: ${SPACING.lg} ${SPACING.xl};
+    color: ${props => props.$isActive ? COLORS.neutral.white : COLORS.neutral.white};
     background-color: ${props => props.$isActive ? 'rgba(59, 130, 246, 0.6)' : 'transparent'};
-    transition: all 0.3s ease;
+    transition: ${TRANSITIONS.default};
     text-decoration: none;
     border-radius: 0;
     margin: 0;
-    border-left: ${props => props.$isActive ? '4px solid #3b82f6' : '4px solid transparent'};
+    border-left: ${props => props.$isActive ? `4px solid ${COLOR_SCALES.primary[500]}` : '4px solid transparent'};
 
     &:hover {
       background-color: ${props => props.$isActive ? 'rgba(59, 130, 246, 0.7)' : 'rgba(59, 130, 246, 0.3)'};
@@ -55,29 +57,29 @@ const NavItem = styled.li<{ $isActive?: boolean }>`
     }
 
     i {
-      margin-right: 12px;
-      font-size: 16px;
+      margin-right: ${SPACING.lg};
+      font-size: ${TYPOGRAPHY.fontSize.lg};
       width: 20px;
       text-align: center;
     }
 
     span {
-      font-weight: 500;
+      font-weight: ${TYPOGRAPHY.fontWeight.medium};
     }
   }
 `;
 
 const SubMenu = styled.div<{ $isOpen: boolean }>`
-  max-height: ${props => props.$isOpen ? '500px' : '0'};
+  max-height: ${props => props.$isOpen ? '1000px' : '0'};
   overflow: hidden;
-  transition: max-height 0.3s ease;
+  transition: max-height 0.3s ease-in-out;
   background-color: rgba(30, 58, 138, 0.4);
 
   a {
     display: block;
     text-decoration: none;
-    color: #ffffff;
-    transition: all 0.3s ease;
+    color: ${COLORS.neutral.white};
+    transition: ${TRANSITIONS.default};
 
     &:hover h3 {
       background-color: rgba(59, 130, 246, 0.4);
@@ -85,14 +87,14 @@ const SubMenu = styled.div<{ $isOpen: boolean }>`
   }
 
   h3 {
-    padding: 12px 40px;
-    font-size: 14px;
-    font-weight: 500;
+    padding: ${SPACING.lg} 40px;
+    font-size: ${TYPOGRAPHY.fontSize.sm};
+    font-weight: ${TYPOGRAPHY.fontWeight.medium};
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: ${TRANSITIONS.default};
     margin: 0;
     border-left: 3px solid transparent;
-    color: #ffffff;
+    color: ${COLORS.neutral.white};
 
     &:hover {
       background-color: rgba(59, 130, 246, 0.3);
@@ -131,6 +133,14 @@ const LogoutSection = styled.div`
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   background: rgba(30, 58, 138, 0.3);
   flex-shrink: 0;
+`;
+
+const SidebarWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 `;
 
 const LogoutButton = styled.button`
@@ -245,7 +255,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
   };
 
   return (
-    <>
+    <SidebarWrapper>
       <SidebarNav>
         <ul>
           <NavItem $isActive={isActive('/dashboard')}>
@@ -321,7 +331,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/ventas/asistente-ia')}>
                 <Link to="/ventas/asistente-ia" onClick={handleItemClick}>
-                  <h3>🤖 Asistente de Ventas IA</h3>
+                  <h3>Asistente de Ventas IA</h3>
                 </Link>
               </SubMenuItem>
             </SubMenu>
@@ -341,7 +351,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
             </SubMenu>
           </NavItem>
 
-          <NavItem $isActive={isActive('/inventario/stock') || isActive('/inventario/kardex') || isActive('/inventario/almacenes') || isActive('/inventario/motivos')}>
+          <NavItem $isActive={isActive('/inventario/stock') || isActive('/inventario/alertas') || isActive('/inventario/kardex') || isActive('/inventario/transferencias') || isActive('/inventario/almacenes') || isActive('/inventario/motivos')}>
             <a href="#" onClick={(e) => { e.preventDefault(); toggleMenu('inventario'); }}>
               <i className="fas fa-boxes"></i>
               <span>Inventario</span>
@@ -352,9 +362,19 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
                   <h3>Stock</h3>
                 </Link>
               </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/inventario/alertas')}>
+                <Link to="/inventario/alertas" onClick={handleItemClick}>
+                  <h3>Alertas de Stock</h3>
+                </Link>
+              </SubMenuItem>
               <SubMenuItem $isActive={isActive('/inventario/kardex')}>
                 <Link to="/inventario/kardex" onClick={handleItemClick}>
                   <h3>Kardex</h3>
+                </Link>
+              </SubMenuItem>
+              <SubMenuItem $isActive={isActive('/inventario/transferencias')}>
+                <Link to="/inventario/transferencias" onClick={handleItemClick}>
+                  <h3>Transferencias</h3>
                 </Link>
               </SubMenuItem>
               <SubMenuItem $isActive={isActive('/inventario/almacenes')}>
@@ -476,7 +496,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onItemClick }) => {
           <span>Cerrar Sesión</span>
         </LogoutButton>
       </LogoutSection>
-    </>
+    </SidebarWrapper>
   );
 };
 

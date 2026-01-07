@@ -1,209 +1,131 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button as SharedButton,
+  Input as SharedInput,
+  Select as SharedSelect,
+  Label as SharedLabel,
+  Table as SharedTable,
+  Thead as SharedThead,
+  Th as SharedTh,
+  Tbody as SharedTbody,
+  Tr as SharedTr,
+  Td as SharedTd,
+  PaginationContainer as SharedPaginationContainer,
+  PaginationInfo as SharedPaginationInfo,
+  PaginationButtons as SharedPaginationButtons,
+  PageButton,
+  StatCard,
+  StatsGrid,
+  StatValue,
+  StatLabel
+} from '../../../components/shared';
 import Layout from '../../../components/Layout';
 import { useQuotes } from '../context/QuotesContext';
 import type { Quote, QuoteStatus } from '../context/QuotesContext';
 import { useNotification } from '../../../context/NotificationContext';
+import { useConfiguracion } from '../../configuracion/context/ConfiguracionContext';
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
-  gap: 1rem;
+`;
+
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
 `;
 
 const Title = styled.h1`
-  color: #2c3e50;
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
 `;
 
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const StatCard = styled.div<{ color: string }>`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  text-align: center;
-  border-left: 4px solid ${props => props.color};
-`;
-
-const StatValue = styled.div<{ color: string }>`
-  font-size: 2rem;
-  font-weight: bold;
-  color: ${props => props.color};
-  margin-bottom: 0.5rem;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.9rem;
-  color: #7f8c8d;
+const PageSubtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const FiltersContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const FiltersTitle = styled.h3`
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #2c3e50;
+  background: ${COLORS.neutral.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  align-items: end;
+  gap: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: ${SPACING.sm};
 `;
 
-const Label = styled.label`
-  font-size: 0.9rem;
-  color: #34495e;
-  font-weight: 500;
-`;
-
-const Select = styled.select`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-`;
-
-const ButtonsContainer = styled.div`
+const ButtonGroup = styled.div`
   display: flex;
-  gap: 0.5rem;
-  align-items: end;
-`;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: ${SPACING.lg};
 
-const Button = styled.button<{ variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  ${props => {
-    if (props.variant === 'danger') {
-      return `
-        background-color: #e74c3c;
-        color: white;
-        &:hover {
-          background-color: #c0392b;
-        }
-      `;
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: stretch;
+    
+    button {
+      flex: 1;
     }
-    if (props.variant === 'secondary') {
-      return `
-        background-color: #95a5a6;
-        color: white;
-        &:hover {
-          background-color: #7f8c8d;
-        }
-      `;
-    }
-    return `
-      background-color: #3498db;
-      color: white;
-      &:hover {
-        background-color: #2980b9;
-      }
-    `;
-  }}
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 `;
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
   overflow: hidden;
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const Thead = styled.thead`
-  background: #34495e;
-  color: white;
-`;
-
-const Th = styled.th`
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
-`;
-
-const Tbody = styled.tbody``;
-
-const Tr = styled.tr`
-  border-bottom: 1px solid #ecf0f1;
-  transition: background-color 0.2s ease;
+const PageSizeSelect = styled.select`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.primary};
+  background: ${COLORS.background};
+  cursor: pointer;
+  transition: ${TRANSITIONS.default};
 
   &:hover {
-    background-color: #f8f9fa;
+    border-color: ${COLOR_SCALES.primary[300]};
   }
-`;
 
-const Td = styled.td`
-  padding: 1rem;
-  font-size: 0.95rem;
-  color: #2c3e50;
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
 `;
 
 const StatusBadge = styled.span<{ $status: QuoteStatus }>`
@@ -231,24 +153,28 @@ const StatusBadge = styled.span<{ $status: QuoteStatus }>`
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: ${SPACING.sm};
   flex-wrap: wrap;
 `;
 
 const ActionButton = styled.button<{ color?: string }>`
-  padding: 0.5rem 0.8rem;
+  background: ${props => props.color || COLOR_SCALES.primary[500]};
+  color: ${COLORS.neutral.white};
   border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.xs} ${SPACING.sm};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: ${props => props.color || '#3498db'};
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: ${SPACING.xs};
+  transition: ${TRANSITIONS.default};
+  white-space: nowrap;
 
   &:hover {
-    opacity: 0.8;
-    transform: translateY(-2px);
+    opacity: 0.9;
+    transform: translateY(-1px);
   }
 
   &:disabled {
@@ -260,17 +186,17 @@ const ActionButton = styled.button<{ color?: string }>`
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 4rem 2rem;
-  color: #7f8c8d;
+  padding: ${SPACING['4xl']} ${SPACING.xl};
+  color: ${COLORS.text.secondary};
 `;
 
 const EmptyIcon = styled.div`
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  font-size: ${TYPOGRAPHY.fontSize['4xl']};
+  margin-bottom: ${SPACING.lg};
 `;
 
 const EmptyText = styled.p`
-  font-size: 1.2rem;
+  font-size: ${TYPOGRAPHY.fontSize.lg};
   margin: 0;
 `;
 
@@ -278,12 +204,12 @@ const LoadingContainer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 4rem;
+  padding: ${SPACING['4xl']};
 `;
 
 const Spinner = styled.div`
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db;
+  border: 4px solid ${COLORS.neutral[200]};
+  border-top: 4px solid ${COLOR_SCALES.primary[500]};
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -310,18 +236,18 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
   max-width: 800px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: ${SHADOWS.lg};
 `;
 
 const ModalHeader = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid #ecf0f1;
+  padding: ${SPACING.xl};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -329,24 +255,25 @@ const ModalHeader = styled.div`
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #2c3e50;
+  color: ${COLORS.text.primary};
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: ${TYPOGRAPHY.fontSize.xl};
   cursor: pointer;
-  color: #7f8c8d;
+  color: ${COLORS.text.secondary};
   padding: 0;
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: ${TRANSITIONS.default};
 
   &:hover {
-    color: #2c3e50;
+    color: ${COLORS.text.primary};
   }
 `;
 
@@ -432,6 +359,7 @@ const Cotizaciones: React.FC = () => {
   const { quotes, loading, stats, fetchQuotes, deleteQuote, setFilters } = useQuotes();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const { empresa } = useConfiguracion();
 
   // Estados locales
   const [localFilters, setLocalFilters] = useState<{
@@ -448,6 +376,20 @@ const Cotizaciones: React.FC = () => {
 
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Paginación de quotes
+  const paginatedQuotes = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return quotes.slice(startIndex, startIndex + pageSize);
+  }, [quotes, currentPage, pageSize]);
+
+  const totalPages = React.useMemo(() => {
+    return Math.ceil(quotes.length / pageSize);
+  }, [quotes.length, pageSize]);
 
   // Cargar datos al montar SOLO UNA VEZ
   useEffect(() => {
@@ -464,6 +406,7 @@ const Cotizaciones: React.FC = () => {
       search: localFilters.search || undefined
     };
     setFilters(newFilters);
+    setCurrentPage(1); // Reset página al aplicar filtros
     // Esperar un momento para que los filtros se actualicen en el contexto
     setTimeout(() => {
       fetchQuotes();
@@ -479,6 +422,7 @@ const Cotizaciones: React.FC = () => {
       search: ''
     });
     setFilters({});
+    setCurrentPage(1); // Reset página al limpiar filtros
     // Esperar un momento para que los filtros se actualicen en el contexto
     setTimeout(() => {
       fetchQuotes();
@@ -525,84 +469,92 @@ const Cotizaciones: React.FC = () => {
     <Layout title="Cotizaciones">
       <Container>
         <Header>
-          <Title>📝 Cotizaciones</Title>
+          <TitleSection>
+            <Title>Cotizaciones</Title>
+            <PageSubtitle>Gestión de cotizaciones, seguimiento de estados y conversión a ventas</PageSubtitle>
+          </TitleSection>
         </Header>
 
         {/* Estadísticas */}
-        <StatsContainer>
-          <StatCard color="#f39c12">
-            <StatValue color="#f39c12">{stats.totalQuotes}</StatValue>
+        <StatsGrid>
+          <StatCard $color="#3498db">
+            <StatValue $color="#3498db">{stats.totalQuotes}</StatValue>
             <StatLabel>Total</StatLabel>
           </StatCard>
-          <StatCard color="#f39c12">
-            <StatValue color="#f39c12">{stats.pendientes}</StatValue>
+          <StatCard $color="#f39c12">
+            <StatValue $color="#f39c12">{stats.pendientes}</StatValue>
             <StatLabel>Pendientes</StatLabel>
           </StatCard>
-          <StatCard color="#3498db">
-            <StatValue color="#3498db">{stats.convertidas}</StatValue>
+          <StatCard $color="#27ae60">
+            <StatValue $color="#27ae60">{stats.convertidas}</StatValue>
             <StatLabel>Convertidas</StatLabel>
           </StatCard>
-          <StatCard color="#95a5a6">
-            <StatValue color="#95a5a6">{stats.vencidas}</StatValue>
+          <StatCard $color="#95a5a6">
+            <StatValue $color="#95a5a6">{stats.vencidas}</StatValue>
             <StatLabel>Vencidas</StatLabel>
           </StatCard>
-        </StatsContainer>
+        </StatsGrid>
 
         {/* Filtros */}
         <FiltersContainer>
-          <FiltersTitle>Filtros de Búsqueda</FiltersTitle>
           <FiltersGrid>
             <FilterGroup>
-              <Label>Estado</Label>
-              <Select
+              <SharedLabel htmlFor="estado">Estado</SharedLabel>
+              <SharedSelect
+                id="estado"
                 value={localFilters.estado}
-                onChange={(e) => setLocalFilters({ ...localFilters, estado: e.target.value as QuoteStatus | 'Todas' })}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setLocalFilters({ ...localFilters, estado: e.target.value as QuoteStatus | 'Todas' })}
               >
                 <option value="Todas">Todos los Estados</option>
                 <option value="Pendiente">Pendiente</option>
                 <option value="Convertida">Convertida</option>
                 <option value="Vencida">Vencida</option>
                 <option value="Cancelada">Cancelada</option>
-              </Select>
+              </SharedSelect>
             </FilterGroup>
 
             <FilterGroup>
-              <Label>Fecha Desde</Label>
-              <Input
+              <SharedLabel htmlFor="fechaDesde">Fecha Desde</SharedLabel>
+              <SharedInput
+                id="fechaDesde"
                 type="date"
                 value={localFilters.fechaDesde}
-                onChange={(e) => setLocalFilters({ ...localFilters, fechaDesde: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocalFilters({ ...localFilters, fechaDesde: e.target.value })}
               />
             </FilterGroup>
 
             <FilterGroup>
-              <Label>Fecha Hasta</Label>
-              <Input
+              <SharedLabel htmlFor="fechaHasta">Fecha Hasta</SharedLabel>
+              <SharedInput
+                id="fechaHasta"
                 type="date"
                 value={localFilters.fechaHasta}
-                onChange={(e) => setLocalFilters({ ...localFilters, fechaHasta: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocalFilters({ ...localFilters, fechaHasta: e.target.value })}
               />
             </FilterGroup>
 
             <FilterGroup>
-              <Label>Buscar por Código</Label>
-              <Input
+              <SharedLabel htmlFor="search">Buscar por Código</SharedLabel>
+              <SharedInput
+                id="search"
                 type="text"
                 placeholder="COT-001..."
                 value={localFilters.search}
-                onChange={(e) => setLocalFilters({ ...localFilters, search: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLocalFilters({ ...localFilters, search: e.target.value })}
               />
             </FilterGroup>
-
-            <ButtonsContainer>
-              <Button variant="primary" onClick={handleApplyFilters}>
-                🔍 Buscar
-              </Button>
-              <Button variant="secondary" onClick={handleClearFilters}>
-                🔄 Limpiar
-              </Button>
-            </ButtonsContainer>
           </FiltersGrid>
+          <ButtonGroup>
+            <SharedButton $variant="secondary" onClick={handleClearFilters}>
+              Limpiar
+            </SharedButton>
+            <SharedButton $variant="primary" onClick={handleApplyFilters}>
+              Buscar
+            </SharedButton>
+            <SharedButton $variant="primary" style={{ background: '#28a745' }}>
+              Exportar a Excel
+            </SharedButton>
+          </ButtonGroup>
         </FiltersContainer>
 
         {/* Tabla de cotizaciones */}
@@ -617,36 +569,36 @@ const Cotizaciones: React.FC = () => {
               <EmptyText>No hay cotizaciones registradas</EmptyText>
             </EmptyState>
           ) : (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>Código</Th>
-                  <Th>Cliente</Th>
-                  <Th>Fecha Emisión</Th>
-                  <Th>Fecha Vencimiento</Th>
-                  <Th>Total</Th>
-                  <Th>Estado</Th>
-                  <Th>Acciones</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {quotes.map((quote) => (
-                  <Tr key={quote.id}>
-                    <Td><strong>{quote.codigoCotizacion}</strong></Td>
-                    <Td>{getClientName(quote)}</Td>
-                    <Td>{formatDate(quote.fechaEmision)}</Td>
-                    <Td>{formatDate(quote.fechaVencimiento)}</Td>
-                    <Td><strong>{formatCurrency(quote.total)}</strong></Td>
-                    <Td>
+            <SharedTable>
+              <SharedThead>
+                <tr>
+                  <SharedTh>Código</SharedTh>
+                  <SharedTh>Cliente</SharedTh>
+                  <SharedTh>Fecha Emisión</SharedTh>
+                  <SharedTh>Fecha Vencimiento</SharedTh>
+                  <SharedTh>Total</SharedTh>
+                  <SharedTh>Estado</SharedTh>
+                  <SharedTh>Acciones</SharedTh>
+                </tr>
+              </SharedThead>
+              <SharedTbody>
+                {paginatedQuotes.map((quote) => (
+                  <SharedTr key={quote.id}>
+                    <SharedTd><strong>{quote.codigoCotizacion}</strong></SharedTd>
+                    <SharedTd>{getClientName(quote)}</SharedTd>
+                    <SharedTd>{formatDate(quote.fechaEmision)}</SharedTd>
+                    <SharedTd>{formatDate(quote.fechaVencimiento)}</SharedTd>
+                    <SharedTd><strong>{formatCurrency(quote.total)}</strong></SharedTd>
+                    <SharedTd>
                       <StatusBadge $status={quote.estado}>{quote.estado}</StatusBadge>
-                    </Td>
-                    <Td>
+                    </SharedTd>
+                    <SharedTd>
                       <ActionButtons>
                         <ActionButton 
                           color="#3498db"
                           onClick={() => handleViewDetail(quote)}
                         >
-                          👁️ Ver
+                          Ver
                         </ActionButton>
 
                         <ActionButton 
@@ -694,7 +646,7 @@ const Cotizaciones: React.FC = () => {
                             }
                           }}
                         >
-                          🖨️ Imprimir
+                          Imprimir
                         </ActionButton>
 
                         {quote.estado === 'Pendiente' && (
@@ -718,7 +670,7 @@ const Cotizaciones: React.FC = () => {
                               });
                             }}
                           >
-                            🛒 Convertir a Venta
+                            Convertir a Venta
                           </ActionButton>
                         )}
 
@@ -727,15 +679,77 @@ const Cotizaciones: React.FC = () => {
                             color="#e74c3c"
                             onClick={() => handleDelete(quote.id)}
                           >
-                            🗑️ Eliminar
+                            Eliminar
                           </ActionButton>
                         )}
                       </ActionButtons>
-                    </Td>
-                  </Tr>
+                    </SharedTd>
+                  </SharedTr>
                 ))}
-              </Tbody>
-            </Table>
+              </SharedTbody>
+            </SharedTable>
+          )}
+
+          {/* Paginación */}
+          {quotes.length > 0 && (
+            <SharedPaginationContainer>
+              <SharedPaginationInfo>
+                Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, quotes.length)} de {quotes.length} cotizaciones
+              </SharedPaginationInfo>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <PageSizeSelect
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={10}>10 por página</option>
+                  <option value={20}>20 por página</option>
+                  <option value={50}>50 por página</option>
+                  <option value={100}>100 por página</option>
+                </PageSizeSelect>
+
+                <SharedPaginationButtons>
+                  <PageButton
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </PageButton>
+
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <PageButton
+                        key={pageNum}
+                        $active={pageNum === currentPage}
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </PageButton>
+                    );
+                  })}
+
+                  <PageButton
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </PageButton>
+                </SharedPaginationButtons>
+              </div>
+            </SharedPaginationContainer>
           )}
         </TableContainer>
 
@@ -824,10 +838,12 @@ const Cotizaciones: React.FC = () => {
                         <TotalLabel>Subtotal:</TotalLabel>
                         <TotalValue>{formatCurrency(selectedQuote.subtotal)}</TotalValue>
                       </TotalRow>
-                      <TotalRow>
-                        <TotalLabel>IGV (18%):</TotalLabel>
-                        <TotalValue>{formatCurrency(selectedQuote.igv)}</TotalValue>
-                      </TotalRow>
+                      {empresa?.igvActivo && (
+                        <TotalRow>
+                          <TotalLabel>IGV ({empresa.igvPorcentaje}%):</TotalLabel>
+                          <TotalValue>{formatCurrency(selectedQuote.igv)}</TotalValue>
+                        </TotalRow>
+                      )}
                       <TotalRow>
                         <TotalLabel>TOTAL:</TotalLabel>
                         <TotalValue highlight>{formatCurrency(selectedQuote.total)}</TotalValue>

@@ -16,12 +16,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { COLOR_SCALES, SPACING, BORDER_RADIUS } from '../../../styles/theme';
 import Layout from '../../../components/Layout';
 import Modal from '../../../components/Modal';
 import { PurchaseOrderList, PurchaseOrderForm, PurchaseOrderDetail } from '../components';
 import { usePurchaseOrders } from '../hooks';
 import { useNotification } from '../../../context/NotificationContext';
-import type { PurchaseOrder, FilterPurchaseOrderDto } from '../types/purchases.types';
+import type { PurchaseOrder } from '../types/purchases.types';
 
 // ==================== STYLED COMPONENTS ====================
 
@@ -29,74 +30,13 @@ const Container = styled.div`
   padding: 0;
 `;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-  flex-wrap: wrap;
-`;
-
-const Title = styled.h2`
-  color: #2c3e50;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-`;
-
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
-  padding: 0.625rem 1.25rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  ${props => props.variant === 'primary' ? `
-    background: #0047b3;
-    color: white;
-    &:hover:not(:disabled) {
-      background: #003d99;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 71, 179, 0.2);
-    }
-  ` : `
-    background: #f8f9fa;
-    color: #495057;
-    border: 1px solid #dee2e6;
-    &:hover:not(:disabled) {
-      background: #e9ecef;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  i {
-    font-size: 1rem;
-  }
-`;
-
 const ErrorContainer = styled.div`
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  padding: 1rem;
-  color: #c33;
-  margin-bottom: 1rem;
+  background: ${COLOR_SCALES.danger[50]};
+  border: 1px solid ${COLOR_SCALES.danger[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.lg};
+  color: ${COLOR_SCALES.danger[700]};
+  margin-bottom: ${SPACING.lg};
 `;
 
 // ==================== COMPONENT ====================
@@ -109,13 +49,7 @@ const PurchaseOrdersPage: React.FC = () => {
   // ==================== HOOKS ====================
 
   const {
-    orders,
-    isLoading,
     error,
-    fetchOrders,
-    createOrder,
-    updateOrder,
-    deleteOrder,
     refetch,
   } = usePurchaseOrders({
     autoFetch: true,
@@ -123,7 +57,7 @@ const PurchaseOrdersPage: React.FC = () => {
       // Success handled in individual operations
     },
     onError: (err) => {
-      showNotification(err.message, 'error');
+      showNotification('error', 'Error al Cargar', err.message);
     },
   });
 
@@ -157,11 +91,28 @@ const PurchaseOrdersPage: React.FC = () => {
   /**
    * Abrir modal editar
    */
-  const handleEdit = (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      setSelectedOrder(order);
-      setShowEditModal(true);
+  const handleEdit = (order: PurchaseOrder) => {
+    console.log('📝 [PurchaseOrdersPage] handleEdit called:', { orderId: order.id, estado: order.estado });
+    setSelectedOrder(order);
+    setShowEditModal(true);
+    console.log('📝 [PurchaseOrdersPage] Modal opened for order:', order.codigo);
+  };
+
+  /**
+   * Abrir modal editar desde detalle (recibe solo orderId)
+   */
+  const handleEditFromDetail = async (orderId: string) => {
+    try {
+      // Necesitamos obtener la orden completa para el formulario de edición
+      const { purchaseOrderService } = await import('../services');
+      const response = await purchaseOrderService.getPurchaseOrderById(orderId);
+      if (response && response.data) {
+        handleEdit(response.data);
+        setShowDetailModal(false);
+      }
+    } catch (err) {
+      console.error('Error al cargar orden para editar:', err);
+      showNotification('error', 'Error', 'No se pudo cargar la orden para editar');
     }
   };
 
@@ -174,19 +125,16 @@ const PurchaseOrdersPage: React.FC = () => {
   };
 
   /**
-   * Eliminar orden
+   * Callback de eliminación del hijo (List ya ejecutó el DELETE)
    */
-  const handleDelete = async (orderId: string) => {
-    if (!window.confirm('¿Está seguro de eliminar esta orden de compra?')) {
-      return;
-    }
-
-    const success = await deleteOrder(orderId);
+  const handleDelete = async (_orderId: string) => {
+    // ✅ El hijo (PurchaseOrderList) ya ejecutó el DELETE exitosamente
+    // Este callback solo debe actualizar el estado del padre si es necesario
+    // NO ejecutar deleteOrder() de nuevo para evitar doble petición
     
-    if (success) {
-      showNotification('Orden de compra eliminada exitosamente', 'success');
-      refetch();
-    }
+    // El hijo ya notificó al usuario y actualizó su lista local
+    // Solo hacemos refetch si el padre mantiene estado adicional
+    // (en este caso no es necesario porque el hijo maneja su propio estado)
   };
 
   /**
@@ -194,7 +142,7 @@ const PurchaseOrdersPage: React.FC = () => {
    */
   const handleRefresh = () => {
     refetch();
-    showNotification('Lista actualizada', 'info');
+    showNotification('info', 'Lista Actualizada', 'Los datos se han recargado correctamente');
   };
 
   /**
@@ -202,7 +150,7 @@ const PurchaseOrdersPage: React.FC = () => {
    */
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
-    showNotification('Orden de compra creada exitosamente', 'success');
+    showNotification('success', 'Orden Creada', 'La orden de compra se ha registrado correctamente');
     refetch();
   };
 
@@ -211,7 +159,7 @@ const PurchaseOrdersPage: React.FC = () => {
    */
   const handleEditSuccess = () => {
     setShowEditModal(false);
-    showNotification('Orden de compra actualizada exitosamente', 'success');
+    showNotification('success', 'Orden Actualizada', 'Los cambios se han guardado correctamente');
     refetch();
   };
 
@@ -244,21 +192,6 @@ const PurchaseOrdersPage: React.FC = () => {
   return (
     <Layout title="Órdenes de Compra">
       <Container>
-        {/* Header con acciones */}
-        <Header>
-          <Title>Gestión de Órdenes de Compra</Title>
-          <ButtonGroup>
-            <Button variant="secondary" onClick={handleRefresh} disabled={isLoading}>
-              <i className="fas fa-sync-alt"></i>
-              Actualizar
-            </Button>
-            <Button variant="primary" onClick={handleCreate}>
-              <i className="fas fa-plus"></i>
-              Nueva Orden
-            </Button>
-          </ButtonGroup>
-        </Header>
-
         {/* Error global */}
         {error && (
           <ErrorContainer>
@@ -272,6 +205,7 @@ const PurchaseOrdersPage: React.FC = () => {
           onView={handleView}
           onDelete={handleDelete}
           onRefresh={handleRefresh}
+          onCreate={handleCreate}
         />
 
         {/* Modal Crear */}
@@ -313,7 +247,7 @@ const PurchaseOrdersPage: React.FC = () => {
           {selectedOrderId && (
             <PurchaseOrderDetail
               orderId={selectedOrderId}
-              onEdit={handleEdit}
+              onEdit={handleEditFromDetail}
               onCreateReceipt={handleCreateReceipt}
               onClose={handleCancel}
             />

@@ -7,7 +7,41 @@ import { apiService } from '../../../utils/api';
 import NuevoUsuarioModal from '../components/NuevoUsuarioModal';
 import EditarUsuarioModal from '../components/EditarUsuarioModal';
 
-// Interfaces extendidas para usuarios
+// ============================================================================
+// IMPORTS DEL SISTEMA DE DISEÑO UNIFICADO
+// ============================================================================
+import { TYPOGRAPHY, COLORS, BORDER_RADIUS, SPACING } from '../../../styles/theme';
+import { 
+  StatusBadge, 
+  Button, 
+  ActionButton,
+  Input,
+  Select,
+  StatsGrid,
+  StatCard,
+  StatValue,
+  StatLabel,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  PaginationContainer,
+  PaginationInfo,
+  PaginationButtons,
+  PageButton,
+  EmptyState,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyText,
+  ButtonGroup
+} from '../../../components/shared';
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
 interface Role {
   id: string;
@@ -40,24 +74,34 @@ interface UserFormData {
   roleId: string;
 }
 
+// ============================================================================
+// STYLED COMPONENTS (Solo los específicos de esta página)
+// ============================================================================
+
 const Container = styled.div`
   padding: 1rem;
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
-  gap: 1rem;
 `;
 
-const Title = styled.h1`
-  color: #2c3e50;
+const PageTitle = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+`;
+
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const SearchContainer = styled.div`
@@ -67,187 +111,26 @@ const SearchContainer = styled.div`
   flex-wrap: wrap;
 `;
 
-const SearchInput = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
+const SearchInput = styled(Input)`
   min-width: 250px;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
 `;
 
-const FilterSelect = styled.select`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
+const FilterSelect = styled(Select)`
   min-width: 150px;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-
-  ${props => {
-    switch (props.$variant) {
-      case 'primary':
-        return `
-          background: #3498db;
-          color: white;
-          &:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
-          }
-        `;
-      case 'danger':
-        return `
-          background: #e74c3c;
-          color: white;
-          &:hover {
-            background: #c0392b;
-            transform: translateY(-1px);
-          }
-        `;
-      default:
-        return `
-          background: #95a5a6;
-          color: white;
-          &:hover {
-            background: #7f8c8d;
-            transform: translateY(-1px);
-          }
-        `;
-    }
-  }}
-`;
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const StatCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  text-align: center;
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #3498db;
-  margin-bottom: 0.5rem;
-`;
-
-const StatLabel = styled.div`
-  color: #7f8c8d;
-  font-size: 0.9rem;
-`;
-
-const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr`
-  &:nth-child(even) {
-    background: #f8f9fa;
-  }
-
-  &:hover {
-    background: #e3f2fd;
-  }
-`;
-
-const TableHeaderCell = styled.th`
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 2px solid #e1e8ed;
-`;
-
-const TableCell = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #e1e8ed;
-  color: #2c3e50;
-`;
-
-const StatusBadge = styled.span<{ status: string }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  
-  ${props => {
-    switch (props.status) {
-      case 'activo':
-        return `
-          background: #d4edda;
-          color: #155724;
-        `;
-      case 'inactivo':
-        return `
-          background: #f8d7da;
-          color: #721c24;
-        `;
-      case 'suspendido':
-        return `
-          background: #fff3cd;
-          color: #856404;
-        `;
-      default:
-        return `
-          background: #e2e3e5;
-          color: #383d41;
-        `;
-    }
-  }}
 `;
 
 const UserAvatar = styled.div`
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background: #3498db;
+  border-radius: ${BORDER_RADIUS.round};
+  background: ${COLORS.primary};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
+  color: ${COLORS.white};
+  font-weight: ${TYPOGRAPHY.fontWeight.bold};
   margin-right: 0.75rem;
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const UserInfo = styled.div`
@@ -256,104 +139,89 @@ const UserInfo = styled.div`
 `;
 
 const UserName = styled.div`
-  font-weight: 600;
-  color: #2c3e50;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
 `;
 
 const UserEmail = styled.div`
-  font-size: 0.8rem;
-  color: #7f8c8d;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  color: ${COLORS.textLight};
 `;
 
-const ActionButton = styled.button<{ variant?: 'edit' | 'delete' | 'activate' | 'deactivate' }>`
-  padding: 0.25rem 0.5rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  margin-right: 0.5rem;
-  transition: all 0.3s ease;
-
-  ${props => {
-    switch (props.variant) {
-      case 'edit':
-        return `
-          background: #3498db;
-          color: white;
-          
-          &:hover {
-            background: #2980b9;
-          }
-        `;
-      case 'delete':
-        return `
-          background: #e74c3c;
-          color: white;
-          
-          &:hover {
-            background: #c0392b;
-          }
-        `;
-      case 'activate':
-        return `
-          background: #27ae60;
-          color: white;
-          
-          &:hover {
-            background: #229954;
-          }
-        `;
-      case 'deactivate':
-        return `
-          background: #f39c12;
-          color: white;
-          
-          &:hover {
-            background: #e67e22;
-          }
-        `;
-      default:
-        return `
-          background: #95a5a6;
-          color: white;
-          
-          &:hover {
-            background: #7f8c8d;
-          }
-        `;
-    }
-  }}
-`;
-
-const EmptyState = styled.div`
+const LoadingContainer = styled.div`
   text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
+  padding: 2rem;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  color: ${COLORS.textLight};
 `;
 
-const EmptyIcon = styled.div`
-  font-size: 4rem;
-  margin-bottom: 1rem;
+const DeleteConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 `;
 
+const DeleteConfirmContent = styled.div`
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  padding: ${SPACING.xl};
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+`;
 
+const DeleteConfirmTitle = styled.h3`
+  margin: 0 0 ${SPACING.md} 0;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.large};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+`;
+
+const DeleteConfirmMessage = styled.p`
+  margin: 0 0 ${SPACING.xl} 0;
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  line-height: 1.5;
+`;
+
+const DeleteConfirmActions = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
+`;
+
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
 
 const ListaUsuarios: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { showError, showInfo } = useNotification();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('activo');
   const [isNuevoUsuarioModalOpen, setIsNuevoUsuarioModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<ExtendedUser | null>(null);
   
   // Estados para datos del backend
   const [users, setUsers] = useState<ExtendedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [currentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
 
   // Cargar usuarios del backend
   const loadUsers = async () => {
@@ -372,6 +240,7 @@ const ListaUsuarios: React.FC = () => {
       
       setUsers(usersData);
       setTotalUsers(response.data?.pagination?.totalUsers || 0);
+      setTotalPages(response.data?.pagination?.totalPages || 0);
     } catch (error) {
       console.error('Error loading users:', error);
       showError('Error al cargar los usuarios');
@@ -380,9 +249,26 @@ const ListaUsuarios: React.FC = () => {
     }
   };
 
+  // Resetear a página 1 cuando cambian los filtros de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
   useEffect(() => {
     loadUsers();
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, pageSize, searchTerm, statusFilter]);
+
+  // Funciones de paginación
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
 
 
 
@@ -414,13 +300,9 @@ const ListaUsuarios: React.FC = () => {
 
     if (diffHours < 1) return 'Hace menos de 1 hora';
     if (diffHours < 24) return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
-    if (diffDays < 7) return `Hace ${diffDays} dias`;
+    if (diffDays < 7) return `Hace ${diffDays} días`;
     
     return date.toLocaleDateString('es-PE');
-  };
-
-  const getStatusText = (isActive: boolean) => {
-    return isActive ? 'Activo' : 'Inactivo';
   };
 
   const handleEditUser = (userId: string) => {
@@ -465,17 +347,39 @@ const ListaUsuarios: React.FC = () => {
     }
   };
 
-  const handleToggleUserStatus = async (userId: string, currentStatus: boolean) => {
+  const handleDeleteClick = (user: ExtendedUser) => {
+    setUserToDelete(user);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
     try {
-      const newStatus = !currentStatus;
-      await apiService.updateUserStatus(userId, newStatus);
-      
-      const action = newStatus ? 'activado' : 'desactivado';
-      showInfo(`Usuario ${action} exitosamente`);
-      loadUsers(); // Recargar la lista
+      await apiService.deleteUser(userToDelete.id);
+      showInfo('Usuario eliminado exitosamente');
+      setIsDeleteConfirmOpen(false);
+      setUserToDelete(null);
+      loadUsers();
     } catch (error) {
-      console.error('Error updating user status:', error);
-      showError('Error al cambiar el estado del usuario');
+      console.error('Error deleting user:', error);
+      showError('No se pudo eliminar el usuario');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteConfirmOpen(false);
+    setUserToDelete(null);
+  };
+
+  const handleActivateUser = async (userId: string) => {
+    try {
+      await apiService.updateUserStatus(userId, true);
+      showInfo('Usuario activado exitosamente');
+      loadUsers();
+    } catch (error) {
+      console.error('Error activating user:', error);
+      showError('No se pudo activar el usuario');
     }
   };
 
@@ -490,7 +394,13 @@ const ListaUsuarios: React.FC = () => {
       if (userData.firstName) backendUserData.firstName = userData.firstName;
       if (userData.lastName) backendUserData.lastName = userData.lastName;
       if (userData.isActive !== undefined) backendUserData.isActive = userData.isActive;
-
+      
+      // ✅ RBAC: roleId es OBLIGATORIO
+      if (userData.roleId) {
+        backendUserData.roleId = userData.roleId;
+      } else {
+        throw new Error('Debe seleccionar un rol para el usuario');
+      }
       
       const resp = await apiService.createUser(backendUserData);
       if (!resp.success) {
@@ -499,9 +409,9 @@ const ListaUsuarios: React.FC = () => {
       showInfo('Usuario creado exitosamente');
       loadUsers(); // Recargar la lista
       setIsNuevoUsuarioModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating user:', error);
-      showError('Error al crear el usuario');
+      showError(error.message || 'Error al crear el usuario');
     }
   };
 
@@ -521,18 +431,21 @@ const ListaUsuarios: React.FC = () => {
   return (
     <Layout title="Lista de Usuarios">
       <Container>
-        <Header>
-          <Title>Lista de Usuarios</Title>
+        <PageHeader>
+          <div>
+            <PageTitle>Lista de Usuarios</PageTitle>
+            <PageSubtitle>Gestión de usuarios del sistema, roles y permisos de acceso</PageSubtitle>
+          </div>
           <SearchContainer>
             <SearchInput
               type="text"
               placeholder="Buscar por nombre, usuario o email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             />
             <FilterSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
             >
               <option value="">Todos los estados</option>
               <option value="activo">Activo</option>
@@ -547,57 +460,53 @@ const ListaUsuarios: React.FC = () => {
               Nuevo Usuario
             </Button>
           </SearchContainer>
-        </Header>
+        </PageHeader>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            Cargando usuarios...
-          </div>
+          <LoadingContainer>Cargando usuarios...</LoadingContainer>
         ) : (
-          <>
-            <StatsContainer>
-              <StatCard>
-                <StatValue>{stats.totalUsers}</StatValue>
-                <StatLabel>Total de Usuarios</StatLabel>
-              </StatCard>
-              <StatCard>
-                <StatValue>{stats.activeUsers}</StatValue>
-                <StatLabel>Usuarios Activos</StatLabel>
-              </StatCard>
-              <StatCard>
-                <StatValue>{stats.inactiveUsers}</StatValue>
-                <StatLabel>Usuarios Inactivos</StatLabel>
-              </StatCard>
-            </StatsContainer>
-          </>
+          <StatsGrid>
+            <StatCard $color="#3498db">
+              <StatValue $color="#3498db">{stats.totalUsers}</StatValue>
+              <StatLabel>Total de Usuarios</StatLabel>
+            </StatCard>
+            <StatCard $color="#28a745">
+              <StatValue $color="#28a745">{stats.activeUsers}</StatValue>
+              <StatLabel>Usuarios Activos</StatLabel>
+            </StatCard>
+            <StatCard $color="#dc3545">
+              <StatValue $color="#dc3545">{stats.inactiveUsers}</StatValue>
+              <StatLabel>Usuarios Inactivos</StatLabel>
+            </StatCard>
+          </StatsGrid>
         )}
 
         <TableContainer>
           {filteredUsers.length === 0 ? (
             <EmptyState>
               <EmptyIcon>👥</EmptyIcon>
-              <h3>No se encontraron usuarios</h3>
-              <p>
+              <EmptyTitle>No se encontraron usuarios</EmptyTitle>
+              <EmptyText>
                 {users.length === 0 
                   ? 'Aún no se han registrado usuarios en el sistema.'
                   : 'No hay usuarios que coincidan con los filtros aplicados.'
                 }
-              </p>
+              </EmptyText>
             </EmptyState>
           ) : (
             <Table>
-              <TableHeader>
+              <Thead>
                 <tr>
-                  <TableHeaderCell>Usuario</TableHeaderCell>
-                  <TableHeaderCell>Estado</TableHeaderCell>
-                  <TableHeaderCell>Último Acceso</TableHeaderCell>
-                  <TableHeaderCell>Acciones</TableHeaderCell>
+                  <Th>Usuario</Th>
+                  <Th>Estado</Th>
+                  <Th>Último Acceso</Th>
+                  <Th>Acciones</Th>
                 </tr>
-              </TableHeader>
-              <tbody>
+              </Thead>
+              <Tbody>
                 {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
+                  <Tr key={user.id}>
+                    <Td>
                       <UserInfo>
                         <UserAvatar>
                           {getInitials(user.firstName, user.lastName)}
@@ -605,40 +514,112 @@ const ListaUsuarios: React.FC = () => {
                         <div>
                           <UserName>{user.firstName} {user.lastName}</UserName>
                           <UserEmail>{user.email}</UserEmail>
-                          <UserName>@{user.username}</UserName>
+                          <UserEmail>@{user.username}</UserEmail>
                         </div>
                       </UserInfo>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={user.isActive ? 'activo' : 'inactivo'}>
-                        {getStatusText(user.isActive)}
-                      </StatusBadge>
-                    </TableCell>
-                    <TableCell>
-                      <div style={{ fontSize: '0.9rem' }}>
-                        {formatLastAccess(user.lastAccess)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <ActionButton 
-                        variant="edit"
-                        onClick={() => handleEditUser(user.id)}
+                    </Td>
+                    <Td>
+                      <StatusBadge 
+                        variant={user.isActive ? 'success' : 'danger'} 
+                        dot
                       >
-                        Editar
-                      </ActionButton>
-                      {user.id !== currentUser?.id && (
+                        {user.isActive ? 'Activo' : 'Inactivo'}
+                      </StatusBadge>
+                    </Td>
+                    <Td>
+                      {formatLastAccess(user.lastAccess)}
+                    </Td>
+                    <Td>
+                      <ButtonGroup>
                         <ActionButton 
-                          variant={user.isActive ? "deactivate" : "activate"}
-                          onClick={() => handleToggleUserStatus(user.id, user.isActive)}
+                          $variant="edit"
+                          onClick={() => handleEditUser(user.id)}
                         >
-                          {user.isActive ? "Desactivar" : "Activar"}
+                          Editar
                         </ActionButton>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                        {user.id !== currentUser?.id && (
+                          user.isActive ? (
+                            <ActionButton 
+                              $variant="delete"
+                              onClick={() => handleDeleteClick(user)}
+                            >
+                              Eliminar
+                            </ActionButton>
+                          ) : (
+                            <ActionButton 
+                              $variant="activate"
+                              onClick={() => handleActivateUser(user.id)}
+                            >
+                              Activar
+                            </ActionButton>
+                          )
+                        )}
+                      </ButtonGroup>
+                    </Td>
+                  </Tr>
                 ))}
-              </tbody>
+              </Tbody>
             </Table>
+          )}
+          
+          {/* Controles de paginación */}
+          {filteredUsers.length > 0 && (
+            <PaginationContainer>
+              <PaginationInfo>
+                Mostrando {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalUsers)} de {totalUsers} resultados
+              </PaginationInfo>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.md }}>
+                <Select
+                  value={pageSize}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handlePageSizeChange(Number(e.target.value))}
+                  style={{ width: 'auto' }}
+                >
+                  <option value={5}>5 por página</option>
+                  <option value={10}>10 por página</option>
+                  <option value={20}>20 por página</option>
+                  <option value={50}>50 por página</option>
+                </Select>
+                
+                <div style={{ display: 'flex', gap: SPACING.xs }}>
+                  <PageButton
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </PageButton>
+                  
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 2) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 1) {
+                      pageNum = totalPages - 2 + i;
+                    } else {
+                      pageNum = currentPage - 1 + i;
+                    }
+                    return (
+                      <PageButton
+                        key={pageNum}
+                        $active={currentPage === pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </PageButton>
+                    );
+                  })}
+                  
+                  <PageButton
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    Siguiente
+                  </PageButton>
+                </div>
+              </div>
+            </PaginationContainer>
           )}
         </TableContainer>
       </Container>
@@ -658,6 +639,26 @@ const ListaUsuarios: React.FC = () => {
         user={selectedUser}
         onSave={handleSaveUser}
       />
+
+      {isDeleteConfirmOpen && (
+        <DeleteConfirmModal onClick={handleCancelDelete}>
+          <DeleteConfirmContent onClick={(e) => e.stopPropagation()}>
+            <DeleteConfirmTitle>Confirmar Eliminación</DeleteConfirmTitle>
+            <DeleteConfirmMessage>
+              ¿Está seguro que desea eliminar al usuario {userToDelete?.username}?
+              Esta acción desactivará el usuario.
+            </DeleteConfirmMessage>
+            <DeleteConfirmActions>
+              <ActionButton $variant="secondary" onClick={handleCancelDelete}>
+                Cancelar
+              </ActionButton>
+              <ActionButton $variant="delete" onClick={handleConfirmDelete}>
+                Eliminar
+              </ActionButton>
+            </DeleteConfirmActions>
+          </DeleteConfirmContent>
+        </DeleteConfirmModal>
+      )}
     </Layout>
   );
 };

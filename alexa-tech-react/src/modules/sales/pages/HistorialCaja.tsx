@@ -1,10 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
 import type { CashSession } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { SessionDetailModal } from '../components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button,
+  ActionButton,
+  Input,
+  Select,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  PaginationContainer,
+  PaginationInfo,
+  PageButton,
+  EmptyState,
+  EmptyIcon,
+  EmptyTitle,
+  EmptyText,
+  StatusBadge,
+  StatCard,
+  StatsGrid,
+  StatValue,
+  StatLabel
+} from '../../../components/shared';
 
 interface Filters {
   fechaInicio: string;
@@ -25,6 +51,10 @@ const HistorialCaja: React.FC = () => {
   
   const [selectedSession, setSelectedSession] = useState<CashSession | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Cargar sesiones cerradas al montar el componente
   useEffect(() => {
@@ -104,65 +134,120 @@ const HistorialCaja: React.FC = () => {
     return formatCurrency(difference);
   };
 
+  // Paginación calculada
+  const totalSessions = sessions.length;
+  const totalPages = Math.ceil(totalSessions / pageSize);
+  
+  const paginatedSessions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return sessions.slice(start, end);
+  }, [sessions, currentPage, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  // Estadísticas calculadas
+  const stats = useMemo(() => {
+    const totalSesiones = sessions.length;
+    const totalVentas = sessions.reduce((sum, s) => sum + (s.totalVentas || 0), 0);
+    const totalDiferencia = sessions.reduce((sum, s) => sum + (s.diferencia || 0), 0);
+    const sesionesConSobrante = sessions.filter(s => (s.diferencia || 0) > 0).length;
+    const sesionesConFaltante = sessions.filter(s => (s.diferencia || 0) < 0).length;
+    return { totalSesiones, totalVentas, totalDiferencia, sesionesConSobrante, sesionesConFaltante };
+  }, [sessions]);
+
   return (
     <Layout title="Historial de Caja">
       <Container>
-        <Header>
-          <Title>Historial de Arqueos de Caja</Title>
-        </Header>
+        <PageHeader>
+          <TitleSection>
+            <PageTitle>Historial de Arqueos de Caja</PageTitle>
+            <PageSubtitle>Consulta y análisis de sesiones de caja cerradas</PageSubtitle>
+          </TitleSection>
+        </PageHeader>
+
+        {/* Tarjetas Estadísticas */}
+        <StatsGrid>
+          <StatCard $color="#3498db">
+            <StatValue $color="#3498db">{stats.totalSesiones}</StatValue>
+            <StatLabel>Total Arqueos</StatLabel>
+          </StatCard>
+          <StatCard $color="#27ae60">
+            <StatValue $color="#27ae60">S/ {stats.totalVentas.toFixed(2)}</StatValue>
+            <StatLabel>Total Ventas</StatLabel>
+          </StatCard>
+          <StatCard $color="#2ecc71">
+            <StatValue $color="#2ecc71">{stats.sesionesConSobrante}</StatValue>
+            <StatLabel>Con Sobrante</StatLabel>
+          </StatCard>
+          <StatCard $color="#e74c3c">
+            <StatValue $color="#e74c3c">{stats.sesionesConFaltante}</StatValue>
+            <StatLabel>Con Faltante</StatLabel>
+          </StatCard>
+          <StatCard $color={stats.totalDiferencia >= 0 ? '#27ae60' : '#e74c3c'}>
+            <StatValue $color={stats.totalDiferencia >= 0 ? '#27ae60' : '#e74c3c'}>
+              {stats.totalDiferencia >= 0 ? '+' : ''}S/ {stats.totalDiferencia.toFixed(2)}
+            </StatValue>
+            <StatLabel>Diferencia Total</StatLabel>
+          </StatCard>
+        </StatsGrid>
 
         {/* Filtros */}
-        <FiltersContainer>
-          <FiltersTitle>Filtros de Búsqueda</FiltersTitle>
+        <FiltersCard>
           <FiltersGrid>
             <FilterGroup>
-              <Label htmlFor="fechaInicio">Fecha Desde</Label>
-              <DateInput
+              <FilterLabel>Fecha Desde</FilterLabel>
+              <Input
                 type="date"
-                id="fechaInicio"
                 value={filters.fechaInicio}
-                onChange={(e) => handleFilterChange('fechaInicio', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('fechaInicio', e.target.value)}
               />
             </FilterGroup>
             
             <FilterGroup>
-              <Label htmlFor="fechaFin">Fecha Hasta</Label>
-              <DateInput
+              <FilterLabel>Fecha Hasta</FilterLabel>
+              <Input
                 type="date"
-                id="fechaFin"
                 value={filters.fechaFin}
-                onChange={(e) => handleFilterChange('fechaFin', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('fechaFin', e.target.value)}
               />
             </FilterGroup>
             
             <FilterGroup>
-              <Label htmlFor="userId">Usuario</Label>
+              <FilterLabel>Usuario</FilterLabel>
               <Input
                 type="text"
-                id="userId"
-                placeholder="ID del usuario"
+                placeholder="Buscar por usuario..."
                 value={filters.userId}
-                onChange={(e) => handleFilterChange('userId', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('userId', e.target.value)}
               />
             </FilterGroup>
-            
-            <ButtonGroup>
-              <Button onClick={handleSearch} disabled={loading}>
-                <i className="fas fa-search"></i>
-                Buscar
-              </Button>
-              <ButtonSecondary onClick={handleClearFilters} disabled={loading}>
-                <i className="fas fa-times"></i>
-                Limpiar
-              </ButtonSecondary>
-            </ButtonGroup>
           </FiltersGrid>
-        </FiltersContainer>
+          
+          <ButtonGroup>
+            <Button onClick={handleClearFilters} disabled={loading} $variant="secondary">
+              Limpiar
+            </Button>
+            <Button onClick={handleSearch} disabled={loading} $variant="primary">
+              Buscar
+            </Button>
+            <Button onClick={() => {}} disabled={loading || sessions.length === 0} $variant="success">
+              Exportar a Excel
+            </Button>
+          </ButtonGroup>
+        </FiltersCard>
 
         {/* Tabla de Historial */}
-        <TableCard>
-          <CardTitle>Historial de Cierres ({sessions.length})</CardTitle>
-          
+        <ContentCard>
           {loading ? (
             <LoadingContainer>
               <LoadingSpinner />
@@ -170,59 +255,118 @@ const HistorialCaja: React.FC = () => {
             </LoadingContainer>
           ) : sessions.length === 0 ? (
             <EmptyState>
-              <i className="fas fa-inbox" style={{ fontSize: '4rem' }}></i>
-              <p>No se encontraron sesiones cerradas</p>
-              <small>Intenta ajustar los filtros o verifica que haya sesiones cerradas</small>
+              <EmptyIcon className="fas fa-inbox" />
+              <EmptyTitle>No se encontraron sesiones cerradas</EmptyTitle>
+              <EmptyText>Intenta ajustar los filtros o verifica que haya sesiones cerradas</EmptyText>
             </EmptyState>
           ) : (
-            <>
-              <TableContainer>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Fecha Cierre</Th>
-                      <Th>Usuario</Th>
-                      <Th>Caja</Th>
-                      <Th>M. Apertura</Th>
-                      <Th>Total Ventas</Th>
-                      <Th>M. Cierre</Th>
-                      <Th>Diferencia</Th>
-                      <Th>Acciones</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sessions.map((session) => (
-                      <Tr key={session.id}>
-                        <Td>{formatDate(session.fechaCierre || session.updatedAt)}</Td>
-                        <Td>
-                          {session.user 
-                            ? `${session.user.firstName} ${session.user.lastName}`
-                            : session.userId}
-                        </Td>
-                        <Td>{session.cashRegister?.nombre || session.cashRegisterId}</Td>
-                        <Td>{formatCurrency(session.montoApertura)}</Td>
-                        <Td className="sales">{formatCurrency(session.totalVentas)}</Td>
-                        <Td><strong>{formatCurrency(session.montoCierre || 0)}</strong></Td>
-                        <Td className={getDifferenceClass(session.diferencia)}>
-                          <strong>{getDifferenceText(session.diferencia)}</strong>
-                        </Td>
-                        <Td>
-                          <ActionButton onClick={() => handleViewDetails(session)} title="Ver detalles">
-                            <i className="fas fa-eye"></i>
-                          </ActionButton>
-                        </Td>
-                      </Tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </TableContainer>
+            <TableContainer>
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Fecha Cierre</Th>
+                    <Th>Usuario</Th>
+                    <Th>Caja</Th>
+                    <Th>M. Apertura</Th>
+                    <Th>Total Ventas</Th>
+                    <Th>M. Cierre</Th>
+                    <Th>Diferencia</Th>
+                    <Th>Acciones</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {paginatedSessions.map((session) => (
+                    <Tr key={session.id}>
+                      <Td>{formatDate(session.fechaCierre || session.updatedAt)}</Td>
+                      <Td>
+                        {session.user 
+                          ? `${session.user.firstName} ${session.user.lastName}`
+                          : session.userId}
+                      </Td>
+                      <Td>{session.cashRegister?.nombre || session.cashRegisterId}</Td>
+                      <Td>{formatCurrency(session.montoApertura)}</Td>
+                      <Td>
+                        <SalesAmount>{formatCurrency(session.totalVentas)}</SalesAmount>
+                      </Td>
+                      <Td><strong>{formatCurrency(session.montoCierre || 0)}</strong></Td>
+                      <Td>
+                        <DifferenceAmount className={getDifferenceClass(session.diferencia)}>
+                          {getDifferenceText(session.diferencia)}
+                        </DifferenceAmount>
+                      </Td>
+                      <Td>
+                        <ActionButton 
+                          onClick={() => handleViewDetails(session)} 
+                          $variant="view"
+                        >
+                          Ver
+                        </ActionButton>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
               
-              <PaginationFooter>
-                Mostrando {sessions.length} sesión{sessions.length !== 1 ? 'es' : ''}
-              </PaginationFooter>
-            </>
+              {/* Paginación */}
+              <PaginationContainer>
+                <PaginationInfo>
+                  Mostrando {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalSessions)} de {totalSessions} resultados
+                </PaginationInfo>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.md }}>
+                  <Select
+                    value={pageSize}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handlePageSizeChange(Number(e.target.value))}
+                    style={{ width: 'auto' }}
+                  >
+                    <option value={5}>5 por página</option>
+                    <option value={10}>10 por página</option>
+                    <option value={20}>20 por página</option>
+                    <option value={50}>50 por página</option>
+                  </Select>
+                  
+                  <div style={{ display: 'flex', gap: SPACING.xs }}>
+                    <PageButton
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </PageButton>
+                    
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 2) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 1) {
+                        pageNum = totalPages - 2 + i;
+                      } else {
+                        pageNum = currentPage - 1 + i;
+                      }
+                      return (
+                        <PageButton
+                          key={pageNum}
+                          $active={currentPage === pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </PageButton>
+                      );
+                    })}
+                    
+                    <PageButton
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                      Siguiente
+                    </PageButton>
+                  </div>
+                </div>
+              </PaginationContainer>
+            </TableContainer>
           )}
-        </TableCard>
+        </ContentCard>
 
         {/* Modal de Detalles */}
         {showDetailModal && selectedSession && (
@@ -244,234 +388,118 @@ export default HistorialCaja;
 // ==================== STYLED COMPONENTS ====================
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0;
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: ${SPACING.lg};
 `;
 
-const Title = styled.h1`
-  color: #2c3e50;
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const PageTitle = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
 `;
 
-const FiltersContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+const PageSubtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
-const FiltersTitle = styled.h3`
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #2c3e50;
-  font-size: 1.25rem;
+const FiltersCard = styled.div`
+  background: ${COLORS.surface};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  padding: ${SPACING.xl};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: ${SPACING.lg};
   align-items: end;
 `;
 
 const FilterGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: ${SPACING.sm};
 `;
 
-const Label = styled.label`
-  font-size: 0.9rem;
-  color: #34495e;
-  font-weight: 500;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
-`;
-
-const DateInput = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
+const FilterLabel = styled.label`
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.textSecondary};
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 0.5rem;
+  justify-content: flex-end;
+  gap: ${SPACING.sm};
+  margin-top: ${SPACING.lg};
 `;
 
-const Button = styled.button`
+const ContentCard = styled.div`
+  background: ${COLORS.surface};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  padding: ${SPACING.xl};
+`;
+
+const CardHeader = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover:not(:disabled) {
-    background: #2980b9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  i {
-    font-size: 1rem;
-  }
-`;
-
-const ButtonSecondary = styled(Button)`
-  background: #95a5a6;
-
-  &:hover:not(:disabled) {
-    background: #7f8c8d;
-    box-shadow: 0 4px 8px rgba(149, 165, 166, 0.3);
-  }
-`;
-
-const TableCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  overflow: hidden;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const CardTitle = styled.h3`
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #2c3e50;
-  font-size: 1.25rem;
+  margin: 0;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
-const TableContainer = styled.div`
-  overflow-x: auto;
-  margin: 0 -1.5rem;
-  padding: 0 1.5rem;
+const ResultCount = styled.span`
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.textSecondary};
+  background: ${COLORS.backgroundAlt};
+  padding: ${SPACING.xs} ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.full};
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 1000px;
+const SalesAmount = styled.span`
+  color: ${COLOR_SCALES.primary[600]};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
-const Th = styled.th`
-  text-align: left;
-  padding: 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #7f8c8d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 2px solid #e1e8ed;
-  background: #f8f9fa;
-`;
-
-const Tr = styled.tr`
-  transition: background 0.2s;
-
-  &:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const Td = styled.td`
-  padding: 1rem;
-  font-size: 0.9rem;
-  color: #2c3e50;
-  border-bottom: 1px solid #e1e8ed;
-
-  &.sales {
-    color: #3498db;
-    font-weight: 600;
-  }
-
+const DifferenceAmount = styled.span`
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  
   &.surplus {
-    color: #27ae60;
-    font-weight: 600;
+    color: ${COLOR_SCALES.success[600]};
   }
-
+  
   &.shortage {
-    color: #e74c3c;
-    font-weight: 600;
+    color: ${COLOR_SCALES.danger[600]};
   }
-
+  
   &.zero {
-    color: #95a5a6;
+    color: ${COLORS.textSecondary};
   }
-`;
-
-const ActionButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border: none;
-  border-radius: 6px;
-  background: #3498db;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: #2980b9;
-    transform: scale(1.1);
-  }
-
-  i {
-    font-size: 1rem;
-  }
-`;
-
-const PaginationFooter = styled.div`
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e1e8ed;
-  font-size: 0.875rem;
-  color: #7f8c8d;
-  text-align: center;
 `;
 
 const LoadingContainer = styled.div`
@@ -479,16 +507,16 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
-  gap: 1rem;
-  color: #7f8c8d;
+  padding: ${SPACING['4xl']} ${SPACING.xl};
+  gap: ${SPACING.lg};
+  color: ${COLORS.textSecondary};
 `;
 
 const LoadingSpinner = styled.div`
   width: 50px;
   height: 50px;
-  border: 4px solid #e1e8ed;
-  border-top-color: #3498db;
+  border: 4px solid ${COLORS.border};
+  border-top-color: ${COLOR_SCALES.primary[500]};
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 
@@ -496,32 +524,5 @@ const LoadingSpinner = styled.div`
     to {
       transform: rotate(360deg);
     }
-  }
-`;
-
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  gap: 1rem;
-  color: #95a5a6;
-  text-align: center;
-
-  i {
-    color: #bdc3c7;
-  }
-
-  p {
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin: 0;
-    color: #7f8c8d;
-  }
-
-  small {
-    font-size: 0.875rem;
-    color: #95a5a6;
   }
 `;

@@ -3,6 +3,10 @@ import styled from 'styled-components';
 import { configuracionApi } from '../../services/configuracionApi';
 import type { ProductCategory, CategoryInput } from '../../types/configuracion';
 import { useNotification } from '../../context/NotificationContext';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../styles/theme';
+import { Button as SharedButton } from '../shared/Button';
+import { Input as SharedInput } from '../shared/Input';
+import { Label as SharedLabel } from '../shared/Label';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -19,9 +23,9 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.xl};
   width: 500px;
   max-width: 90vw;
   max-height: 90vh;
@@ -29,115 +33,43 @@ const ModalContainer = styled.div`
 `;
 
 const ModalHeader = styled.div`
-  padding: 24px 24px 0 24px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 24px;
+  padding: ${SPACING['2xl']} ${SPACING['2xl']} 0 ${SPACING['2xl']};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  margin-bottom: ${SPACING['2xl']};
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0 0 16px 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
+  margin: 0 0 ${SPACING.lg} 0;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.primary};
 `;
 
 const ModalContent = styled.div`
-  padding: 0 24px 24px 24px;
+  padding: 0 ${SPACING['2xl']} ${SPACING['2xl']} ${SPACING['2xl']};
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 20px;
-
-  label {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-
-    span.required {
-      color: #dc3545;
-      margin-left: 4px;
-    }
-  }
-
-  input,
-  textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border-color 0.2s ease;
-
-    &:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    &:disabled {
-      background-color: #f3f4f6;
-      cursor: not-allowed;
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
+  margin-bottom: ${SPACING.xl};
 
   .error {
-    color: #dc3545;
-    font-size: 13px;
-    margin-top: 6px;
+    color: ${COLOR_SCALES.danger[500]};
+    font-size: ${TYPOGRAPHY.fontSize.xs};
+    margin-top: ${SPACING.sm};
   }
 
   .hint {
-    color: #6b7280;
-    font-size: 13px;
-    margin-top: 4px;
+    color: ${COLORS.text.secondary};
+    font-size: ${TYPOGRAPHY.fontSize.xs};
+    margin-top: ${SPACING.xs};
   }
 `;
 
 const Actions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  ${props =>
-    props.$variant === 'primary'
-      ? `
-    background-color: #007bff;
-    color: white;
-
-    &:hover {
-      background-color: #0056b3;
-    }
-
-    &:disabled {
-      background-color: #8fa8d6;
-      cursor: not-allowed;
-    }
-  `
-      : `
-    background-color: #6c757d;
-    color: white;
-
-    &:hover {
-      background-color: #5a6268;
-    }
-  `}
+  gap: ${SPACING.lg};
+  margin-top: ${SPACING['2xl']};
 `;
 
 interface CategoriaModalProps {

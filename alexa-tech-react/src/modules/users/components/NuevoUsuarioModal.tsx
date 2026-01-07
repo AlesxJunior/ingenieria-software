@@ -5,6 +5,16 @@ import { validatePasswordWithConfirmation, validateUsername, validateEmail } fro
 import PasswordRequirements from '../../../components/PasswordRequirements';
 import RoleSelector from './RoleSelector';
 import PermissionsPreview from './PermissionsPreview';
+import { TYPOGRAPHY, COLORS, BORDER_RADIUS, SHADOWS, TRANSITIONS, Z_INDEX } from '../../../styles/theme';
+import {
+  Button,
+  Input,
+  FormGroup,
+  Label,
+  RequiredMark,
+  ValidationMessage,
+  ButtonGroup
+} from '../../../components/shared';
 
 // ============================================================================
 // INTERFACES
@@ -54,18 +64,19 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.modal};
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
   padding: 2rem;
   max-width: 800px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: ${SHADOWS.xl};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const ModalHeader = styled.div`
@@ -74,21 +85,22 @@ const ModalHeader = styled.div`
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid ${COLORS.border};
 `;
 
 const ModalTitle = styled.h2`
-  color: #2c3e50;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  color: ${COLORS.text};
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 600;
+  font-size: ${TYPOGRAPHY.fontSize.h2};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
   font-size: 1.75rem;
-  color: #6c757d;
+  color: ${COLORS.textLight};
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -96,12 +108,12 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: ${BORDER_RADIUS.small};
+  transition: all ${TRANSITIONS.normal};
 
   &:hover {
-    background: #f8f9fa;
-    color: #2c3e50;
+    background: ${COLORS.background};
+    color: ${COLORS.text};
   }
 `;
 
@@ -121,49 +133,6 @@ const FormRow = styled.div`
   }
 `;
 
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Label = styled.label`
-  margin-bottom: 0.5rem;
-  color: #2c3e50;
-  font-weight: 600;
-  font-size: 0.95rem;
-`;
-
-const Required = styled.span`
-  color: #e74c3c;
-  margin-left: 0.25rem;
-`;
-
-const Input = styled.input<{ $hasError?: boolean }>`
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#dee2e6'};
-  border-radius: 8px;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
-  }
-
-  &:disabled {
-    background-color: #f8f9fa;
-    cursor: not-allowed;
-  }
-`;
-
-const ErrorText = styled.span`
-  color: #e74c3c;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  display: block;
-`;
-
 const CheckboxWrapper = styled.div`
   display: flex;
   align-items: center;
@@ -175,26 +144,29 @@ const Checkbox = styled.input`
   width: 18px;
   height: 18px;
   cursor: pointer;
+  accent-color: ${COLORS.primary};
 `;
 
 const CheckboxLabel = styled.label`
-  color: #2c3e50;
-  font-size: 0.95rem;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.body};
   cursor: pointer;
   user-select: none;
 `;
 
 const Divider = styled.div`
   height: 1px;
-  background: #e9ecef;
+  background: ${COLORS.border};
   margin: 1.5rem 0;
 `;
 
 const SectionTitle = styled.h3`
-  color: #2c3e50;
-  font-size: 1.25rem;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.h3};
   margin-bottom: 1rem;
-  font-weight: 600;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -204,70 +176,24 @@ const SectionTitle = styled.h3`
     display: inline-block;
     width: 4px;
     height: 24px;
-    background: #3498db;
+    background: ${COLORS.primary};
     border-radius: 2px;
   }
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e9ecef;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-  min-width: 120px;
-
-  ${props => {
-    if (props.$variant === 'primary') {
-      return `
-        background: #3498db;
-        color: white;
-        &:hover:not(:disabled) {
-          background: #2980b9;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-        }
-      `;
-    }
-    return `
-      background: #95a5a6;
-      color: white;
-      &:hover:not(:disabled) {
-        background: #7f8c8d;
-      }
-    `;
-  }}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-`;
-
 const InfoBox = styled.div`
-  background: #e3f2fd;
-  border-left: 4px solid #2196f3;
+  background: ${COLORS.infoBg};
+  border-left: 4px solid ${COLORS.info};
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: ${BORDER_RADIUS.small};
   margin: 1rem 0;
   
   p {
     margin: 0;
-    color: #1565c0;
-    font-size: 0.9rem;
+    color: ${COLORS.infoText};
+    font-size: ${TYPOGRAPHY.fontSize.small};
     line-height: 1.5;
+    font-family: ${TYPOGRAPHY.fontFamily};
   }
 `;
 
@@ -432,7 +358,7 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
           <FormRow>
             <FormGroup>
               <Label>
-                Nombre de Usuario<Required>*</Required>
+                Nombre de Usuario<RequiredMark>*</RequiredMark>
               </Label>
               <Input
                 type="text"
@@ -444,12 +370,12 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
                 disabled={isLoading}
                 autoComplete="username"
               />
-              {errors.username && <ErrorText>{errors.username}</ErrorText>}
+              {errors.username && <ValidationMessage $type="error">{errors.username}</ValidationMessage>}
             </FormGroup>
 
             <FormGroup>
               <Label>
-                Correo Electrónico<Required>*</Required>
+                Correo Electrónico<RequiredMark>*</RequiredMark>
               </Label>
               <Input
                 type="email"
@@ -461,14 +387,14 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
                 disabled={isLoading}
                 autoComplete="email"
               />
-              {errors.email && <ErrorText>{errors.email}</ErrorText>}
+              {errors.email && <ValidationMessage $type="error">{errors.email}</ValidationMessage>}
             </FormGroup>
           </FormRow>
 
           <FormRow>
             <FormGroup>
               <Label>
-                Nombre<Required>*</Required>
+                Nombre<RequiredMark>*</RequiredMark>
               </Label>
               <Input
                 type="text"
@@ -480,12 +406,12 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
                 disabled={isLoading}
                 autoComplete="given-name"
               />
-              {errors.firstName && <ErrorText>{errors.firstName}</ErrorText>}
+              {errors.firstName && <ValidationMessage $type="error">{errors.firstName}</ValidationMessage>}
             </FormGroup>
 
             <FormGroup>
               <Label>
-                Apellido<Required>*</Required>
+                Apellido<RequiredMark>*</RequiredMark>
               </Label>
               <Input
                 type="text"
@@ -497,7 +423,7 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
                 disabled={isLoading}
                 autoComplete="family-name"
               />
-              {errors.lastName && <ErrorText>{errors.lastName}</ErrorText>}
+              {errors.lastName && <ValidationMessage $type="error">{errors.lastName}</ValidationMessage>}
             </FormGroup>
           </FormRow>
 
@@ -509,7 +435,7 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
           <FormRow>
             <FormGroup>
               <Label>
-                Contraseña<Required>*</Required>
+                Contraseña<RequiredMark>*</RequiredMark>
               </Label>
               <Input
                 type="password"
@@ -521,12 +447,12 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
                 disabled={isLoading}
                 autoComplete="new-password"
               />
-              {errors.password && <ErrorText>{errors.password}</ErrorText>}
+              {errors.password && <ValidationMessage $type="error">{errors.password}</ValidationMessage>}
             </FormGroup>
 
             <FormGroup>
               <Label>
-                Confirmar Contraseña<Required>*</Required>
+                Confirmar Contraseña<RequiredMark>*</RequiredMark>
               </Label>
               <Input
                 type="password"
@@ -538,7 +464,7 @@ const NuevoUsuarioModal: React.FC<NuevoUsuarioModalProps> = ({ isOpen, onClose, 
                 disabled={isLoading}
                 autoComplete="new-password"
               />
-              {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}
+              {errors.confirmPassword && <ValidationMessage $type="error">{errors.confirmPassword}</ValidationMessage>}
             </FormGroup>
           </FormRow>
 

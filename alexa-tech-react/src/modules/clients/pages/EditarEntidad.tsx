@@ -4,100 +4,76 @@ import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { useClients } from '../context/ClientContext';
 import UbigeoSelector from '../components/UbigeoSelector';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from '../../../styles/theme';
+import { Label } from '../../../components/shared';
+
+// Componente para mensajes de error
+const ErrorMessage = styled.span`
+  color: ${COLOR_SCALES.danger[500]};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin-top: ${SPACING.xs};
+`;
+
+// Input styled local
+const Input = styled.input`
+  padding: 0.75rem;
+  border: 2px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  transition: border-color 0.2s;
+  
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
+`;
+
+// Select styled local
+const Select = styled.select`
+  padding: 0.75rem;
+  border: 2px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  background: ${COLORS.neutral.white};
+  
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
+`;
 
 const FormContainer = styled.div`
   max-width: 600px;
   margin: 0 auto;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: ${SPACING.xl};
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  box-shadow: ${SHADOWS.sm};
 `;
 
 const Title = styled.h2`
-  color: #333;
-  margin-bottom: 30px;
+  color: ${COLORS.text.primary};
+  margin-bottom: ${SPACING.xl};
   text-align: center;
+  font-size: ${TYPOGRAPHY.fontSize.xl};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: ${SPACING.md};
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const Label = styled.label`
-  display: block;
-  margin-bottom: 5px;
-  color: #333;
-  font-weight: 500;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-
-  &.error {
-    border-color: #dc3545;
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-
-  &.error {
-    border-color: #dc3545;
-  }
-`;
-
-const ErrorMessage = styled.span`
-  color: #dc3545;
-  font-size: 14px;
-  margin-top: 5px;
-  display: block;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 30px;
-`;
-
 const Button = styled.button`
-  padding: 12px 24px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s;
 
@@ -108,6 +84,7 @@ const Button = styled.button`
     &:hover {
       background-color: #0056b3;
     }
+  }
 
     &:disabled {
       background-color: #6c757d;
@@ -134,7 +111,6 @@ interface FormData {
   email: string;
   telefono: string;
   direccion: string;
-  ciudad: string;
   // Ubigeo
   departamentoId?: string;
   provinciaId?: string;
@@ -149,7 +125,6 @@ interface FormErrors {
   email?: string;
   telefono?: string;
   direccion?: string;
-  ciudad?: string;
   // Ubigeo
   departamentoId?: string;
   provinciaId?: string;
@@ -170,7 +145,6 @@ const EditarEntidad: React.FC = () => {
     email: '',
     telefono: '',
     direccion: '',
-    ciudad: '',
     departamentoId: '',
     provinciaId: '',
     distritoId: ''
@@ -192,7 +166,6 @@ const EditarEntidad: React.FC = () => {
           email: client.email,
           telefono: client.telefono,
           direccion: client.direccion,
-          ciudad: client.ciudad,
           departamentoId: client.departamentoId || '',
           provinciaId: client.provinciaId || '',
           distritoId: client.distritoId || ''
@@ -336,7 +309,6 @@ const EditarEntidad: React.FC = () => {
           email: formData.email,
           telefono: formData.telefono,
           direccion: formData.direccion,
-          ciudad: formData.ciudad,
           departamentoId: formData.departamentoId || '',
           provinciaId: formData.provinciaId || '',
           distritoId: formData.distritoId || ''
@@ -539,14 +511,14 @@ const EditarEntidad: React.FC = () => {
             </FormGroup>
           </FormRow>
 
-          <ButtonGroup>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1.5rem' }}>
             <Button type="button" className="secondary" onClick={handleCancel}>
               Cancelar
             </Button>
             <Button type="submit" className="primary">
               Actualizar Entidad
             </Button>
-          </ButtonGroup>
+          </div>
         </form>
       </FormContainer>
     </Layout>

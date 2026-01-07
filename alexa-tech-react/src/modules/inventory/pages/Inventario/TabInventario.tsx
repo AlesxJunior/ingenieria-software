@@ -1,30 +1,32 @@
 import React from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY } from '../../../../styles/theme';
 import Layout from '../../../../components/Layout';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const Tabs = styled.div`
   display: flex;
-  gap: 1rem;
-  background: white;
-  padding: 0.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
+  gap: ${SPACING.lg};
+  background: ${COLORS.neutral.white};
+  padding: ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  margin-bottom: ${SPACING.lg};
 `;
 
 const TabLink = styled(NavLink)`
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+  padding: ${SPACING.md} ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.md};
   text-decoration: none;
-  color: #2c3e50;
-  font-weight: 500;
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  transition: all 0.2s;
   &.active {
-    background: #3498db;
-    color: white;
+    background: ${COLOR_SCALES.primary[500]};
+    color: ${COLORS.neutral.white};
   }
   &:hover {
-    background: #f1f3f5;
+    background: ${COLORS.neutral[50]};
   }
 `;
 

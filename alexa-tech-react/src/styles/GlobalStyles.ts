@@ -1,5 +1,6 @@
 import styled, { createGlobalStyle } from 'styled-components';
 import { media } from './breakpoints';
+import { TYPOGRAPHY, COLORS } from './theme';
 
 export const GlobalStyles = createGlobalStyle`
   * {
@@ -9,9 +10,9 @@ export const GlobalStyles = createGlobalStyle`
   }
 
   body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f0f2f5;
-    color: #333;
+    font-family: ${TYPOGRAPHY.fontFamily};
+    background-color: ${COLORS.background};
+    color: ${COLORS.text};
     
     ${media.mobile} {
       font-size: 14px;

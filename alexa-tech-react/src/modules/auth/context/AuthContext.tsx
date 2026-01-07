@@ -39,31 +39,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Verificar si hay un token válido al cargar la aplicación
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = tokenUtils.getAccessToken();
+      console.log('[AuthContext] Inicializando autenticación...');
       
-      if (token && !tokenUtils.isTokenExpired(token)) {
-        try {
-          // Verificar el token con el backend
-          const response = await apiService.getCurrentUser();
-          if (response.success && response.data) {
-            setUser(response.data as User);
-          } else {
-            // Token inválido, limpiar
+      try {
+        const token = tokenUtils.getAccessToken();
+        console.log('[AuthContext] Token encontrado:', !!token);
+        
+        if (token && !tokenUtils.isTokenExpired(token)) {
+          try {
+            console.log('[AuthContext] Validando token con backend...');
+            // Verificar el token con el backend
+            const response = await apiService.getCurrentUser();
+            console.log('[AuthContext] Respuesta del backend:', response.success);
+            
+            if (response.success && response.data) {
+              setUser(response.data as User);
+              console.log('[AuthContext] Usuario autenticado');
+            } else {
+              // Token inválido, limpiar
+              console.log('[AuthContext] Token inválido, limpiando...');
+              tokenUtils.clearTokens();
+              localStorage.removeItem('alexatech_user');
+            }
+          } catch (error) {
+            console.error('[AuthContext] Error validating token:', error);
             tokenUtils.clearTokens();
             localStorage.removeItem('alexatech_user');
           }
-        } catch (error) {
-          console.error('Error validating token:', error);
+        } else {
+          // Token expirado o no existe
+          console.log('[AuthContext] No hay token válido');
           tokenUtils.clearTokens();
           localStorage.removeItem('alexatech_user');
         }
-      } else {
-        // Token expirado o no existe
-        tokenUtils.clearTokens();
-        localStorage.removeItem('alexatech_user');
+      } catch (error) {
+        console.error('[AuthContext] Error crítico en initializeAuth:', error);
+      } finally {
+        console.log('[AuthContext] Finalizando carga, setIsLoading(false)');
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
     initializeAuth();

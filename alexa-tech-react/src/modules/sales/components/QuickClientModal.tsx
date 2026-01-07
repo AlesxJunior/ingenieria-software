@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { apiService } from '../../../utils/api';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, Z_INDEX } from '../../../styles/theme';
+import { Button as SharedButton, ButtonGroup as SharedButtonGroup, Input as SharedInput, Select as SharedSelect, Label as SharedLabel } from '../../../components/shared';
 
 // ============================================
 // INTERFACES
@@ -63,41 +65,41 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1100;
+  z-index: ${Z_INDEX.modal + 100};
   backdrop-filter: blur(4px);
 `;
 
 const ModalContainer = styled.div`
-  background: white;
-  border-radius: 16px;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
   width: 95%;
   max-width: 700px;
   max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: ${SHADOWS.xl};
 `;
 
 const ModalHeader = styled.div`
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  padding: 20px 24px;
+  background: #3498db;
+  color: ${COLORS.neutral.white};
+  padding: ${SPACING.xl} ${SPACING.xl};
   display: flex;
   justify-content: space-between;
   align-items: center;
 
   h2 {
     margin: 0;
-    font-size: 1.3rem;
+    font-size: ${TYPOGRAPHY.fontSize.xl};
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: ${SPACING.sm};
   }
 
   p {
-    margin: 4px 0 0 0;
-    font-size: 0.85rem;
+    margin: ${SPACING.xs} 0 0 0;
+    font-size: ${TYPOGRAPHY.fontSize.sm};
     opacity: 0.9;
   }
 `;
@@ -237,13 +239,13 @@ const StatusMessage = styled.div<{ $type: 'success' | 'error' | 'info' }>`
 
 const FormGrid = styled.div`
   display: grid;
-  gap: 16px;
+  gap: ${SPACING.lg};
 `;
 
 const FormRow = styled.div<{ $columns?: number }>`
   display: grid;
   grid-template-columns: ${props => props.$columns === 2 ? '1fr 1fr' : props.$columns === 3 ? '1fr 1fr 1fr' : '1fr'};
-  gap: 16px;
+  gap: ${SPACING.md};
 
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
@@ -253,115 +255,32 @@ const FormRow = styled.div<{ $columns?: number }>`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
-`;
-
-const Label = styled.label`
-  font-weight: 500;
-  font-size: 0.9rem;
-  color: #374151;
-`;
-
-const Input = styled.input`
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  &:read-only {
-    background: #f9fafb;
-    color: #6b7280;
-  }
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-`;
-
-const Select = styled.select<{ $hasError?: boolean }>`
-  padding: 10px 12px;
-  border: 1px solid ${props => props.$hasError ? '#ef4444' : '#e5e7eb'};
-  border-radius: 6px;
-  font-size: 0.95rem;
-  background: white;
-  cursor: pointer;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  &:disabled {
-    background: #f3f4f6;
-    cursor: not-allowed;
-  }
+  gap: ${SPACING.xs};
 `;
 
 const SectionTitle = styled.h4`
-  font-size: 0.95rem;
-  color: #374151;
-  margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.primary};
+  margin: 0 0 ${SPACING.md} 0;
+  padding-bottom: ${SPACING.sm};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: ${SPACING.sm};
 `;
 
 const ErrorText = styled.span`
-  color: #ef4444;
-  font-size: 0.8rem;
+  color: ${COLORS.status.danger};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
 `;
 
 const ModalFooter = styled.div`
-  padding: 16px 24px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  padding: ${SPACING.lg} ${SPACING.xl};
+  background: ${COLORS.neutral[50]};
+  border-top: 1px solid ${COLORS.neutral[200]};
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-`;
-
-const Button = styled.button<{ $variant: 'primary' | 'secondary' }>`
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    border: none;
-    color: white;
-
-    &:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-  ` : `
-    background: white;
-    border: 2px solid #e5e7eb;
-    color: #6b7280;
-
-    &:hover:not(:disabled) {
-      background: #f9fafb;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  gap: ${SPACING.md};
 `;
 
 const Spinner = styled.span`
@@ -382,7 +301,7 @@ const Spinner = styled.span`
 
 const SpinnerDark = styled(Spinner)`
   border-color: rgba(0, 0, 0, 0.1);
-  border-top-color: #3b82f6;
+  border-top-color: ${COLOR_SCALES.primary[500]};
 `;
 
 // ============================================
@@ -824,8 +743,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
       <ModalContainer>
         <ModalHeader>
           <div>
-            <h2>👤 Crear Cliente Rápido</h2>
-            <p>Busca con DNI o RUC para autocompletar</p>
+            <h2>Crear Cliente</h2>
           </div>
           <CloseButton onClick={onClose}>×</CloseButton>
         </ModalHeader>
@@ -837,25 +755,25 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                 $selected={tipoDocumento === 'DNI'}
                 onClick={() => { setTipoDocumento('DNI'); setNumeroDocumento(''); setDataFound(false); }}
               >
-                🪪 DNI
+                DNI
               </DocumentTypeButton>
               <DocumentTypeButton
                 $selected={tipoDocumento === 'RUC'}
                 onClick={() => { setTipoDocumento('RUC'); setNumeroDocumento(''); setDataFound(false); }}
               >
-                🏢 RUC
+                RUC
               </DocumentTypeButton>
               <DocumentTypeButton
                 $selected={tipoDocumento === 'CE'}
                 onClick={() => { setTipoDocumento('CE'); setNumeroDocumento(''); setDataFound(false); }}
               >
-                🌍 CE
+                CE
               </DocumentTypeButton>
               <DocumentTypeButton
                 $selected={tipoDocumento === 'Pasaporte'}
                 onClick={() => { setTipoDocumento('Pasaporte'); setNumeroDocumento(''); setDataFound(false); }}
               >
-                🛂 Pasaporte
+                Pasaporte
               </DocumentTypeButton>
             </DocumentTypeSelector>
 
@@ -891,7 +809,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                       <SpinnerDark /> Buscando...
                     </>
                   ) : (
-                    <>🔍 Buscar</>
+                    <>Buscar</>
                   )}
                 </SearchButton>
               )}
@@ -905,29 +823,31 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
           </DocumentSection>
 
           <FormGrid>
-            <SectionTitle>🏷️ Tipo de Entidad</SectionTitle>
+            <SectionTitle>Tipo de Entidad</SectionTitle>
             <FormGroup>
-              <Label>¿Qué tipo de entidad es? *</Label>
-              <Select
+              <SharedLabel htmlFor="tipoEntidad">¿Qué tipo de entidad es? *</SharedLabel>
+              <SharedSelect
+                id="tipoEntidad"
                 value={tipoEntidad}
-                onChange={(e) => setTipoEntidad(e.target.value as 'Cliente' | 'Proveedor' | 'Ambos')}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTipoEntidad(e.target.value as 'Cliente' | 'Proveedor' | 'Ambos')}
               >
                 <option value="Cliente">Cliente</option>
                 <option value="Proveedor">Proveedor</option>
                 <option value="Ambos">Ambos (Cliente y Proveedor)</option>
-              </Select>
+              </SharedSelect>
             </FormGroup>
 
-            <SectionTitle>📋 Datos {tipoDocumento === 'RUC' ? 'de la Empresa' : 'Personales'}</SectionTitle>
+            <SectionTitle>Datos {tipoDocumento === 'RUC' ? 'de la Empresa' : 'Personales'}</SectionTitle>
             
             {tipoDocumento === 'RUC' ? (
               <FormGroup>
-                <Label>Razón Social *</Label>
-                <Input
+                <SharedLabel htmlFor="razonSocial">Razón Social *</SharedLabel>
+                <SharedInput
+                  id="razonSocial"
                   type="text"
                   placeholder="Nombre de la empresa..."
                   value={razonSocial}
-                  onChange={(e) => setRazonSocial(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRazonSocial(e.target.value)}
                   readOnly={dataFound}
                 />
                 {errors.razonSocial && <ErrorText>{errors.razonSocial}</ErrorText>}
@@ -935,23 +855,25 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
             ) : (
               <FormRow $columns={2}>
                 <FormGroup>
-                  <Label>Nombres *</Label>
-                  <Input
+                  <SharedLabel htmlFor="nombres">Nombres *</SharedLabel>
+                  <SharedInput
+                    id="nombres"
                     type="text"
                     placeholder="Nombres..."
                     value={nombres}
-                    onChange={(e) => setNombres(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNombres(e.target.value)}
                     readOnly={dataFound && tipoDocumento === 'DNI'}
                   />
                   {errors.nombres && <ErrorText>{errors.nombres}</ErrorText>}
                 </FormGroup>
                 <FormGroup>
-                  <Label>Apellidos *</Label>
-                  <Input
+                  <SharedLabel htmlFor="apellidos">Apellidos *</SharedLabel>
+                  <SharedInput
+                    id="apellidos"
                     type="text"
                     placeholder="Apellidos..."
                     value={apellidos}
-                    onChange={(e) => setApellidos(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setApellidos(e.target.value)}
                     readOnly={dataFound && tipoDocumento === 'DNI'}
                   />
                   {errors.apellidos && <ErrorText>{errors.apellidos}</ErrorText>}
@@ -961,37 +883,40 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
 
             <FormRow $columns={2}>
               <FormGroup>
-                <Label>Email *</Label>
-                <Input
+                <SharedLabel htmlFor="email">Email *</SharedLabel>
+                <SharedInput
+                  id="email"
                   type="email"
                   placeholder="correo@ejemplo.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 />
                 {errors.email && <ErrorText>{errors.email}</ErrorText>}
               </FormGroup>
               <FormGroup>
-                <Label>Teléfono *</Label>
-                <Input
+                <SharedLabel htmlFor="telefono">Teléfono *</SharedLabel>
+                <SharedInput
+                  id="telefono"
                   type="tel"
                   placeholder="999 999 999"
                   value={telefono}
-                  onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 9))}
                 />
                 {errors.telefono && <ErrorText>{errors.telefono}</ErrorText>}
               </FormGroup>
             </FormRow>
 
             {/* Dirección y Ubigeo */}
-            <SectionTitle>📍 Ubicación</SectionTitle>
+            <SectionTitle>Ubicación</SectionTitle>
 
             <FormGroup>
-              <Label>Dirección *</Label>
-              <Input
+              <SharedLabel htmlFor="direccion">Dirección *</SharedLabel>
+              <SharedInput
+                id="direccion"
                 type="text"
                 placeholder="Dirección fiscal..."
                 value={direccion}
-                onChange={(e) => setDireccion(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDireccion(e.target.value)}
                 readOnly={dataFound && tipoDocumento === 'RUC'}
               />
               {errors.direccion && <ErrorText>{errors.direccion}</ErrorText>}
@@ -999,10 +924,11 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
 
             <FormRow $columns={3}>
               <FormGroup>
-                <Label>Departamento *</Label>
-                <Select
+                <SharedLabel htmlFor="departamento">Departamento *</SharedLabel>
+                <SharedSelect
+                  id="departamento"
                   value={departamentoId}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     setDepartamentoId(e.target.value);
                     setProvinciaId('');
                     setDistritoId('');
@@ -1014,15 +940,16 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                   {departamentos.map(dep => (
                     <option key={dep.id} value={dep.id}>{dep.nombre}</option>
                   ))}
-                </Select>
+                </SharedSelect>
                 {errors.departamentoId && <ErrorText>{errors.departamentoId}</ErrorText>}
               </FormGroup>
 
               <FormGroup>
-                <Label>Provincia *</Label>
-                <Select
+                <SharedLabel htmlFor="provincia">Provincia *</SharedLabel>
+                <SharedSelect
+                  id="provincia"
                   value={provinciaId}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                     setProvinciaId(e.target.value);
                     setDistritoId('');
                   }}
@@ -1033,15 +960,16 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                   {provincias.map(prov => (
                     <option key={prov.id} value={prov.id}>{prov.nombre}</option>
                   ))}
-                </Select>
+                </SharedSelect>
                 {errors.provinciaId && <ErrorText>{errors.provinciaId}</ErrorText>}
               </FormGroup>
 
               <FormGroup>
-                <Label>Distrito *</Label>
-                <Select
+                <SharedLabel htmlFor="distrito">Distrito *</SharedLabel>
+                <SharedSelect
+                  id="distrito"
                   value={distritoId}
-                  onChange={(e) => setDistritoId(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDistritoId(e.target.value)}
                   disabled={!provinciaId || loadingDist}
                   $hasError={!!errors.distritoId}
                 >
@@ -1049,7 +977,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                   {distritos.map(dist => (
                     <option key={dist.id} value={dist.id}>{dist.nombre}</option>
                   ))}
-                </Select>
+                </SharedSelect>
                 {errors.distritoId && <ErrorText>{errors.distritoId}</ErrorText>}
               </FormGroup>
             </FormRow>
@@ -1057,10 +985,10 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
         </ModalBody>
 
         <ModalFooter>
-          <Button $variant="secondary" onClick={onClose} disabled={isSaving}>
+          <SharedButton $variant="outline" onClick={onClose} disabled={isSaving}>
             Cancelar
-          </Button>
-          <Button 
+          </SharedButton>
+          <SharedButton 
             $variant="primary" 
             onClick={handleSave}
             disabled={!canSave || isSaving}
@@ -1070,9 +998,9 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                 <Spinner /> Guardando...
               </>
             ) : (
-              <>✅ Crear Cliente</>
+              <>Crear Cliente</>
             )}
-          </Button>
+          </SharedButton>
         </ModalFooter>
       </ModalContainer>
     </ModalOverlay>

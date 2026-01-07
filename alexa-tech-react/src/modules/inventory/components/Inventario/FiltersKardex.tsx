@@ -1,23 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../../styles/theme';
+import { Input as SharedInput, Select as SharedSelect, Label as SharedLabel, Button as SharedButton } from '../../../../components/shared';
 import type { KardexFilters } from '../../../../types/inventario';
 import { WAREHOUSE_OPTIONS } from '../../../../constants/warehouses';
 import { inventarioApi } from '../../services/inventarioApi';
 import { apiService } from '../../../../utils/api';
 
 const FiltersContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  background: ${COLORS.neutral.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -27,51 +29,7 @@ const FiltersGrid = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const Label = styled.label<{ $required?: boolean }>`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 0.9rem;
-  
-  ${props => props.$required && `
-    &::after {
-      content: ' *';
-      color: #e74c3c;
-    }
-  `}
-`;
-
-const Input = styled.input<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-
-  &::placeholder {
-    color: #95a5a6;
-  }
-`;
-
-const Select = styled.select<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
+  gap: ${SPACING.sm};
 `;
 
 const AutocompleteContainer = styled.div`
@@ -83,44 +41,54 @@ const AutocompleteList = styled.ul`
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: 2px solid #e1e8ed;
+  background: ${COLORS.neutral.white};
+  border: 2px solid ${COLORS.neutral[200]};
   border-top: none;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 ${BORDER_RADIUS.md} ${BORDER_RADIUS.md};
   max-height: 200px;
   overflow-y: auto;
   z-index: 10;
   list-style: none;
   padding: 0;
   margin: 0;
+  box-shadow: ${SHADOWS.md};
 `;
 
 const AutocompleteItem = styled.li`
-  padding: 0.75rem;
+  padding: ${SPACING.md};
   cursor: pointer;
-  border-bottom: 1px solid #f8f9fa;
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  transition: ${TRANSITIONS.fast};
   
   &:hover {
-    background: #f8f9fa;
+    background: ${COLORS.neutral[50]};
   }
   
   &:last-child {
     border-bottom: none;
   }
+  
+  strong {
+    color: ${COLOR_SCALES.primary[500]};
+  }
 `;
 
 const ErrorMessage = styled.span`
-  color: #e74c3c;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  color: ${COLOR_SCALES.danger[500]};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin-top: ${SPACING.xs};
+  display: block;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.md};
   justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: ${SPACING.lg};
 
   @media (max-width: 768px) {
+    width: 100%;
     justify-content: stretch;
     
     button {
@@ -129,43 +97,15 @@ const ButtonGroup = styled.div`
   }
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  ${props => props.$variant === 'primary' ? `
-    background: #3498db;
-    color: white;
-    
-    &:hover {
-      background: #2980b9;
-    }
-  ` : `
-    background: #6c757d;
-    color: white;
-    
-    &:hover {
-      background: #5a6268;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
 interface FiltersKardexProps {
   onFilterChange: (filters: KardexFilters) => void;
   loading?: boolean;
   defaultWarehouseId?: string;
+  onExport?: () => void;
+  exportando?: boolean;
 }
 
-const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading = false, defaultWarehouseId }) => {
+const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading = false, defaultWarehouseId, onExport, exportando }) => {
   const [filters, setFilters] = useState<KardexFilters>({
     warehouseId: '',
     productId: '',
@@ -384,11 +324,11 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
     <FiltersContainer>
       <FiltersGrid>
         <FormGroup>
-          <Label htmlFor="warehouseId" $required>Almacén</Label>
-          <Select
+          <SharedLabel htmlFor="warehouseId">Almacén *</SharedLabel>
+          <SharedSelect
             id="warehouseId"
             value={filters.warehouseId}
-            onChange={(e) => handleFilterChange('warehouseId', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('warehouseId', e.target.value)}
             $hasError={!!errors.warehouseId}
             data-testid="kardex-filter-warehouse"
           >
@@ -398,19 +338,19 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
                 {warehouse.label}
               </option>
             ))}
-          </Select>
+          </SharedSelect>
           {errors.warehouseId && <ErrorMessage>{errors.warehouseId}</ErrorMessage>}
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="productSearch">Producto</Label>
+          <SharedLabel htmlFor="productSearch">Producto</SharedLabel>
           <AutocompleteContainer ref={autocompleteRef}>
-            <Input
+            <SharedInput
               id="productSearch"
               type="text"
               placeholder="Buscar por código o nombre..."
               value={productSearch}
-              onChange={(e) => handleProductSearchChange(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleProductSearchChange(e.target.value)}
               data-testid="kardex-filter-product-input"
             />
             {showSuggestions && productSuggestions.length > 0 && (
@@ -430,71 +370,55 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="tipoMovimiento">Tipo de Movimiento</Label>
-          <Select
+          <SharedLabel htmlFor="tipoMovimiento">Tipo de Movimiento</SharedLabel>
+          <SharedSelect
             id="tipoMovimiento"
             value={filters.tipoMovimiento || ''}
-            onChange={(e) => handleFilterChange('tipoMovimiento', e.target.value || undefined)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('tipoMovimiento', e.target.value || undefined)}
             data-testid="kardex-filter-tipo"
           >
             <option value="">Todos los tipos</option>
             <option value="ENTRADA">Entrada</option>
             <option value="SALIDA">Salida</option>
             <option value="AJUSTE">Ajuste</option>
-          </Select>
+          </SharedSelect>
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="fechaDesde">Fecha Desde</Label>
-          <Input
+          <SharedLabel htmlFor="fechaDesde">Fecha Desde</SharedLabel>
+          <SharedInput
             id="fechaDesde"
             type="date"
             value={filters.fechaDesde || ''}
-            onChange={(e) => handleFilterChange('fechaDesde', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('fechaDesde', e.target.value)}
             data-testid="kardex-filter-fecha-desde"
           />
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="fechaHasta">Fecha Hasta</Label>
-          <Input
+          <SharedLabel htmlFor="fechaHasta">Fecha Hasta</SharedLabel>
+          <SharedInput
             id="fechaHasta"
             type="date"
             value={filters.fechaHasta || ''}
-            onChange={(e) => handleFilterChange('fechaHasta', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('fechaHasta', e.target.value)}
             $hasError={!!errors.fechaHasta}
             data-testid="kardex-filter-fecha-hasta"
           />
           {errors.fechaHasta && <ErrorMessage>{errors.fechaHasta}</ErrorMessage>}
         </FormGroup>
-
-        <FormGroup>
-          <Label htmlFor="pageSize">Elementos por página</Label>
-          <Select
-            id="pageSize"
-            value={filters.pageSize || 20}
-            onChange={(e) => handleFilterChange('pageSize', parseInt(e.target.value))}
-            data-testid="kardex-filter-pagesize"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </Select>
-        </FormGroup>
       </FiltersGrid>
 
       <ButtonGroup>
-        <Button 
+        <SharedButton 
           type="button" 
-          $variant="secondary" 
           onClick={handleClear}
           disabled={loading}
           data-testid="kardex-filter-clear"
         >
           Limpiar
-        </Button>
-        <Button 
+        </SharedButton>
+        <SharedButton 
           type="button" 
           $variant="primary" 
           onClick={handleSearch}
@@ -502,7 +426,19 @@ const FiltersKardex: React.FC<FiltersKardexProps> = ({ onFilterChange, loading =
           data-testid="kardex-filter-search-button"
         >
           {loading ? 'Buscando...' : 'Buscar'}
-        </Button>
+        </SharedButton>
+        {onExport && (
+          <SharedButton 
+            type="button" 
+            $variant="primary" 
+            onClick={onExport}
+            disabled={exportando || loading}
+            style={{ background: '#28a745' }}
+            data-testid="kardex-filter-export"
+          >
+            {exportando ? 'Exportando...' : 'Exportar a Excel'}
+          </SharedButton>
+        )}
       </ButtonGroup>
     </FiltersContainer>
   );

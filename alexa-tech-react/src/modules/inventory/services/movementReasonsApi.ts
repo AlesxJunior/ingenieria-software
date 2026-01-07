@@ -110,6 +110,11 @@ class MovementReasonsApiService {
     );
     return response.data.data;
   }
+
+  // Activar motivo
+  async activateMovementReason(id: string): Promise<void> {
+    await this.api.post(`/movement-reasons/${id}/activate`);
+  }
 }
 
 export const movementReasonsApi = new MovementReasonsApiService();

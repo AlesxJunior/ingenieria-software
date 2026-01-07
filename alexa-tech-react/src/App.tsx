@@ -19,12 +19,13 @@ import { ClientProvider } from './modules/clients/context/ClientContext';
 // Lazy loading de páginas desde módulos
 const Login = lazy(() => import('./modules/auth/pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const GestionCaja = lazy(() => import('./modules/sales/pages/GestionCaja'));
+const TemplateUI = lazy(() => import('./pages/TemplateUI'));
+const GestionCaja = lazy(() => import('./modules/sales/pages/GestionCaja') as Promise<{ default: React.ComponentType<any> }>);
 const HistorialCaja = lazy(() => import('./modules/sales/pages/HistorialCaja'));
 const ListaEntidades = lazy(() => import('./modules/clients/pages/ListaEntidades'));
 const ListaProductos = lazy(() => import('./modules/products/pages/ListaProductos'));
-const EditarEntidad = lazy(() => import('./modules/clients/pages/EditarEntidad'));
-const RegistroEntidad = lazy(() => import('./modules/clients/pages/RegistroEntidad'));
+const EditarEntidad = lazy(() => import('./modules/clients/pages/EditarEntidad') as Promise<{ default: React.ComponentType<any> }>);
+const RegistroEntidad = lazy(() => import('./modules/clients/pages/RegistroEntidad') as Promise<{ default: React.ComponentType<any> }>);
 const RealizarVenta = lazy(() => import('./modules/sales/pages/RealizarVenta'));
 const ListaVentas = lazy(() => import('./modules/sales/pages/ListaVentas'));
 const DetalleVenta = lazy(() => import('./modules/sales/pages/DetalleVenta'));
@@ -40,6 +41,8 @@ const PurchaseOrdersPage = lazy(() => import('./modules/purchases/pages/Purchase
 const PurchaseReceiptsPage = lazy(() => import('./modules/purchases/pages/PurchaseReceiptsPage'));
 const ListadoStock = lazy(() => import('./modules/inventory/pages/Inventario/ListadoStock'));
 const Kardex = lazy(() => import('./modules/inventory/pages/Inventario/Kardex'));
+const Alertas = lazy(() => import('./pages/Inventario/Alertas'));
+const Transferencias = lazy(() => import('./pages/Inventario/Transferencias'));
 const ListaAlmacenes = lazy(() => import('./modules/inventory/pages/Inventario/ListaAlmacenes'));
 const ListaMotivosMovimiento = lazy(() => import('./modules/inventory/pages/Inventario/ListaMotivosMovimiento'));
 
@@ -52,9 +55,9 @@ const ConfiguracionProductos = lazy(() => import('./pages/ConfiguracionProductos
 
 // Módulo de Reportes
 const ReportesVentas = lazy(() => import('./modules/reportes/pages/ReporteVentas'));
-const ReportesCompras = lazy(() => import('./modules/reportes/pages/ReporteCompras'));
-const ReportesInventario = lazy(() => import('./modules/reportes/pages/ReporteInventario'));
-const ReportesCaja = lazy(() => import('./modules/reportes/pages/ReporteCaja'));
+const ReportesCompras = lazy(() => import('./modules/reportes/pages/ReporteCompras') as Promise<{ default: React.ComponentType<any> }>);
+const ReportesInventario = lazy(() => import('./modules/reportes/pages/ReporteInventario') as Promise<{ default: React.ComponentType<any> }>);
+const ReportesCaja = lazy(() => import('./modules/reportes/pages/ReporteCaja') as Promise<{ default: React.ComponentType<any> }>);
 
 // Componente interno para manejar el modal
 const AppContent = () => {
@@ -94,6 +97,8 @@ function App() {
                         <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/login" element={<Login />} />
+                  {/* 🎨 Template UI - Solo para desarrollo */}
+                  <Route path="/template-ui" element={<TemplateUI />} />
                   <Route 
                     path="/dashboard" 
                     element={
@@ -121,7 +126,7 @@ function App() {
                   <Route 
                     path="/lista-entidades" 
                     element={
-                      <ProtectedRoute requiredPermission="commercial_entities.read">
+                      <ProtectedRoute requiredPermission="clients.read">
                         <ListaEntidades />
                       </ProtectedRoute>
                     } 
@@ -132,12 +137,12 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/editar-entidad/:id" element={
-                    <ProtectedRoute requiredPermission="commercial_entities.update">
+                    <ProtectedRoute requiredPermission="clients.update">
                       <EditarEntidad />
                     </ProtectedRoute>
                   } />
                   <Route path="/registrar-entidad" element={
-                    <ProtectedRoute requiredPermission="commercial_entities.create">
+                    <ProtectedRoute requiredPermission="clients.create">
                       <RegistroEntidad />
                     </ProtectedRoute>
                   } />
@@ -192,7 +197,7 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/auditoria" element={
-                    <ProtectedRoute requiredPermission="system.settings">
+                    <ProtectedRoute requiredPermission="audit.read">
                       <AuditoriaLogs />
                     </ProtectedRoute>
                   } />
@@ -234,13 +239,23 @@ function App() {
                       <ListadoStock />
                     </ProtectedRoute>
                   } />
+                  <Route path="/inventario/alertas" element={
+                    <ProtectedRoute requiredPermission="inventory.read">
+                      <Alertas />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/inventario/kardex" element={
                     <ProtectedRoute requiredPermission="inventory.read">
                       <Kardex />
                     </ProtectedRoute>
                   } />
+                  <Route path="/inventario/transferencias" element={
+                    <ProtectedRoute requiredPermission="inventory.update">
+                      <Transferencias />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/inventario/almacenes" element={
-                    <ProtectedRoute requiredPermission="inventory.read">
+                    <ProtectedRoute requiredPermission="warehouses.read">
                       <ListaAlmacenes />
                     </ProtectedRoute>
                   } />
@@ -257,44 +272,44 @@ function App() {
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracion/empresa" element={
-                    <ProtectedRoute requiredPermission="system.settings">
+                    <ProtectedRoute requiredPermission="settings.update">
                       <ConfiguracionEmpresa />
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracion/comprobantes" element={
-                    <ProtectedRoute requiredPermission="system.settings">
+                    <ProtectedRoute requiredPermission="settings.update">
                       <ConfiguracionComprobantes />
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracion/metodos-pago" element={
-                    <ProtectedRoute requiredPermission="system.settings">
+                    <ProtectedRoute requiredPermission="settings.update">
                       <ConfiguracionMetodosPago />
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracion/productos" element={
-                    <ProtectedRoute requiredPermission="system.settings">
+                    <ProtectedRoute requiredPermission="settings.update">
                       <ConfiguracionProductos />
                     </ProtectedRoute>
                   } />
 
                   {/* Módulo de Reportes */}
                   <Route path="/reportes/ventas" element={
-                    <ProtectedRoute requiredPermission="reports.sales">
+                    <ProtectedRoute requiredPermission="reports.read">
                       <ReportesVentas />
                     </ProtectedRoute>
                   } />
                   <Route path="/reportes/compras" element={
-                    <ProtectedRoute requiredPermission="reports.inventory">
+                    <ProtectedRoute requiredPermission="reports.read">
                       <ReportesCompras />
                     </ProtectedRoute>
                   } />
                   <Route path="/reportes/inventario" element={
-                    <ProtectedRoute requiredPermission="reports.inventory">
+                    <ProtectedRoute requiredPermission="reports.read">
                       <ReportesInventario />
                     </ProtectedRoute>
                   } />
                   <Route path="/reportes/caja" element={
-                    <ProtectedRoute requiredPermission="reports.financial">
+                    <ProtectedRoute requiredPermission="reports.read">
                       <ReportesCaja />
                     </ProtectedRoute>
                   } />

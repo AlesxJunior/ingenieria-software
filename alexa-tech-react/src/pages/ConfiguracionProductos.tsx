@@ -1,68 +1,66 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import Layout from '../components/Layout';
-import { media } from '../styles/breakpoints';
+import { COLORS, COLOR_SCALES, SPACING, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 import CategoriasTable from '../components/configuracion/CategoriasTable';
 import UnidadesTable from '../components/configuracion/UnidadesTable';
 
 const Container = styled.div`
-  padding: 20px;
-  
-  ${media.mobile} {
-    padding: 12px;
-  }
+  padding: 0;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
+`;
+
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
 `;
 
 const Subtitle = styled.p`
-  font-size: 16px;
-  color: #666;
-  margin: 0 0 30px 0;
-  
-  ${media.mobile} {
-    font-size: 14px;
-    margin: 0 0 20px 0;
-  }
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: 0;
 `;
 
 const TabContainer = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: ${SPACING.xl};
 `;
 
 const TabButtons = styled.div`
   display: flex;
-  gap: 10px;
-  border-bottom: 2px solid #e0e0e0;
-  
-  ${media.mobile} {
-    gap: 5px;
-  }
+  gap: ${SPACING.sm};
+  border-bottom: 2px solid ${COLORS.neutral[200]};
 `;
 
 const TabButton = styled.button<{ $active: boolean }>`
-  padding: 12px 24px;
+  padding: ${SPACING.md} ${SPACING.xl};
   background: none;
   border: none;
-  border-bottom: 3px solid ${props => props.$active ? '#007bff' : 'transparent'};
-  color: ${props => props.$active ? '#007bff' : '#666'};
-  font-size: 16px;
-  font-weight: ${props => props.$active ? '600' : '500'};
+  border-bottom: 3px solid ${props => props.$active ? COLOR_SCALES.primary[500] : 'transparent'};
+  color: ${props => props.$active ? COLOR_SCALES.primary[500] : COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.md};
+  font-weight: ${props => props.$active ? TYPOGRAPHY.fontWeight.semibold : TYPOGRAPHY.fontWeight.medium};
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: ${TRANSITIONS.default};
   position: relative;
   top: 2px;
 
   &:hover {
-    color: #007bff;
-  }
-  
-  ${media.mobile} {
-    padding: 10px 16px;
-    font-size: 14px;
+    color: ${COLOR_SCALES.primary[500]};
   }
 `;
 
 const TabContent = styled.div`
-  margin-top: 20px;
+  margin-top: ${SPACING.xl};
 `;
 
 type TabType = 'categorias' | 'unidades';
@@ -73,9 +71,12 @@ const ConfiguracionProductos: React.FC = () => {
   return (
     <Layout title="Configuración de Productos">
       <Container>
-        <Subtitle>
-          Administre las categorías y unidades de medida para sus productos
-        </Subtitle>
+        <Header>
+          <div>
+            <Title>Configuración de Productos</Title>
+            <Subtitle>Administre las categorías y unidades de medida para sus productos</Subtitle>
+          </div>
+        </Header>
 
         <TabContainer>
           <TabButtons>

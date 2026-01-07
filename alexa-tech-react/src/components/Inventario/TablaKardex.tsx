@@ -3,10 +3,11 @@ import styled from 'styled-components';
 import type { MovimientoKardex, PaginationData } from '../../types/inventario';
 import { getWarehouseLabel } from '../../constants/warehouses';
 import { formatDateToLocal } from '../../utils/dateFormatter';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY } from '../../styles/theme';
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 `;
@@ -25,76 +26,76 @@ const TableWrapper = styled.div`
 
 const Th = styled.th`
   text-align: left;
-  background: #f1f3f5;
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: 600;
-  color: #555;
-  font-size: 0.9rem;
+  background: ${COLORS.neutral[100]};
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.border};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   white-space: nowrap;
 `;
 
 const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  color: #333;
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  color: ${COLORS.text};
   vertical-align: middle;
 `;
 
 const Tr = styled.tr`
   &:hover {
-    background: #f8f9fa;
+    background: ${COLORS.neutral[50]};
   }
 `;
 
 const MovementBadge = styled.span<{ $type: 'ENTRADA' | 'SALIDA' | 'AJUSTE' }>`
-  padding: 0.25rem 0.75rem;
+  padding: ${SPACING.xs} ${SPACING.md};
   border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   text-transform: uppercase;
   
   ${props => {
     switch (props.$type) {
       case 'ENTRADA':
         return `
-          background: #d4edda;
-          color: #155724;
+          background: ${COLOR_SCALES.success[100]};
+          color: ${COLOR_SCALES.success[700]};
         `;
       case 'SALIDA':
         return `
-          background: #f8d7da;
-          color: #721c24;
+          background: ${COLOR_SCALES.danger[100]};
+          color: ${COLOR_SCALES.danger[700]};
         `;
       case 'AJUSTE':
         return `
-          background: #d1ecf1;
-          color: #0c5460;
+          background: ${COLOR_SCALES.primary[100]};
+          color: ${COLOR_SCALES.primary[700]};
         `;
       default:
         return `
-          background: #e2e3e5;
-          color: #383d41;
+          background: ${COLORS.neutral[200]};
+          color: ${COLORS.neutral[700]};
         `;
     }
   }}
 `;
 
 const QuantityCell = styled.div<{ $type: 'ENTRADA' | 'SALIDA' | 'AJUSTE' }>`
-  font-weight: 500;
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   color: ${props => {
     switch (props.$type) {
-      case 'ENTRADA': return '#28a745';
-      case 'SALIDA': return '#dc3545';
-      case 'AJUSTE': return '#17a2b8';
-      default: return '#2c3e50';
+      case 'ENTRADA': return COLOR_SCALES.success[600];
+      case 'SALIDA': return COLOR_SCALES.danger[600];
+      case 'AJUSTE': return COLOR_SCALES.primary[600];
+      default: return COLORS.text;
     }
   }};
 `;
 
 const StockCell = styled.div`
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.textLight};
 `;
 
 const EmptyState = styled.div`
@@ -110,39 +111,39 @@ const EmptyIcon = styled.div`
 `;
 
 const EmptyTitle = styled.h3`
-  margin: 0 0 0.5rem 0;
-  color: #495057;
-  font-size: 1.2rem;
-  font-weight: 600;
+  margin: 0 0 ${SPACING.sm} 0;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const EmptyDescription = styled.p`
-  margin: 0 0 1.5rem 0;
-  color: #6c757d;
-  font-size: 0.95rem;
+  margin: 0 0 ${SPACING.lg} 0;
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.md};
   line-height: 1.5;
 `;
 
 const EmptyActions = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.md};
   justify-content: center;
   flex-wrap: wrap;
 `;
 
 const SuggestionButton = styled.button`
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  background: ${COLORS.neutral[100]};
+  color: ${COLORS.text};
+  border: 1px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.sm} ${SPACING.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #e9ecef;
-    border-color: #adb5bd;
+    background: ${COLORS.neutral[200]};
+    border-color: ${COLORS.neutral[400]};
   }
 `;
 
@@ -153,16 +154,16 @@ const SkeletonRow = styled.tr`
 `;
 
 const SkeletonCell = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
 `;
 
 const SkeletonBar = styled.div<{ width?: string }>`
   height: 1rem;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, ${COLORS.neutral[100]} 25%, ${COLORS.neutral[200]} 50%, ${COLORS.neutral[100]} 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
-  border-radius: 4px;
+  border-radius: ${BORDER_RADIUS.sm};
   width: ${props => props.width || '100%'};
 
   @keyframes loading {
@@ -176,50 +177,50 @@ const SkeletonBar = styled.div<{ width?: string }>`
 `;
 
 const LoadingContainer = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 `;
 
 const PaginationContainer = styled.div`
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-  gap: 1rem;
+  padding: ${SPACING.lg};
+  background: ${COLORS.neutral[100]};
+  border-top: 1px solid ${COLORS.border};
+  gap: ${SPACING.md};
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: ${SPACING.sm};
   }
 `;
 
 const PaginationInfo = styled.div`
-  color: #6c757d;
-  font-size: 0.9rem;
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const PaginationControls = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: ${SPACING.xs};
   align-items: center;
 `;
 
 const PaginationButton = styled.button<{ $active?: boolean }>`
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #dee2e6;
-  background: ${props => props.$active ? '#3498db' : 'white'};
-  color: ${props => props.$active ? 'white' : '#495057'};
-  border-radius: 4px;
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.border};
+  background: ${props => props.$active ? COLORS.primary : COLORS.background};
+  color: ${props => props.$active ? 'white' : COLORS.text};
+  border-radius: ${BORDER_RADIUS.sm};
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: ${props => props.$active ? '#2980b9' : '#f8f9fa'};
+    background: ${props => props.$active ? COLORS.primaryHover : COLORS.neutral[100]};
   }
 
   &:disabled {

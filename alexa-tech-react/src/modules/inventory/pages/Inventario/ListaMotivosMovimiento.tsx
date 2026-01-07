@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY } from '../../../../styles/theme';
 import Layout from '../../../../components/Layout';
+import { 
+  StatusBadge, 
+  ActionButton, 
+  ButtonGroup as ActionsGroup,
+  Button as SharedButton,
+  StatCard,
+  StatsGrid,
+  StatValue,
+  StatLabel
+} from '../../../../components/shared';
 import {
   movementReasonsApi,
   type MovementReason,
@@ -8,188 +19,174 @@ import {
 } from '../../services/movementReasonsApi';
 
 const Container = styled.div`
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.lg};
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-`;
-
-const Title = styled.h1`
-  color: #2c3e50;
-  margin: 0;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  background: ${(props) =>
-    props.$variant === 'secondary' ? '#6c757d' : '#3498db'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s;
-
-  &:hover {
-    background: ${(props) =>
-      props.$variant === 'secondary' ? '#5a6268' : '#2980b9'};
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const FilterBar = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  align-items: flex-start;
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
 `;
 
-const FilterSelect = styled.select`
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  cursor: pointer;
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
 
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
+`;
+
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
+`;
+
+const FiltersCard = styled.div`
+  background: ${COLORS.background};
+  padding: ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.lg};
+  border: 1px solid ${COLORS.neutral[200]};
+`;
+
+const FiltersGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: ${SPACING.md};
+`;
+
+const FormGroupFilter = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.xs};
+`;
+
+const FilterLabel = styled.label`
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const SearchInput = styled.input`
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: ${SPACING.sm};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: ${COLOR_SCALES.primary[500]};
   }
+
+  &::placeholder {
+    color: ${COLORS.textLight};
+  }
+`;
+
+const FilterSelect = styled.select`
+  padding: ${SPACING.sm};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  background: ${COLORS.background};
+  transition: border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
+`;
+
+const FilterButtonGroup = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
+  margin-top: ${SPACING.lg};
+`;
+
+const TableContainer = styled.div`
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
+  overflow: hidden;
+  border: 1px solid ${COLORS.neutral[200]};
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Th = styled.th`
-  background: #f8f9fa;
-  padding: 1rem;
+  background: ${COLORS.background};
+  padding: ${SPACING.md};
   text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.textLight};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
+  padding: ${SPACING.md};
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text};
 `;
 
 const Tr = styled.tr`
   &:hover {
-    background: #f8f9fa;
+    background: ${COLORS.neutral[50]};
   }
 `;
 
-const Badge = styled.span<{ $color: string }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: ${(props) => props.$color};
-  color: white;
-`;
-
-const StatusBadge = styled.span<{ $active: boolean }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: ${(props) => (props.$active ? '#d4edda' : '#f8d7da')};
-  color: ${(props) => (props.$active ? '#155724' : '#721c24')};
-`;
-
-const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' | 'toggle' }>`
-  padding: 0.5rem 1rem;
-  background: ${(props) =>
-    props.$variant === 'delete'
-      ? '#e74c3c'
-      : props.$variant === 'toggle'
-        ? '#f39c12'
-        : '#3498db'};
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  margin-right: 0.5rem;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${(props) =>
-      props.$variant === 'delete'
-        ? '#c0392b'
-        : props.$variant === 'toggle'
-          ? '#e67e22'
-          : '#2980b9'};
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
+// Helper para obtener variant del StatusBadge según tipo de movimiento
+const getTipoVariant = (tipo: 'ENTRADA' | 'SALIDA' | 'AJUSTE'): 'success' | 'danger' | 'info' => {
+  const variants: Record<string, 'success' | 'danger' | 'info'> = {
+    ENTRADA: 'success',
+    SALIDA: 'danger',
+    AJUSTE: 'info'
+  };
+  return variants[tipo] || 'info';
+};
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 3rem;
-  color: #6c757d;
-
+  padding: ${SPACING.xxl};
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
+  border: 1px solid ${COLORS.neutral[200]};
+  color: ${COLORS.textLight};
+  
   p {
-    font-size: 1.1rem;
-    margin-top: 1rem;
+    font-size: ${TYPOGRAPHY.fontSize.md};
+    margin-top: ${SPACING.md};
   }
 `;
 
 const ErrorMessage = styled.div`
-  background: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  background: ${COLOR_SCALES.danger[100]};
+  color: ${COLOR_SCALES.danger[700]};
+  padding: ${SPACING.md};
+  border-radius: ${BORDER_RADIUS.md};
+  border: 1px solid ${COLOR_SCALES.danger[200]};
 `;
 
 const LoadingSpinner = styled.div`
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #6c757d;
+  padding: ${SPACING.xxl};
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.md};
 `;
 
 // Estilos del Modal
@@ -379,11 +376,45 @@ const FormError = styled.div`
   font-size: 0.9rem;
 `;
 
-const TIPO_COLORS = {
-  ENTRADA: '#28a745',
-  SALIDA: '#dc3545',
-  AJUSTE: '#ffc107',
-};
+// Modal de confirmación de eliminación
+const DeleteConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+`;
+
+const DeleteConfirmContent = styled.div`
+  background: ${COLORS.background};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.lg};
+  max-width: 500px;
+  width: 90%;
+`;
+
+const DeleteConfirmTitle = styled.h3`
+  margin: 0 0 ${SPACING.md} 0;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+`;
+
+const DeleteConfirmMessage = styled.p`
+  color: ${COLORS.textLight};
+  margin-bottom: ${SPACING.lg};
+  line-height: 1.5;
+`;
+
+const DeleteConfirmActions = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
+`;
 
 const ListaMotivosMovimiento: React.FC = () => {
   const [reasons, setReasons] = useState<MovementReason[]>([]);
@@ -402,6 +433,10 @@ const ListaMotivosMovimiento: React.FC = () => {
   );
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Estados del modal de confirmación de eliminación
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [reasonToDelete, setReasonToDelete] = useState<MovementReason | null>(null);
 
   const [formData, setFormData] = useState<MovementReasonFormData>({
     tipo: 'ENTRADA',
@@ -542,22 +577,32 @@ const ListaMotivosMovimiento: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Está seguro de eliminar este motivo?')) {
-      return;
-    }
+  const handleDeleteClick = (reason: MovementReason) => {
+    setReasonToDelete(reason);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!reasonToDelete) return;
 
     try {
-      await movementReasonsApi.deleteMovementReason(id);
+      await movementReasonsApi.deleteMovementReason(reasonToDelete.id);
+      setIsDeleteConfirmOpen(false);
+      setReasonToDelete(null);
       await fetchReasons();
     } catch (err: any) {
       alert(err.response?.data?.message || err.message);
     }
   };
 
-  const handleToggle = async (id: string) => {
+  const handleCancelDelete = () => {
+    setIsDeleteConfirmOpen(false);
+    setReasonToDelete(null);
+  };
+
+  const handleActivateReason = async (id: string) => {
     try {
-      await movementReasonsApi.toggleMovementReason(id);
+      await movementReasonsApi.activateMovementReason(id);
       await fetchReasons();
     } catch (err: any) {
       alert(err.response?.data?.message || err.message);
@@ -568,120 +613,171 @@ const ListaMotivosMovimiento: React.FC = () => {
     return (
       <Layout title="Motivos de Movimiento">
         <Container>
-          <LoadingSpinner>⏳ Cargando motivos...</LoadingSpinner>
+          <LoadingSpinner>Cargando motivos...</LoadingSpinner>
         </Container>
       </Layout>
     );
   }
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setTipoFilter('all');
+    setStatusFilter('all');
+  };
+
   return (
     <Layout title="Motivos de Movimiento">
       <Container>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+
         <Header>
-          <Title>Gestión de Motivos de Movimiento</Title>
-          <ButtonGroup>
-            <Button onClick={fetchReasons} $variant="secondary">
-              🔄 Actualizar
-            </Button>
-            <Button onClick={openCreateModal}>➕ Nuevo Motivo</Button>
-          </ButtonGroup>
+          <TitleSection>
+            <Title>Motivos de Movimiento</Title>
+            <PageSubtitle>Configuración de motivos para ajustes, transferencias y movimientos de inventario</PageSubtitle>
+          </TitleSection>
+          <SharedButton $variant="primary" onClick={openCreateModal}>
+            Nuevo Motivo
+          </SharedButton>
         </Header>
 
-        {error && <ErrorMessage>⚠️ {error}</ErrorMessage>}
+        {/* Stats Cards */}
+        <StatsGrid>
+          <StatCard $color="#3498db">
+            <StatValue $color="#3498db">{reasons.length}</StatValue>
+            <StatLabel>Total Motivos</StatLabel>
+          </StatCard>
+          <StatCard $color={COLOR_SCALES.success[500]}>
+            <StatValue $color={COLOR_SCALES.success[500]}>{reasons.filter(r => r.activo).length}</StatValue>
+            <StatLabel>Activos</StatLabel>
+          </StatCard>
+          <StatCard $color={COLOR_SCALES.success[500]}>
+            <StatValue $color={COLOR_SCALES.success[500]}>{reasons.filter(r => r.tipo === 'ENTRADA').length}</StatValue>
+            <StatLabel>Entradas</StatLabel>
+          </StatCard>
+          <StatCard $color={COLOR_SCALES.danger[500]}>
+            <StatValue $color={COLOR_SCALES.danger[500]}>{reasons.filter(r => r.tipo === 'SALIDA').length}</StatValue>
+            <StatLabel>Salidas</StatLabel>
+          </StatCard>
+          <StatCard $color="#17a2d8">
+            <StatValue $color="#17a2d8">{reasons.filter(r => r.tipo === 'AJUSTE').length}</StatValue>
+            <StatLabel>Ajustes</StatLabel>
+          </StatCard>
+        </StatsGrid>
 
-        <FilterBar>
-          <SearchInput
-            type="text"
-            placeholder="Buscar por código, nombre o descripción..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <FilterSelect
-            value={tipoFilter}
-            onChange={(e) => setTipoFilter(e.target.value)}
-          >
-            <option value="all">Todos los tipos</option>
-            <option value="ENTRADA">Entrada</option>
-            <option value="SALIDA">Salida</option>
-            <option value="AJUSTE">Ajuste</option>
-          </FilterSelect>
-          <FilterSelect
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">Todos los estados</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </FilterSelect>
-        </FilterBar>
+        {/* Filtros */}
+        <FiltersCard>
+          <FiltersGrid>
+            <FormGroupFilter>
+              <FilterLabel htmlFor="search">Buscar</FilterLabel>
+              <SearchInput
+                id="search"
+                type="text"
+                placeholder="Código, nombre o descripción..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </FormGroupFilter>
+            <FormGroupFilter>
+              <FilterLabel htmlFor="tipo">Tipo</FilterLabel>
+              <FilterSelect
+                id="tipo"
+                value={tipoFilter}
+                onChange={(e) => setTipoFilter(e.target.value)}
+              >
+                <option value="all">Todos los tipos</option>
+                <option value="ENTRADA">Entrada</option>
+                <option value="SALIDA">Salida</option>
+                <option value="AJUSTE">Ajuste</option>
+              </FilterSelect>
+            </FormGroupFilter>
+            <FormGroupFilter>
+              <FilterLabel htmlFor="status">Estado</FilterLabel>
+              <FilterSelect
+                id="status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </FilterSelect>
+            </FormGroupFilter>
+          </FiltersGrid>
+          <FilterButtonGroup>
+            <SharedButton onClick={handleClearFilters}>Limpiar</SharedButton>
+            <SharedButton $variant="primary" onClick={fetchReasons}>Buscar</SharedButton>
+          </FilterButtonGroup>
+        </FiltersCard>
 
         {filteredReasons.length === 0 ? (
           <EmptyState>
-            <div style={{ fontSize: '3rem' }}>📋</div>
             <p>No se encontraron motivos</p>
             {reasons.length === 0 && (
-              <Button onClick={openCreateModal} style={{ marginTop: '1rem' }}>
+              <SharedButton $variant="primary" onClick={openCreateModal} style={{ marginTop: '1rem' }}>
                 Crear primer motivo
-              </Button>
+              </SharedButton>
             )}
           </EmptyState>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>Tipo</Th>
-                <Th>Código</Th>
-                <Th>Nombre</Th>
-                <Th>Descripción</Th>
-                {/* <Th>Requiere Doc.</Th> */}
-                <Th>Movimientos</Th>
-                <Th>Estado</Th>
-                <Th>Acciones</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredReasons.map((reason) => (
-                <Tr key={reason.id}>
-                  <Td>
-                    <Badge $color={TIPO_COLORS[reason.tipo]}>
-                      {reason.tipo}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <strong>{reason.codigo}</strong>
-                  </Td>
-                  <Td>{reason.nombre}</Td>
-                  <Td>{reason.descripcion || '-'}</Td>
-                  {/* <Td>{reason.requiereDocumento ? '✅ Sí' : '❌ No'}</Td> */}
-                  <Td>{reason._count?.inventoryMovements || 0}</Td>
-                  <Td>
-                    <StatusBadge $active={reason.activo}>
-                      {reason.activo ? 'Activo' : 'Inactivo'}
-                    </StatusBadge>
-                  </Td>
-                  <Td>
-                    <ActionButton onClick={() => openEditModal(reason)}>
-                      ✏️ Editar
-                    </ActionButton>
-                    <ActionButton
-                      $variant="toggle"
-                      onClick={() => handleToggle(reason.id)}
-                    >
-                      {reason.activo ? '🔴 Desactivar' : '🟢 Activar'}
-                    </ActionButton>
-                    {reason._count && reason._count.inventoryMovements === 0 && (
-                      <ActionButton
-                        $variant="delete"
-                        onClick={() => handleDelete(reason.id)}
-                      >
-                        🗑️ Eliminar
-                      </ActionButton>
-                    )}
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
+          <TableContainer>
+            <Table>
+              <thead>
+                <tr>
+                  <Th>Tipo</Th>
+                  <Th>Código</Th>
+                  <Th>Nombre</Th>
+                  <Th>Descripción</Th>
+                  <Th>Movimientos</Th>
+                  <Th>Estado</Th>
+                  <Th>Acciones</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReasons.map((reason) => (
+                  <Tr key={reason.id}>
+                    <Td>
+                      <StatusBadge variant={getTipoVariant(reason.tipo)}>
+                        {reason.tipo}
+                      </StatusBadge>
+                    </Td>
+                    <Td><strong>{reason.codigo}</strong></Td>
+                    <Td>{reason.nombre}</Td>
+                    <Td>{reason.descripcion || '-'}</Td>
+                    <Td>{reason._count?.inventoryMovements || 0}</Td>
+                    <Td>
+                      <StatusBadge variant={reason.activo ? 'success' : 'danger'} dot>
+                        {reason.activo ? 'Activo' : 'Inactivo'}
+                      </StatusBadge>
+                    </Td>
+                    <Td>
+                      <ActionsGroup>
+                        <ActionButton $variant="edit" onClick={() => openEditModal(reason)}>
+                          Editar
+                        </ActionButton>
+                        {reason.activo ? (
+                          <ActionButton
+                            $variant="delete"
+                            onClick={() => handleDeleteClick(reason)}
+                            disabled={reason._count && reason._count.inventoryMovements > 0}
+                            title={reason._count && reason._count.inventoryMovements > 0 ? 'No se puede eliminar un motivo con movimientos asociados' : 'Eliminar motivo'}
+                          >
+                            Eliminar
+                          </ActionButton>
+                        ) : (
+                          <ActionButton
+                            $variant="activate"
+                            onClick={() => handleActivateReason(reason.id)}
+                          >
+                            Activar
+                          </ActionButton>
+                        )}
+                      </ActionsGroup>
+                    </Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableContainer>
         )}
 
         {/* Modal de Crear/Editar Motivo */}
@@ -689,7 +785,7 @@ const ListaMotivosMovimiento: React.FC = () => {
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>
-                {modalMode === 'create' ? '➕ Nuevo Motivo' : '✏️ Editar Motivo'}
+                {modalMode === 'create' ? 'Nuevo Motivo' : 'Editar Motivo'}
               </ModalTitle>
               <CloseButton onClick={closeModal}>&times;</CloseButton>
             </ModalHeader>
@@ -802,6 +898,27 @@ const ListaMotivosMovimiento: React.FC = () => {
             </ModalBody>
           </ModalContent>
         </ModalOverlay>
+
+        {/* Modal de confirmación de eliminación */}
+        {isDeleteConfirmOpen && (
+          <DeleteConfirmModal onClick={handleCancelDelete}>
+            <DeleteConfirmContent onClick={(e) => e.stopPropagation()}>
+              <DeleteConfirmTitle>Confirmar Eliminación</DeleteConfirmTitle>
+              <DeleteConfirmMessage>
+                ¿Está seguro que desea eliminar el motivo "{reasonToDelete?.nombre}"?
+                Esta acción desactivará el motivo.
+              </DeleteConfirmMessage>
+              <DeleteConfirmActions>
+                <ActionButton $variant="secondary" onClick={handleCancelDelete}>
+                  Cancelar
+                </ActionButton>
+                <ActionButton $variant="delete" onClick={handleConfirmDelete}>
+                  Eliminar
+                </ActionButton>
+              </DeleteConfirmActions>
+            </DeleteConfirmContent>
+          </DeleteConfirmModal>
+        )}
       </Container>
     </Layout>
   );

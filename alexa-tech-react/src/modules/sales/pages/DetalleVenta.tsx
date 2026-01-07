@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
 import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
@@ -29,7 +30,7 @@ const getNCStatusLabel = (status: string): string => {
 };
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: ${SPACING.lg};
   max-width: 1200px;
   margin: 0 auto;
 `;
@@ -38,101 +39,101 @@ const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: ${SPACING.xl};
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: ${SPACING.lg};
 `;
 
 const BackButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #95a5a6;
-  color: white;
+  gap: ${SPACING.sm};
+  padding: ${SPACING.md} ${SPACING.xl};
+  background: ${COLORS.neutral[400]};
+  color: ${COLORS.neutral.white};
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: ${TRANSITIONS.default};
 
   &:hover {
-    background: #7f8c8d;
+    background: ${COLORS.neutral[500]};
     transform: translateY(-2px);
   }
 `;
 
 const ActionButton = styled.button<{ $variant?: 'primary' | 'danger' }>`
-  padding: 0.75rem 1.5rem;
+  padding: ${SPACING.md} ${SPACING.xl};
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: ${TRANSITIONS.default};
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: ${SPACING.sm};
 
   ${props => {
     if (props.$variant === 'danger') {
       return `
-        background: #e74c3c;
-        color: white;
-        &:hover { background: #c0392b; }
+        background: ${COLOR_SCALES.danger[500]};
+        color: ${COLORS.neutral.white};
+        &:hover { background: ${COLOR_SCALES.danger[600]}; }
       `;
     }
     return `
-      background: #3498db;
-      color: white;
-      &:hover { background: #2980b9; }
+      background: ${COLOR_SCALES.primary[500]};
+      color: ${COLORS.neutral.white};
+      &:hover { background: ${COLOR_SCALES.primary[600]}; }
     `;
   }}
 
   &:disabled {
-    background: #bdc3c7;
+    background: ${COLORS.neutral[300]};
     cursor: not-allowed;
     transform: none;
   }
 `;
 
 const Card = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.md};
+  padding: ${SPACING.xl};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const CardTitle = styled.h2`
-  color: #2c3e50;
-  font-size: 1.3rem;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e1e8ed;
+  color: ${COLORS.text.primary};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  margin: 0 0 ${SPACING.lg} 0;
+  padding-bottom: ${SPACING.md};
+  border-bottom: 2px solid ${COLORS.neutral[200]};
 `;
 
 const InfoGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
+  gap: ${SPACING.lg};
 `;
 
 const InfoItem = styled.div`
-  margin-bottom: 0.75rem;
+  margin-bottom: ${SPACING.md};
 `;
 
 const InfoLabel = styled.div`
-  font-size: 0.85rem;
-  color: #7f8c8d;
-  margin-bottom: 0.25rem;
-  font-weight: 600;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.secondary};
+  margin-bottom: ${SPACING.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const InfoValue = styled.div`
-  font-size: 1rem;
-  color: #2c3e50;
-  font-weight: 500;
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
 `;
 
 const StatusBadge = styled.span<{ status: string }>`
@@ -176,54 +177,54 @@ const StatusBadge = styled.span<{ status: string }>`
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  margin-top: 1rem;
+  margin-top: ${SPACING.lg};
 `;
 
 const TableHeader = styled.thead`
-  background: #f8f9fa;
+  background: ${COLORS.neutral[50]};
 `;
 
 const TableRow = styled.tr`
   &:not(:last-child) {
-    border-bottom: 1px solid #e1e8ed;
+    border-bottom: 1px solid ${COLORS.neutral[200]};
   }
 
   &:hover {
-    background: #f8f9fa;
+    background: ${COLORS.neutral[50]};
   }
 `;
 
 const TableHeaderCell = styled.th`
-  padding: 1rem;
+  padding: ${SPACING.lg};
   text-align: left;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 2px solid #e1e8ed;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.primary};
+  border-bottom: 2px solid ${COLORS.neutral[200]};
 `;
 
 const TableCell = styled.td`
-  padding: 1rem;
-  color: #2c3e50;
+  padding: ${SPACING.lg};
+  color: ${COLORS.text.primary};
 `;
 
 const TotalSection = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 2px solid #e1e8ed;
+  gap: ${SPACING.sm};
+  margin-top: ${SPACING.lg};
+  padding-top: ${SPACING.lg};
+  border-top: 2px solid ${COLORS.neutral[200]};
 `;
 
 const TotalRow = styled.div<{ $isGrandTotal?: boolean }>`
   display: flex;
   justify-content: space-between;
   min-width: 300px;
-  padding: 0.5rem 0;
-  font-size: ${props => props.$isGrandTotal ? '1.3rem' : '1rem'};
-  font-weight: ${props => props.$isGrandTotal ? '700' : '500'};
-  color: ${props => props.$isGrandTotal ? '#27ae60' : '#2c3e50'};
+  padding: ${SPACING.sm} 0;
+  font-size: ${props => props.$isGrandTotal ? TYPOGRAPHY.fontSize.lg : TYPOGRAPHY.fontSize.base};
+  font-weight: ${props => props.$isGrandTotal ? TYPOGRAPHY.fontWeight.bold : TYPOGRAPHY.fontWeight.medium};
+  color: ${props => props.$isGrandTotal ? COLOR_SCALES.success[500] : COLORS.text.primary};
 `;
 
 const AlertBox = styled.div<{ $type: 'warning' | 'info' | 'success' }>`
@@ -263,13 +264,13 @@ const LoadingSpinner = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 400px;
-  font-size: 1.5rem;
-  color: #7f8c8d;
+  font-size: ${TYPOGRAPHY.fontSize.xl};
+  color: ${COLORS.text.secondary};
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
 `;
 
@@ -524,7 +525,7 @@ const DetalleVenta: React.FC = () => {
       <Layout title="Detalle de Venta">
         <Container>
           <AlertBox $type="warning">
-            ⚠️ Venta no encontrada
+            Venta no encontrada
           </AlertBox>
           <BackButton onClick={() => navigate('/ventas/lista')}>
             ← Volver a Lista de Ventas
@@ -557,14 +558,14 @@ const DetalleVenta: React.FC = () => {
           </BackButton>
           <ButtonGroup>
             <ActionButton onClick={handlePrint} disabled={isProcessing || sale.estado !== 'Completada'}>
-              🖨️ Imprimir
+              Imprimir
             </ActionButton>
             <ActionButton 
               $variant="danger" 
               onClick={handleEmitCreditNote}
               disabled={isProcessing || sale.estado !== 'Completada'}
             >
-              📝 Emitir Nota de Crédito
+              Emitir Nota de Crédito
             </ActionButton>
           </ButtonGroup>
         </Header>
@@ -572,13 +573,13 @@ const DetalleVenta: React.FC = () => {
         {/* Alerta si tiene Nota de Crédito */}
         {sale.tieneNotaCredito && (
           <AlertBox $type="warning">
-            ⚠️ Esta venta tiene Notas de Crédito asociadas por un total de {formatCurrency(montoNC)}
+            Esta venta tiene Notas de Crédito asociadas por un total de {formatCurrency(montoNC)}
           </AlertBox>
         )}
 
         {/* Información del Comprobante */}
         <Card>
-          <CardTitle>📄 Información del Comprobante</CardTitle>
+          <CardTitle>Información del Comprobante</CardTitle>
           <InfoGrid>
             <InfoItem>
               <InfoLabel>Código de Venta</InfoLabel>
@@ -632,7 +633,7 @@ const DetalleVenta: React.FC = () => {
 
         {/* Información del Cliente */}
         <Card>
-          <CardTitle>👤 Información del Cliente</CardTitle>
+          <CardTitle>Información del Cliente</CardTitle>
           {sale.cliente ? (
             <InfoGrid>
               <InfoItem>
@@ -667,7 +668,7 @@ const DetalleVenta: React.FC = () => {
 
         {/* Detalle de Productos */}
         <Card>
-          <CardTitle>📦 Productos</CardTitle>
+          <CardTitle>Productos</CardTitle>
           <Table>
             <TableHeader>
               <tr>
@@ -764,7 +765,7 @@ const DetalleVenta: React.FC = () => {
         {/* Observaciones */}
         {sale.observaciones && (
           <Card>
-            <CardTitle>📝 Observaciones</CardTitle>
+            <CardTitle>Observaciones</CardTitle>
             <InfoValue>{sale.observaciones}</InfoValue>
           </Card>
         )}
@@ -772,9 +773,9 @@ const DetalleVenta: React.FC = () => {
         {/* Historial de Notas de Crédito */}
         {sale.creditNotes && sale.creditNotes.length > 0 && (
           <Card>
-            <CardTitle>📋 Historial de Notas de Crédito</CardTitle>
+            <CardTitle>Historial de Notas de Crédito</CardTitle>
             <AlertBox $type="warning" style={{ marginBottom: '1rem' }}>
-              ⚠️ Esta venta tiene {sale.creditNotes.length} Nota{sale.creditNotes.length > 1 ? 's' : ''} de Crédito por un total de <strong style={{ color: '#e74c3c' }}>{formatCurrency(-montoNC)}</strong>
+              Esta venta tiene {sale.creditNotes.length} Nota{sale.creditNotes.length > 1 ? 's' : ''} de Crédito por un total de <strong style={{ color: '#e74c3c' }}>{formatCurrency(-montoNC)}</strong>
             </AlertBox>
             
             {sale.creditNotes.map((nc: any, index: number) => (
@@ -843,7 +844,7 @@ const DetalleVenta: React.FC = () => {
                       onClick={() => printCreditNote(nc.id)}
                       disabled={isProcessing}
                     >
-                      🖨️ Imprimir NC
+                      Imprimir NC
                     </IconButton>
                   </div>
                 </div>

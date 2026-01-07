@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../styles/theme';
+import { Input as SharedInput, Select as SharedSelect, Label as SharedLabel, Button as SharedButton } from '../../../../components/shared';
 import type { StockFilters } from '../../../../types/inventario';
 import { WAREHOUSE_OPTIONS } from '../../../../constants/warehouses';
 import { apiService } from '../../../../utils/api';
 
 const FiltersContainer = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  background: ${COLORS.neutral.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  margin-bottom: ${SPACING.xl};
 `;
 
 const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -26,52 +28,18 @@ const FiltersGrid = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const Label = styled.label`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 0.9rem;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-
-  &::placeholder {
-    color: #95a5a6;
-  }
-`;
-
-const Select = styled.select`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
+  gap: ${SPACING.sm};
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.md};
   justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: ${SPACING.lg};
 
   @media (max-width: 768px) {
+    width: 100%;
     justify-content: stretch;
     
     button {
@@ -80,43 +48,15 @@ const ButtonGroup = styled.div`
   }
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  ${props => props.$variant === 'primary' ? `
-    background: #3498db;
-    color: white;
-    
-    &:hover {
-      background: #2980b9;
-    }
-  ` : `
-    background: #6c757d;
-    color: white;
-    
-    &:hover {
-      background: #5a6268;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
 interface FiltersStockProps {
   onFilterChange: (filters: StockFilters) => void;
   loading?: boolean;
   defaultWarehouseId?: string;
+  onExport?: () => void;
+  exportando?: boolean;
 }
 
-const FiltersStock: React.FC<FiltersStockProps> = ({ onFilterChange, loading = false, defaultWarehouseId }) => {
+const FiltersStock: React.FC<FiltersStockProps> = ({ onFilterChange, loading = false, defaultWarehouseId, onExport, exportando }) => {
   const [filters, setFilters] = useState<StockFilters>({
     almacenId: '',
     q: '',
@@ -229,23 +169,23 @@ const FiltersStock: React.FC<FiltersStockProps> = ({ onFilterChange, loading = f
     <FiltersContainer>
       <FiltersGrid>
         <FormGroup>
-          <Label htmlFor="search">Buscar Producto</Label>
-          <Input
+          <SharedLabel htmlFor="search">Buscar Producto</SharedLabel>
+          <SharedInput
             id="search"
             type="text"
             placeholder="Código o nombre del producto..."
             value={filters.q || ''}
-            onChange={(e) => handleFilterChange('q', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('q', e.target.value)}
             data-testid="stock-filter-search"
           />
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="almacen">Almacén</Label>
-          <Select
+          <SharedLabel htmlFor="almacen">Almacén</SharedLabel>
+          <SharedSelect
             id="almacen"
             value={filters.almacenId || ''}
-            onChange={(e) => handleFilterChange('almacenId', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('almacenId', e.target.value)}
             data-testid="stock-filter-warehouse"
           >
             <option value="">Todos los almacenes</option>
@@ -254,70 +194,55 @@ const FiltersStock: React.FC<FiltersStockProps> = ({ onFilterChange, loading = f
                 {warehouse.label}
               </option>
             ))}
-          </Select>
+          </SharedSelect>
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="estado">Estado del Stock</Label>
-          <Select
+          <SharedLabel htmlFor="estado">Estado del Stock</SharedLabel>
+          <SharedSelect
             id="estado"
             value={filters.estado || ''}
-            onChange={(e) => handleFilterChange('estado', e.target.value || undefined)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('estado', e.target.value || undefined)}
             data-testid="stock-filter-status"
           >
             <option value="">Todos los estados</option>
             <option value="NORMAL">Normal</option>
             <option value="BAJO">Stock Bajo</option>
             <option value="CRITICO">Stock Crítico</option>
-          </Select>
+          </SharedSelect>
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="sortBy">Ordenar por</Label>
-          <Select
+          <SharedLabel htmlFor="sortBy">Ordenar por</SharedLabel>
+          <SharedSelect
             id="sortBy"
             value={filters.sortBy || 'producto'}
-            onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('sortBy', e.target.value)}
             data-testid="stock-filter-sortby"
           >
             <option value="producto">Producto</option>
             <option value="cantidad">Cantidad</option>
             <option value="estado">Estado</option>
             <option value="updatedAt">Última actualización</option>
-          </Select>
+          </SharedSelect>
         </FormGroup>
 
         <FormGroup>
-          <Label htmlFor="order">Orden</Label>
-          <Select
+          <SharedLabel htmlFor="order">Orden</SharedLabel>
+          <SharedSelect
             id="order"
             value={filters.order || 'asc'}
-            onChange={(e) => handleFilterChange('order', e.target.value as 'asc' | 'desc')}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleFilterChange('order', e.target.value as 'asc' | 'desc')}
             data-testid="stock-filter-order"
           >
             <option value="asc">Ascendente</option>
             <option value="desc">Descendente</option>
-          </Select>
-        </FormGroup>
-
-        <FormGroup>
-          <Label htmlFor="limit">Elementos por página</Label>
-          <Select
-            id="limit"
-            value={filters.limit || 10}
-            onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-            data-testid="stock-filter-limit"
-          >
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </Select>
+          </SharedSelect>
         </FormGroup>
       </FiltersGrid>
 
       <ButtonGroup>
-        <Button 
+        <SharedButton 
           type="button" 
           $variant="secondary" 
           onClick={handleClear}
@@ -325,8 +250,8 @@ const FiltersStock: React.FC<FiltersStockProps> = ({ onFilterChange, loading = f
           data-testid="stock-filter-clear"
         >
           Limpiar
-        </Button>
-        <Button 
+        </SharedButton>
+        <SharedButton 
           type="button" 
           $variant="primary" 
           onClick={handleSearch}
@@ -334,7 +259,19 @@ const FiltersStock: React.FC<FiltersStockProps> = ({ onFilterChange, loading = f
           data-testid="stock-filter-search-button"
         >
           {loading ? 'Buscando...' : 'Buscar'}
-        </Button>
+        </SharedButton>
+        {onExport && (
+          <SharedButton 
+            type="button" 
+            $variant="primary" 
+            onClick={onExport}
+            disabled={exportando || loading}
+            style={{ background: '#28a745' }}
+            data-testid="stock-filter-export"
+          >
+            {exportando ? 'Exportando...' : 'Exportar a Excel'}
+          </SharedButton>
+        )}
       </ButtonGroup>
     </FiltersContainer>
   );

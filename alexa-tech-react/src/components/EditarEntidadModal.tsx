@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../context/NotificationContext';
 import UbigeoSelector from './UbigeoSelector';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 interface Client {
   id: string;
@@ -92,13 +93,13 @@ const CloseButton = styled.button`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: ${SPACING.lg};
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;

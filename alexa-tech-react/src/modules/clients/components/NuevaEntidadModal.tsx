@@ -4,6 +4,8 @@ import { useNotification } from '../../../context/NotificationContext';
 import { useClients } from '../context/ClientContext';
 import UbigeoSelector from './UbigeoSelector';
 import { apiService } from '../../../utils/api';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, Z_INDEX } from '../../../styles/theme';
+import { Button, ButtonGroup, Label } from '../../../components/shared';
 
 interface ClienteFormData {
   tipoEntidad: 'Cliente' | 'Proveedor' | 'Ambos';
@@ -66,58 +68,43 @@ const ModalOverlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.modal};
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  padding: ${SPACING.xxl};
   max-width: 900px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: ${SHADOWS.xl};
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: ${SPACING.xxl};
 `;
 
 const Title = styled.h2`
-  color: #2c3e50;
+  color: ${COLORS.text.primary};
   margin: 0;
-  font-size: 1.8rem;
-  font-weight: 600;
-`;
-
-const CloseButton = styled.button`
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #5a6268;
-  }
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const Form = styled.form`
   display: grid;
-  gap: 1.5rem;
+  gap: ${SPACING.lg};
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: ${SPACING.md};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -127,78 +114,40 @@ const FormRow = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const Label = styled.label`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 0.9rem;
-`;
-
-const Input = styled.input<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-`;
-
-const Select = styled.select<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
+  gap: ${SPACING.xs};
 `;
 
 const TextArea = styled.textarea<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: ${SPACING.sm};
+  border: 2px solid ${props => props.$hasError ? COLORS.status.danger : COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.md};
   min-height: 100px;
   resize: vertical;
   transition: border-color 0.2s;
+  font-family: inherit;
 
   &:focus {
     outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
+    border-color: ${props => props.$hasError ? COLORS.status.danger : COLOR_SCALES.primary[500]};
   }
 `;
 
-const ErrorMessage = styled.span`
-  color: #e74c3c;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
-`;
-
 const SearchButton = styled.button<{ $loading?: boolean }>`
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  padding: ${SPACING.sm} ${SPACING.lg};
+  background: linear-gradient(135deg, ${COLORS.status.success} 0%, #059669 100%);
+  color: ${COLORS.neutral.white};
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: ${BORDER_RADIUS.md};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: ${SPACING.sm};
   transition: all 0.2s;
   min-width: 140px;
   justify-content: center;
-  font-size: 0.95rem;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
@@ -214,7 +163,7 @@ const SearchButton = styled.button<{ $loading?: boolean }>`
 const SearchButtonRow = styled.div`
   display: flex;
   align-items: flex-end;
-  gap: 1rem;
+  gap: ${SPACING.md};
   
   > div:first-child {
     flex: 1;
@@ -222,13 +171,13 @@ const SearchButtonRow = styled.div`
 `;
 
 const StatusMessage = styled.div<{ $type: 'success' | 'error' | 'info' }>`
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-top: 12px;
-  font-size: 0.9rem;
+  padding: ${SPACING.md};
+  border-radius: ${BORDER_RADIUS.md};
+  margin-top: ${SPACING.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: ${SPACING.sm};
 
   ${props => props.$type === 'success' && `
     background: #dcfce7;
@@ -265,43 +214,6 @@ const Spinner = styled.span`
   }
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  ${props => props.$variant === 'primary' ? `
-    background: #27ae60;
-    color: white;
-    
-    &:hover {
-      background: #229954;
-    }
-  ` : `
-    background: #6c757d;
-    color: white;
-    
-    &:hover {
-      background: #5a6268;
-    }
-  `}
-
-  &:disabled {
-    background: #bdc3c7;
-    cursor: not-allowed;
-  }
-`;
-
 const SectionTitle = styled.h3`
   color: #2c3e50;
   margin: 1.5rem 0 1rem 0;
@@ -309,6 +221,67 @@ const SectionTitle = styled.h3`
   font-weight: 600;
   border-bottom: 2px solid #e1e8ed;
   padding-bottom: 0.5rem;
+`;
+
+const Input = styled.input<{ $hasError?: boolean }>`
+  padding: ${SPACING.sm};
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.md};
+  transition: border-color 0.2s;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+  }
+
+  &:disabled {
+    background: ${COLORS.neutral[100]};
+    cursor: not-allowed;
+  }
+`;
+
+const Select = styled.select<{ $hasError?: boolean }>`
+  padding: ${SPACING.sm};
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.md};
+  transition: border-color 0.2s;
+  width: 100%;
+  background: ${COLORS.white};
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+  }
+
+  &:disabled {
+    background: ${COLORS.neutral[100]};
+    cursor: not-allowed;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: ${COLORS.neutral[200]};
+  color: ${COLORS.text.primary};
+  border: none;
+  padding: ${SPACING.sm} ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.md};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${COLORS.neutral[300]};
+  }
+`;
+
+const ErrorMessage = styled.span`
+  color: ${COLORS.danger};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin-top: ${SPACING.xs};
 `;
 
 const NuevoClienteModal: React.FC<NuevoClienteModalProps> = ({ isOpen, onClose }) => {

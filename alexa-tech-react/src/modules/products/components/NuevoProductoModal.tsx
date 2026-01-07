@@ -6,76 +6,155 @@ import { apiService } from '../../../utils/api';
 import { configuracionApi } from '../../../services/configuracionApi';
 import type { ProductCategory, UnitOfMeasure } from '../../../types/configuracion';
 import { WAREHOUSE_OPTIONS as WAREHOUSE_SELECT_OPTIONS } from '../../../constants/warehouses';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, Z_INDEX, TRANSITIONS } from '../../../styles/theme';
+import { Button, Input, Select, Label, RequiredMark, ValidationMessage, ButtonGroup } from '../../../components/shared';
+
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: ${Z_INDEX.modal};
+  padding: ${SPACING.lg};
+  
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+`;
+
+const ModalWrapper = styled.div`
+  position: relative;
+  max-width: 900px;
+  width: 95vw;
+  max-height: 85vh;
+  background: white;
+  border-radius: ${BORDER_RADIUS.md};
+  box-shadow: ${SHADOWS.xl};
+  overflow: hidden;
+  
+  @media (max-width: 768px) {
+    width: 100vw;
+    max-height: 95vh;
+    border-radius: 0;
+  }
+`;
+
+const ModalContent = styled.div`
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: ${SPACING.xl};
+  
+  @media (max-width: 768px) {
+    max-height: 95vh;
+    padding: ${SPACING.md};
+  }
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${SPACING.xl};
+  padding-bottom: ${SPACING.md};
+  border-bottom: 2px solid ${COLORS.border.light};
+  
+  h2 {
+    font-size: ${TYPOGRAPHY.fontSize.h3};
+    color: ${COLORS.text.primary};
+    margin: 0;
+    font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: ${COLORS.text.muted};
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: ${BORDER_RADIUS.sm};
+  transition: ${TRANSITIONS.fast};
+  
+  &:hover {
+    background: ${COLORS.background.secondary};
+    color: ${COLORS.text.primary};
+  }
+`;
 
 const FormGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${SPACING.lg};
+  margin-bottom: ${SPACING.xl};
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: ${SPACING.md};
   }
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
+  gap: ${SPACING.xs};
+`;
 
-  label {
-    font-size: 13px;
-    color: #555;
-    font-weight: 500;
-    margin-bottom: 6px;
-  }
+const FullWidthGroup = styled(FormGroup)`
+  grid-column: 1 / -1;
+`;
 
-  input, select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 14px;
+const Textarea = styled.textarea`
+  width: 100%;
+  padding: ${SPACING.sm};
+  border: 2px solid ${COLORS.border.medium};
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  font-family: ${TYPOGRAPHY.fontFamily};
+  resize: vertical;
+  min-height: 80px;
+  transition: ${TRANSITIONS.normal};
+
+  &:focus {
     outline: none;
-    transition: border-color 0.2s ease;
-  }
-
-  input:focus, select:focus {
-    border-color: #0047b3;
-  }
-
-  .error {
-    color: #e74c3c;
-    font-size: 12px;
-    margin-top: 5px;
+    border-color: ${COLORS.primary};
+    box-shadow: 0 0 0 3px ${COLORS.primary}1a;
   }
 `;
 
-const Actions = styled.div`
+const CharCounter = styled.small`
+  color: ${COLORS.text.muted};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  margin-top: ${SPACING.xs};
+  display: block;
+`;
+
+const InputWrapper = styled.div`
+  position: relative;
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  flex-direction: column;
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 10px 18px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  ${props => props.$variant === 'primary' ? `
-    background-color: #0047b3;
-    color: white;
-
-    &:hover { background-color: #003a92; }
-    &:disabled { background-color: #8fa8d6; cursor: not-allowed; }
-  ` : `
-    background-color: #6c757d;
-    color: white;
-    &:hover { background-color: #5a6268; }
-  `}
+const StatusIcon = styled.span<{ $type: 'loading' | 'success' | 'error' }>`
+  position: absolute;
+  right: ${SPACING.sm};
+  top: 38px;
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  color: ${props => 
+    props.$type === 'loading' ? COLORS.text.muted :
+    props.$type === 'success' ? COLORS.success :
+    COLORS.danger
+  };
 `;
 
 interface ProductFormData {
@@ -382,115 +461,123 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <FormGrid>
+    <ModalOverlay onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <ModalWrapper>
+        <ModalContent>
+          <ModalHeader>
+            <h2>Crear Nuevo Producto</h2>
+            <CloseButton onClick={onClose} type="button">
+              ×
+            </CloseButton>
+          </ModalHeader>
+          <form onSubmit={handleSubmit}>
+            <FormGrid>
         <FormGroup>
-          <label htmlFor="productCode">Código *</label>
-          <div style={{ position: 'relative' }}>
-            <input 
+          <Label htmlFor="productCode">
+            Código
+            <RequiredMark />
+          </Label>
+          <InputWrapper>
+            <Input 
               id="productCode" 
               name="productCode" 
               type="text" 
               value={formData.productCode} 
               onChange={handleInputChange}
               style={{
-                borderColor: codigoExists ? '#e74c3c' : (formData.productCode && !checkingCodigo && !codigoExists) ? '#27ae60' : undefined,
+                borderColor: codigoExists ? COLORS.danger : (formData.productCode && !checkingCodigo && !codigoExists) ? COLORS.success : undefined,
                 paddingRight: '30px'
               }}
             />
-            {checkingCodigo && (
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#7f8c8d' }}>
-                ⏳
-              </span>
-            )}
-            {!checkingCodigo && formData.productCode && codigoExists && (
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#e74c3c' }}>
-                ✗
-              </span>
-            )}
-            {!checkingCodigo && formData.productCode && !codigoExists && (
-              <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#27ae60' }}>
-                ✓
-              </span>
-            )}
-          </div>
-          {errors.productCode && <span className="error">{errors.productCode}</span>}
+            {checkingCodigo && <StatusIcon $type="loading">⏳</StatusIcon>}
+            {!checkingCodigo && formData.productCode && codigoExists && <StatusIcon $type="error">✗</StatusIcon>}
+            {!checkingCodigo && formData.productCode && !codigoExists && <StatusIcon $type="success">✓</StatusIcon>}
+          </InputWrapper>
+          {errors.productCode && <ValidationMessage $type="error">{errors.productCode}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="productName">Nombre *</label>
-          <input id="productName" name="productName" type="text" value={formData.productName} onChange={handleInputChange} />
-          {errors.productName && <span className="error">{errors.productName}</span>}
+          <Label htmlFor="productName">
+            Nombre
+            <RequiredMark />
+          </Label>
+          <Input id="productName" name="productName" type="text" value={formData.productName} onChange={handleInputChange} />
+          {errors.productName && <ValidationMessage $type="error">{errors.productName}</ValidationMessage>}
         </FormGroup>
-        <FormGroup style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="descripcion">Descripción</label>
-          <textarea 
+        <FullWidthGroup>
+          <Label htmlFor="descripcion">Descripción</Label>
+          <Textarea 
             id="descripcion" 
             name="descripcion" 
-            rows={3}
             maxLength={500}
             value={formData.descripcion} 
             onChange={handleInputChange}
             placeholder="Descripción detallada del producto (opcional, máx 500 caracteres)"
-            style={{ 
-              resize: 'vertical',
-              minHeight: '80px',
-              fontFamily: 'inherit',
-              padding: '10px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              fontSize: '14px'
-            }}
           />
-          <small style={{ color: '#666', fontSize: '12px' }}>
+          <CharCounter>
             {formData.descripcion.length}/500 caracteres
-          </small>
-          {errors.descripcion && <span className="error">{errors.descripcion}</span>}
-        </FormGroup>
+          </CharCounter>
+          {errors.descripcion && <ValidationMessage $type="error">{errors.descripcion}</ValidationMessage>}
+        </FullWidthGroup>
         <FormGroup>
-          <label htmlFor="category">Categoría *</label>
-          <select id="category" name="category" value={formData.category} onChange={handleInputChange}>
+          <Label htmlFor="category">
+            Categoría
+            <RequiredMark />
+          </Label>
+          <Select id="category" name="category" value={formData.category} onChange={handleInputChange}>
             <option value="">Selecciona una categoría</option>
             {categoryOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
-          </select>
-          {errors.category && <span className="error">{errors.category}</span>}
+          </Select>
+          {errors.category && <ValidationMessage $type="error">{errors.category}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="price">Precio *</label>
-          <input id="price" name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} />
-          {errors.price && <span className="error">{errors.price}</span>}
+          <Label htmlFor="price">
+            Precio
+            <RequiredMark />
+          </Label>
+          <Input id="price" name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} />
+          {errors.price && <ValidationMessage $type="error">{errors.price}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="initialStock">Stock inicial *</label>
-          <input id="initialStock" name="initialStock" type="number" min="0" value={formData.initialStock} onChange={handleInputChange} />
-          {errors.initialStock && <span className="error">{errors.initialStock}</span>}
+          <Label htmlFor="initialStock">
+            Stock inicial
+            <RequiredMark />
+          </Label>
+          <Input id="initialStock" name="initialStock" type="number" min="0" value={formData.initialStock} onChange={handleInputChange} />
+          {errors.initialStock && <ValidationMessage $type="error">{errors.initialStock}</ValidationMessage>}
         </FormGroup>
         <FormGroup>
-          <label htmlFor="unit">Unidad *</label>
-          <select id="unit" name="unit" value={formData.unit} onChange={handleInputChange}>
+          <Label htmlFor="unit">
+            Unidad
+            <RequiredMark />
+          </Label>
+          <Select id="unit" name="unit" value={formData.unit} onChange={handleInputChange}>
             <option value="">Selecciona unidad</option>
             {unitOptions.map(opt => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
-          </select>
-          {errors.unit && <span className="error">{errors.unit}</span>}
+          </Select>
+          {errors.unit && <ValidationMessage $type="error">{errors.unit}</ValidationMessage>}
         </FormGroup>
         
         <FormGroup>
-          <label htmlFor="warehouseId">Almacén para Stock Inicial *</label>
-          <select id="warehouseId" name="warehouseId" value={formData.warehouseId} onChange={handleInputChange}>
+          <Label htmlFor="warehouseId">
+            Almacén para Stock Inicial
+            <RequiredMark />
+          </Label>
+          <Select id="warehouseId" name="warehouseId" value={formData.warehouseId} onChange={handleInputChange}>
             <option value="">Selecciona un almacén</option>
             {warehouseOptions.map(opt => (
               <option key={opt.id} value={opt.id}>{opt.name}</option>
             ))}
-          </select>
-          {errors.warehouseId && <span className="error">{errors.warehouseId}</span>}
+          </Select>
+          {errors.warehouseId && <ValidationMessage $type="error">{errors.warehouseId}</ValidationMessage>}
         </FormGroup>
 
         <FormGroup>
-          <label htmlFor="minStock">Stock Mínimo</label>
-          <input 
+          <Label htmlFor="minStock">Stock Mínimo</Label>
+          <Input 
             id="minStock" 
             name="minStock" 
             type="number" 
@@ -499,10 +586,10 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
             onChange={handleInputChange}
             placeholder="Opcional: alertas de stock bajo"
           />
-          {errors.minStock && <span className="error">{errors.minStock}</span>}
+          {errors.minStock && <ValidationMessage $type="error">{errors.minStock}</ValidationMessage>}
         </FormGroup>
       </FormGrid>
-      <Actions>
+      <ButtonGroup style={{ justifyContent: 'flex-end', marginTop: SPACING.xl, paddingTop: SPACING.lg, borderTop: `1px solid ${COLORS.border.light}` }}>
         <Button type="button" $variant="secondary" onClick={onClose}>Cancelar</Button>
         <Button 
           type="submit" 
@@ -511,8 +598,11 @@ const NuevoProductoModal: React.FC<NuevoProductoModalProps> = ({ onClose }) => {
         >
           {isSubmitting ? 'Guardando...' : checkingCodigo ? 'Verificando...' : 'Registrar'}
         </Button>
-      </Actions>
+      </ButtonGroup>
     </form>
+        </ModalContent>
+      </ModalWrapper>
+    </ModalOverlay>
   );
 };
 

@@ -1,45 +1,46 @@
 import React from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY } from '../../../../styles/theme';
 import { useAuth } from '../../../auth/context/AuthContext';
 import { tokenUtils } from '../../../../utils/api';
 
 const DiagnosticContainer = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
+  background: ${COLORS.neutral[50]};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const DiagnosticTitle = styled.h4`
-  margin: 0 0 0.5rem 0;
-  color: #495057;
-  font-size: 1rem;
+  margin: 0 0 ${SPACING.sm} 0;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.base};
 `;
 
 const DiagnosticItem = styled.div`
-  margin-bottom: 0.25rem;
+  margin-bottom: ${SPACING.xs};
   display: flex;
   justify-content: space-between;
 `;
 
 const StatusBadge = styled.span<{ $status: 'success' | 'error' | 'warning' }>`
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: ${SPACING.xs} ${SPACING.sm};
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   
   ${props => {
     switch (props.$status) {
       case 'success':
-        return 'background: #d4edda; color: #155724; border: 1px solid #c3e6cb;';
+        return `background: ${COLOR_SCALES.success[100]}; color: ${COLOR_SCALES.success[700]}; border: 1px solid ${COLOR_SCALES.success[300]};`;
       case 'error':
-        return 'background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;';
+        return `background: ${COLOR_SCALES.danger[100]}; color: ${COLOR_SCALES.danger[700]}; border: 1px solid ${COLOR_SCALES.danger[300]};`;
       case 'warning':
-        return 'background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;';
+        return `background: ${COLOR_SCALES.warning[100]}; color: ${COLOR_SCALES.warning[700]}; border: 1px solid ${COLOR_SCALES.warning[300]};`;
       default:
-        return 'background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db;';
+        return `background: ${COLORS.neutral[100]}; color: ${COLORS.neutral[700]}; border: 1px solid ${COLORS.neutral[300]};`;
     }
   }}
 `;

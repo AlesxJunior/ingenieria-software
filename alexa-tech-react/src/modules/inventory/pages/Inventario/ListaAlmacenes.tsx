@@ -1,169 +1,182 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY } from '../../../../styles/theme';
 import Layout from '../../../../components/Layout';
 import { almacenesApi, type Almacen, type AlmacenFormData } from '../../services/almacenesApi';
+import { StatCard, StatsGrid, StatValue, StatLabel, Button as SharedButton, StatusBadge, ActionButton, ButtonGroup as ActionsGroup } from '../../../../components/shared';
 
 const Container = styled.div`
-  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.lg};
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
+`;
+
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
 `;
 
 const Title = styled.h1`
-  color: #2c3e50;
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  background: ${props => props.$variant === 'secondary' ? '#6c757d' : '#3498db'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s;
-
-  &:hover {
-    background: ${props => props.$variant === 'secondary' ? '#5a6268' : '#2980b9'};
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
+const FiltersCard = styled.div`
+  background: ${COLORS.background};
+  padding: ${SPACING.lg};
+  border-radius: ${BORDER_RADIUS.lg};
+  border: 1px solid ${COLORS.neutral[200]};
 `;
 
-const SearchBar = styled.div`
-  margin-bottom: 1.5rem;
+const FiltersGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: ${SPACING.md};
+`;
+
+const FormGroupFilter = styled.div`
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: ${SPACING.xs};
+`;
+
+const FilterLabel = styled.label`
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const SearchInput = styled.input`
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: ${SPACING.sm};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
+
+  &::placeholder {
+    color: ${COLORS.textLight};
   }
 `;
 
 const FilterSelect = styled.select`
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  cursor: pointer;
+  padding: ${SPACING.sm};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  background: ${COLORS.background};
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: ${COLOR_SCALES.primary[500]};
   }
+`;
+
+const FilterButtonGroup = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
+  margin-top: ${SPACING.lg};
+`;
+
+const TableContainer = styled.div`
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
+  overflow: hidden;
+  border: 1px solid ${COLORS.neutral[200]};
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const Th = styled.th`
-  background: #f8f9fa;
-  padding: 1rem;
+  background: ${COLORS.background};
+  padding: ${SPACING.md};
   text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.textLight};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
+  padding: ${SPACING.md};
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text};
 `;
 
 const Tr = styled.tr`
   &:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const Badge = styled.span<{ $active: boolean }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: ${props => props.$active ? '#d4edda' : '#f8d7da'};
-  color: ${props => props.$active ? '#155724' : '#721c24'};
-`;
-
-const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' }>`
-  padding: 0.5rem 1rem;
-  background: ${props => props.$variant === 'delete' ? '#e74c3c' : '#3498db'};
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  margin-right: 0.5rem;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${props => props.$variant === 'delete' ? '#c0392b' : '#2980b9'};
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+    background: ${COLORS.neutral[50]};
   }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 3rem;
-  color: #6c757d;
+  padding: ${SPACING.xxl};
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
+  border: 1px solid ${COLORS.neutral[200]};
+  color: ${COLORS.textLight};
   
   p {
-    font-size: 1.1rem;
-    margin-top: 1rem;
+    font-size: ${TYPOGRAPHY.fontSize.md};
+    margin-top: ${SPACING.md};
   }
 `;
 
 const ErrorMessage = styled.div`
-  background: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  background: ${COLOR_SCALES.danger[100]};
+  color: ${COLOR_SCALES.danger[700]};
+  padding: ${SPACING.md};
+  border-radius: ${BORDER_RADIUS.md};
+  border: 1px solid ${COLOR_SCALES.danger[200]};
 `;
 
 const LoadingSpinner = styled.div`
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: #6c757d;
+  padding: ${SPACING.xxl};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  color: ${COLORS.textLight};
+`;
+
+// Paginación
+const Pagination = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: ${SPACING.md} 0;
+`;
+
+const PaginationInfo = styled.div`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 // Estilos del Modal
@@ -178,12 +191,12 @@ const ModalOverlay = styled.div<{ $isOpen: boolean }>`
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: ${SPACING.md};
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   max-width: 600px;
   width: 100%;
@@ -193,27 +206,28 @@ const ModalContent = styled.div`
 `;
 
 const ModalHeader = styled.div`
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #dee2e6;
+  padding: ${SPACING.lg} ${SPACING.xl};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8f9fa;
-  border-radius: 12px 12px 0 0;
+  background: ${COLORS.neutral[50]};
+  border-radius: ${BORDER_RADIUS.lg} ${BORDER_RADIUS.lg} 0 0;
 `;
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: ${TYPOGRAPHY.fontSize.lg};
   cursor: pointer;
-  color: #6c757d;
+  color: ${COLORS.textLight};
   padding: 0;
   width: 30px;
   height: 30px;
@@ -224,112 +238,129 @@ const CloseButton = styled.button`
   transition: all 0.2s;
 
   &:hover {
-    background: #e9ecef;
-    color: #495057;
+    background: ${COLORS.neutral[200]};
+    color: ${COLORS.text};
   }
 `;
 
 const ModalBody = styled.div`
-  padding: 2rem;
+  padding: ${SPACING.xl};
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: ${SPACING.lg};
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: ${SPACING.xs};
 `;
 
 const Label = styled.label`
-  font-weight: 600;
-  color: #495057;
-  font-size: 0.95rem;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const Input = styled.input`
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
+  padding: ${SPACING.sm};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: ${COLOR_SCALES.primary[500]};
   }
 
   &:disabled {
-    background: #f8f9fa;
+    background: ${COLORS.neutral[100]};
     cursor: not-allowed;
   }
 `;
 
 const TextArea = styled.textarea`
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: ${SPACING.sm};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.base};
   min-height: 80px;
   resize: vertical;
   font-family: inherit;
-  transition: border-color 0.3s;
+  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: ${COLOR_SCALES.primary[500]};
   }
 `;
 
 const HelpText = styled.small`
-  color: #6c757d;
-  font-size: 0.875rem;
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+`;
+
+// Modal de confirmación de eliminación
+const DeleteConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+`;
+
+const DeleteConfirmContent = styled.div`
+  background: ${COLORS.background};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.lg};
+  max-width: 500px;
+  width: 90%;
+`;
+
+const DeleteConfirmTitle = styled.h3`
+  margin: 0 0 ${SPACING.md} 0;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+`;
+
+const DeleteConfirmMessage = styled.p`
+  color: ${COLORS.textLight};
+  margin-bottom: ${SPACING.lg};
+  line-height: 1.5;
+`;
+
+const DeleteConfirmActions = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
 `;
 
 const ModalFooter = styled.div`
-  padding: 1.5rem 2rem;
-  border-top: 1px solid #dee2e6;
+  padding: ${SPACING.lg} ${SPACING.xl};
+  border-top: 1px solid ${COLORS.neutral[200]};
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.md};
   justify-content: flex-end;
-  background: #f8f9fa;
-  border-radius: 0 0 12px 12px;
-`;
-
-const ModalButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 2rem;
-  background: ${props => props.$variant === 'secondary' ? '#6c757d' : '#3498db'};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.3s;
-
-  &:hover {
-    background: ${props => props.$variant === 'secondary' ? '#5a6268' : '#2980b9'};
-    transform: translateY(-2px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
+  background: ${COLORS.neutral[50]};
+  border-radius: 0 0 ${BORDER_RADIUS.lg} ${BORDER_RADIUS.lg};
 `;
 
 const FormError = styled.div`
-  background: #f8d7da;
-  color: #721c24;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+  background: ${COLOR_SCALES.danger[100]};
+  color: ${COLOR_SCALES.danger[700]};
+  padding: ${SPACING.sm} ${SPACING.md};
+  border-radius: ${BORDER_RADIUS.md};
+  margin-bottom: ${SPACING.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
 const ListaAlmacenes: React.FC = () => {
@@ -347,12 +378,31 @@ const ListaAlmacenes: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   
+  // Estados del modal de confirmación de eliminación
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [almacenToDelete, setAlmacenToDelete] = useState<Almacen | null>(null);
+  
   const [formData, setFormData] = useState<AlmacenFormData>({
     codigo: '',
     nombre: '',
     ubicacion: '',
     capacidad: undefined,
   });
+
+  // Stats calculados
+  const stats = useMemo(() => {
+    const total = almacenes.length;
+    const activos = almacenes.filter(a => a.activo).length;
+    const inactivos = almacenes.filter(a => !a.activo).length;
+    const totalProductos = almacenes.reduce((sum, a) => sum + (a._count?.stockByWarehouses || 0), 0);
+    return { total, activos, inactivos, totalProductos };
+  }, [almacenes]);
+
+  // Handler para limpiar filtros
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+  };
 
   useEffect(() => {
     fetchAlmacenes();
@@ -475,13 +525,32 @@ const ListaAlmacenes: React.FC = () => {
     openEditModal(almacen);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Está seguro de desactivar este almacén?')) {
-      return;
-    }
+  const handleDeleteClick = (almacen: Almacen) => {
+    setAlmacenToDelete(almacen);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!almacenToDelete) return;
 
     try {
-      await almacenesApi.deleteAlmacen(id);
+      await almacenesApi.deleteAlmacen(almacenToDelete.id);
+      setIsDeleteConfirmOpen(false);
+      setAlmacenToDelete(null);
+      await fetchAlmacenes();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteConfirmOpen(false);
+    setAlmacenToDelete(null);
+  };
+
+  const handleActivateAlmacen = async (id: string) => {
+    try {
+      await almacenesApi.activateAlmacen(id);
       await fetchAlmacenes();
     } catch (err: any) {
       alert(err.message);
@@ -496,7 +565,7 @@ const ListaAlmacenes: React.FC = () => {
     return (
       <Layout title="Almacenes">
         <Container>
-          <LoadingSpinner>⏳ Cargando almacenes...</LoadingSpinner>
+          <LoadingSpinner>Cargando almacenes...</LoadingSpinner>
         </Container>
       </Layout>
     );
@@ -505,98 +574,148 @@ const ListaAlmacenes: React.FC = () => {
   return (
     <Layout title="Almacenes">
       <Container>
-        <Header>
-          <Title>Gestión de Almacenes</Title>
-          <ButtonGroup>
-            <Button onClick={fetchAlmacenes} $variant="secondary">
-              🔄 Actualizar
-            </Button>
-            <Button onClick={handleCreate}>
-              ➕ Nuevo Almacén
-            </Button>
-          </ButtonGroup>
-        </Header>
-
         {error && (
-          <ErrorMessage>
-            ⚠️ {error}
-          </ErrorMessage>
+          <ErrorMessage>{error}</ErrorMessage>
         )}
 
-        <SearchBar>
-          <SearchInput
-            type="text"
-            placeholder="Buscar por nombre, código o ubicación..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <FilterSelect
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">Todos los estados</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </FilterSelect>
-        </SearchBar>
+        <Header>
+          <TitleSection>
+            <Title>Gestión de Almacenes</Title>
+            <PageSubtitle>Administración de almacenes, ubicaciones y capacidad de almacenamiento</PageSubtitle>
+          </TitleSection>
+          <SharedButton $variant="primary" onClick={handleCreate}>
+            Nuevo Almacén
+          </SharedButton>
+        </Header>
+
+        {/* Stats Cards */}
+        <StatsGrid>
+          <StatCard $color="#3498db">
+            <StatValue $color="#3498db">{stats.total}</StatValue>
+            <StatLabel>Total Almacenes</StatLabel>
+          </StatCard>
+          <StatCard $color={COLOR_SCALES.success[500]}>
+            <StatValue $color={COLOR_SCALES.success[500]}>{stats.activos}</StatValue>
+            <StatLabel>Activos</StatLabel>
+          </StatCard>
+          <StatCard $color={COLOR_SCALES.danger[500]}>
+            <StatValue $color={COLOR_SCALES.danger[500]}>{stats.inactivos}</StatValue>
+            <StatLabel>Inactivos</StatLabel>
+          </StatCard>
+          <StatCard $color="#9b59b6">
+            <StatValue $color="#9b59b6">{stats.totalProductos}</StatValue>
+            <StatLabel>Total Productos</StatLabel>
+          </StatCard>
+        </StatsGrid>
+
+        {/* Filtros */}
+        <FiltersCard>
+          <FiltersGrid>
+            <FormGroupFilter>
+              <FilterLabel htmlFor="search">Buscar</FilterLabel>
+              <SearchInput
+                id="search"
+                type="text"
+                placeholder="Nombre, código o ubicación..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </FormGroupFilter>
+            <FormGroupFilter>
+              <FilterLabel htmlFor="status">Estado</FilterLabel>
+              <FilterSelect
+                id="status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </FilterSelect>
+            </FormGroupFilter>
+          </FiltersGrid>
+          <FilterButtonGroup>
+            <SharedButton onClick={handleClearFilters}>Limpiar</SharedButton>
+            <SharedButton $variant="primary" onClick={fetchAlmacenes}>
+              Buscar
+            </SharedButton>
+          </FilterButtonGroup>
+        </FiltersCard>
 
         {filteredAlmacenes.length === 0 ? (
           <EmptyState>
-            <div style={{ fontSize: '3rem' }}>🏪</div>
             <p>No se encontraron almacenes</p>
             {almacenes.length === 0 && (
-              <Button onClick={handleCreate} style={{ marginTop: '1rem' }}>
+              <SharedButton $variant="primary" onClick={handleCreate} style={{ marginTop: '1rem' }}>
                 Crear primer almacén
-              </Button>
+              </SharedButton>
             )}
           </EmptyState>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <Th>Código</Th>
-                <Th>Nombre</Th>
-                <Th>Ubicación</Th>
-                {/* <Th>Capacidad</Th> */}
-                <Th>Productos</Th>
-                <Th>Movimientos</Th>
-                <Th>Estado</Th>
-                <Th>Acciones</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAlmacenes.map((almacen) => (
-                <Tr key={almacen.id}>
-                  <Td><strong>{almacen.codigo}</strong></Td>
-                  <Td>{almacen.nombre}</Td>
-                  <Td>{almacen.ubicacion || '-'}</Td>
-                  {/* <Td>{almacen.capacidad || '-'}</Td> */}
-                  <Td>{almacen._count?.stockByWarehouses || 0}</Td>
-                  <Td>{almacen._count?.inventoryMovements || 0}</Td>
-                  <Td>
-                    <Badge $active={almacen.activo}>
-                      {almacen.activo ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <ActionButton onClick={() => handleEdit(almacen)}>
-                      ✏️ Editar
-                    </ActionButton>
-                    {almacen.activo && (
-                      <ActionButton 
-                        $variant="delete"
-                        onClick={() => handleDelete(almacen.id)}
-                        disabled={almacen._count && almacen._count.stockByWarehouses > 0}
-                        title={almacen._count && almacen._count.stockByWarehouses > 0 ? 'No se puede desactivar un almacén con stock' : 'Desactivar almacén'}
-                      >
-                        🗑️ Desactivar
-                      </ActionButton>
-                    )}
-                  </Td>
-                </Tr>
-              ))}
-            </tbody>
-          </Table>
+          <>
+            <TableContainer>
+              <Table>
+                <thead>
+                  <tr>
+                    <Th>Código</Th>
+                    <Th>Nombre</Th>
+                    <Th>Ubicación</Th>
+                    <Th>Productos</Th>
+                    <Th>Movimientos</Th>
+                    <Th>Estado</Th>
+                    <Th>Acciones</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAlmacenes.map((almacen) => (
+                    <Tr key={almacen.id}>
+                      <Td><strong>{almacen.codigo}</strong></Td>
+                      <Td>{almacen.nombre}</Td>
+                      <Td>{almacen.ubicacion || '-'}</Td>
+                      <Td>{almacen._count?.stockByWarehouses || 0}</Td>
+                      <Td>{almacen._count?.inventoryMovements || 0}</Td>
+                      <Td>
+                        <StatusBadge variant={almacen.activo ? 'success' : 'danger'} dot>
+                          {almacen.activo ? 'Activo' : 'Inactivo'}
+                        </StatusBadge>
+                      </Td>
+                      <Td>
+                        <ActionsGroup>
+                          <ActionButton $variant="edit" onClick={() => handleEdit(almacen)}>
+                            Editar
+                          </ActionButton>
+                          {almacen.activo ? (
+                            <ActionButton 
+                              $variant="delete"
+                              onClick={() => handleDeleteClick(almacen)}
+                              disabled={almacen._count && almacen._count.stockByWarehouses > 0}
+                              title={almacen._count && almacen._count.stockByWarehouses > 0 ? 'No se puede eliminar un almacén con stock' : 'Eliminar almacén'}
+                            >
+                              Eliminar
+                            </ActionButton>
+                          ) : (
+                            <ActionButton 
+                              $variant="activate"
+                              onClick={() => handleActivateAlmacen(almacen.id)}
+                            >
+                              Activar
+                            </ActionButton>
+                          )}
+                        </ActionsGroup>
+                      </Td>
+                    </Tr>
+                  ))}
+                </tbody>
+              </Table>
+            </TableContainer>
+
+            {/* Paginación */}
+            <Pagination>
+              <PaginationInfo>
+                Mostrando {filteredAlmacenes.length} de {almacenes.length} almacenes
+              </PaginationInfo>
+            </Pagination>
+          </>
         )}
 
         {/* Modal de Crear/Editar Almacén */}
@@ -604,14 +723,14 @@ const ListaAlmacenes: React.FC = () => {
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>
-                {modalMode === 'create' ? '➕ Nuevo Almacén' : '✏️ Editar Almacén'}
+                {modalMode === 'create' ? 'Nuevo Almacén' : 'Editar Almacén'}
               </ModalTitle>
               <CloseButton onClick={closeModal}>&times;</CloseButton>
             </ModalHeader>
 
             <ModalBody>
               {modalError && (
-                <FormError>⚠️ {modalError}</FormError>
+                <FormError>{modalError}</FormError>
               )}
 
               <Form onSubmit={handleSubmit}>
@@ -684,25 +803,46 @@ const ListaAlmacenes: React.FC = () => {
                 */}
 
                 <ModalFooter>
-                  <ModalButton
+                  <SharedButton
                     type="button"
-                    $variant="secondary"
                     onClick={closeModal}
                     disabled={saving}
                   >
                     Cancelar
-                  </ModalButton>
-                  <ModalButton
+                  </SharedButton>
+                  <SharedButton
                     type="submit"
+                    $variant="primary"
                     disabled={saving}
                   >
-                    {saving ? '⏳ Guardando...' : modalMode === 'create' ? '✅ Crear Almacén' : '💾 Guardar Cambios'}
-                  </ModalButton>
+                    {saving ? 'Guardando...' : modalMode === 'create' ? 'Crear Almacén' : 'Guardar Cambios'}
+                  </SharedButton>
                 </ModalFooter>
               </Form>
             </ModalBody>
           </ModalContent>
         </ModalOverlay>
+
+        {/* Modal de confirmación de eliminación */}
+        {isDeleteConfirmOpen && (
+          <DeleteConfirmModal onClick={handleCancelDelete}>
+            <DeleteConfirmContent onClick={(e) => e.stopPropagation()}>
+              <DeleteConfirmTitle>Confirmar Eliminación</DeleteConfirmTitle>
+              <DeleteConfirmMessage>
+                ¿Está seguro que desea eliminar el almacén "{almacenToDelete?.nombre}"?
+                Esta acción desactivará el almacén.
+              </DeleteConfirmMessage>
+              <DeleteConfirmActions>
+                <ActionButton $variant="secondary" onClick={handleCancelDelete}>
+                  Cancelar
+                </ActionButton>
+                <ActionButton $variant="delete" onClick={handleConfirmDelete}>
+                  Eliminar
+                </ActionButton>
+              </DeleteConfirmActions>
+            </DeleteConfirmContent>
+          </DeleteConfirmModal>
+        )}
       </Container>
     </Layout>
   );

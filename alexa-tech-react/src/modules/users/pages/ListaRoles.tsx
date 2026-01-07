@@ -6,6 +6,28 @@ import { useNotification } from '../../../context/NotificationContext';
 import { apiService } from '../../../utils/api';
 import NuevoRolModal from '../components/NuevoRolModal';
 import EditarRolModal from '../components/EditarRolModal';
+import { TYPOGRAPHY, COLORS, BORDER_RADIUS, SHADOWS, SPACING } from '../../../styles/theme';
+import {
+  Button,
+  ActionButton,
+  Input,
+  Select,
+  StatusBadge,
+  StatsGrid,
+  StatCard,
+  StatValue,
+  StatLabel,
+  TableContainer,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  EmptyState,
+  EmptyTitle,
+  EmptyText
+} from '../../../components/shared';
 
 // ============================================================================
 // INTERFACES
@@ -49,20 +71,26 @@ const Container = styled.div`
   padding: 1rem;
 `;
 
-const Header = styled.div`
+const PageHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
-  gap: 1rem;
 `;
 
-const Title = styled.h1`
-  color: #2c3e50;
+const PageTitle = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
+`;
+
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const SearchContainer = styled.div`
@@ -72,274 +100,85 @@ const SearchContainer = styled.div`
   flex-wrap: wrap;
 `;
 
-const SearchInput = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
+const SearchInput = styled(Input)`
   min-width: 250px;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
 `;
 
-const FilterSelect = styled.select`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
+const FilterSelect = styled(Select)`
   min-width: 150px;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
 `;
 
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-
-  ${props => {
-    switch (props.$variant) {
-      case 'primary':
-        return `
-          background: #3498db;
-          color: white;
-          &:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
-          }
-        `;
-      case 'danger':
-        return `
-          background: #e74c3c;
-          color: white;
-          &:hover {
-            background: #c0392b;
-            transform: translateY(-1px);
-          }
-        `;
-      default:
-        return `
-          background: #95a5a6;
-          color: white;
-          &:hover {
-            background: #7f8c8d;
-            transform: translateY(-1px);
-          }
-        `;
-    }
-  }}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    &:hover {
-      transform: none;
-    }
-  }
+const PermissionCount = styled.span`
+  background: ${COLORS.infoBg};
+  color: ${COLORS.infoText};
+  padding: 0.25rem 0.75rem;
+  border-radius: ${BORDER_RADIUS.large};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const StatCard = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid;
-  border-left-color: ${props => props.color || '#3498db'};
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.9rem;
-  color: #7f8c8d;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const Thead = styled.thead`
-  background: #f8f9fa;
-`;
-
-const Th = styled.th`
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 2px solid #e1e8ed;
-`;
-
-const Tbody = styled.tbody``;
-
-const Tr = styled.tr`
-  &:nth-child(even) {
-    background: #f8f9fa;
-  }
-
-  &:hover {
-    background: #e3f2fd;
-  }
-`;
-
-const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #e1e8ed;
-  color: #2c3e50;
-`;
-
-const Badge = styled.span<{ $variant?: 'success' | 'danger' | 'warning' | 'info' }>`
+const TypeBadge = styled.span<{ $isSystem?: boolean }>`
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-
-  ${props => {
-    switch (props.$variant) {
-      case 'success':
-        return 'background: #d4edda; color: #155724;';
-      case 'danger':
-        return 'background: #f8d7da; color: #721c24;';
-      case 'warning':
-        return 'background: #fff3cd; color: #856404;';
-      case 'info':
-        return 'background: #d1ecf1; color: #0c5460;';
-      default:
-        return 'background: #e2e3e5; color: #383d41;';
-    }
-  }}
-`;
-
-const ActionButton = styled.button<{ $variant?: 'edit' | 'delete' | 'toggle' }>`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-right: 0.5rem;
-
-  ${props => {
-    switch (props.$variant) {
-      case 'edit':
-        return `
-          background: #3498db;
-          color: white;
-          &:hover { background: #2980b9; transform: translateY(-1px); }
-        `;
-      case 'delete':
-        return `
-          background: #e74c3c;
-          color: white;
-          &:hover { background: #c0392b; transform: translateY(-1px); }
-        `;
-      case 'toggle':
-        return `
-          background: #f39c12;
-          color: white;
-          &:hover { background: #e67e22; transform: translateY(-1px); }
-        `;
-      default:
-        return `
-          background: #95a5a6;
-          color: white;
-          &:hover { background: #7f8c8d; }
-        `;
-    }
-  }}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    &:hover {
-      transform: none;
-    }
-  }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
-
-  h3 {
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-  }
-
-  p {
-    margin-bottom: 1.5rem;
+  border-radius: ${BORDER_RADIUS.large};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  font-family: ${TYPOGRAPHY.fontFamily};
+  ${props => props.$isSystem
+    ? `background: ${COLORS.infoBg}; color: ${COLORS.infoText};`
+    : `background: ${COLORS.warningBg}; color: ${COLORS.warningText};`
   }
 `;
 
 const LoadingSpinner = styled.div`
   text-align: center;
   padding: 3rem;
-  font-size: 1.2rem;
-  color: #7f8c8d;
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  color: ${COLORS.textLight};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
-const PermissionCount = styled.span`
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+const DeleteConfirmModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 `;
 
-const TypeBadge = styled.span<{ $isSystem?: boolean }>`
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  ${props => props.$isSystem
-    ? 'background: #d1ecf1; color: #0c5460;'
-    : 'background: #fff3cd; color: #856404;'
-  }
+const DeleteConfirmContent = styled.div`
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  padding: ${SPACING.xl};
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+`;
+
+const DeleteConfirmTitle = styled.h3`
+  margin: 0 0 ${SPACING.md} 0;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.large};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+`;
+
+const DeleteConfirmMessage = styled.p`
+  margin: 0 0 ${SPACING.xl} 0;
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  line-height: 1.5;
+`;
+
+const DeleteConfirmActions = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
 `;
 
 // ============================================================================
@@ -360,6 +199,8 @@ const ListaRoles: React.FC = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   // Permisos
   const canCreate = hasPermission('users.create');
@@ -457,30 +298,53 @@ const ListaRoles: React.FC = () => {
   };
 
   const handleToggleStatus = async (role: Role) => {
+    const action = role.isActive ? 'desactivar' : 'activar';
     try {
       const endpoint = role.isActive ? 'deactivate' : 'activate';
       await apiService.patch(`/roles/${role.id}/${endpoint}`, {});
-      showSuccess(`Rol ${role.isActive ? 'desactivado' : 'activado'} exitosamente`);
+      showSuccess(`Rol ${action === 'desactivar' ? 'desactivado' : 'activado'} exitosamente`);
       loadRoles();
       loadStats();
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Error al cambiar el estado del rol';
+      const message = error.response?.data?.message || `Error al ${action} el rol`;
       showError(message);
     }
   };
 
-  const handleDeleteRole = async (role: Role) => {
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar el rol "${role.name}"?\n\nEsta acción no se puede deshacer.`)) {
-      return;
-    }
+  const handleDeleteClick = (role: Role) => {
+    setRoleToDelete(role);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!roleToDelete) return;
 
     try {
-      await apiService.delete(`/roles/${role.id}`);
+      await apiService.patch(`/roles/${roleToDelete.id}/deactivate`, {});
       showSuccess('Rol eliminado exitosamente');
+      setIsDeleteConfirmOpen(false);
+      setRoleToDelete(null);
       loadRoles();
       loadStats();
     } catch (error: any) {
       const message = error.response?.data?.message || 'Error al eliminar el rol';
+      showError(message);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteConfirmOpen(false);
+    setRoleToDelete(null);
+  };
+
+  const handleActivateRole = async (role: Role) => {
+    try {
+      await apiService.patch(`/roles/${role.id}/activate`, {});
+      showSuccess('Rol activado exitosamente');
+      loadRoles();
+      loadStats();
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Error al activar el rol';
       showError(message);
     }
   };
@@ -497,8 +361,11 @@ const ListaRoles: React.FC = () => {
   return (
     <Layout title="Gestión de Roles">
       <Container>
-        <Header>
-          <Title>Gestión de Roles</Title>
+        <PageHeader>
+          <div>
+            <PageTitle>Gestión de Roles</PageTitle>
+            <PageSubtitle>Administra los roles del sistema y sus permisos de acceso</PageSubtitle>
+          </div>
           <SearchContainer>
             <SearchInput
               type="text"
@@ -522,29 +389,29 @@ const ListaRoles: React.FC = () => {
               </Button>
             )}
           </SearchContainer>
-        </Header>
+        </PageHeader>
 
         {/* Estadísticas */}
         {stats && (
           <StatsGrid>
-            <StatCard color="#3498db">
-              <StatValue>{stats.total}</StatValue>
+            <StatCard $color="#3498db">
+              <StatValue $color="#3498db">{stats.total}</StatValue>
               <StatLabel>Total de Roles</StatLabel>
             </StatCard>
-            <StatCard color="#2ecc71">
-              <StatValue>{stats.active}</StatValue>
+            <StatCard $color="#28a745">
+              <StatValue $color="#28a745">{stats.active}</StatValue>
               <StatLabel>Roles Activos</StatLabel>
             </StatCard>
-            <StatCard color="#9b59b6">
-              <StatValue>{stats.system}</StatValue>
+            <StatCard $color="#17a2b8">
+              <StatValue $color="#17a2b8">{stats.system}</StatValue>
               <StatLabel>Roles del Sistema</StatLabel>
             </StatCard>
-            <StatCard color="#e67e22">
-              <StatValue>{stats.totalUsers}</StatValue>
+            <StatCard $color="#f0ad4e">
+              <StatValue $color="#f0ad4e">{stats.totalUsers}</StatValue>
               <StatLabel>Usuarios Asignados</StatLabel>
             </StatCard>
-            <StatCard color="#e74c3c">
-              <StatValue>{stats.usersWithoutRole}</StatValue>
+            <StatCard $color="#dc3545">
+              <StatValue $color="#dc3545">{stats.usersWithoutRole}</StatValue>
               <StatLabel>Sin Rol Asignado</StatLabel>
             </StatCard>
           </StatsGrid>
@@ -556,12 +423,12 @@ const ListaRoles: React.FC = () => {
         ) : filteredRoles.length === 0 ? (
           <TableContainer>
             <EmptyState>
-              <h3>No se encontraron roles</h3>
-              <p>
+              <EmptyTitle>No se encontraron roles</EmptyTitle>
+              <EmptyText>
                 {searchTerm || filterStatus !== 'all' || filterType !== 'all'
                   ? 'No hay roles que coincidan con los filtros aplicados.'
                   : 'Aún no se han creado roles en el sistema.'}
-              </p>
+              </EmptyText>
               {canCreate && (
                 <Button $variant="primary" onClick={() => setShowNewModal(true)}>
                   + Crear Primer Rol
@@ -573,7 +440,7 @@ const ListaRoles: React.FC = () => {
           <TableContainer>
             <Table>
               <Thead>
-                <tr>
+                <Tr>
                   <Th>Nombre</Th>
                   <Th>Tipo</Th>
                   <Th>Descripción</Th>
@@ -581,7 +448,7 @@ const ListaRoles: React.FC = () => {
                   <Th>Usuarios</Th>
                   <Th>Estado</Th>
                   <Th>Acciones</Th>
-                </tr>
+                </Tr>
               </Thead>
               <Tbody>
                 {filteredRoles.map(role => (
@@ -600,9 +467,9 @@ const ListaRoles: React.FC = () => {
                     </Td>
                     <Td>{role._count?.users || 0} usuarios</Td>
                     <Td>
-                      <Badge $variant={role.isActive ? 'success' : 'danger'}>
+                      <StatusBadge variant={role.isActive ? 'success' : 'danger'} dot>
                         {role.isActive ? 'Activo' : 'Inactivo'}
-                      </Badge>
+                      </StatusBadge>
                     </Td>
                     <Td>
                       {canUpdate && (
@@ -614,22 +481,21 @@ const ListaRoles: React.FC = () => {
                             Editar
                           </ActionButton>
                           {!role.isSystem && (
-                            <ActionButton
-                              $variant="toggle"
-                              onClick={() => handleToggleStatus(role)}
-                            >
-                              {role.isActive ? 'Desactivar' : 'Activar'}
-                            </ActionButton>
-                          )}
-                          {!role.isSystem && (
-                            <ActionButton
-                              $variant="delete"
-                              onClick={() => handleDeleteRole(role)}
-                              disabled={!!(role._count?.users && role._count.users > 0)}
-                              title={role._count?.users && role._count.users > 0 ? 'No se puede eliminar: hay usuarios asignados' : 'Eliminar rol'}
-                            >
-                              Eliminar
-                            </ActionButton>
+                            role.isActive ? (
+                              <ActionButton
+                                $variant="delete"
+                                onClick={() => handleDeleteClick(role)}
+                              >
+                                Eliminar
+                              </ActionButton>
+                            ) : (
+                              <ActionButton
+                                $variant="activate"
+                                onClick={() => handleActivateRole(role)}
+                              >
+                                Activar
+                              </ActionButton>
+                            )
                           )}
                         </>
                       )}
@@ -658,6 +524,28 @@ const ListaRoles: React.FC = () => {
             }}
             onSubmit={(data) => handleEditRole(selectedRole.id, data)}
           />
+        )}
+
+        {/* Modal de Confirmación de Eliminación */}
+        {isDeleteConfirmOpen && roleToDelete && (
+          <DeleteConfirmModal>
+            <DeleteConfirmContent>
+              <DeleteConfirmTitle>¿Eliminar Rol?</DeleteConfirmTitle>
+              <DeleteConfirmMessage>
+                ¿Estás seguro de que deseas eliminar el rol{' '}
+                <strong>{roleToDelete.name}</strong>?
+                Esta acción marcará el rol como inactivo.
+              </DeleteConfirmMessage>
+              <DeleteConfirmActions>
+                <Button $variant="outline" onClick={handleCancelDelete}>
+                  Cancelar
+                </Button>
+                <Button $variant="danger" onClick={handleConfirmDelete}>
+                  Eliminar
+                </Button>
+              </DeleteConfirmActions>
+            </DeleteConfirmContent>
+          </DeleteConfirmModal>
         )}
       </Container>
     </Layout>

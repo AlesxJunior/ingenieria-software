@@ -3,8 +3,37 @@ import styled from 'styled-components';
 import Layout from '../../../components/Layout';
 import { useSales } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { Button as SharedButton } from '../../../components/shared/Button';
 
 // ==================== STYLED COMPONENTS ====================
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
+`;
+
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
+`;
+
+const PageSubtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: ${SPACING.xs} 0 0 0;
+`;
 
 const PageGrid = styled.div`
   display: grid;
@@ -25,19 +54,19 @@ const ColumnLeft = styled.div`
 const ColumnRight = styled.div``;
 
 const Card = styled.div`
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.xl};
+  box-shadow: ${SHADOWS.sm};
 `;
 
 const CardTitle = styled.h3`
   margin-top: 0;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 10px;
-  font-size: 18px;
-  font-weight: 600;
+  margin-bottom: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  padding-bottom: ${SPACING.sm};
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const CashStatusView = styled.div`
@@ -95,17 +124,12 @@ const Button = styled.button`
     background-color: #ffc107;
     color: #333;
   }
-
-  &.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-  }
 `;
 
 const MovementButtons = styled.div`
   display: flex;
-  gap: 16px;
-  margin-top: 16px;
+  gap: ${SPACING.lg};
+  margin-top: ${SPACING.lg};
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -536,6 +560,12 @@ const GestionCaja: React.FC = () => {
 
   return (
     <Layout title="Gestión de Caja">
+      <Header>
+        <TitleSection>
+          <Title>Gestión de Caja</Title>
+          <PageSubtitle>Control de apertura, cierre y movimientos de efectivo en caja</PageSubtitle>
+        </TitleSection>
+      </Header>
       <PageGrid>
         {/* ==================== COLUMNA IZQUIERDA ==================== */}
         <ColumnLeft>
@@ -544,36 +574,36 @@ const GestionCaja: React.FC = () => {
             <CardTitle>Estado de Caja</CardTitle>
             {!activeCashSession ? (
               <CashStatusView>
-                <p>🔒 La caja se encuentra actualmente <strong>cerrada</strong>.</p>
+                <p>La caja se encuentra actualmente <strong>cerrada</strong>.</p>
                 <p>Debes abrirla para registrar movimientos o realizar ventas.</p>
-                <Button className="btn-primary" onClick={() => setShowOpenModal(true)}>
-                  🔓 Abrir Caja
-                </Button>
+                <SharedButton $variant="primary" onClick={() => setShowOpenModal(true)}>
+                  Abrir Caja
+                </SharedButton>
               </CashStatusView>
             ) : (
               <CashStatusView>
                 <p>
-                  ✅ Caja abierta desde:{' '}
+                  Caja abierta desde:{' '}
                   <strong>{formatDate(activeCashSession.fechaApertura)}</strong>
                 </p>
                 <p>
-                  👤 Usuario: <strong>
+                  Usuario: <strong>
                     {activeCashSession.user 
                       ? `${activeCashSession.user.firstName} ${activeCashSession.user.lastName}`
                       : activeCashSession.userId}
                   </strong>
                 </p>
                 <p>
-                  🏪 Caja: <strong>
+                  Caja: <strong>
                     {activeCashSession.cashRegister?.nombre || activeCashSession.cashRegisterId}
                   </strong>
                 </p>
                 <p>
-                  💰 Monto Inicial: <strong>{formatCurrency(activeCashSession.montoApertura)}</strong>
+                  Monto Inicial: <strong>{formatCurrency(activeCashSession.montoApertura)}</strong>
                 </p>
-                <Button className="btn-danger" onClick={() => setShowCloseModal(true)}>
-                  🔒 Cerrar Caja
-                </Button>
+                <SharedButton $variant="danger" onClick={() => setShowCloseModal(true)}>
+                  Cerrar Caja
+                </SharedButton>
               </CashStatusView>
             )}
           </Card>
@@ -583,18 +613,18 @@ const GestionCaja: React.FC = () => {
             <Card>
               <CardTitle>Movimientos de Caja</CardTitle>
               <MovementButtons>
-                <Button
-                  className="btn-success"
+                <SharedButton
+                  $variant="success"
                   onClick={() => handleOpenMovementModal('INGRESO')}
                 >
-                  ➕ Ingreso de Efectivo
-                </Button>
-                <Button
-                  className="btn-warning"
+                  Ingreso de Efectivo
+                </SharedButton>
+                <SharedButton
+                  $variant="warning"
                   onClick={() => handleOpenMovementModal('EGRESO')}
                 >
-                  ➖ Retiro de Efectivo
-                </Button>
+                  Retiro de Efectivo
+                </SharedButton>
               </MovementButtons>
 
               {cashMovements.length > 0 ? (
@@ -689,7 +719,7 @@ const GestionCaja: React.FC = () => {
                 </li>
 
                 <li className="summary-total">
-                  <span>💵 Total Esperado en Caja</span>
+                  <span>Total Esperado en Caja</span>
                   <strong>{formatCurrency(cashSummary.totalEsperado)}</strong>
                 </li>
               </SummaryList>
@@ -708,7 +738,7 @@ const GestionCaja: React.FC = () => {
         <Modal onClick={() => setShowOpenModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleOpenCash}>
-              <h3>🔓 Abrir Caja</h3>
+              <h3>Abrir Caja</h3>
               <p>Ingresa el monto inicial en efectivo con el que abrirás la caja.</p>
 
               <label htmlFor="open-amount">Monto inicial en caja (S/)</label>
@@ -724,16 +754,16 @@ const GestionCaja: React.FC = () => {
               />
 
               <ModalActions>
-                <Button
+                <SharedButton
                   type="button"
-                  className="btn-secondary"
+                  $variant="secondary"
                   onClick={() => setShowOpenModal(false)}
                 >
                   Cancelar
-                </Button>
-                <Button type="submit" className="btn-primary">
+                </SharedButton>
+                <SharedButton type="submit" $variant="primary">
                   Confirmar Apertura
-                </Button>
+                </SharedButton>
               </ModalActions>
             </form>
           </div>
@@ -746,7 +776,7 @@ const GestionCaja: React.FC = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSaveMovement}>
               <h3>
-                {movementType === 'INGRESO' ? '➕ Registrar Ingreso' : '➖ Registrar Egreso'}
+                {movementType === 'INGRESO' ? 'Registrar Ingreso' : 'Registrar Egreso'}
               </h3>
               <p>
                 {movementType === 'INGRESO'
@@ -808,16 +838,16 @@ const GestionCaja: React.FC = () => {
               />
 
               <ModalActions>
-                <Button
+                <SharedButton
                   type="button"
-                  className="btn-secondary"
+                  $variant="secondary"
                   onClick={() => setShowMovementModal(false)}
                 >
                   Cancelar
-                </Button>
-                <Button type="submit" className="btn-primary">
+                </SharedButton>
+                <SharedButton type="submit" $variant="primary">
                   Guardar Movimiento
-                </Button>
+                </SharedButton>
               </ModalActions>
             </form>
           </div>
@@ -829,7 +859,7 @@ const GestionCaja: React.FC = () => {
         <Modal onClick={() => setShowCloseModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleCloseCash}>
-              <h3>🔒 Cerrar Caja</h3>
+              <h3>Cerrar Caja</h3>
               <p>
                 Este es el resumen final de la sesión. Por favor, cuenta el efectivo en tu cajón e
                 ingrésalo a continuación.
@@ -837,7 +867,7 @@ const GestionCaja: React.FC = () => {
 
               <SummaryList style={{ marginBottom: '20px' }}>
                 <li>
-                  <span>💵 Total Esperado en Sistema</span>
+                  <span>Total Esperado en Sistema</span>
                   <strong>{formatCurrency(totalEsperado)}</strong>
                 </li>
               </SummaryList>
@@ -862,16 +892,16 @@ const GestionCaja: React.FC = () => {
               )}
 
               <ModalActions>
-                <Button
+                <SharedButton
                   type="button"
-                  className="btn-secondary"
+                  $variant="secondary"
                   onClick={() => setShowCloseModal(false)}
                 >
                   Cancelar
-                </Button>
-                <Button type="submit" className="btn-primary">
+                </SharedButton>
+                <SharedButton type="submit" $variant="primary">
                   Confirmar Cierre
-                </Button>
+                </SharedButton>
               </ModalActions>
             </form>
           </div>

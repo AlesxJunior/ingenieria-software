@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../../../../styles/theme';
+import { Input as SharedInput } from '../../../../components/shared/Input';
+import { Select as SharedSelect } from '../../../../components/shared/Select';
+import { Label as SharedLabel } from '../../../../components/shared/Label';
+import { Button as SharedButton } from '../../../../components/shared/Button';
 import Modal from '../../../../components/Modal';
 import type { StockItem, AjusteFormData } from '../../../../types/inventario';
 import { getWarehouseLabel } from '../../../../constants/warehouses';
@@ -9,104 +14,35 @@ import type { MovementReason } from '../../services/movementReasonsApi';
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: ${SPACING.xl};
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const Label = styled.label<{ $required?: boolean }>`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 0.9rem;
-  
-  ${props => props.$required && `
-    &::after {
-      content: ' *';
-      color: #e74c3c;
-    }
-  `}
-`;
-
-const Input = styled.input<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-
-  &:disabled {
-    background: #f8f9fa;
-    color: #6c757d;
-    cursor: not-allowed;
-  }
-
-  &::placeholder {
-    color: #95a5a6;
-  }
-`;
-
-const Select = styled.select<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-`;
-
-const Textarea = styled.textarea<{ $hasError?: boolean }>`
-  padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-  }
-
-  &::placeholder {
-    color: #95a5a6;
-  }
+  gap: ${SPACING.sm};
 `;
 
 const ErrorMessage = styled.span`
-  color: #e74c3c;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  color: ${COLOR_SCALES.danger[500]};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin-top: ${SPACING.xs};
+  display: block;
 `;
 
 const InfoCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  background: ${COLORS.neutral[50]};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
 `;
 
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: ${SPACING.sm};
   
   &:last-child {
     margin-bottom: 0;
@@ -114,68 +50,35 @@ const InfoRow = styled.div`
 `;
 
 const InfoLabel = styled.span`
-  font-weight: 500;
-  color: #495057;
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text.secondary};
 `;
 
 const InfoValue = styled.span`
-  color: #2c3e50;
-  font-weight: 600;
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const StockPreview = styled.div<{ $isValid: boolean }>`
-  background: ${props => props.$isValid ? '#d4edda' : '#f8d7da'};
-  border: 1px solid ${props => props.$isValid ? '#c3e6cb' : '#f5c6cb'};
-  color: ${props => props.$isValid ? '#155724' : '#721c24'};
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-weight: 500;
+  background: ${props => props.$isValid ? COLOR_SCALES.success[100] : COLOR_SCALES.danger[100]};
+  border: 1px solid ${props => props.$isValid ? COLOR_SCALES.success[300] : COLOR_SCALES.danger[300]};
+  color: ${props => props.$isValid ? COLOR_SCALES.success[700] : COLOR_SCALES.danger[700]};
+  padding: ${SPACING.md};
+  border-radius: ${BORDER_RADIUS.md};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   text-align: center;
-  margin-top: 0.5rem;
+  margin-top: ${SPACING.sm};
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.lg};
   justify-content: flex-end;
-  margin-top: 1rem;
+  margin-top: ${SPACING.lg};
 
   @media (max-width: 768px) {
-    justify-content: stretch;
-    
-    button {
-      flex: 1;
-    }
-  }
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  ${props => props.$variant === 'primary' ? `
-    background: #3498db;
-    color: white;
-    
-    &:hover:not(:disabled) {
-      background: #2980b9;
-    }
-  ` : `
-    background: #6c757d;
-    color: white;
-    
-    &:hover:not(:disabled) {
-      background: #5a6268;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    flex-direction: column;
+    gap: ${SPACING.md};
   }
 `;
 
@@ -335,13 +238,13 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
         {/* Cantidad ajuste */}
         <FormGroup>
-          <Label htmlFor="cantidadAjuste" $required>Cantidad a ajustar</Label>
-          <Input
+          <SharedLabel htmlFor="cantidadAjuste" required>Cantidad a ajustar</SharedLabel>
+          <SharedInput
             id="cantidadAjuste"
             type="number"
             value={formData.cantidadAjuste}
-            onChange={(e) => handleInputChange('cantidadAjuste', Number(e.target.value))}
-            $hasError={!!errors.cantidadAjuste}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cantidadAjuste', Number(e.target.value))}
+            error={!!errors.cantidadAjuste}
             placeholder="Ingrese la cantidad"
             data-testid="ajuste-input-cantidad"
           />
@@ -357,12 +260,12 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
         {/* Motivo */}
         <FormGroup>
-          <Label htmlFor="adjustmentReason" $required>Motivo del ajuste</Label>
-          <Select
+          <SharedLabel htmlFor="adjustmentReason" required>Motivo del ajuste</SharedLabel>
+          <SharedSelect
             id="adjustmentReason"
             value={formData.adjustmentReason}
-            onChange={(e) => handleInputChange('adjustmentReason', e.target.value)}
-            $hasError={!!errors.adjustmentReason}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleInputChange('adjustmentReason', e.target.value)}
+            error={!!errors.adjustmentReason}
             data-testid="ajuste-select-motivo"
             disabled={loadingMotivos}
           >
@@ -374,7 +277,7 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
                 {motivo.codigo} - {motivo.nombre}
               </option>
             ))}
-          </Select>
+          </SharedSelect>
           {errors.adjustmentReason && (
             <ErrorMessage data-testid="ajuste-error-motivo">
               {errors.adjustmentReason}
@@ -384,22 +287,24 @@ const ModalAjuste: React.FC<ModalAjusteProps> = ({
 
         {/* Observaciones */}
         <FormGroup>
-          <Label htmlFor="observaciones">Observaciones</Label>
-          <Textarea
+          <SharedLabel htmlFor="observaciones">Observaciones</SharedLabel>
+          <SharedInput
+            as="textarea"
             id="observaciones"
             value={formData.observaciones || ''}
-            onChange={(e) => handleInputChange('observaciones', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('observaciones', e.target.value)}
             placeholder="Notas adicionales"
+            style={{ minHeight: '80px', resize: 'vertical' }}
             data-testid="ajuste-input-observaciones"
           />
         </FormGroup>
 
         {/* Acciones */}
         <ButtonGroup>
-          <Button type="button" $variant="secondary" onClick={handleClose} data-testid="ajuste-button-cancelar">Cancelar</Button>
-          <Button type="submit" $variant="primary" disabled={isSubmitting} data-testid="ajuste-button-confirmar">
+          <SharedButton type="button" $variant="secondary" onClick={handleClose} data-testid="ajuste-button-cancelar">Cancelar</SharedButton>
+          <SharedButton type="submit" $variant="primary" disabled={isSubmitting} data-testid="ajuste-button-confirmar">
             {isSubmitting ? 'Guardando...' : 'Confirmar Ajuste'}
-          </Button>
+          </SharedButton>
         </ButtonGroup>
       </Form>
     </Modal>

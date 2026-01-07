@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { apiService } from '../utils/api';
 import type { ApiResponse } from '../utils/api';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../styles/theme';
 
 interface Departamento { id: string; nombre: string; }
 interface Provincia { id: string; nombre: string; departamentoId: string; }
@@ -28,11 +29,11 @@ interface UbigeoSelectorProps {
 const FormRow = styled.div<{ $compact?: boolean }>`
   display: ${props => props.$compact ? 'flex' : 'grid'};
   ${props => props.$compact ? `
-    gap: 15px;
+    gap: ${SPACING.lg};
     flex-wrap: wrap;
   ` : `
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 1rem;
+    gap: ${SPACING.lg};
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
     }
@@ -42,34 +43,34 @@ const FormRow = styled.div<{ $compact?: boolean }>`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: ${SPACING.sm};
 `;
 
 const Label = styled.label<{ $compact?: boolean }>`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: ${props => props.$compact ? '12px' : '0.9rem'};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text.primary};
+  font-size: ${props => props.$compact ? TYPOGRAPHY.fontSize.xs : TYPOGRAPHY.fontSize.sm};
 `;
 
 const Select = styled.select<{ $hasError?: boolean; $compact?: boolean }>`
-  padding: ${props => props.$compact ? '8px' : '0.75rem'};
-  border: ${props => props.$hasError ? (props.$compact ? '1px solid #e74c3c' : '2px solid #e74c3c') : (props.$compact ? '1px solid #e1e8ed' : '2px solid #e1e8ed')};
-  border-radius: ${props => props.$compact ? '4px' : '8px'};
-  font-size: ${props => props.$compact ? '14px' : '1rem'};
-  background: white;
-  transition: border-color 0.2s;
+  padding: ${props => props.$compact ? SPACING.sm : SPACING.lg};
+  border: ${props => props.$hasError ? `2px solid ${COLOR_SCALES.danger[500]}` : `2px solid ${COLORS.neutral[200]}`};
+  border-radius: ${props => props.$compact ? BORDER_RADIUS.sm : BORDER_RADIUS.md};
+  font-size: ${props => props.$compact ? TYPOGRAPHY.fontSize.sm : TYPOGRAPHY.fontSize.base};
+  background: ${COLORS.neutral.white};
+  transition: ${TRANSITIONS.default};
   width: ${props => props.$compact ? '200px' : '100%'};
 
   &:focus {
     outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
+    border-color: ${props => props.$hasError ? COLOR_SCALES.danger[500] : COLOR_SCALES.primary[500]};
   }
 `;
 
 const ErrorMessage = styled.span`
-  color: #e74c3c;
-  font-size: 0.8rem;
-  margin-top: 0.25rem;
+  color: ${COLOR_SCALES.danger[500]};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  margin-top: ${SPACING.xs};
 `;
 
 const UbigeoSelector: React.FC<UbigeoSelectorProps> = ({ value, onChange, errors, disabled, compact = false }) => {

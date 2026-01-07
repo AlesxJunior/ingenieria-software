@@ -2,41 +2,25 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { apiService } from '../../../utils/api';
 import { useNotification } from '../../../context/NotificationContext';
+import { SPACING, COLORS, BORDER_RADIUS } from '../../../styles/theme';
+import { Button } from '../../../components/shared';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: ${SPACING.md};
 `;
 
 const Row = styled.div`
   display: flex;
-  gap: 12px;
+  gap: ${SPACING.sm};
   align-items: center;
 `;
 
 const Actions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 10px 16px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  font-weight: 500;
-  ${p => p.$variant === 'secondary' ? `
-    background: #6c757d;
-    color: white;
-    &:hover { background: #5a6268; }
-  ` : `
-    background: #0047b3;
-    border-color: #0047b3;
-    color: white;
-    &:hover { background: #003a92; border-color: #003a92; }
-  `}
+  gap: ${SPACING.sm};
 `;
 
 interface CambiarEstadoModalProps {

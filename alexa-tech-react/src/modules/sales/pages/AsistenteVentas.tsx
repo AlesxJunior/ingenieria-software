@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { Input as SharedInput } from '../../../components/shared/Input';
+import { Select as SharedSelect } from '../../../components/shared/Select';
+import { Label as SharedLabel } from '../../../components/shared/Label';
 import Layout from '../../../components/Layout';
 import { useClients } from '../../clients/context/ClientContext';
 import { useNotification } from '../../../context/NotificationContext';
@@ -8,34 +13,36 @@ import { Sparkles, Search, MapPin, TrendingUp, AlertTriangle, Lightbulb, Shoppin
 
 // 🎨 ESTILOS SIGUIENDO DISEÑO ESTÁNDAR DEL SISTEMA
 const AIContainer = styled.div`
-  padding: 24px;
+  padding: ${SPACING.xl};
   max-width: 1400px;
   margin: 0 auto;
 `;
 
 const Header = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
+`;
+
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
 `;
 
 const Title = styled.h1`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 8px 0;
-  font-size: 24px;
-  color: #333;
-  font-weight: 600;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
 `;
 
-const Subtitle = styled.p`
-  color: #666;
-  font-size: 14px;
-  margin: 0;
-  line-height: 1.5;
+const PageSubtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const SearchSection = styled.div`
@@ -60,87 +67,66 @@ const SearchGrid = styled.div`
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 6px;
-`;
-
-const Label = styled.label`
-  font-weight: 600;
-  font-size: 13px;
-  color: #333;
-`;
-
-const Input = styled.input`
-  padding: 10px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #1e3a5f;
-  }
-
-  &::placeholder {
-    color: #999;
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
-
-const Select = styled.select`
-  padding: 10px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #1e3a5f;
-  }
-
-  &:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-`;
+  gap: ${SPACING.xs};\n`;
 
 const SearchButton = styled.button<{ $loading?: boolean }>`
   padding: 10px 24px;
-  background: #1e3a5f;
+  background: ${COLORS.primary};
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   cursor: ${(props) => (props.$loading ? 'not-allowed' : 'pointer')};
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.2s ease;
+  transition: ${TRANSITIONS.default};
   opacity: ${(props) => (props.$loading ? 0.7 : 1)};
 
   &:hover:not(:disabled) {
-    background: #2c5282;
+    background: ${COLORS.primaryDark};
+    transform: translateY(-1px);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
+
+  .spin-animation {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 const LoadingContainer = styled.div`
   background: white;
-  border-radius: 8px;
+  border-radius: ${BORDER_RADIUS.md};
   padding: 48px;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: ${SHADOWS.sm};
+
+  .spin-animation {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 const LoadingText = styled.p`
@@ -213,13 +199,13 @@ const RecommendationsGrid = styled.div`
   }
 `;
 
-const ProductCard = styled.div`
+const ProductCard = styled.div<{ $selected?: boolean }>`
   background: white;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
-  border: 1px solid #e0e0e0;
+  border: 2px solid ${(props) => (props.$selected ? '#3b82f6' : '#e0e0e0')};
 
   &:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -309,27 +295,6 @@ const WarningItem = styled(ReasonItem)`
   }
 `;
 
-const AddToCartButton = styled.button`
-  width: 100%;
-  padding: 10px;
-  background: #1e3a5f;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #2c5282;
-  }
-`;
-
 const NotRecommendedSection = styled.div`
   background: white;
   border-radius: 8px;
@@ -394,6 +359,115 @@ const TipText = styled.p`
   display: flex;
   align-items: center;
   gap: 8px;
+`;
+
+// 🛒 ESTILOS PARA SELECCIÓN Y CONVERSIÓN A VENTA
+const ProductSelectionRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 12px;
+`;
+
+const CheckboxLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+
+  input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+`;
+
+const QuantityInput = styled.input`
+  width: 70px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  text-align: center;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+
+  &:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+  }
+`;
+
+const ConvertButtonContainer = styled.div`
+  position: sticky;
+  bottom: 20px;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  border: 2px solid #3b82f6;
+`;
+
+const TotalInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const TotalLabel = styled.span`
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+`;
+
+const TotalAmount = styled.span`
+  font-size: 24px;
+  color: #1e3a5f;
+  font-weight: 700;
+`;
+
+const ConvertButton = styled.button`
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
 `;
 
 // 🕵️ ESTILOS PANEL DETECTIVE
@@ -612,11 +686,18 @@ interface AIResponse {
 const AsistenteVentas: React.FC = () => {
   const { clients } = useClients();
   const { showNotification } = useNotification();
+  const navigate = useNavigate();
+
+  // Filtrar solo clientes (excluir proveedores puros)
+  const filteredClients = clients.filter(
+    (client) => client.tipoEntidad === 'Cliente' || client.tipoEntidad === 'Ambos'
+  );
 
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<AIResponse | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<Map<string, number>>(new Map()); // productoId -> cantidad
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const handleSearch = async () => {
@@ -677,9 +758,104 @@ const AsistenteVentas: React.FC = () => {
     }
   };
 
-  const handleAddToCart = (product: ProductRecommendation) => {
-    // TODO: Integrar con el carrito de ventas
-    showNotification('success', 'Producto Agregado', `${product.nombre} agregado al carrito`);
+  const handleToggleProduct = (productoId: string) => {
+    setSelectedProducts((prev) => {
+      const newMap = new Map(prev);
+      if (newMap.has(productoId)) {
+        newMap.delete(productoId);
+      } else {
+        newMap.set(productoId, 1); // Cantidad inicial: 1
+      }
+      return newMap;
+    });
+  };
+
+  const handleQuantityChange = (productoId: string, cantidad: number) => {
+    if (cantidad < 1) return;
+    setSelectedProducts((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(productoId, cantidad);
+      return newMap;
+    });
+  };
+
+  const handleConvertirEnVenta = () => {
+    if (selectedProducts.size === 0) {
+      showNotification('warning', 'Sin Productos', 'Selecciona al menos un producto para convertir en venta');
+      return;
+    }
+
+    if (!selectedClient) {
+      showNotification('warning', 'Sin Cliente', 'Selecciona un cliente antes de continuar');
+      return;
+    }
+
+    // Preparar productos seleccionados con sus datos completos
+    const productosParaVenta = Array.from(selectedProducts.entries()).map(([productoId, cantidad]) => {
+      // Buscar en ambas listas: recomendaciones y complementarios
+      const todosLosProductos = [
+        ...getRecommendations(),
+        ...(recommendations?.productosComplementarios || [])
+      ];
+      
+      const producto = todosLosProductos.find((p) => p.productoId === productoId);
+      
+      if (!producto) {
+        console.warn('⚠️ Producto no encontrado:', productoId);
+      }
+      
+      console.log('📦 Producto encontrado:', {
+        productoId,
+        nombre: producto?.nombre,
+        precio: producto?.precio,
+        codigo: producto?.codigo
+      });
+      
+      return {
+        productId: productoId,
+        nombreProducto: producto?.nombre || '',
+        codigo: producto?.codigo || '',
+        cantidad: cantidad,
+        precioUnitario: producto?.precio || 0,
+        subtotal: (producto?.precio || 0) * cantidad,
+      };
+    });
+
+    // Calcular total
+    const total = productosParaVenta.reduce((sum, p) => sum + p.subtotal, 0);
+
+    console.log('🚀 Productos para venta:', productosParaVenta);
+    console.log('💰 Total:', total);
+
+    // Navegar a RealizarVenta con productos pre-cargados
+    navigate('/ventas/realizar', {
+      state: {
+        productosPreseleccionados: productosParaVenta,
+        clientePreseleccionado: selectedClient,
+        observaciones: `🤖 Generado desde Asistente IA - Consulta: "${searchQuery}"`,
+        totalPreseleccionado: total,
+      },
+    });
+
+    showNotification('success', 'Redirigiendo', 'Abriendo módulo de ventas con productos seleccionados');
+  };
+
+  const calcularTotalSeleccionado = () => {
+    let total = 0;
+    
+    // Combinar todas las listas de productos
+    const todosLosProductos = [
+      ...getRecommendations(),
+      ...(recommendations?.productosComplementarios || [])
+    ];
+    
+    selectedProducts.forEach((cantidad, productoId) => {
+      const producto = todosLosProductos.find((p) => p.productoId === productoId);
+      if (producto) {
+        total += (producto.precio || 0) * cantidad;
+      }
+    });
+    return total;
   };
 
   const selectedClientData = clients.find((c) => c.id === selectedClient);
@@ -741,27 +917,27 @@ const AsistenteVentas: React.FC = () => {
     <Layout title="Asistente de Ventas IA">
       <AIContainer>
         <Header>
-          <Title>
-            <Sparkles size={36} />
-            Asistente de Ventas Inteligente
-          </Title>
-          <Subtitle>
-            Obtén recomendaciones personalizadas basadas en la ubicación, clima y necesidades del
-            cliente usando inteligencia artificial de última generación.
-          </Subtitle>
+          <TitleSection>
+            <Title>Asistente de Ventas Inteligente</Title>
+            <PageSubtitle>
+              Obtén recomendaciones personalizadas basadas en la ubicación, clima y necesidades del
+              cliente usando inteligencia artificial de última generación.
+            </PageSubtitle>
+          </TitleSection>
         </Header>
 
         <SearchSection>
           <SearchGrid>
             <FormGroup>
-              <Label>Cliente</Label>
-              <Select
+              <SharedLabel htmlFor="cliente">Cliente</SharedLabel>
+              <SharedSelect
+                id="cliente"
                 value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedClient(e.target.value)}
                 disabled={loading}
               >
                 <option value="">Selecciona un cliente...</option>
-                {clients.map((client) => {
+                {filteredClients.map((client) => {
                   // Mostrar razónSocial para RUC o nombres+apellidos para DNI/CE/Pasaporte
                   const displayName = client.razonSocial || 
                     `${client.nombres || ''} ${client.apellidos || ''}`.trim();
@@ -772,16 +948,17 @@ const AsistenteVentas: React.FC = () => {
                     </option>
                   );
                 })}
-              </Select>
+              </SharedSelect>
             </FormGroup>
 
             <FormGroup>
-              <Label>¿Qué necesita el cliente?</Label>
-              <Input
+              <SharedLabel htmlFor="searchQuery">¿Qué necesita el cliente?</SharedLabel>
+              <SharedInput
+                id="searchQuery"
                 type="text"
                 placeholder="Ej: cámaras de seguridad"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 disabled={loading}
               />
@@ -790,7 +967,7 @@ const AsistenteVentas: React.FC = () => {
             <SearchButton onClick={handleSearch} disabled={loading || !selectedClient} $loading={loading}>
               {loading ? (
                 <>
-                  <Loader2 size={20} className="animate-spin" />
+                  <Loader2 size={20} className="spin-animation" />
                   Analizando...
                 </>
               ) : (
@@ -805,9 +982,8 @@ const AsistenteVentas: React.FC = () => {
 
         {loading && (
           <LoadingContainer>
-            <Loader2 size={48} className="animate-spin" style={{ color: '#1e3a5f' }} />
+            <Loader2 size={48} className="spin-animation" style={{ color: COLORS.primary }} />
             <LoadingText>
-              <Sparkles size={20} />
               La IA está analizando las mejores opciones para tu cliente...
             </LoadingText>
           </LoadingContainer>
@@ -819,8 +995,8 @@ const AsistenteVentas: React.FC = () => {
             {recommendations.pasosAnalisis && recommendations.pasosAnalisis.length > 0 && (
               <AnalysisPanel>
                 <AnalysisHeader>
-                  <Eye size={24} style={{ color: '#1e3a5f' }} />
-                  <AnalysisTitle>🕵️ Proceso de Análisis de la IA</AnalysisTitle>
+                  <Eye size={24} style={{ color: COLORS.primary }} />
+                  <AnalysisTitle>Proceso de Análisis de la IA</AnalysisTitle>
                   <TotalTimeBadge>
                     <Clock size={14} />
                     {getTotalTime()}
@@ -901,10 +1077,12 @@ const AsistenteVentas: React.FC = () => {
                 </SectionTitle>
                 <RecommendationsGrid>
                   {getRecommendations().map((product) => (
-                    <ProductCard key={product.productoId}>
+                    <ProductCard 
+                      key={product.productoId}
+                      $selected={selectedProducts.has(product.productoId)}
+                    >
                       <ProductHeader>
                         <ProductName>{product.nombre}</ProductName>
-                        <ScoreBadge $score={product.score}>{product.score}%</ScoreBadge>
                       </ProductHeader>
 
                       <ProductPrice>S/ {product.precio ? product.precio.toFixed(2) : '0.00'}</ProductPrice>
@@ -917,7 +1095,7 @@ const AsistenteVentas: React.FC = () => {
                           </InfoTitle>
                           <ReasonList>
                             {product.razones.map((razon, idx) => (
-                              <ReasonItem key={idx}>{razon}</ReasonItem>
+                              <ReasonItem key={`${product.productoId}-razon-${idx}`}>{razon}</ReasonItem>
                             ))}
                           </ReasonList>
                         </InfoSection>
@@ -931,7 +1109,7 @@ const AsistenteVentas: React.FC = () => {
                           </InfoTitle>
                           <ReasonList>
                             {product.ventajas.map((ventaja, idx) => (
-                              <ReasonItem key={idx}>{ventaja}</ReasonItem>
+                              <ReasonItem key={`${product.productoId}-ventaja-${idx}`}>{ventaja}</ReasonItem>
                             ))}
                           </ReasonList>
                         </InfoSection>
@@ -945,16 +1123,40 @@ const AsistenteVentas: React.FC = () => {
                           </InfoTitle>
                           <ReasonList>
                             {product.consideraciones.map((consideracion, idx) => (
-                              <WarningItem key={idx}>{consideracion}</WarningItem>
+                              <WarningItem key={`${product.productoId}-consideracion-${idx}`}>{consideracion}</WarningItem>
                             ))}
                           </ReasonList>
                         </InfoSection>
                       )}
 
-                      <AddToCartButton onClick={() => handleAddToCart(product)}>
-                        <ShoppingCart size={18} />
-                        Agregar al Carrito
-                      </AddToCartButton>
+                      <ProductSelectionRow>
+                        <CheckboxLabel>
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.has(product.productoId)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleToggleProduct(product.productoId);
+                            }}
+                          />
+                          Seleccionar
+                        </CheckboxLabel>
+                        {selectedProducts.has(product.productoId) && (
+                          <>
+                            <span style={{ color: '#666', fontSize: '14px' }}>Cantidad:</span>
+                            <QuantityInput
+                              type="number"
+                              min="1"
+                              value={selectedProducts.get(product.productoId) || 1}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleQuantityChange(product.productoId, parseInt(e.target.value) || 1);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </>
+                        )}
+                      </ProductSelectionRow>
                     </ProductCard>
                   ))}
                 </RecommendationsGrid>
@@ -989,28 +1191,57 @@ const AsistenteVentas: React.FC = () => {
                     También te puede interesar
                   </SectionTitle>
                   <RecommendationsGrid>
-                    {recommendations.productosComplementarios.map((product) => (
-                      <ProductCard key={product.productoId}>
-                        <ProductHeader>
-                          <ProductName>{product.nombre}</ProductName>
-                          <ScoreBadge $score={product.score}>{product.score}%</ScoreBadge>
-                        </ProductHeader>
-                        <ProductPrice>S/ {product.precio ? product.precio.toFixed(2) : '0.00'}</ProductPrice>
+                    {recommendations.productosComplementarios.map((product, index) => {
+                      console.log('🔍 Producto complementario:', product);
+                      return (
+                        <ProductCard 
+                          key={`comp-${product.productoId}-${index}`}
+                          $selected={selectedProducts.has(product.productoId)}
+                        >
+                          <ProductHeader>
+                            <ProductName>{product.nombre}</ProductName>
+                          </ProductHeader>
+                          <ProductPrice>S/ {product.precio?.toFixed(2) || '0.00'}</ProductPrice>
                         {product.razones && product.razones.length > 0 && (
                           <InfoSection>
                             <ReasonList>
                               {product.razones.map((razon, idx) => (
-                                <ReasonItem key={idx}>{razon}</ReasonItem>
+                                <ReasonItem key={`${product.productoId}-comp-razon-${idx}`}>{razon}</ReasonItem>
                               ))}
                             </ReasonList>
                           </InfoSection>
                         )}
-                        <AddToCartButton onClick={() => handleAddToCart(product)}>
-                          <ShoppingCart size={18} />
-                          Agregar al Carrito
-                        </AddToCartButton>
+                        <ProductSelectionRow>
+                          <CheckboxLabel>
+                            <input
+                              type="checkbox"
+                              checked={selectedProducts.has(product.productoId)}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleToggleProduct(product.productoId);
+                              }}
+                            />
+                            Seleccionar
+                          </CheckboxLabel>
+                          {selectedProducts.has(product.productoId) && (
+                            <>
+                              <span style={{ color: '#666', fontSize: '14px' }}>Cantidad:</span>
+                              <QuantityInput
+                                type="number"
+                                min="1"
+                                value={selectedProducts.get(product.productoId) || 1}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(product.productoId, parseInt(e.target.value) || 1);
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </>
+                          )}
+                        </ProductSelectionRow>
                       </ProductCard>
-                    ))}
+                    );
+                    })}
                   </RecommendationsGrid>
                 </>
               )}
@@ -1031,6 +1262,25 @@ const AsistenteVentas: React.FC = () => {
                   </TipCard>
                 ))}
               </TipsSection>
+            )}
+
+            {/* Botón Convertir en Venta */}
+            {(getRecommendations().length > 0 || recommendations?.productosComplementarios) && (
+              <ConvertButtonContainer>
+                <TotalInfo>
+                  <TotalLabel>
+                    {selectedProducts.size} producto{selectedProducts.size !== 1 ? 's' : ''} seleccionado{selectedProducts.size !== 1 ? 's' : ''}
+                  </TotalLabel>
+                  <TotalAmount>S/ {calcularTotalSeleccionado().toFixed(2)}</TotalAmount>
+                </TotalInfo>
+                <ConvertButton
+                  onClick={handleConvertirEnVenta}
+                  disabled={selectedProducts.size === 0}
+                >
+                  <ShoppingCart size={20} />
+                  Convertir en Venta
+                </ConvertButton>
+              </ConvertButtonContainer>
             )}
           </ResultsContainer>
         )}

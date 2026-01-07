@@ -4,6 +4,14 @@ import { useNotification } from '../../../context/NotificationContext';
 import { validateUsername, validateEmail } from '../../../utils/validation';
 import RoleSelector from './RoleSelector';
 import PermissionsPreview from './PermissionsPreview';
+import { TYPOGRAPHY, COLORS, BORDER_RADIUS, SHADOWS, TRANSITIONS, Z_INDEX } from '../../../styles/theme';
+import {
+  Button,
+  Input,
+  Label,
+  ValidationMessage,
+  ButtonGroup
+} from '../../../components/shared';
 
 // ============================================================================
 // INTERFACES
@@ -69,18 +77,19 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.modal};
   padding: 20px;
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: ${SHADOWS.xl};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const ModalHeader = styled.div`
@@ -88,16 +97,17 @@ const ModalHeader = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 24px;
-  border-bottom: 1px solid #e9ecef;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid ${COLORS.border};
+  background: ${COLORS.primary};
+  border-radius: ${BORDER_RADIUS.large} ${BORDER_RADIUS.large} 0 0;
 `;
 
 const ModalTitle = styled.h2`
   margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: white;
+  font-size: ${TYPOGRAPHY.fontSize.h2};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.white};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const CloseButton = styled.button`
@@ -105,14 +115,14 @@ const CloseButton = styled.button`
   border: none;
   font-size: 28px;
   cursor: pointer;
-  color: white;
+  color: ${COLORS.white};
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: ${BORDER_RADIUS.round};
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all ${TRANSITIONS.normal};
 
   &:hover {
     background: rgba(255, 255, 255, 0.3);
@@ -128,150 +138,83 @@ const InputGroup = styled.div`
   margin-bottom: 20px;
 `;
 
-const Label = styled.label`
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 14px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.2s;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  &:disabled {
-    background-color: #f8f9fa;
-    cursor: not-allowed;
-  }
-`;
-
 const InputWithError = styled(Input)<{ hasError?: boolean }>`
-  border-color: ${props => props.hasError ? '#dc3545' : '#ddd'};
+  border-color: ${props => props.hasError ? COLORS.danger : COLORS.border};
   
   &:focus {
-    border-color: ${props => props.hasError ? '#dc3545' : '#667eea'};
-    box-shadow: 0 0 0 3px ${props => props.hasError ? 'rgba(220, 53, 69, 0.1)' : 'rgba(102, 126, 234, 0.1)'};
+    border-color: ${props => props.hasError ? COLORS.danger : COLORS.primary};
+    box-shadow: 0 0 0 3px ${props => props.hasError ? COLORS.dangerBg : COLORS.primaryLight};
   }
-`;
-
-const ErrorMessage = styled.div`
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 6px;
-  margin-left: 4px;
-  font-weight: 500;
 `;
 
 const InfoBox = styled.div`
-  background: #e7f3ff;
-  border-left: 4px solid #2196f3;
+  background: ${COLORS.infoBg};
+  border-left: 4px solid ${COLORS.info};
   padding: 16px;
-  border-radius: 8px;
+  border-radius: ${BORDER_RADIUS.medium};
   margin-bottom: 20px;
 `;
 
 const InfoTitle = styled.div`
-  font-weight: 600;
-  color: #1976d2;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.infoText};
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: ${TYPOGRAPHY.fontSize.small};
 `;
 
 const InfoText = styled.div`
-  color: #0d47a1;
-  font-size: 13px;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  color: ${COLORS.infoText};
+  font-size: ${TYPOGRAPHY.fontSize.small};
   line-height: 1.5;
 `;
 
 const RoleChangeAlert = styled.div`
-  background: #fff3cd;
-  border-left: 4px solid #ffc107;
+  background: ${COLORS.warningBg};
+  border-left: 4px solid ${COLORS.warning};
   padding: 16px;
-  border-radius: 8px;
+  border-radius: ${BORDER_RADIUS.medium};
   margin-bottom: 20px;
 `;
 
 const RoleChangeTitle = styled.div`
-  font-weight: 600;
-  color: #856404;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.warningText};
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: ${TYPOGRAPHY.fontSize.small};
 `;
 
 const RoleChangeText = styled.div`
-  color: #856404;
-  font-size: 13px;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  color: ${COLORS.warningText};
+  font-size: ${TYPOGRAPHY.fontSize.small};
   line-height: 1.5;
 `;
 
 const RoleChangeBadge = styled.span<{ $variant?: 'old' | 'new' }>`
   display: inline-block;
   padding: 4px 12px;
-  background: ${props => props.$variant === 'old' ? '#dc3545' : '#28a745'};
-  color: white;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  background: ${props => props.$variant === 'old' ? COLORS.danger : COLORS.success};
+  color: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-family: ${TYPOGRAPHY.fontFamily};
   margin: 0 4px;
 `;
 
 const Divider = styled.div`
   height: 1px;
-  background: #e9ecef;
+  background: ${COLORS.border};
   margin: 1.5rem 0;
 `;
 
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+const ModalButtonGroup = styled(ButtonGroup)`
   padding: 24px;
-  border-top: 1px solid #e9ecef;
-  background-color: #f8f9fa;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-
-    &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  ` : `
-    background: #6c757d;
-    color: white;
-
-    &:hover {
-      background: #5a6268;
-    }
-  `}
+  border-top: 1px solid ${COLORS.border};
+  background-color: ${COLORS.background};
 `;
 
 // ============================================================================
@@ -456,7 +399,7 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
                 hasError={!!errors.username}
                 required
               />
-              {errors.username && <ErrorMessage>{errors.username}</ErrorMessage>}
+              {errors.username && <ValidationMessage $type="error">{errors.username}</ValidationMessage>}
             </InputGroup>
             
             <InputGroup>
@@ -470,7 +413,7 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
                 hasError={!!errors.email}
                 required
               />
-              {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+              {errors.email && <ValidationMessage $type="error">{errors.email}</ValidationMessage>}
             </InputGroup>
 
             <InputGroup>
@@ -484,7 +427,7 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
                 hasError={!!errors.firstName}
                 required
               />
-              {errors.firstName && <ErrorMessage>{errors.firstName}</ErrorMessage>}
+              {errors.firstName && <ValidationMessage $type="error">{errors.firstName}</ValidationMessage>}
             </InputGroup>
 
             <InputGroup>
@@ -498,7 +441,7 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
                 hasError={!!errors.lastName}
                 required
               />
-              {errors.lastName && <ErrorMessage>{errors.lastName}</ErrorMessage>}
+              {errors.lastName && <ValidationMessage $type="error">{errors.lastName}</ValidationMessage>}
             </InputGroup>
 
             <Divider />
@@ -526,14 +469,14 @@ const EditarUsuarioModal: React.FC<EditarUsuarioModalProps> = ({
             <Divider />
           </FormGroup>
           
-          <ButtonGroup>
+          <ModalButtonGroup>
             <Button type="button" $variant="secondary" onClick={onClose}>
               Cancelar
             </Button>
             <Button type="submit" $variant="primary" disabled={isLoading}>
               {isLoading ? 'Guardando...' : 'Guardar Cambios'}
             </Button>
-          </ButtonGroup>
+          </ModalButtonGroup>
         </form>
       </ModalContent>
     </ModalOverlay>

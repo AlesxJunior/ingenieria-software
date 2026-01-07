@@ -4,96 +4,73 @@ import { useNotification } from '../../../context/NotificationContext';
 import { useConfiguracion } from '../context/ConfiguracionContext';
 import configuracionApi, { type MetodoPagoData } from '../services/configuracionApi';
 import Layout from '../../../components/Layout';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button, 
+  Input, 
+  Select, 
+  Label, 
+  FormGroup,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  StatusBadge 
+} from '../../../components/shared';
 
 const Container = styled.div`
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0;
 `;
 
 const Header = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
 `;
 
-// Título desde Layout
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
+`;
 
 const Subtitle = styled.p`
-  color: #6b7280;
-  font-size: 14px;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: 0;
 `;
 
-const Button = styled.button`
-  padding: 8px 16px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #2563eb;
-  }
-`;
-
-const Card = styled.div`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+const TableCard = styled.div`
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
   overflow: hidden;
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const Th = styled.th`
-  padding: 12px;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: #374151;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const Td = styled.td`
-  padding: 12px;
-  font-size: 14px;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const Badge = styled.span<{ $active: boolean }>`
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  background-color: ${props => props.$active ? '#d1fae5' : '#fee2e2'};
-  color: ${props => props.$active ? '#065f46' : '#991b1b'};
-`;
-
 const ActionButton = styled.button<{ $variant?: 'primary' | 'danger' }>`
-  padding: 4px 8px;
-  margin: 0 2px;
+  padding: ${SPACING.xs} ${SPACING.sm};
+  margin: 0 ${SPACING.xs};
   border: none;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
   cursor: pointer;
-  transition: opacity 0.2s;
-  background-color: ${props => props.$variant === 'danger' ? '#ef4444' : '#3b82f6'};
-  color: white;
+  transition: ${TRANSITIONS.default};
+  background-color: ${props => props.$variant === 'danger' ? COLOR_SCALES.danger[500] : COLOR_SCALES.primary[500]};
+  color: ${COLORS.neutral.white};
 
   &:hover {
     opacity: 0.8;
   }
+`;
+
+const ModalFormGroup = styled.div`
+  margin-bottom: ${SPACING.lg};
 `;
 
 const Modal = styled.div<{ $isOpen: boolean }>`
@@ -112,9 +89,9 @@ const ModalContent = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING['2xl']};
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
@@ -125,74 +102,33 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: ${SPACING.xl};
 `;
 
 const ModalTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.primary};
 `;
 
 const CloseButton = styled.button`
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: ${TYPOGRAPHY.fontSize['2xl']};
   cursor: pointer;
-  color: #6b7280;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 4px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  background-color: white;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
+  color: ${COLORS.text.secondary};
 `;
 
 const Checkbox = styled.input`
-  margin-right: 8px;
+  margin-right: ${SPACING.sm};
 `;
 
 const CheckboxLabel = styled.label`
   display: flex;
   align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text.primary};
   cursor: pointer;
 `;
 
@@ -200,14 +136,6 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 12px;
   margin-top: 24px;
-`;
-
-const ButtonSecondary = styled(Button)`
-  background-color: #6b7280;
-
-  &:hover {
-    background-color: #4b5563;
-  }
 `;
 
 const HelpText = styled.small`
@@ -364,16 +292,19 @@ const MetodosPago: React.FC = () => {
     <Layout title="Configuración: Métodos de Pago">
       <Container>
         <Header>
-          <Button onClick={openNewModal}>
+          <div>
+            <Title>Métodos de Pago</Title>
+            <Subtitle>Configura los métodos de pago disponibles para tus ventas</Subtitle>
+          </div>
+          <Button $variant="primary" onClick={openNewModal}>
             Nuevo Método de Pago
           </Button>
         </Header>
-        <Subtitle>Configura los métodos de pago disponibles para tus ventas</Subtitle>
 
-      <Card>
+      <TableCard>
         <Table>
-          <thead>
-            <tr>
+          <Thead>
+            <Tr>
               <Th>Código</Th>
               <Th>Nombre</Th>
               <Th>Tipo</Th>
@@ -381,11 +312,11 @@ const MetodosPago: React.FC = () => {
               <Th>Predet.</Th>
               <Th>Req. Ref.</Th>
               <Th>Acciones</Th>
-            </tr>
-          </thead>
-          <tbody>
+            </Tr>
+          </Thead>
+          <Tbody>
             {metodosPago.map((metodo) => (
-              <tr key={metodo.id}>
+              <Tr key={metodo.id}>
                 <Td>{metodo.codigo}</Td>
                 <Td>{metodo.nombre}</Td>
                 <Td>
@@ -397,37 +328,37 @@ const MetodosPago: React.FC = () => {
                   {metodo.tipo === 'otro' && 'Otro'}
                 </Td>
                 <Td>
-                  <Badge $active={metodo.activo}>
+                  <StatusBadge variant={metodo.activo ? 'success' : 'danger'} dot>
                     {metodo.activo ? 'Activo' : 'Inactivo'}
-                  </Badge>
+                  </StatusBadge>
                 </Td>
                 <Td>
                   {metodo.predeterminado && (
-                    <Badge $active={true}>Sí</Badge>
+                    <StatusBadge variant="success" dot>Sí</StatusBadge>
                   )}
                 </Td>
                 <Td>
                   {metodo.requiereReferencia && (
-                    <Badge $active={true}>Sí</Badge>
+                    <StatusBadge variant="success" dot>Sí</StatusBadge>
                   )}
                 </Td>
                 <Td>
                   <ActionButton onClick={() => handleEdit(metodo)}>
-                    ✏️ Editar
+                    Editar
                   </ActionButton>
                   <ActionButton 
                     $variant={metodo.activo ? 'danger' : 'primary'} 
                     onClick={() => handleToggleActivo(metodo)}
                     title={metodo.activo ? 'Desactivar método' : 'Activar método'}
                   >
-                    {metodo.activo ? '🚫 Desactivar' : '✅ Activar'}
+                    {metodo.activo ? 'Desactivar' : 'Activar'}
                   </ActionButton>
                 </Td>
-              </tr>
+              </Tr>
             ))}
-          </tbody>
+          </Tbody>
         </Table>
-      </Card>
+      </TableCard>
 
       <Modal $isOpen={isModalOpen}>
         <ModalContent>
@@ -529,12 +460,12 @@ const MetodosPago: React.FC = () => {
             </FormGroup>
 
             <ButtonGroup>
-              <Button type="button" onClick={handleSave} disabled={loading}>
+              <Button $variant="primary" type="button" onClick={handleSave} disabled={loading}>
                 {loading ? 'Guardando...' : 'Guardar'}
               </Button>
-              <ButtonSecondary type="button" onClick={closeModal}>
+              <Button $variant="secondary" type="button" onClick={closeModal}>
                 Cancelar
-              </ButtonSecondary>
+              </Button>
             </ButtonGroup>
           </form>
         </ModalContent>

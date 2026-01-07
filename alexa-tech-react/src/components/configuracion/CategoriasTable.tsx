@@ -4,248 +4,155 @@ import { configuracionApi } from '../../services/configuracionApi';
 import type { ProductCategory } from '../../types/configuracion';
 import { useNotification } from '../../context/NotificationContext';
 import CategoriaModal from './CategoriaModal';
-import { media } from '../../styles/breakpoints';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../styles/theme';
+import { 
+  Button,
+  Input,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  StatusBadge
+} from '../shared';
 
 const Container = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  
-  ${media.mobile} {
-    padding: 16px;
-    border-radius: 6px;
-  }
+  padding: 0;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
-  gap: 12px;
-  
-  ${media.mobile} {
-    margin-bottom: 16px;
-  }
 `;
 
-const Title = styled.h2`
-  font-size: 20px;
-  color: #333;
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
-  
-  ${media.mobile} {
-    font-size: 18px;
-  }
 `;
 
-const HeaderActions = styled.div`
+const Subtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: 0;
+`;
+
+const FiltersCard = styled.div`
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  padding: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
+`;
+
+const FiltersGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: ${SPACING.md};
+  margin-bottom: ${SPACING.lg};
+`;
+
+const FilterGroup = styled.div`
   display: flex;
-  gap: 10px;
-  align-items: center;
-  
-  ${media.mobile} {
-    width: 100%;
-    flex-direction: column;
-    gap: 8px;
-  }
+  flex-direction: column;
+  gap: ${SPACING.xs};
 `;
 
-const FilterButton = styled.button<{ $active: boolean }>`
-  padding: 8px 16px;
-  border: 1px solid ${props => props.$active ? '#007bff' : '#ddd'};
-  background: ${props => props.$active ? '#007bff' : 'white'};
-  color: ${props => props.$active ? 'white' : '#666'};
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: #007bff;
-    color: ${props => props.$active ? 'white' : '#007bff'};
-  }
-  
-  ${media.mobile} {
-    flex: 1;
-    width: 100%;
-  }
+const FilterLabel = styled.label`
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text.primary};
 `;
 
-const Button = styled.button`
-  padding: 10px 20px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: #218838;
-  }
-  
-  ${media.mobile} {
-    width: 100%;
-  }
-`;
-
-const SearchBar = styled.input`
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  min-width: 250px;
+const FilterSelect = styled.select`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  background: ${COLORS.neutral.white};
+  color: ${COLORS.text.primary};
+  transition: ${TRANSITIONS.default};
 
   &:focus {
     outline: none;
-    border-color: #007bff;
-  }
-  
-  ${media.mobile} {
-    width: 100%;
-    min-width: unset;
+    border-color: ${COLOR_SCALES.primary[500]};
   }
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  
-  ${media.mobile} {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+const FilterInput = styled(Input)`
+  padding: ${SPACING.sm} ${SPACING.md};
 `;
 
-const Thead = styled.thead`
-  background-color: #f8f9fa;
-  
-  ${media.mobile} {
-    display: none;
-  }
+const FilterButtonsRow = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
 `;
 
-const Th = styled.th`
-  padding: 12px;
-  text-align: left;
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #dee2e6;
-`;
-
-const Tbody = styled.tbody``;
-
-const Tr = styled.tr`
-  border-bottom: 1px solid #dee2e6;
-
-  &:hover {
-    background-color: #f8f9fa;
-  }
-  
-  ${media.mobile} {
-    display: block;
-    margin-bottom: 16px;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 12px;
-    background-color: white;
-    
-    &:hover {
-      background-color: #f8f9fa;
-    }
-  }
-`;
-
-const Td = styled.td`
-  padding: 12px;
-  font-size: 14px;
-  color: #333;
-  
-  ${media.mobile} {
-    display: block;
-    padding: 8px 0;
-    border: none;
-    
-    &:before {
-      content: attr(data-label);
-      font-weight: 600;
-      display: inline-block;
-      width: 120px;
-      color: #555;
-    }
-  }
-`;
-
-const Badge = styled.span<{ $active: boolean }>`
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  background-color: ${props => props.$active ? '#d4edda' : '#f8d7da'};
-  color: ${props => props.$active ? '#155724' : '#721c24'};
+const TableCard = styled.div`
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  overflow: hidden;
 `;
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${SPACING.sm};
 `;
 
-const ActionButton = styled.button<{ variant?: 'edit' | 'delete' }>`
-  padding: 6px 12px;
+const ActionButton = styled.button<{ $variant?: 'primary' | 'danger' }>`
+  padding: ${SPACING.xs} ${SPACING.sm};
   border: none;
-  border-radius: 4px;
-  font-size: 13px;
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
   cursor: pointer;
-  transition: all 0.2s ease;
-  
-  ${props => props.variant === 'edit' ? `
-    background-color: #007bff;
-    color: white;
-    &:hover { background-color: #0056b3; }
-  ` : `
-    background-color: #dc3545;
-    color: white;
-    &:hover { background-color: #c82333; }
-  `}
+  transition: ${TRANSITIONS.default};
+  background-color: ${props => props.$variant === 'danger' ? COLOR_SCALES.danger[500] : COLOR_SCALES.primary[500]};
+  color: ${COLORS.neutral.white};
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 40px;
-  color: #999;
-  
-  ${media.mobile} {
-    padding: 30px 20px;
-  }
+  padding: ${SPACING['2xl']};
+  color: ${COLORS.text.secondary};
 `;
 
 const LoadingState = styled(EmptyState)`
-  color: #007bff;
+  color: ${COLOR_SCALES.primary[500]};
 `;
 
 const CategoriasTable: React.FC = () => {
   const [categorias, setCategorias] = useState<ProductCategory[]>([]);
   const [filteredCategorias, setFilteredCategorias] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showActive, setShowActive] = useState<boolean | undefined>(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategoria, setSelectedCategoria] = useState<ProductCategory | undefined>();
   const { showSuccess, showError } = useNotification();
 
-  const fetchCategorias = async () => {
+  // Estados de filtros
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('activo');
+
+  const fetchCategorias = async (status?: string, search?: string) => {
     try {
       setLoading(true);
-      const data = await configuracionApi.getAllCategories({ activo: showActive });
+      const statusToUse = status !== undefined ? status : filterStatus;
+      const searchToUse = search !== undefined ? search : filterSearch;
+      const activo = statusToUse === 'activo' ? true : statusToUse === 'inactivo' ? false : undefined;
+      const data = await configuracionApi.getAllCategories({ activo });
       setCategorias(data);
-      setFilteredCategorias(data);
+      applyFilters(data, searchToUse);
     } catch (error: any) {
       showError(error.message || 'Error al cargar categorías');
     } finally {
@@ -253,21 +160,32 @@ const CategoriasTable: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCategorias();
-  }, [showActive]);
+  const applyFilters = (data: ProductCategory[], search: string) => {
+    let filtered = data;
+    if (search.trim()) {
+      const searchLower = search.toLowerCase();
+      filtered = data.filter(cat =>
+        cat.codigo.toLowerCase().includes(searchLower) ||
+        cat.nombre.toLowerCase().includes(searchLower) ||
+        (cat.descripcion && cat.descripcion.toLowerCase().includes(searchLower))
+      );
+    }
+    setFilteredCategorias(filtered);
+  };
 
   useEffect(() => {
-    if (searchTerm) {
-      const filtered = categorias.filter(cat =>
-        cat.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cat.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredCategorias(filtered);
-    } else {
-      setFilteredCategorias(categorias);
-    }
-  }, [searchTerm, categorias]);
+    fetchCategorias('activo', '');
+  }, []);
+
+  const handleSearch = () => {
+    fetchCategorias(filterStatus, filterSearch);
+  };
+
+  const handleClearFilters = () => {
+    setFilterSearch('');
+    setFilterStatus('activo');
+    fetchCategorias('activo', '');
+  };
 
   const handleCreate = () => {
     setSelectedCategoria(undefined);
@@ -304,80 +222,93 @@ const CategoriasTable: React.FC = () => {
   return (
     <Container>
       <Header>
-        <Title>Categorías de Productos</Title>
-        <HeaderActions>
-          <SearchBar
-            type="text"
-            placeholder="Buscar categoría..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <FilterButton
-            $active={showActive === true}
-            onClick={() => setShowActive(true)}
-          >
-            Activas
-          </FilterButton>
-          <FilterButton
-            $active={showActive === false}
-            onClick={() => setShowActive(false)}
-          >
-            Inactivas
-          </FilterButton>
-          <FilterButton
-            $active={showActive === undefined}
-            onClick={() => setShowActive(undefined)}
-          >
-            Todas
-          </FilterButton>
-          <Button onClick={handleCreate}>+ Nueva Categoría</Button>
-        </HeaderActions>
+        <div>
+          <Title>Categorías de Productos</Title>
+          <Subtitle>Gestiona las categorías para organizar tus productos</Subtitle>
+        </div>
+        <Button $variant="primary" onClick={handleCreate}>+ Nueva Categoría</Button>
       </Header>
+
+      <FiltersCard>
+        <FiltersGrid>
+          <FilterGroup>
+            <FilterLabel>Buscar</FilterLabel>
+            <FilterInput
+              type="text"
+              placeholder="Código o nombre..."
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+          </FilterGroup>
+          <FilterGroup>
+            <FilterLabel>Estado</FilterLabel>
+            <FilterSelect
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="activo">Activas</option>
+              <option value="inactivo">Inactivas</option>
+              <option value="todos">Todas</option>
+            </FilterSelect>
+          </FilterGroup>
+        </FiltersGrid>
+        <FilterButtonsRow>
+          <Button $variant="secondary" onClick={handleClearFilters}>
+            Limpiar
+          </Button>
+          <Button $variant="primary" onClick={handleSearch}>
+            Buscar
+          </Button>
+        </FilterButtonsRow>
+      </FiltersCard>
 
       {loading ? (
         <LoadingState>Cargando categorías...</LoadingState>
       ) : filteredCategorias.length === 0 ? (
         <EmptyState>
-          {searchTerm ? 'No se encontraron categorías' : 'No hay categorías registradas'}
+          {filterSearch ? 'No se encontraron categorías' : 'No hay categorías registradas'}
         </EmptyState>
       ) : (
-        <Table>
-          <Thead>
-            <tr>
-              <Th>Código</Th>
-              <Th>Nombre</Th>
-              <Th>Descripción</Th>
-              <Th>Estado</Th>
-              <Th>Acciones</Th>
-            </tr>
-          </Thead>
-          <Tbody>
-            {filteredCategorias.map((categoria) => (
-              <Tr key={categoria.id}>
-                <Td data-label="Código">{categoria.codigo}</Td>
-                <Td data-label="Nombre">{categoria.nombre}</Td>
-                <Td data-label="Descripción">{categoria.descripcion || '-'}</Td>
-                <Td data-label="Estado">
-                  <Badge $active={categoria.activo}>
-                    {categoria.activo ? 'Activa' : 'Inactiva'}
-                  </Badge>
-                </Td>
-                <Td data-label="Acciones">
-                  <ActionButtons>
-                    <ActionButton variant="edit" onClick={() => handleEdit(categoria)}>
-                      Editar
-                    </ActionButton>
-                    {categoria.activo && (
-                      <ActionButton variant="delete" onClick={() => handleDelete(categoria.id)}>
-                        Desactivar
-                      </ActionButton>
-                    )}
-                  </ActionButtons>
-                </Td>
+        <TableCard>
+          <Table>
+            <Thead>
+              <Tr>
+                <Th>Código</Th>
+                <Th>Nombre</Th>
+                <Th>Descripción</Th>
+                <Th>Estado</Th>
+                <Th>Acciones</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
+            </Thead>
+            <Tbody>
+              {filteredCategorias.map((categoria) => (
+                <Tr key={categoria.id}>
+                  <Td>{categoria.codigo}</Td>
+                  <Td>{categoria.nombre}</Td>
+                  <Td>{categoria.descripcion || '-'}</Td>
+                  <Td>
+                    <StatusBadge variant={categoria.activo ? 'success' : 'danger'} dot>
+                      {categoria.activo ? 'Activa' : 'Inactiva'}
+                    </StatusBadge>
+                  </Td>
+                  <Td>
+                    <ActionButtons>
+                      <ActionButton onClick={() => handleEdit(categoria)}>
+                        Editar
+                      </ActionButton>
+                      {categoria.activo && (
+                        <ActionButton $variant="danger" onClick={() => handleDelete(categoria.id)}>
+                          Desactivar
+                        </ActionButton>
+                      )}
+                    </ActionButtons>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </TableCard>
       )}
 
       {isModalOpen && (

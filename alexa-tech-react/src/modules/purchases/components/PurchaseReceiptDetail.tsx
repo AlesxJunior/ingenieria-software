@@ -326,7 +326,7 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
     } catch (err: any) {
       const errorMessage = err.message || 'Error al cargar detalle de recepción';
       setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error de Carga', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -334,12 +334,12 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
 
   const handleConfirm = async () => {
     if (!receipt || receipt.estado !== 'PENDIENTE') {
-      showNotification('Solo se pueden confirmar recepciones pendientes', 'error');
+      showNotification('error', 'Acción No Permitida', 'Solo se pueden confirmar recepciones con estado PENDIENTE');
       return;
     }
 
     if (!user?.id) {
-      showNotification('Error: Usuario no autenticado', 'error');
+      showNotification('error', 'Sesión Requerida', 'Debe iniciar sesión para confirmar recepciones');
       return;
     }
 
@@ -352,7 +352,7 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
         inspeccionadoPorId: user.id,
         items: []
       });
-      showNotification('Recepción confirmada exitosamente. Inventario actualizado.', 'success');
+      showNotification('success', 'Recepción Confirmada', 'La recepción se confirmó exitosamente y el inventario se ha actualizado');
       fetchReceiptDetail();
       
       if (onConfirm) {
@@ -360,13 +360,13 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al confirmar recepción';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Confirmar', errorMessage);
     }
   };
 
   const handleCancelReceipt = async () => {
     if (!receipt || receipt.estado === 'CANCELADA') {
-      showNotification('La recepción ya está cancelada', 'error');
+      showNotification('warning', 'Ya Cancelada', 'Esta recepción ya se encuentra en estado CANCELADA');
       return;
     }
 
@@ -377,7 +377,7 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
 
     try {
       await purchaseReceiptService.cancelPurchaseReceipt(receipt.id, motivo);
-      showNotification('Recepción cancelada exitosamente', 'success');
+      showNotification('success', 'Recepción Cancelada', 'La recepción se ha cancelado correctamente');
       fetchReceiptDetail();
       
       if (onCancel) {
@@ -385,7 +385,7 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al anular recepción';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Cancelar', errorMessage);
     }
   };
 
@@ -394,10 +394,10 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
 
     try {
       await purchaseReceiptService.downloadPDF(receipt.id);
-      showNotification('PDF descargado exitosamente', 'success');
+      showNotification('success', 'PDF Descargado', 'El documento se ha descargado correctamente');
     } catch (err: any) {
       const errorMessage = err.message || 'Error al descargar PDF';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Descargar', errorMessage);
     }
   };
 
@@ -523,7 +523,7 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
           <InfoItem>
             <InfoLabel>Almacén Destino</InfoLabel>
             <InfoValue>
-              {receipt.ordenCompra?.almacenDestino?.nombre || 'N/A'}
+              {receipt.almacen?.nombre || 'N/A'}
             </InfoValue>
           </InfoItem>
           <InfoItem>
@@ -543,6 +543,21 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
         )}
       </Section>
 
+      {/* Resumen de Progreso */}
+      <Section>
+        <SectionTitle>Resumen de Recepción</SectionTitle>
+        <InfoGrid>
+          <InfoItem>
+            <InfoLabel>Productos en Orden</InfoLabel>
+            <InfoValue>{receipt.ordenCompra?.items.length || 0} items</InfoValue>
+          </InfoItem>
+          <InfoItem>
+            <InfoLabel>Estado de Orden</InfoLabel>
+            <InfoValue>{receipt.ordenCompra?.estado || 'N/A'}</InfoValue>
+          </InfoItem>
+        </InfoGrid>
+      </Section>
+
       {/* Productos Recibidos */}
       <Section>
         <SectionTitle>Productos Recibidos ({receipt.items.length})</SectionTitle>
@@ -551,32 +566,47 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
             <tr>
               <Th>#</Th>
               <Th>Producto</Th>
-              <Th>Cant. Esperada</Th>
-              <Th>Cant. Recibida</Th>
+              <Th>Ordenada Original</Th>
+              <Th>Ya Recibida</Th>
+              <Th>Pendiente</Th>
+              <Th>En Esta Recepción</Th>
               <Th>Observaciones</Th>
             </tr>
           </Thead>
           <Tbody>
             {receipt.items.map((item, index) => {
-              const orderItem = receipt.ordenCompra?.items.find(oi => oi.productoId === item.productoId);
-              const expectedQty = orderItem?.cantidad || 0;
-              const hasDifference = hasQuantityDifference(expectedQty, item.cantidadRecibida);
+              const ordenada = item.ordenCompraItem?.cantidadOrdenada || 0;
+              const enEstaRecepcion = item.cantidadRecibida || 0;
+              const totalRecibidaEnOC = item.ordenCompraItem?.cantidadRecibida || 0;
+              const pendienteActual = item.ordenCompraItem?.cantidadPendiente || 0;
+              
+              // Si la recepción está CONFIRMADA: totalRecibidaEnOC YA incluye esta recepción
+              // Si está PENDIENTE: totalRecibidaEnOC NO incluye esta recepción
+              const yaRecibidaAntes = receipt.estado === 'CONFIRMADA' 
+                ? totalRecibidaEnOC - enEstaRecepcion 
+                : totalRecibidaEnOC;
+              
+              // Pendiente después de esta recepción
+              const pendienteDespues = receipt.estado === 'CONFIRMADA'
+                ? pendienteActual
+                : pendienteActual - enEstaRecepcion;
               
               return (
-                <Tr key={item.id} $warning={hasDifference}>
+                <Tr key={item.id}>
                   <Td>{index + 1}</Td>
                   <Td>
                     {item.producto?.codigo && <>{item.producto.codigo} - </>}
                     {item.producto?.nombre || 'N/A'}
                   </Td>
-                  <Td>{expectedQty}</Td>
+                  <Td>{ordenada}</Td>
+                  <Td>{yaRecibidaAntes}</Td>
                   <Td>
-                    <strong>{item.cantidadRecibida}</strong>
-                    {hasDifference && (
-                      <WarningBadge>
-                        ⚠️ Diferencia
-                      </WarningBadge>
-                    )}
+                    <strong style={{ color: pendienteDespues > 0 ? '#f59e0b' : '#10b981' }}>
+                      {pendienteDespues}
+                    </strong>
+                  </Td>
+                  <Td>
+                    <strong>{enEstaRecepcion}</strong>
                   </Td>
                   <Td>{item.observaciones || '-'}</Td>
                 </Tr>
@@ -586,11 +616,18 @@ const PurchaseReceiptDetail: React.FC<PurchaseReceiptDetailProps> = ({
         </Table>
 
         {receipt.items.some(item => {
-          const orderItem = receipt.ordenCompra?.items.find(oi => oi.productoId === item.productoId);
-          return hasQuantityDifference(orderItem?.cantidad || 0, item.cantidadRecibida);
+          const pendiente = item.ordenCompraItem?.cantidadPendiente || 0;
+          return pendiente > 0;
         }) && (
-          <AlertBox $type="warning">
-            ⚠️ Existen diferencias entre las cantidades esperadas y las recibidas. Revise las observaciones.
+          <AlertBox $type="info">
+            ℹ️ Esta es una recepción parcial. Quedan {
+              receipt.items.reduce((sum, item) => sum + (item.ordenCompraItem?.cantidadPendiente || 0), 0)
+            } unidades pendientes por recepcionar.
+          </AlertBox>
+        )}
+        {receipt.estado === 'CONFIRMADA' && receipt.items.every(item => (item.ordenCompraItem?.cantidadPendiente || 0) === 0) && (
+          <AlertBox $type="success">
+            ✅ Recepción completada. Todos los productos de la orden fueron recibidos.
           </AlertBox>
         )}
       </Section>

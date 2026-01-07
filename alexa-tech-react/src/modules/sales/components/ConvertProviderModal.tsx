@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useClients, type Client } from '../../clients/context/ClientContext';
 import { useNotification } from '../../../context/NotificationContext';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, Z_INDEX } from '../../../styles/theme';
+import { Button as SharedButton } from '../../../components/shared/Button';
 
 interface ConvertProviderModalProps {
   isOpen: boolean;
@@ -309,10 +311,10 @@ export const ConvertProviderModal: React.FC<ConvertProviderModalProps> = ({
         </Content>
 
         <ButtonGroup>
-          <Button variant="secondary" onClick={onClose} disabled={isConverting}>
+          <SharedButton $variant="outline" onClick={onClose} disabled={isConverting}>
             Cancelar
-          </Button>
-          <Button variant="primary" onClick={handleConvert} disabled={isConverting}>
+          </SharedButton>
+          <SharedButton $variant="primary" onClick={handleConvert} disabled={isConverting}>
             {isConverting ? (
               <>
                 <LoadingSpinner />
@@ -321,7 +323,7 @@ export const ConvertProviderModal: React.FC<ConvertProviderModalProps> = ({
             ) : (
               `Convertir a ${selectedOption}`
             )}
-          </Button>
+          </SharedButton>
         </ButtonGroup>
       </Modal>
     </Overlay>

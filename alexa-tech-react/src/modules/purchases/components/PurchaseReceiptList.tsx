@@ -4,8 +4,30 @@
  * Fase 3 - Task 7
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import styled from 'styled-components';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS, COLOR_SCALES } from '../../../styles/theme';
+import { 
+  Button,
+  Table as SharedTable,
+  Thead as SharedThead,
+  Th as SharedTh,
+  Tbody as SharedTbody,
+  Tr as SharedTr,
+  Td as SharedTd,
+  PaginationContainer as SharedPaginationContainer,
+  PaginationInfo as SharedPaginationInfo,
+  PaginationButtons as SharedPaginationButtons,
+  PageButton,
+  StatCard,
+  StatsGrid,
+  StatValue,
+  StatLabel,
+  Select,
+  StatusBadge,
+  ActionButton,
+  ButtonGroup as ActionsGroup
+} from '../../../components/shared';
 import { purchaseReceiptService } from '../services';
 import type { PurchaseReceipt, FilterPurchaseReceiptDto, PurchaseReceiptStatus } from '../types/purchases.types';
 import { 
@@ -14,6 +36,7 @@ import {
 } from '../types/purchases.types';
 import { useNotification } from '../../../context/NotificationContext';
 import { useAuth } from '../../../context/AuthContext';
+import { almacenesApi } from '../../../services/almacenesApi';
 import { media } from '../../../styles/breakpoints';
 
 // ==================== TIPOS ====================
@@ -23,120 +46,129 @@ interface PurchaseReceiptListProps {
   onConfirm?: (receipt: PurchaseReceipt) => void;
   onCancel?: (receipt: PurchaseReceipt) => void;
   onRefresh?: () => void;
+  onCreate?: () => void;
   orderFilter?: string; // ID de orden para filtrar recepciones
 }
 
 // ==================== STYLED COMPONENTS ====================
 
 const Container = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
+  padding: ${SPACING.xl};
+  box-shadow: ${SHADOWS.sm};
   
   ${media.mobile} {
-    padding: 16px;
-    border-radius: 6px;
+    padding: ${SPACING.md};
+    border-radius: ${BORDER_RADIUS.md};
   }
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
-  gap: 12px;
   
   ${media.mobile} {
-    margin-bottom: 16px;
+    margin-bottom: ${SPACING.md};
   }
 `;
 
-const Title = styled.h2`
-  font-size: 20px;
-  color: #333;
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
   
   ${media.mobile} {
-    font-size: 18px;
+    font-size: ${TYPOGRAPHY.fontSize.lg};
   }
+`;
+
+const PageSubtitle = styled.p`
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
 const HeaderActions = styled.div`
   display: flex;
-  gap: 10px;
+  gap: ${SPACING.sm};
   align-items: center;
   flex-wrap: wrap;
-  
-  ${media.mobile} {
-    width: 100%;
-    flex-direction: column;
-    gap: 8px;
-  }
 `;
 
 const FilterContainer = styled.div`
   display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: ${SPACING.md};
+  margin-bottom: ${SPACING.lg};
   flex-wrap: wrap;
+  padding: ${SPACING.lg};
+  background: ${COLORS.neutral[50]};
+  border-radius: ${BORDER_RADIUS.md};
   
   ${media.mobile} {
     flex-direction: column;
-    gap: 8px;
+    gap: ${SPACING.md};
+    padding: ${SPACING.md};
   }
 `;
 
-const FilterButton = styled.button<{ $active: boolean }>`
-  padding: 8px 16px;
-  border: 1px solid ${props => props.$active ? '#007bff' : '#ddd'};
-  background: ${props => props.$active ? '#007bff' : 'white'};
-  color: ${props => props.$active ? 'white' : '#666'};
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: #007bff;
-    color: ${props => props.$active ? 'white' : '#007bff'};
-  }
-  
-  ${media.mobile} {
-    flex: 1;
-  }
-`;
-
-const SearchBar = styled.input`
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
-  min-width: 250px;
+const FilterGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.xs};
+  min-width: 150px;
   flex: 1;
-
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-  }
   
   ${media.mobile} {
-    width: 100%;
     min-width: unset;
   }
 `;
 
-const Select = styled.select`
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 14px;
+const FilterLabel = styled.label`
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.textLight};
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const FilterInput = styled.input`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  transition: ${TRANSITIONS.fast};
+  
+  &:focus {
+    outline: none;
+    border-color: ${COLORS.primary};
+    box-shadow: 0 0 0 3px ${COLORS.primary}20;
+  }
+`;
+
+const FilterSelect = styled.select`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   cursor: pointer;
+  background: white;
+  transition: ${TRANSITIONS.fast};
 
   &:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: ${COLORS.primary};
+    box-shadow: 0 0 0 3px ${COLORS.primary}20;
   }
   
   ${media.mobile} {
@@ -144,199 +176,42 @@ const Select = styled.select`
   }
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  
-  ${media.mobile} {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-`;
-
-const Thead = styled.thead`
-  background-color: #f8f9fa;
-  
-  ${media.mobile} {
-    display: none;
-  }
-`;
-
-const Th = styled.th`
-  padding: 12px;
-  text-align: left;
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #dee2e6;
-  white-space: nowrap;
-`;
-
-const Tbody = styled.tbody``;
-
-const Tr = styled.tr`
-  border-bottom: 1px solid #dee2e6;
-
-  &:hover {
-    background-color: #f8f9fa;
-  }
-  
-  ${media.mobile} {
-    display: block;
-    margin-bottom: 16px;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 12px;
-  }
-`;
-
-const Td = styled.td`
-  padding: 12px;
-  font-size: 14px;
-  color: #333;
-  
-  ${media.mobile} {
-    display: block;
-    padding: 8px 0;
-    border-bottom: none;
-    
-    &:before {
-      content: attr(data-label);
-      font-weight: 600;
-      display: inline-block;
-      width: 120px;
-      color: #666;
-    }
-  }
-`;
-
-const StatusBadge = styled.span<{ $status: PurchaseReceiptStatus }>`
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  background-color: ${props => PURCHASE_RECEIPT_STATUS_COLORS[props.$status] || '#6c757d'};
-  color: white;
-  white-space: nowrap;
-  opacity: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 8px;
-  
-  ${media.mobile} {
-    flex-wrap: wrap;
-  }
-`;
-
-const ActionButton = styled.button<{ $variant?: 'view' | 'confirm' | 'cancel' | 'pdf' }>`
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: ${props => {
-    switch (props.$variant) {
-      case 'view': return '#17a2b8';
-      case 'confirm': return '#28a745';
-      case 'cancel': return '#dc3545';
-      case 'pdf': return '#6c757d';
-      default: return '#007bff';
-    }
-  }};
-  color: white;
-
-  &:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  ${media.mobile} {
-    flex: 1;
-  }
-`;
-
-const Pagination = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #dee2e6;
-  
-  ${media.mobile} {
-    flex-direction: column;
-    gap: 12px;
-  }
-`;
-
-const PaginationInfo = styled.div`
-  font-size: 14px;
-  color: #666;
-`;
-
-const PaginationButtons = styled.div`
-  display: flex;
-  gap: 8px;
-  
-  ${media.mobile} {
-    width: 100%;
-    justify-content: center;
-  }
-`;
-
-const PaginationButton = styled.button`
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-
-  &:hover:not(:disabled) {
-    background-color: #f8f9fa;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
+// Helper para obtener variant del StatusBadge según estado de recepción
+const getEstadoVariant = (status: PurchaseReceiptStatus): 'success' | 'warning' | 'danger' | 'info' => {
+  const variants: Record<PurchaseReceiptStatus, 'success' | 'warning' | 'danger' | 'info'> = {
+    PENDIENTE: 'warning',
+    INSPECCION: 'info',
+    CONFIRMADA: 'success',
+    CANCELADA: 'danger'
+  };
+  return variants[status] || 'info';
+};
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 40px 20px;
-  color: #666;
-  font-size: 16px;
+  padding: ${SPACING.xxl} ${SPACING.xl};
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.md};
 `;
 
 const LoadingState = styled.div`
   text-align: center;
-  padding: 40px 20px;
-  color: #007bff;
-  font-size: 16px;
+  padding: ${SPACING.xxl} ${SPACING.xl};
+  color: ${COLORS.primary};
+  font-size: ${TYPOGRAPHY.fontSize.md};
 `;
 
 const ErrorState = styled.div`
   text-align: center;
-  padding: 40px 20px;
-  color: #dc3545;
-  font-size: 16px;
+  padding: ${SPACING.xxl} ${SPACING.xl};
+  color: ${COLOR_SCALES.danger[500]};
+  font-size: ${TYPOGRAPHY.fontSize.md};
 `;
 
 const OrderLink = styled.a`
-  color: #007bff;
+  color: ${COLORS.primary};
   text-decoration: none;
-  font-weight: 600;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   
   &:hover {
     text-decoration: underline;
@@ -350,6 +225,7 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
   onConfirm,
   onCancel,
   onRefresh,
+  onCreate,
   orderFilter,
 }) => {
   const { showNotification } = useNotification();
@@ -368,25 +244,54 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Estado de filtros seleccionados
-  const [selectedStatus, setSelectedStatus] = useState<PurchaseReceiptStatus | 'ALL'>('ALL');
+  // Estado de filtros compactos
   const [searchTerm, setSearchTerm] = useState('');
-
-  // ==================== EFECTOS ====================
-
-  useEffect(() => {
-    fetchReceipts();
-  }, [filters]);
-
-  useEffect(() => {
-    if (orderFilter) {
-      setFilters(prev => ({ ...prev, ordenCompraId: orderFilter }));
-    }
-  }, [orderFilter]);
+  const [selectedStatus, setSelectedStatus] = useState<PurchaseReceiptStatus | ''>('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+  const [ordenCompraId, setOrdenCompraId] = useState(orderFilter || '');
+  const [almacenId, setAlmacenId] = useState('');
+  const [almacenes, setAlmacenes] = useState<Array<{id: string; nombre: string}>>([]);
 
   // ==================== FUNCIONES ====================
 
-  const fetchReceipts = async () => {
+  const loadInitialData = async () => {
+    try {
+      const almacenesData = await almacenesApi.getAlmacenes({ activo: true });
+      setAlmacenes(almacenesData);
+    } catch (error) {
+      console.error('Error al cargar datos iniciales:', error);
+    }
+  };
+
+  const applyFilters = () => {
+    setFilters(prev => ({
+      ...prev,
+      search: searchTerm || undefined,
+      estado: selectedStatus || undefined,
+      fechaDesde: fechaDesde || undefined,
+      fechaHasta: fechaHasta || undefined,
+      ordenCompraId: ordenCompraId || undefined,
+      almacenId: almacenId || undefined,
+      page: 1,
+    }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedStatus('');
+    setFechaDesde('');
+    setFechaHasta('');
+    setOrdenCompraId(orderFilter || '');
+    setAlmacenId('');
+    setFilters({
+      page: 1,
+      limit: filters.limit,
+      ordenCompraId: orderFilter,
+    });
+  };
+
+  const fetchReceipts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -399,39 +304,18 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
     } catch (err: any) {
       const errorMessage = err.message || 'Error al cargar recepciones';
       setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error de Carga', errorMessage);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleStatusFilter = (status: PurchaseReceiptStatus | 'ALL') => {
-    setSelectedStatus(status);
-    setFilters(prev => ({
-      ...prev,
-      estado: status === 'ALL' ? undefined : status,
-      page: 1,
-    }));
-  };
+  }, [filters, showNotification]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    
-    // Debounce search
-    const timeoutId = setTimeout(() => {
-      setFilters(prev => ({
-        ...prev,
-        search: value || undefined,
-        page: 1,
-      }));
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
   };
 
   const handlePageChange = (newPage: number) => {
     setFilters(prev => ({ ...prev, page: newPage }));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleView = (receipt: PurchaseReceipt) => {
@@ -440,18 +324,49 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
     }
   };
 
+  /**
+   * Verificar si una recepción está completa (todos los items con cantidades recibidas)
+   */
+  const isReceiptComplete = (receipt: PurchaseReceipt): boolean => {
+    if (!receipt.items || receipt.items.length === 0) return false;
+    
+    // Para recepciones PENDIENTES: validar que ingresaste cantidades
+    // Para recepciones CONFIRMADAS: siempre están completas
+    if (receipt.estado !== 'PENDIENTE') return true;
+    
+    // Todos los items deben tener cantidadRecibida > 0
+    return receipt.items.every(item => {
+      const recibida = item.cantidadRecibida || 0;
+      return recibida > 0;
+    });
+  };
+
   const handleConfirm = async (receipt: PurchaseReceipt) => {
+    // Validaciones de negocio
     if (receipt.estado !== 'PENDIENTE') {
-      showNotification('Solo se pueden confirmar recepciones pendientes', 'error');
+      showNotification('error', 'Acción No Permitida', 'Solo se pueden confirmar recepciones con estado PENDIENTE');
       return;
     }
 
     if (!user?.id) {
-      showNotification('Error: Usuario no autenticado', 'error');
+      showNotification('error', 'Sesión Requerida', 'Debe iniciar sesión para confirmar recepciones');
       return;
     }
 
-    if (!confirm(`¿Confirmar recepción ${receipt.codigo}? Esto actualizará el inventario.`)) {
+    // Validar que la recepción tenga items con cantidades
+    if (!receipt.items || receipt.items.length === 0) {
+      showNotification('error', 'Recepción Incompleta', 'La recepción no tiene items. Edite la recepción para agregar los productos recibidos.');
+      return;
+    }
+
+    // Validar que TODOS los items tengan cantidad recibida (recepción completa)
+    const recepcionCompleta = isReceiptComplete(receipt);
+    if (!recepcionCompleta) {
+      showNotification('error', 'Recepción Incompleta', 'Todos los productos deben tener cantidades recibidas. Use "Ver" para completar los detalles de la recepción.');
+      return;
+    }
+
+    if (!confirm(`¿Confirmar recepción ${receipt.codigo}?\n\nEsto actualizará el inventario y NO se podrá revertir.`)) {
       return;
     }
 
@@ -460,7 +375,7 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
         inspeccionadoPorId: user.id,
         items: []
       });
-      showNotification(`Recepción ${receipt.codigo} confirmada. El inventario ha sido actualizado.`, 'success');
+      showNotification('success', 'Recepción Confirmada', `${receipt.codigo} confirmada. El inventario se ha actualizado correctamente.`);
       fetchReceipts();
       
       if (onConfirm) {
@@ -468,13 +383,13 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al confirmar recepción';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Confirmar', errorMessage);
     }
   };
 
   const handleCancelReceipt = async (receipt: PurchaseReceipt) => {
     if (receipt.estado === 'CANCELADA') {
-      showNotification('La recepción ya está cancelada', 'error');
+      showNotification('warning', 'Ya Cancelada', 'Esta recepción ya se encuentra en estado CANCELADA');
       return;
     }
 
@@ -485,7 +400,7 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
 
     try {
       await purchaseReceiptService.cancelPurchaseReceipt(receipt.id, motivo);
-      showNotification(`Recepción ${receipt.codigo} anulada correctamente.`, 'success');
+      showNotification('success', 'Recepción Anulada', `${receipt.codigo} se ha anulado correctamente`);
       fetchReceipts();
       
       if (onCancel) {
@@ -493,17 +408,17 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al anular recepción';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Anular', errorMessage);
     }
   };
 
   const handleDownloadPDF = async (receiptId: string) => {
     try {
       await purchaseReceiptService.downloadPDF(receiptId);
-      showNotification('PDF de recepción descargado correctamente', 'success');
+      showNotification('success', 'PDF Descargado', 'El documento se ha descargado correctamente');
     } catch (err: any) {
       const errorMessage = err.message || 'Error al descargar PDF';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Descargar', errorMessage);
     }
   };
 
@@ -515,95 +430,170 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
     });
   };
 
+  // Stats Cards
+  const stats = useMemo(() => {
+    const pendientes = receipts.filter(r => r.estado === 'PENDIENTE').length;
+    const inspeccion = receipts.filter(r => r.estado === 'INSPECCION').length;
+    const confirmadas = receipts.filter(r => r.estado === 'CONFIRMADA').length;
+    const canceladas = receipts.filter(r => r.estado === 'CANCELADA').length;
+    return { total: totalItems, pendientes, inspeccion, confirmadas, canceladas };
+  }, [receipts, totalItems]);
+
+  // ==================== EFECTOS ====================
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    fetchReceipts();
+  }, [fetchReceipts]);
+
+  useEffect(() => {
+    if (orderFilter) {
+      setOrdenCompraId(orderFilter);
+      setFilters(prev => ({ ...prev, ordenCompraId: orderFilter }));
+    }
+  }, [orderFilter]);
+
   // ==================== RENDER ====================
 
   return (
     <Container>
       <Header>
-        <Title>Recepciones de Compra</Title>
+        <TitleSection>
+          <Title>Gestión de Recepciones de Compra</Title>
+          <PageSubtitle>Control de recepciones de mercadería y verificación de entregas</PageSubtitle>
+        </TitleSection>
+        <HeaderActions>
+          {onCreate && (
+            <Button $variant="primary" onClick={onCreate}>
+              <i className="fas fa-plus"></i>
+              Nueva Recepción
+            </Button>
+          )}
+        </HeaderActions>
       </Header>
 
-      {/* Filtros */}
+      {/* Stats Cards */}
+      <StatsGrid>
+        <StatCard $color="#3498db">
+          <StatValue $color="#3498db">{stats.total}</StatValue>
+          <StatLabel>Total Recepciones</StatLabel>
+        </StatCard>
+        <StatCard $color="#f39c12">
+          <StatValue $color="#f39c12">{stats.pendientes}</StatValue>
+          <StatLabel>Pendientes</StatLabel>
+        </StatCard>
+        <StatCard $color="#9b59b6">
+          <StatValue $color="#9b59b6">{stats.inspeccion}</StatValue>
+          <StatLabel>En Inspección</StatLabel>
+        </StatCard>
+        <StatCard $color="#27ae60">
+          <StatValue $color="#27ae60">{stats.confirmadas}</StatValue>
+          <StatLabel>Confirmadas</StatLabel>
+        </StatCard>
+        <StatCard $color="#e74c3c">
+          <StatValue $color="#e74c3c">{stats.canceladas}</StatValue>
+          <StatLabel>Canceladas</StatLabel>
+        </StatCard>
+      </StatsGrid>
+
+      {/* Filtros compactos */}
       <FilterContainer>
-        <FilterButton
-          $active={selectedStatus === 'ALL'}
-          onClick={() => handleStatusFilter('ALL')}
-        >
-          Todos
-        </FilterButton>
-        <FilterButton
-          $active={selectedStatus === 'PENDIENTE'}
-          onClick={() => handleStatusFilter('PENDIENTE')}
-        >
-          Pendientes
-        </FilterButton>
-        <FilterButton
-          $active={selectedStatus === 'INSPECCION'}
-          onClick={() => handleStatusFilter('INSPECCION')}
-        >
-          En Inspección
-        </FilterButton>
-        <FilterButton
-          $active={selectedStatus === 'CONFIRMADA'}
-          onClick={() => handleStatusFilter('CONFIRMADA')}
-        >
-          Confirmadas
-        </FilterButton>
-        <FilterButton
-          $active={selectedStatus === 'CANCELADA'}
-          onClick={() => handleStatusFilter('CANCELADA')}
-        >
-          Canceladas
-        </FilterButton>
+        <FilterGroup>
+          <FilterLabel>Buscar</FilterLabel>
+          <FilterInput
+            type="text"
+            placeholder="Código..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </FilterGroup>
+
+        <FilterGroup>
+          <FilterLabel>Estado</FilterLabel>
+          <FilterSelect
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value as PurchaseReceiptStatus | '')}
+          >
+            <option value="">Todos los estados</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="INSPECCION">En Inspección</option>
+            <option value="CONFIRMADA">Confirmada</option>
+            <option value="CANCELADA">Cancelada</option>
+          </FilterSelect>
+        </FilterGroup>
+
+        <FilterGroup>
+          <FilterLabel>Fecha Desde</FilterLabel>
+          <FilterInput
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+          />
+        </FilterGroup>
+
+        <FilterGroup>
+          <FilterLabel>Fecha Hasta</FilterLabel>
+          <FilterInput
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+          />
+        </FilterGroup>
+
+        <FilterGroup>
+          <FilterLabel>Almacén</FilterLabel>
+          <FilterSelect
+            value={almacenId}
+            onChange={(e) => setAlmacenId(e.target.value)}
+          >
+            <option value="">Todos los almacenes</option>
+            {almacenes.map((almacen) => (
+              <option key={almacen.id} value={almacen.id}>
+                {almacen.nombre}
+              </option>
+            ))}
+          </FilterSelect>
+        </FilterGroup>
+
+        <FilterGroup style={{ alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button onClick={clearFilters}>Limpiar</Button>
+            <Button $variant="primary" onClick={applyFilters}>Buscar</Button>
+          </div>
+        </FilterGroup>
       </FilterContainer>
 
-      {/* Búsqueda */}
-      <HeaderActions>
-        <SearchBar
-          type="text"
-          placeholder="Buscar por código..."
-          value={searchTerm}
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-        <Select
-          value={filters.limit}
-          onChange={(e) => setFilters(prev => ({ ...prev, limit: Number(e.target.value), page: 1 }))}
-        >
-          <option value={10}>10 por página</option>
-          <option value={25}>25 por página</option>
-          <option value={50}>50 por página</option>
-          <option value={100}>100 por página</option>
-        </Select>
-      </HeaderActions>
-
       {/* Estados */}
-      {loading && <LoadingState>Cargando recepciones...</LoadingState>}
+      {loading && receipts.length === 0 && <LoadingState>Cargando recepciones...</LoadingState>}
       {error && <ErrorState>{error}</ErrorState>}
       
       {/* Tabla */}
-      {!loading && !error && receipts.length === 0 && (
+      {!error && receipts.length === 0 && !loading && (
         <EmptyState>No se encontraron recepciones</EmptyState>
       )}
 
-      {!loading && !error && receipts.length > 0 && (
+      {!error && receipts.length > 0 && (
         <>
-          <Table>
-            <Thead>
+          <SharedTable>
+            <SharedThead>
               <tr>
-                <Th>Código</Th>
-                <Th>Fecha Recepción</Th>
-                <Th>Orden Compra</Th>
-                <Th>Items</Th>
-                <Th>Estado</Th>
-                <Th>Acciones</Th>
+                <SharedTh>Código</SharedTh>
+                <SharedTh>Fecha Recepción</SharedTh>
+                <SharedTh>Orden Compra</SharedTh>
+                <SharedTh>Items</SharedTh>
+                <SharedTh>Estado</SharedTh>
+                <SharedTh>Acciones</SharedTh>
               </tr>
-            </Thead>
-            <Tbody>
+            </SharedThead>
+            <SharedTbody>
               {receipts.map((receipt) => (
-                <Tr key={receipt.id}>
-                  <Td data-label="Código">{receipt.codigo}</Td>
-                  <Td data-label="Fecha">{formatDate(receipt.fechaRecepcion)}</Td>
-                  <Td data-label="Orden Compra">
+                <SharedTr key={receipt.id}>
+                  <SharedTd data-label="Código">{receipt.codigo}</SharedTd>
+                  <SharedTd data-label="Fecha">{formatDate(receipt.fechaRecepcion)}</SharedTd>
+                  <SharedTd data-label="Orden Compra">
                     {receipt.ordenCompra?.codigo ? (
                       <OrderLink href={`#orden-${receipt.ordenCompraId}`}>
                         {receipt.ordenCompra.codigo}
@@ -611,15 +601,22 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
                     ) : (
                       'N/A'
                     )}
-                  </Td>
-                  <Td data-label="Items">{receipt.items.length} productos</Td>
-                  <Td data-label="Estado">
-                    <StatusBadge $status={receipt.estado}>
+                  </SharedTd>
+                  <SharedTd data-label="Items">
+                    {receipt.items.length} productos
+                    {receipt.estado === 'PENDIENTE' && (
+                      <span style={{ marginLeft: '8px', fontSize: '0.85em', color: isReceiptComplete(receipt) ? '#10b981' : '#f59e0b' }}>
+                        {isReceiptComplete(receipt) ? '✓ Completa' : '⚠ Incompleta'}
+                      </span>
+                    )}
+                  </SharedTd>
+                  <SharedTd data-label="Estado">
+                    <StatusBadge variant={getEstadoVariant(receipt.estado)} dot>
                       {PURCHASE_RECEIPT_STATUS_LABELS[receipt.estado]}
                     </StatusBadge>
-                  </Td>
-                  <Td data-label="Acciones">
-                    <ActionButtons>
+                  </SharedTd>
+                  <SharedTd data-label="Acciones">
+                    <ActionsGroup>
                       <ActionButton
                         $variant="view"
                         onClick={() => handleView(receipt)}
@@ -627,14 +624,15 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
                       >
                         Ver
                       </ActionButton>
-                      <ActionButton
-                        $variant="confirm"
-                        onClick={() => handleConfirm(receipt)}
-                        disabled={receipt.estado !== 'PENDIENTE'}
-                        title="Confirmar recepción"
-                      >
-                        Confirmar
-                      </ActionButton>
+                      {receipt.estado === 'PENDIENTE' && isReceiptComplete(receipt) && (
+                        <ActionButton
+                          $variant="activate"
+                          onClick={() => handleConfirm(receipt)}
+                          title="Confirmar recepción (actualiza inventario)"
+                        >
+                          Confirmar
+                        </ActionButton>
+                      )}
                       <ActionButton
                         $variant="pdf"
                         onClick={() => handleDownloadPDF(receipt.id)}
@@ -643,55 +641,73 @@ const PurchaseReceiptList: React.FC<PurchaseReceiptListProps> = ({
                         PDF
                       </ActionButton>
                       <ActionButton
-                        $variant="cancel"
+                        $variant="deactivate"
                         onClick={() => handleCancelReceipt(receipt)}
                         disabled={receipt.estado === 'CANCELADA'}
                         title="Anular recepción"
                       >
                         Anular
                       </ActionButton>
-                    </ActionButtons>
-                  </Td>
-                </Tr>
+                    </ActionsGroup>
+                  </SharedTd>
+                </SharedTr>
               ))}
-            </Tbody>
-          </Table>
+            </SharedTbody>
+          </SharedTable>
 
           {/* Paginación */}
-          <Pagination>
-            <PaginationInfo>
-              Mostrando {(filters.page! - 1) * filters.limit! + 1} - {Math.min(filters.page! * filters.limit!, totalItems)} de {totalItems} recepciones
-            </PaginationInfo>
-            <PaginationButtons>
-              <PaginationButton
-                onClick={() => handlePageChange(1)}
-                disabled={filters.page === 1}
+          <SharedPaginationContainer>
+            <SharedPaginationInfo>
+              Mostrando {(filters.page! - 1) * filters.limit! + 1}-{Math.min(filters.page! * filters.limit!, totalItems)} de {totalItems} resultados
+            </SharedPaginationInfo>
+            <div style={{ display: 'flex', alignItems: 'center', gap: SPACING.md }}>
+              <Select
+                value={filters.limit}
+                onChange={(e) => setFilters(prev => ({ ...prev, limit: Number(e.target.value), page: 1 }))}
+                style={{ width: 'auto' }}
               >
-                Primera
-              </PaginationButton>
-              <PaginationButton
-                onClick={() => handlePageChange(filters.page! - 1)}
-                disabled={filters.page === 1}
-              >
-                Anterior
-              </PaginationButton>
-              <PaginationButton disabled>
-                Página {filters.page} de {totalPages}
-              </PaginationButton>
-              <PaginationButton
-                onClick={() => handlePageChange(filters.page! + 1)}
-                disabled={filters.page === totalPages}
-              >
-                Siguiente
-              </PaginationButton>
-              <PaginationButton
-                onClick={() => handlePageChange(totalPages)}
-                disabled={filters.page === totalPages}
-              >
-                Última
-              </PaginationButton>
-            </PaginationButtons>
-          </Pagination>
+                <option value="10">10 por página</option>
+                <option value="25">25 por página</option>
+                <option value="50">50 por página</option>
+                <option value="100">100 por página</option>
+              </Select>
+              <div style={{ display: 'flex', gap: SPACING.xs }}>
+                <PageButton
+                  onClick={() => handlePageChange(filters.page! - 1)}
+                  disabled={filters.page === 1}
+                >
+                  Anterior
+                </PageButton>
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 3) {
+                    pageNum = i + 1;
+                  } else if (filters.page! <= 2) {
+                    pageNum = i + 1;
+                  } else if (filters.page! >= totalPages - 1) {
+                    pageNum = totalPages - 2 + i;
+                  } else {
+                    pageNum = filters.page! - 1 + i;
+                  }
+                  return (
+                    <PageButton
+                      key={pageNum}
+                      $active={filters.page === pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </PageButton>
+                  );
+                })}
+                <PageButton
+                  onClick={() => handlePageChange(filters.page! + 1)}
+                  disabled={filters.page === totalPages || totalPages === 0}
+                >
+                  Siguiente
+                </PageButton>
+              </div>
+            </div>
+          </SharedPaginationContainer>
         </>
       )}
     </Container>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../../../context/NotificationContext';
 import { apiService } from '../../../utils/api';
+import { TYPOGRAPHY, COLORS, BORDER_RADIUS, SHADOWS, TRANSITIONS, Z_INDEX } from '../../../styles/theme';
+import { Button, ValidationMessage, ButtonGroup } from '../../../components/shared';
 
 // ============================================================================
 // INTERFACES
@@ -30,7 +32,7 @@ interface NuevoRolModalProps {
 }
 
 // ============================================================================
-// PERMISOS DISPONIBLES (33 permisos del sistema)
+// PERMISOS DISPONIBLES (43 permisos del sistema)
 // ============================================================================
 
 const PERMISSION_METADATA: Record<string, { name: string; description: string; module: string }> = {
@@ -41,12 +43,19 @@ const PERMISSION_METADATA: Record<string, { name: string; description: string; m
   'users.create': { name: 'Crear Usuarios', description: 'Crear nuevos usuarios', module: 'USUARIOS' },
   'users.read': { name: 'Ver Usuarios', description: 'Ver lista de usuarios', module: 'USUARIOS' },
   'users.update': { name: 'Actualizar Usuarios', description: 'Modificar usuarios', module: 'USUARIOS' },
+  'users.delete': { name: 'Eliminar Usuarios', description: 'Eliminar usuarios', module: 'USUARIOS' },
   
-  // Clientes
-  'commercial_entities.create': { name: 'Crear Entidades', description: 'Registrar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
-  'commercial_entities.read': { name: 'Ver Entidades', description: 'Ver lista de clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
-  'commercial_entities.update': { name: 'Actualizar Entidades', description: 'Modificar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
-  'commercial_entities.delete': { name: 'Eliminar Entidades', description: 'Eliminar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  // Roles
+  'roles.create': { name: 'Crear Roles', description: 'Crear nuevos roles', module: 'ROLES' },
+  'roles.read': { name: 'Ver Roles', description: 'Ver lista de roles', module: 'ROLES' },
+  'roles.update': { name: 'Actualizar Roles', description: 'Modificar roles', module: 'ROLES' },
+  'roles.delete': { name: 'Eliminar Roles', description: 'Eliminar roles', module: 'ROLES' },
+  
+  // Clientes/Entidades Comerciales
+  'clients.create': { name: 'Crear Entidades', description: 'Registrar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  'clients.read': { name: 'Ver Entidades', description: 'Ver lista de clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  'clients.update': { name: 'Actualizar Entidades', description: 'Modificar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
+  'clients.delete': { name: 'Eliminar Entidades', description: 'Eliminar clientes/proveedores', module: 'ENTIDADES COMERCIALES' },
   
   // Ventas
   'sales.create': { name: 'Crear Ventas', description: 'Registrar ventas', module: 'VENTAS' },
@@ -64,6 +73,12 @@ const PERMISSION_METADATA: Record<string, { name: string; description: string; m
   'inventory.read': { name: 'Ver Inventario', description: 'Ver estado de inventario', module: 'INVENTARIO' },
   'inventory.update': { name: 'Actualizar Inventario', description: 'Modificar inventario', module: 'INVENTARIO' },
   
+  // Almacenes
+  'warehouses.create': { name: 'Crear Almacenes', description: 'Registrar almacenes', module: 'ALMACENES' },
+  'warehouses.read': { name: 'Ver Almacenes', description: 'Ver lista de almacenes', module: 'ALMACENES' },
+  'warehouses.update': { name: 'Actualizar Almacenes', description: 'Modificar almacenes', module: 'ALMACENES' },
+  'warehouses.delete': { name: 'Eliminar Almacenes', description: 'Eliminar almacenes', module: 'ALMACENES' },
+  
   // Compras
   'purchases.create': { name: 'Crear Compras', description: 'Registrar compras', module: 'COMPRAS' },
   'purchases.read': { name: 'Ver Compras', description: 'Ver lista de compras', module: 'COMPRAS' },
@@ -80,14 +95,17 @@ const PERMISSION_METADATA: Record<string, { name: string; description: string; m
   'cash-sessions.create': { name: 'Crear Sesiones', description: 'Abrir sesiones de caja', module: 'SESIONES' },
   'cash-sessions.read': { name: 'Ver Sesiones', description: 'Ver sesiones de caja', module: 'SESIONES' },
   'cash-sessions.update': { name: 'Actualizar Sesiones', description: 'Modificar sesiones', module: 'SESIONES' },
+  'cash-sessions.delete': { name: 'Eliminar Sesiones', description: 'Eliminar sesiones', module: 'SESIONES' },
   
-  // Sistema
-  'system.settings': { name: 'Configuración', description: 'Acceso a configuración', module: 'SISTEMA' },
+  // Configuración
+  'settings.read': { name: 'Ver Configuración', description: 'Ver configuración del sistema', module: 'CONFIGURACIÓN' },
+  'settings.update': { name: 'Actualizar Configuración', description: 'Modificar configuración', module: 'CONFIGURACIÓN' },
+  
+  // Auditoría
+  'audit.read': { name: 'Ver Auditoría', description: 'Ver registros de auditoría', module: 'AUDITORÍA' },
   
   // Reportes
-  'reports.sales': { name: 'Reportes de Ventas', description: 'Ver reportes de ventas', module: 'REPORTES' },
-  'reports.inventory': { name: 'Reportes de Inventario', description: 'Ver reportes de inventario', module: 'REPORTES' },
-  'reports.financial': { name: 'Reportes Financieros', description: 'Ver reportes financieros', module: 'REPORTES' },
+  'reports.read': { name: 'Ver Reportes', description: 'Acceso a todos los reportes', module: 'REPORTES' },
 };
 
 // ============================================================================
@@ -104,24 +122,25 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.modal};
   padding: 1rem;
 `;
 
 const ModalContainer = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: ${COLORS.white};
+  border-radius: ${BORDER_RADIUS.large};
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: ${SHADOWS.xl};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const ModalHeader = styled.div`
   padding: 1.5rem;
-  border-bottom: 1px solid #e1e8ed;
+  border-bottom: 1px solid ${COLORS.border};
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -129,8 +148,10 @@ const ModalHeader = styled.div`
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #2c3e50;
-  font-size: 1.5rem;
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.h2};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const CloseButton = styled.button`
@@ -138,19 +159,19 @@ const CloseButton = styled.button`
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #7f8c8d;
+  color: ${COLORS.textLight};
   padding: 0;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  border-radius: ${BORDER_RADIUS.round};
+  transition: all ${TRANSITIONS.normal};
 
   &:hover {
-    background: #f8f9fa;
-    color: #2c3e50;
+    background: ${COLORS.background};
+    color: ${COLORS.text};
   }
 `;
 
@@ -173,51 +194,47 @@ const FormGroup = styled.div`
 `;
 
 const Label = styled.label`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 0.95rem;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.body};
 
   span {
-    color: #e74c3c;
+    color: ${COLORS.danger};
     margin-left: 0.25rem;
   }
 `;
 
 const Input = styled.input<{ $hasError?: boolean }>`
+  font-family: ${TYPOGRAPHY.fontFamily};
   padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.border};
+  border-radius: ${BORDER_RADIUS.medium};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  transition: all ${TRANSITIONS.normal};
 
   &:focus {
     outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+    box-shadow: 0 0 0 3px ${props => props.$hasError ? COLORS.dangerBg : COLORS.primaryLight};
   }
 `;
 
 const TextArea = styled.textarea<{ $hasError?: boolean }>`
+  font-family: ${TYPOGRAPHY.fontFamily};
   padding: 0.75rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#e1e8ed'};
-  border-radius: 8px;
-  font-size: 1rem;
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.border};
+  border-radius: ${BORDER_RADIUS.medium};
+  font-size: ${TYPOGRAPHY.fontSize.body};
   min-height: 80px;
   resize: vertical;
-  font-family: inherit;
-  transition: all 0.3s ease;
+  transition: all ${TRANSITIONS.normal};
 
   &:focus {
     outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+    box-shadow: 0 0 0 3px ${props => props.$hasError ? COLORS.dangerBg : COLORS.primaryLight};
   }
-`;
-
-const ErrorText = styled.span`
-  color: #e74c3c;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
 `;
 
 const PermissionsSection = styled.div`
@@ -232,25 +249,27 @@ const PermissionsHeader = styled.div`
 `;
 
 const PermissionCount = styled.span`
-  background: #e3f2fd;
-  color: #1976d2;
+  background: ${COLORS.infoBg};
+  color: ${COLORS.infoText};
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: ${BORDER_RADIUS.large};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  font-family: ${TYPOGRAPHY.fontFamily};
 `;
 
 const SelectAllButton = styled.button`
   background: none;
   border: none;
-  color: #3498db;
+  color: ${COLORS.primary};
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  font-family: ${TYPOGRAPHY.fontFamily};
   text-decoration: underline;
   padding: 0;
 
   &:hover {
-    color: #2980b9;
+    color: ${COLORS.primaryHover};
   }
 `;
 
@@ -259,10 +278,11 @@ const ModuleGroup = styled.div`
 `;
 
 const ModuleTitle = styled.div`
-  font-weight: 600;
-  color: #2c3e50;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text};
   padding: 0.5rem 0;
-  border-bottom: 2px solid #e1e8ed;
+  border-bottom: 2px solid ${COLORS.border};
   margin-bottom: 0.75rem;
   display: flex;
   justify-content: space-between;
@@ -280,14 +300,15 @@ const PermissionItem = styled.label`
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
+  border: 2px solid ${COLORS.border};
+  border-radius: ${BORDER_RADIUS.medium};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all ${TRANSITIONS.normal};
+  font-family: ${TYPOGRAPHY.fontFamily};
 
   &:hover {
-    border-color: #3498db;
-    background: #f8f9fa;
+    border-color: ${COLORS.primary};
+    background: ${COLORS.background};
   }
 `;
 
@@ -296,7 +317,7 @@ const Checkbox = styled.input.attrs({ type: 'checkbox' })`
   cursor: pointer;
   width: 18px;
   height: 18px;
-  accent-color: #667eea;
+  accent-color: ${COLORS.primary};
 `;
 
 const PermissionInfo = styled.div`
@@ -304,52 +325,25 @@ const PermissionInfo = styled.div`
 `;
 
 const PermissionName = styled.div`
-  font-weight: 500;
-  color: #2c3e50;
-  font-size: 0.9rem;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text};
+  font-size: ${TYPOGRAPHY.fontSize.small};
 `;
 
 const PermissionDescription = styled.div`
-  font-size: 0.8rem;
-  color: #7f8c8d;
+  font-family: ${TYPOGRAPHY.fontFamily};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  color: ${COLORS.textLight};
   margin-top: 0.25rem;
 `;
 
 const ModalFooter = styled.div`
   padding: 1.5rem;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid ${COLORS.border};
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-
-  ${props => props.$variant === 'primary' ? `
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    &:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
-  ` : `
-    background: #f8f9fa;
-    color: #495057;
-    &:hover { background: #e9ecef; }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    &:hover {
-      transform: none;
-      box-shadow: none;
-    }
-  }
 `;
 
 // ============================================================================
@@ -505,7 +499,7 @@ const NuevoRolModal: React.FC<NuevoRolModalProps> = ({ onClose, onSubmit }) => {
                 placeholder="Ej: Gerente, Asistente, etc."
                 $hasError={!!errors.name}
               />
-              {errors.name && <ErrorText>{errors.name}</ErrorText>}
+              {errors.name && <ValidationMessage $type="error">{errors.name}</ValidationMessage>}
             </FormGroup>
 
             <FormGroup>
@@ -519,7 +513,7 @@ const NuevoRolModal: React.FC<NuevoRolModalProps> = ({ onClose, onSubmit }) => {
                 placeholder="Describe las responsabilidades y alcance de este rol..."
                 $hasError={!!errors.description}
               />
-              {errors.description && <ErrorText>{errors.description}</ErrorText>}
+              {errors.description && <ValidationMessage $type="error">{errors.description}</ValidationMessage>}
             </FormGroup>
 
             <PermissionsSection>
@@ -536,7 +530,7 @@ const NuevoRolModal: React.FC<NuevoRolModalProps> = ({ onClose, onSubmit }) => {
                   {formData.permissions.length === validPermissions.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
                 </SelectAllButton>
               </PermissionsHeader>
-              {errors.permissions && <ErrorText>{errors.permissions}</ErrorText>}
+              {errors.permissions && <ValidationMessage $type="error">{errors.permissions}</ValidationMessage>}
 
               {Object.entries(permissionsByModule).map(([module, permissions]) => (
                 <ModuleGroup key={module}>

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useSales } from '../context/SalesContext';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, Z_INDEX, TRANSITIONS } from '../../../styles/theme';
+import { Button as SharedButton } from '../../../components/shared/Button';
+import { Input as SharedInput } from '../../../components/shared/Input';
+import { Select as SharedSelect } from '../../../components/shared/Select';
+import { Label as SharedLabel } from '../../../components/shared/Label';
 
 // ==================== TIPOS ====================
 interface SaleItem {

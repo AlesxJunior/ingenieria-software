@@ -175,6 +175,20 @@ class AlmacenesApiService {
       throw new Error(message);
     }
   }
+
+  /**
+   * Activar un almacén
+   * POST /api/almacenes/:id/activate
+   */
+  async activateAlmacen(id: string): Promise<void> {
+    try {
+      await this.api.post(`/almacenes/${id}/activate`);
+    } catch (error: any) {
+      console.error('Error activating almacén:', error);
+      const message = error?.response?.data?.message || error?.message || 'Error al activar almacén';
+      throw new Error(message);
+    }
+  }
 }
 
 // Instancia singleton

@@ -4,141 +4,81 @@ import { useNotification } from '../../../context/NotificationContext';
 import { useConfiguracion } from '../context/ConfiguracionContext';
 import configuracionApi, { type EmpresaData } from '../services/configuracionApi';
 import Layout from '../../../components/Layout';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button, 
+  Input, 
+  Select, 
+  Label, 
+  FormGroup
+} from '../../../components/shared';
 
 const Container = styled.div`
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
 `;
 
-// El header principal se renderiza desde Layout
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
+  flex-wrap: wrap;
+`;
 
-// Título desde Layout
+const Title = styled.h1`
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  margin: 0;
+`;
 
 const Subtitle = styled.p`
-  color: #6b7280;
-  font-size: 14px;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  margin: 0;
 `;
 
-const Card = styled.div`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  margin-bottom: 16px;
+const SectionCard = styled.div`
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  padding: ${SPACING.xl};
+  margin-bottom: ${SPACING.lg};
 `;
 
-const CardTitle = styled.h2`
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 16px;
+const SectionTitle = styled.h2`
+  font-size: ${TYPOGRAPHY.fontSize.lg};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.primary};
+  margin: 0 0 ${SPACING.lg} 0;
+  padding-bottom: ${SPACING.md};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
 `;
 
 const FormGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 16px;
-`;
-
-const Label = styled.label`
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 4px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  background-color: white;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: ${SPACING.lg};
 `;
 
 const Checkbox = styled.input`
-  margin-right: 8px;
+  margin-right: ${SPACING.sm};
 `;
 
 const CheckboxLabel = styled.label`
   display: flex;
   align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
+  color: ${COLORS.text.primary};
   cursor: pointer;
-`;
-
-const Button = styled.button`
-  padding: 8px 16px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #2563eb;
-  }
-
-  &:disabled {
-    background-color: #9ca3af;
-    cursor: not-allowed;
-  }
-`;
-
-const ButtonSecondary = styled(Button)`
-  background-color: #6b7280;
-
-  &:hover {
-    background-color: #4b5563;
-  }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
-`;
-
-const Alert = styled.div`
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  border: 1px solid #f59e0b;
-  background-color: #fef3c7;
-  color: #92400e;
+  gap: ${SPACING.lg};
+  margin-top: ${SPACING['2xl']};
 `;
 
 const Empresa: React.FC = () => {
@@ -178,7 +118,28 @@ const Empresa: React.FC = () => {
     try {
       const data = await configuracionApi.getEmpresa();
       setEmpresa(data);
-      setFormData(data);
+      // Asegurar que no haya valores null para evitar inputs uncontrolled
+      setFormData({
+        ruc: data.ruc || '',
+        razonSocial: data.razonSocial || '',
+        nombreComercial: data.nombreComercial || '',
+        direccion: data.direccion || '',
+        telefono: data.telefono || '',
+        email: data.email || '',
+        website: data.website || '',
+        logo: data.logo || '',
+        igvActivo: data.igvActivo ?? true,
+        igvPorcentaje: data.igvPorcentaje ?? 18,
+        moneda: data.moneda || 'PEN',
+        pais: data.pais || 'Perú',
+        departamento: data.departamento || '',
+        provincia: data.provincia || '',
+        distrito: data.distrito || '',
+        codigoPostal: data.codigoPostal || '',
+        sunatUsuario: data.sunatUsuario || '',
+        sunatClave: data.sunatClave || '',
+        sunatServidor: data.sunatServidor || 'homologacion',
+      });
     } catch (error) {
       showError('Error al cargar datos de la empresa');
     } finally {
@@ -218,27 +179,66 @@ const Empresa: React.FC = () => {
 
   const handleCancel = () => {
     if (empresa) {
-      setFormData(empresa);
+      setFormData({
+        ruc: empresa.ruc || '',
+        razonSocial: empresa.razonSocial || '',
+        nombreComercial: empresa.nombreComercial || '',
+        direccion: empresa.direccion || '',
+        telefono: empresa.telefono || '',
+        email: empresa.email || '',
+        website: empresa.website || '',
+        logo: empresa.logo || '',
+        igvActivo: empresa.igvActivo ?? true,
+        igvPorcentaje: empresa.igvPorcentaje ?? 18,
+        moneda: empresa.moneda || 'PEN',
+        pais: empresa.pais || 'Perú',
+        departamento: empresa.departamento || '',
+        provincia: empresa.provincia || '',
+        distrito: empresa.distrito || '',
+        codigoPostal: empresa.codigoPostal || '',
+        sunatUsuario: empresa.sunatUsuario || '',
+        sunatClave: empresa.sunatClave || '',
+        sunatServidor: empresa.sunatServidor || 'homologacion',
+      });
     }
     setIsEditing(false);
   };
 
-  if (loading) {
-    return <div>Cargando...</div>;
+  if (loading && !empresa) {
+    return (
+      <Layout title="Empresa">
+        <Container>
+          <Header>
+            <Title>Configuración de Empresa</Title>
+          </Header>
+          <SectionCard>
+            <div style={{ textAlign: 'center', padding: SPACING.xl }}>
+              ⏳ Cargando datos de la empresa...
+            </div>
+          </SectionCard>
+        </Container>
+      </Layout>
+    );
   }
 
   return (
-    <Layout title="Configuración: Empresa">
+    <Layout title="Empresa">
       <Container>
-        <Subtitle>Configura la información de tu empresa y datos SUNAT</Subtitle>
+        <Header>
+          <div>
+            <Title>Configuración de Empresa</Title>
+            <Subtitle>Configura la información de tu empresa y datos SUNAT</Subtitle>
+          </div>
+          {!isEditing && (
+            <Button $variant="primary" onClick={() => setIsEditing(true)}>
+              Editar Datos
+            </Button>
+          )}
+        </Header>
 
-      <Alert>
-        <strong>Importante:</strong> Los datos de SUNAT son necesarios para la emisión de comprobantes electrónicos.
-      </Alert>
-
-      <Card>
-        <CardTitle>Información General</CardTitle>
-        <FormGrid>
+        <SectionCard>
+          <SectionTitle>Información General</SectionTitle>
+          <FormGrid>
           <FormGroup>
             <Label>RUC *</Label>
             <Input
@@ -335,10 +335,10 @@ const Empresa: React.FC = () => {
             />
           </FormGroup>
         </FormGrid>
-      </Card>
+        </SectionCard>
 
-      <Card>
-        <CardTitle>Configuración de Impuestos</CardTitle>
+        <SectionCard>
+          <SectionTitle>Configuración de Impuestos</SectionTitle>
         <FormGrid>
           <FormGroup>
             <CheckboxLabel>
@@ -380,10 +380,10 @@ const Empresa: React.FC = () => {
             </Select>
           </FormGroup>
         </FormGrid>
-      </Card>
+        </SectionCard>
 
-      <Card>
-        <CardTitle>Configuración SUNAT</CardTitle>
+        <SectionCard>
+          <SectionTitle>Configuración SUNAT</SectionTitle>
         <FormGrid>
           <FormGroup>
             <Label>Usuario SOL *</Label>
@@ -422,22 +422,18 @@ const Empresa: React.FC = () => {
             </Select>
           </FormGroup>
         </FormGrid>
-      </Card>
+        </SectionCard>
 
-      {isEditing ? (
-        <ButtonGroup>
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
-          <ButtonSecondary onClick={handleCancel}>
-            Cancelar
-          </ButtonSecondary>
-        </ButtonGroup>
-      ) : (
-        <Button onClick={() => setIsEditing(true)}>
-          Editar Datos
-        </Button>
-      )}
+        {isEditing && (
+          <ButtonGroup>
+            <Button $variant="primary" onClick={handleSave} disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+            <Button $variant="secondary" onClick={handleCancel}>
+              Cancelar
+            </Button>
+          </ButtonGroup>
+        )}
       </Container>
     </Layout>
   );

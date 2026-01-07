@@ -369,7 +369,7 @@ const PurchaseReceiptForm: React.FC<PurchaseReceiptFormProps> = ({
 
       setAvailableOrders(validOrders);
     } catch (err: any) {
-      showNotification('Error al cargar órdenes disponibles', 'error');
+      showNotification('error', 'Error de Carga', 'No se pudieron cargar las órdenes de compra disponibles');
     }
   };
 
@@ -401,7 +401,7 @@ const PurchaseReceiptForm: React.FC<PurchaseReceiptFormProps> = ({
         items: receiptItems,
       }));
     } catch (err: any) {
-      showNotification('Error al cargar detalles de la orden', 'error');
+      showNotification('error', 'Error al Cargar Orden', 'No se pudieron obtener los detalles de la orden seleccionada');
     }
   };
 
@@ -474,7 +474,7 @@ const PurchaseReceiptForm: React.FC<PurchaseReceiptFormProps> = ({
 
     if (formData.items.length === 0) {
       newErrors.items = 'No hay productos para recepcionar';
-      showNotification('No hay productos para recepcionar', 'error');
+      showNotification('warning', 'Sin Productos', 'La orden seleccionada no tiene productos pendientes de recepción');
     }
 
     formData.items.forEach((item, index) => {
@@ -495,7 +495,7 @@ const PurchaseReceiptForm: React.FC<PurchaseReceiptFormProps> = ({
     }
 
     if (!user?.id) {
-      showNotification('Error: Usuario no autenticado', 'error');
+      showNotification('error', 'Sesión Requerida', 'Debe iniciar sesión para crear recepciones');
       return;
     }
 
@@ -529,14 +529,14 @@ const PurchaseReceiptForm: React.FC<PurchaseReceiptFormProps> = ({
       };
 
       const response = await purchaseReceiptService.createPurchaseReceipt(createData);
-      showNotification('Recepción creada exitosamente', 'success');
+      showNotification('success', 'Recepción Creada', `Se ha registrado la recepción de ${formData.items.length} producto(s) correctamente`);
 
       if (onSuccess) {
         onSuccess(response.data);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Error al crear recepción';
-      showNotification(errorMessage, 'error');
+      showNotification('error', 'Error al Crear', errorMessage);
     } finally {
       setLoading(false);
     }

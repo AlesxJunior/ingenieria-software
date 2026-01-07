@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { apiService } from '../../../utils/api';
+import { COLORS, SPACING, BORDER_RADIUS, TYPOGRAPHY, SHADOWS, TRANSITIONS } from '../../../styles/theme';
+import { Label, RequiredMark, ValidationMessage } from '../../../components/shared';
 
 interface Role {
   id: string;
@@ -22,20 +24,7 @@ interface RoleSelectorProps {
 }
 
 const Container = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #2c3e50;
-  font-weight: 600;
-  font-size: 0.95rem;
-`;
-
-const Required = styled.span`
-  color: #e74c3c;
-  margin-left: 0.25rem;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const SelectWrapper = styled.div`
@@ -44,93 +33,86 @@ const SelectWrapper = styled.div`
 
 const Select = styled.select<{ $hasError?: boolean }>`
   width: 100%;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 2px solid ${props => props.$hasError ? '#e74c3c' : '#dee2e6'};
-  border-radius: 8px;
+  padding: ${SPACING.sm} ${SPACING.md};
+  font-size: ${TYPOGRAPHY.fontSize.body};
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.border.medium};
+  border-radius: ${BORDER_RADIUS.md};
   background: white;
-  color: #2c3e50;
+  color: ${COLORS.text.primary};
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: ${TRANSITIONS.normal};
   appearance: none;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 1rem center;
+  background-position: right ${SPACING.md} center;
   background-size: 1.25rem;
   padding-right: 3rem;
 
   &:focus {
     outline: none;
-    border-color: ${props => props.$hasError ? '#e74c3c' : '#3498db'};
-    box-shadow: 0 0 0 3px ${props => props.$hasError ? 'rgba(231, 76, 60, 0.1)' : 'rgba(52, 152, 219, 0.1)'};
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+    box-shadow: 0 0 0 3px ${props => props.$hasError ? `${COLORS.danger}1a` : `${COLORS.primary}1a`};
   }
 
   &:disabled {
-    background-color: #f8f9fa;
+    background-color: ${COLORS.background.secondary};
     cursor: not-allowed;
     opacity: 0.6;
   }
 
   option {
-    padding: 0.75rem;
+    padding: ${SPACING.sm};
   }
 `;
 
 const RoleInfo = styled.div`
-  margin-top: 0.75rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
+  margin-top: ${SPACING.sm};
+  padding: ${SPACING.md};
+  background: ${COLORS.background.secondary};
+  border-radius: ${BORDER_RADIUS.md};
+  border-left: 4px solid ${COLORS.primary};
 `;
 
 const RoleName = styled.div`
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 0.25rem;
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.text.primary};
+  margin-bottom: ${SPACING.xs};
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: ${SPACING.xs};
 `;
 
 const SystemBadge = styled.span`
   display: inline-block;
-  padding: 0.2rem 0.6rem;
-  background: #3498db;
+  padding: ${SPACING.xs} 0.6rem;
+  background: ${COLORS.primary};
   color: white;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
+  border-radius: ${BORDER_RADIUS.sm};
+  font-size: ${TYPOGRAPHY.fontSize.xs};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   text-transform: uppercase;
 `;
 
 const RoleDescription = styled.div`
-  font-size: 0.85rem;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  color: ${COLORS.text.muted};
+  margin-bottom: ${SPACING.xs};
 `;
 
 const PermissionsCount = styled.div`
-  font-size: 0.85rem;
-  color: #495057;
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  color: ${COLORS.text.secondary};
   
   strong {
-    color: #27ae60;
-    font-weight: 600;
+    color: ${COLORS.success};
+    font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   }
 `;
 
-const ErrorText = styled.span`
-  color: #e74c3c;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  display: block;
-`;
-
 const LoadingText = styled.div`
-  padding: 1rem;
+  padding: ${SPACING.md};
   text-align: center;
-  color: #6c757d;
+  color: ${COLORS.text.muted};
   font-style: italic;
 `;
 
@@ -202,7 +184,12 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
   if (isLoading) {
     return (
       <Container>
-        {label && <Label>{label}{required && <Required>*</Required>}</Label>}
+        {label && (
+          <Label>
+            {label}
+            {required && <RequiredMark />}
+          </Label>
+        )}
         <LoadingText>Cargando roles...</LoadingText>
       </Container>
     );
@@ -213,7 +200,7 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
       {label && (
         <Label>
           {label}
-          {required && <Required>*</Required>}
+          {required && <RequiredMark />}
         </Label>
       )}
       
@@ -236,7 +223,7 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
         </Select>
       </SelectWrapper>
 
-      {error && <ErrorText>{error}</ErrorText>}
+      {error && <ValidationMessage $type="error">{error}</ValidationMessage>}
 
       {showDescription && selectedRole && (
         <RoleInfo>

@@ -165,14 +165,14 @@ class PurchaseReceiptService {
 
   /**
    * 5. Anular recepción
-   * POST /api/compras/recepciones/:id/anular
+   * PATCH /api/compras/recepciones/:id/anular
    */
   async cancelPurchaseReceipt(
     id: string,
     motivo?: string
   ): Promise<ApiResponse<PurchaseReceipt>> {
     try {
-      const response = await this.api.post<ApiResponse<PurchaseReceipt>>(
+      const response = await this.api.patch<ApiResponse<PurchaseReceipt>>(
         `${this.baseEndpoint}/${id}/anular`,
         { motivo }
       );

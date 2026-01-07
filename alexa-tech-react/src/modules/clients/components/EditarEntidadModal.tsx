@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNotification } from '../../../context/NotificationContext';
 import UbigeoSelector from './UbigeoSelector';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, Z_INDEX, TYPOGRAPHY } from '../../../styles/theme';
+import { Button, ButtonGroup, Label } from '../../../components/shared';
 
 interface Client {
   id: string;
@@ -54,13 +56,13 @@ const ModalOverlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: ${Z_INDEX.modal};
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.xl};
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
@@ -71,136 +73,115 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: ${SPACING.xl};
 `;
 
 const ModalTitle = styled.h2`
   margin: 0;
-  color: #333;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  
-  &:hover {
-    color: #333;
-  }
+  color: ${COLORS.text.primary};
+  font-size: ${TYPOGRAPHY.fontSize.xl};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: ${SPACING.lg};
 `;
 
 const FormRow = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: ${SPACING.md};
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const Label = styled.label`
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 500;
-  color: #333;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-  }
-`;
-
 const TextArea = styled.textarea`
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: ${SPACING.sm};
+  border: 2px solid ${COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   min-height: 80px;
   resize: vertical;
+  font-family: inherit;
   
   &:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
+`;
+
+const Input = styled.input<{ $hasError?: boolean }>`
+  padding: ${SPACING.sm};
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.md};
+  transition: border-color 0.2s;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+  }
+
+  &:disabled {
+    background: ${COLORS.neutral[100]};
+    cursor: not-allowed;
+  }
+`;
+
+const Select = styled.select<{ $hasError?: boolean }>`
+  padding: ${SPACING.sm};
+  border: 2px solid ${props => props.$hasError ? COLORS.danger : COLORS.neutral[300]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.md};
+  transition: border-color 0.2s;
+  width: 100%;
+  background: ${COLORS.white};
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.$hasError ? COLORS.danger : COLORS.primary};
+  }
+
+  &:disabled {
+    background: ${COLORS.neutral[100]};
+    cursor: not-allowed;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: ${COLORS.text.secondary};
+  
+  &:hover {
+    color: ${COLORS.text.primary};
   }
 `;
 
 const InfoAlert = styled.div`
   background-color: #e7f3ff;
   border: 1px solid #b3d9ff;
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.md};
+  margin-bottom: ${SPACING.md};
   display: flex;
   align-items: start;
-  gap: 10px;
-  font-size: 14px;
-  color: #0056b3;
+  gap: ${SPACING.sm};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLOR_SCALES.primary[700]};
   line-height: 1.5;
   
   &::before {
     content: 'ℹ️';
     font-size: 18px;
   }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-`;
-
-const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  
-  ${props => props.$variant === 'primary' ? `
-    background-color: #007bff;
-    color: white;
-    
-    &:hover {
-      background-color: #0056b3;
-    }
-  ` : `
-    background-color: #6c757d;
-    color: white;
-    
-    &:hover {
-      background-color: #545b62;
-    }
-  `}
 `;
 
 const EditarClienteModal: React.FC<EditarClienteModalProps> = ({

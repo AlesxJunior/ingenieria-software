@@ -16,6 +16,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
+import { COLOR_SCALES, SPACING, BORDER_RADIUS } from '../../../styles/theme';
 import Layout from '../../../components/Layout';
 import Modal from '../../../components/Modal';
 import { PurchaseReceiptList, PurchaseReceiptForm, PurchaseReceiptDetail } from '../components';
@@ -29,74 +30,13 @@ const Container = styled.div`
   padding: 0;
 `;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
-  flex-wrap: wrap;
-`;
-
-const Title = styled.h2`
-  color: #2c3e50;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-`;
-
-const Button = styled.button<{ variant?: 'primary' | 'secondary' }>`
-  padding: 0.625rem 1.25rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  ${props => props.variant === 'primary' ? `
-    background: #0047b3;
-    color: white;
-    &:hover:not(:disabled) {
-      background: #003d99;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 71, 179, 0.2);
-    }
-  ` : `
-    background: #f8f9fa;
-    color: #495057;
-    border: 1px solid #dee2e6;
-    &:hover:not(:disabled) {
-      background: #e9ecef;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  i {
-    font-size: 1rem;
-  }
-`;
-
 const ErrorContainer = styled.div`
-  background: #fee;
-  border: 1px solid #fcc;
-  border-radius: 8px;
-  padding: 1rem;
-  color: #c33;
-  margin-bottom: 1rem;
+  background: ${COLOR_SCALES.danger[50]};
+  border: 1px solid ${COLOR_SCALES.danger[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.lg};
+  color: ${COLOR_SCALES.danger[700]};
+  margin-bottom: ${SPACING.lg};
 `;
 
 // ==================== COMPONENT ====================
@@ -127,7 +67,7 @@ const PurchaseReceiptsPage: React.FC = () => {
       // Success handled in individual operations
     },
     onError: (err) => {
-      showNotification(err.message, 'error');
+      showNotification('error', 'Error al Cargar', err.message);
     },
   });
 
@@ -193,7 +133,7 @@ const PurchaseReceiptsPage: React.FC = () => {
    */
   const handleRefresh = () => {
     refetch();
-    showNotification('Lista actualizada', 'info');
+    showNotification('info', 'Lista Actualizada', 'Los datos se han recargado correctamente');
   };
 
   /**
@@ -201,7 +141,7 @@ const PurchaseReceiptsPage: React.FC = () => {
    */
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
-    showNotification('Recepción de compra creada exitosamente', 'success');
+    showNotification('success', 'Recepción Creada', 'La recepción de compra se ha registrado correctamente');
     refetch();
     
     // Limpiar query params
@@ -229,21 +169,6 @@ const PurchaseReceiptsPage: React.FC = () => {
   return (
     <Layout title="Recepciones de Compra">
       <Container>
-        {/* Header con acciones */}
-        <Header>
-          <Title>Gestión de Recepciones de Compra</Title>
-          <ButtonGroup>
-            <Button variant="secondary" onClick={handleRefresh} disabled={isLoading}>
-              <i className="fas fa-sync-alt"></i>
-              Actualizar
-            </Button>
-            <Button variant="primary" onClick={handleCreate}>
-              <i className="fas fa-plus"></i>
-              Nueva Recepción
-            </Button>
-          </ButtonGroup>
-        </Header>
-
         {/* Error global */}
         {error && (
           <ErrorContainer>
@@ -253,6 +178,7 @@ const PurchaseReceiptsPage: React.FC = () => {
 
         {/* Lista de recepciones */}
         <PurchaseReceiptList
+          onCreate={handleCreate}
           onView={handleView}
           onConfirm={handleConfirm}
           onCancel={handleCancel}

@@ -1,162 +1,79 @@
 import React from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../../styles/theme';
+import { 
+  Button as SharedButton,
+  Table as SharedTable,
+  Thead as SharedThead,
+  Th as SharedTh,
+  Tbody as SharedTbody,
+  Tr as SharedTr,
+  Td as SharedTd,
+  PaginationContainer as SharedPaginationContainer,
+  PaginationInfo as SharedPaginationInfo,
+  PaginationButtons as SharedPaginationButtons,
+  PageButton,
+  StatusBadge
+} from '../../../../components/shared';
 import type { StockItem, PaginationData } from '../../../../types/inventario';
 import { getWarehouseLabel } from '../../../../constants/warehouses';
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.background};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
   overflow: hidden;
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const Th = styled.th`
-  text-align: left;
-  background: #f1f3f5;
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: 600;
-  color: #555;
-  font-size: 0.9rem;
-`;
-
-const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  color: #333;
-  vertical-align: middle;
-`;
-
-const Tr = styled.tr`
-  &:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const StatusBadge = styled.span<{ $status: 'NORMAL' | 'BAJO' | 'CRITICO' }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  
-  ${props => {
-    switch (props.$status) {
-      case 'NORMAL':
-        return `
-          background: #d4edda;
-          color: #155724;
-        `;
-      case 'BAJO':
-        return `
-          background: #fff3cd;
-          color: #856404;
-        `;
-      case 'CRITICO':
-        return `
-          background: #f8d7da;
-          color: #721c24;
-        `;
-      default:
-        return `
-          background: #e2e3e5;
-          color: #383d41;
-        `;
-    }
-  }}
-`;
-
-const ActionButton = styled.button`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: #3498db;
-  color: white;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #2980b9;
-  }
-
-  &:disabled {
-    background: #bdc3c7;
-    cursor: not-allowed;
-  }
-`;
+// Helper para obtener variant del StatusBadge según estado de stock
+const getStatusVariant = (status: 'NORMAL' | 'BAJO' | 'CRITICO'): 'success' | 'warning' | 'danger' => {
+  const variants: Record<string, 'success' | 'warning' | 'danger'> = {
+    NORMAL: 'success',
+    BAJO: 'warning',
+    CRITICO: 'danger'
+  };
+  return variants[status] || 'success';
+};
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 3rem;
-  color: #6c757d;
+  padding: ${SPACING['3xl']};
+  color: ${COLORS.textLight};
 `;
 
 const EmptyIcon = styled.div`
   font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: ${SPACING.lg};
   opacity: 0.5;
 `;
 
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: between;
-  align-items: center;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-`;
-
-const PaginationInfo = styled.div`
-  color: #6c757d;
-  font-size: 0.9rem;
-`;
-
-const PaginationControls = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-`;
-
-const PaginationButton = styled.button<{ $active?: boolean }>`
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #dee2e6;
-  background: ${props => props.$active ? '#3498db' : 'white'};
-  color: ${props => props.$active ? 'white' : '#495057'};
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-
-  &:hover:not(:disabled) {
-    background: ${props => props.$active ? '#2980b9' : '#f8f9fa'};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
 const QuantityCell = styled.div<{ $isLow?: boolean; $isCritical?: boolean }>`
-  font-weight: 500;
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   color: ${props => {
-    if (props.$isCritical) return '#e74c3c';
-    if (props.$isLow) return '#f39c12';
-    return '#2c3e50';
+    if (props.$isCritical) return COLOR_SCALES.danger[500];
+    if (props.$isLow) return COLOR_SCALES.warning[500];
+    return COLORS.text;
   }};
+`;
+
+const PageSizeSelect = styled.select`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text};
+  background: ${COLORS.background};
+  cursor: pointer;
+  transition: ${TRANSITIONS.default};
+
+  &:hover {
+    border-color: ${COLOR_SCALES.primary[300]};
+  }
+
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
 `;
 
 interface TablaStockProps {
@@ -166,6 +83,7 @@ interface TablaStockProps {
   canUpdateInventory?: boolean;
   onAjustar: (stock: StockItem) => void;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 const TablaStock: React.FC<TablaStockProps> = ({
@@ -174,7 +92,8 @@ const TablaStock: React.FC<TablaStockProps> = ({
   loading = false,
   canUpdateInventory = false,
   onAjustar,
-  onPageChange
+  onPageChange,
+  onPageSizeChange
 }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -215,55 +134,56 @@ const TablaStock: React.FC<TablaStockProps> = ({
     }
 
     return (
-      <PaginationContainer>
-        <PaginationInfo>
+      <SharedPaginationContainer>
+        <SharedPaginationInfo>
           Mostrando {startItem} - {endItem} de {total} elementos
-        </PaginationInfo>
+        </SharedPaginationInfo>
         
-        <PaginationControls>
-          <PaginationButton
-            onClick={() => onPageChange(1)}
-            disabled={page === 1}
-          >
-            ««
-          </PaginationButton>
-          
-          <PaginationButton
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 1}
-          >
-            ‹
-          </PaginationButton>
-
-          {pageNumbers.map(pageNum => (
-            <PaginationButton
-              key={pageNum}
-              $active={pageNum === page}
-              onClick={() => onPageChange(pageNum)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {onPageSizeChange && (
+            <PageSizeSelect
+              value={limit}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
             >
-              {pageNum}
-            </PaginationButton>
-          ))}
+              <option value={10}>10 por página</option>
+              <option value={20}>20 por página</option>
+              <option value={50}>50 por página</option>
+              <option value={100}>100 por página</option>
+            </PageSizeSelect>
+          )}
 
-          <PaginationButton
-            onClick={() => onPageChange(page + 1)}
-            disabled={page === pages}
-          >
-            ›
-          </PaginationButton>
-          
-          <PaginationButton
-            onClick={() => onPageChange(pages)}
-            disabled={page === pages}
-          >
-            »»
-          </PaginationButton>
-        </PaginationControls>
-      </PaginationContainer>
+          <SharedPaginationButtons>
+            <PageButton
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 1}
+            >
+              Anterior
+            </PageButton>
+
+            {pageNumbers.map(pageNum => (
+              <PageButton
+                key={pageNum}
+                $active={pageNum === page}
+                onClick={() => onPageChange(pageNum)}
+              >
+                {pageNum}
+              </PageButton>
+            ))}
+
+            <PageButton
+              onClick={() => onPageChange(page + 1)}
+              disabled={page === pages}
+            >
+              Siguiente
+            </PageButton>
+          </SharedPaginationButtons>
+        </div>
+      </SharedPaginationContainer>
     );
   };
 
-  if (loading) {
+  // Mostrar estado de carga solo si no hay items (primera carga)
+  if (loading && stockItems.length === 0) {
     return (
       <TableContainer>
         <EmptyState>
@@ -274,7 +194,7 @@ const TablaStock: React.FC<TablaStockProps> = ({
     );
   }
 
-  if (stockItems.length === 0) {
+  if (!loading && stockItems.length === 0) {
     return (
       <TableContainer>
         <EmptyState>
@@ -287,28 +207,28 @@ const TablaStock: React.FC<TablaStockProps> = ({
 
   return (
     <TableContainer>
-      <Table data-testid="stock-table">
-        <thead>
+      <SharedTable data-testid="stock-table">
+        <SharedThead>
           <tr>
-            <Th>Código</Th>
-            <Th>Producto</Th>
-            <Th>Almacén</Th>
-            <Th>Cantidad</Th>
-            <Th>Stock Mín.</Th>
-            <Th>Estado</Th>
-            <Th>Última Act.</Th>
-            {canUpdateInventory && <Th>Acciones</Th>}
+            <SharedTh>Código</SharedTh>
+            <SharedTh>Producto</SharedTh>
+            <SharedTh>Almacén</SharedTh>
+            <SharedTh>Cantidad</SharedTh>
+            <SharedTh>Stock Mín.</SharedTh>
+            <SharedTh>Estado</SharedTh>
+            <SharedTh>Última Act.</SharedTh>
+            {canUpdateInventory && <SharedTh>Acciones</SharedTh>}
           </tr>
-        </thead>
-        <tbody>
+        </SharedThead>
+        <SharedTbody>
           {stockItems.map((item) => (
-            <Tr key={item.stockByWarehouseId} data-testid={`stock-row-${item.codigo}-${item.warehouseId}`}>
-              <Td>
+            <SharedTr key={item.stockByWarehouseId} data-testid={`stock-row-${item.codigo}-${item.warehouseId}`}>
+              <SharedTd>
                 <strong>{item.codigo}</strong>
-              </Td>
-              <Td>{item.nombre}</Td>
-              <Td>{getWarehouseLabel(item.warehouseId)}</Td>
-              <Td>
+              </SharedTd>
+              <SharedTd>{item.nombre}</SharedTd>
+              <SharedTd>{getWarehouseLabel(item.warehouseId)}</SharedTd>
+              <SharedTd>
                 <QuantityCell
                   $isLow={item.estado === 'BAJO'}
                   $isCritical={item.estado === 'CRITICO'}
@@ -316,31 +236,32 @@ const TablaStock: React.FC<TablaStockProps> = ({
                 >
                   {item.cantidad.toLocaleString()}
                 </QuantityCell>
-              </Td>
-              <Td>{item.stockMinimo != null ? item.stockMinimo.toLocaleString() : 'N/A'}</Td>
-              <Td>
-                <StatusBadge $status={item.estado} data-testid={`stock-status-${item.estado.toLowerCase()}`}>
+              </SharedTd>
+              <SharedTd>{item.stockMinimo != null ? item.stockMinimo.toLocaleString() : 'N/A'}</SharedTd>
+              <SharedTd>
+                <StatusBadge variant={getStatusVariant(item.estado)} dot data-testid={`stock-status-${item.estado.toLowerCase()}`}>
                   {getStatusLabel(item.estado)}
                 </StatusBadge>
-              </Td>
-              <Td>{formatDate(item.updatedAt)}</Td>
+              </SharedTd>
+              <SharedTd>{formatDate(item.updatedAt)}</SharedTd>
               {canUpdateInventory && (
-                <Td>
-                  <ActionButton
+                <SharedTd>
+                  <SharedButton
+                    $variant="primary"
                     onClick={() => onAjustar(item)}
                     disabled={loading}
                     data-testid={`stock-ajustar-${item.codigo}-${item.warehouseId}`}
                   >
                     Ajustar
-                  </ActionButton>
-                </Td>
+                  </SharedButton>
+                </SharedTd>
               )}
-            </Tr>
+            </SharedTr>
           ))}
-        </tbody>
-      </Table>
+        </SharedTbody>
+      </SharedTable>
       
-      {pagination.pages > 1 && renderPagination()}
+      {pagination.total > 0 && renderPagination()}
     </TableContainer>
   );
 };

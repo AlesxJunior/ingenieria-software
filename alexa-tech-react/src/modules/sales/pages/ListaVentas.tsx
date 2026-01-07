@@ -6,141 +6,127 @@ import { useSales } from '../context/SalesContext';
 import { useNotification } from '../../../context/NotificationContext';
 import { useClients } from '../../clients/context/ClientContext';
 import { ModalNotaCredito } from '../components/ModalNotaCredito';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, TRANSITIONS } from '../../../styles/theme';
+import { 
+  Button as SharedButton,
+  Input as SharedInput,
+  Select as SharedSelect,
+  Label as SharedLabel,
+  Table as SharedTable,
+  Thead as SharedThead,
+  Th as SharedTh,
+  Tbody as SharedTbody,
+  Tr as SharedTr,
+  Td as SharedTd,
+  PaginationContainer as SharedPaginationContainer,
+  PaginationInfo as SharedPaginationInfo,
+  PaginationButtons as SharedPaginationButtons,
+  PageButton,
+  StatCard,
+  StatsGrid,
+  StatValue,
+  StatLabel
+} from '../../../components/shared';
 
 
 const Container = styled.div`
-  padding: 1rem;
+  padding: 0;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: ${SPACING.xl};
+  gap: ${SPACING.lg};
   flex-wrap: wrap;
-  gap: 1rem;
+`;
+
+const TitleSection = styled.div`
+  display: flex;
+  flex-direction: column;
 `;
 
 const Title = styled.h1`
-  color: #2c3e50;
+  font-size: ${TYPOGRAPHY.fontSize.xxl};
+  color: ${COLORS.text.primary};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
   margin: 0;
-  font-size: 2rem;
-  font-weight: 600;
 `;
 
-const SearchContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
+const PageSubtitle = styled.p`
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.small};
+  margin: ${SPACING.xs} 0 0 0;
 `;
 
-const SearchInput = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  min-width: 250px;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  }
+const FiltersContainer = styled.div`
+  background: ${COLORS.neutral.white};
+  padding: ${SPACING.xl};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
+  margin-bottom: ${SPACING.xl};
 `;
 
-const FilterSelect = styled.select`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-  background: white;
-  min-width: 150px;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-`;
-
-const DateInput = styled.input`
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 1rem;
-
-  &:focus {
-    outline: none;
-    border-color: #3498db;
-  }
-`;
-
-const StatsContainer = styled.div`
+const FiltersGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: ${SPACING.lg};
+  margin-bottom: ${SPACING.lg};
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
-const StatCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  text-align: center;
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${SPACING.sm};
 `;
 
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #3498db;
-  margin-bottom: 0.5rem;
-`;
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: ${SPACING.md};
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: ${SPACING.lg};
 
-const StatLabel = styled.div`
-  color: #7f8c8d;
-  font-size: 0.9rem;
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: stretch;
+    
+    button {
+      flex: 1;
+    }
+  }
 `;
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  box-shadow: ${SHADOWS.sm};
   overflow: hidden;
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const TableHeader = styled.thead`
-  background: #f8f9fa;
-`;
-
-const TableRow = styled.tr`
-  &:nth-child(even) {
-    background: #f8f9fa;
-  }
+const PageSizeSelect = styled.select`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.primary};
+  background: ${COLORS.background};
+  cursor: pointer;
+  transition: ${TRANSITIONS.default};
 
   &:hover {
-    background: #e3f2fd;
+    border-color: ${COLOR_SCALES.primary[300]};
   }
-`;
 
-const TableHeaderCell = styled.th`
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 2px solid #e1e8ed;
-`;
-
-const TableCell = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #e1e8ed;
-  color: #2c3e50;
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
 `;
 
 const StatusBadge = styled.span<{ status: string }>`
@@ -247,102 +233,61 @@ const VoucherBadge = styled.span<{ type: string }>`
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
+  padding: ${SPACING['3xl']};
+  color: ${COLORS.text.secondary};
 `;
 
 const EmptyIcon = styled.div`
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  font-size: 3rem;
+  margin-bottom: ${SPACING.lg};
+  opacity: 0.5;
 `;
 
-const Button = styled.button`
-  background: #3498db;
-  color: white;
+const ActionButton = styled.button<{ $variant?: 'view' | 'pdf' | 'credit' }>`
+  padding: ${SPACING.sm} ${SPACING.md};
   border: none;
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: #2980b9;
-    transform: translateY(-1px);
-  }
-`;
-
-const ActionButton = styled.button<{ $variant?: 'view' | 'pdf' | 'download' | 'complete' | 'cancel' }>`
-  padding: 0.4rem 0.75rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  margin-right: 0.5rem;
-  margin-bottom: 0.25rem;
-  transition: all 0.3s ease;
-  font-weight: 500;
+  transition: ${TRANSITIONS.default};
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-
-  &:last-child {
-    margin-right: 0;
-  }
+  justify-content: center;
+  gap: ${SPACING.xs};
 
   ${props => {
     switch (props.$variant) {
       case 'view':
         return `
-          background: #3498db;
-          color: white;
+          background: ${COLOR_SCALES.primary[500]};
+          color: ${COLORS.neutral.white};
           &:hover {
-            background: #2980b9;
-            transform: translateY(-1px);
+            background: ${COLOR_SCALES.primary[600]};
           }
         `;
       case 'pdf':
         return `
-          background: #e74c3c;
-          color: white;
+          background: #9b59b6;
+          color: ${COLORS.neutral.white};
           &:hover {
-            background: #c0392b;
-            transform: translateY(-1px);
+            background: #8e44ad;
           }
         `;
-      case 'download':
+      case 'credit':
         return `
-          background: #27ae60;
-          color: white;
+          background: ${COLOR_SCALES.danger[500]};
+          color: ${COLORS.neutral.white};
           &:hover {
-            background: #229954;
-            transform: translateY(-1px);
-          }
-        `;
-      case 'complete':
-        return `
-          background: #f39c12;
-          color: white;
-          &:hover {
-            background: #e67e22;
-            transform: translateY(-1px);
-          }
-        `;
-      case 'cancel':
-        return `
-          background: #95a5a6;
-          color: white;
-          &:hover {
-            background: #7f8c8d;
-            transform: translateY(-1px);
+            background: ${COLOR_SCALES.danger[600]};
           }
         `;
       default:
         return `
-          background: #95a5a6;
-          color: white;
+          background: ${COLORS.neutral[300]};
+          color: ${COLORS.text.primary};
           &:hover {
-            background: #7f8c8d;
+            background: ${COLORS.neutral[400]};
           }
         `;
     }
@@ -351,14 +296,13 @@ const ActionButton = styled.button<{ $variant?: 'view' | 'pdf' | 'download' | 'c
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none !important;
   }
 `;
 
 const ActionsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: ${SPACING.xs};
   align-items: center;
 `;
 
@@ -438,6 +382,10 @@ const ListaVentas: React.FC = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
   // Modal Nota de Crédito
   const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
   const [selectedSale, setSelectedSale] = useState<any>(null);
@@ -479,6 +427,21 @@ const ListaVentas: React.FC = () => {
       return matchesSearch && matchesStatus && matchesPayment && matchesVoucher && matchesClient && matchesDate;
     });
   }, [sales, searchTerm, statusFilter, paymentFilter, voucherFilter, clientFilter, dateFilter]);
+
+  // Paginación de resultados filtrados
+  const paginatedSales = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredSales.slice(startIndex, startIndex + pageSize);
+  }, [filteredSales, currentPage, pageSize]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredSales.length / pageSize);
+  }, [filteredSales.length, pageSize]);
+
+  // Reset página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, paymentFilter, voucherFilter, clientFilter, dateFilter]);
 
   const stats = useMemo(() => {
     const totalSales = filteredSales.length;
@@ -715,88 +678,126 @@ const ListaVentas: React.FC = () => {
     <Layout title="Lista de Ventas">
       <Container>
         <Header>
-          <Title>Lista de Ventas</Title>
-          <SearchContainer>
-            <SearchInput
-              type="text"
-              placeholder="Buscar por número de venta o cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <FilterSelect
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">Todos los estados</option>
-              <option value="Pendiente">Pendiente</option>
-              <option value="Completada">Completada</option>
-              <option value="Cancelada">Cancelada</option>
-            </FilterSelect>
-            <FilterSelect
-              value={voucherFilter}
-              onChange={(e) => setVoucherFilter(e.target.value)}
-            >
-              <option value="">Todos los comprobantes</option>
-              <option value="Boleta">Boleta</option>
-              <option value="Factura">Factura</option>
-              <option value="NotaVenta">Nota de Venta</option>
-            </FilterSelect>
-            <FilterSelect
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value)}
-            >
-              <option value="">Todas las formas de pago</option>
-              <option value="Efectivo">Efectivo</option>
-              <option value="Tarjeta">Tarjeta</option>
-              <option value="Transferencia">Transferencia</option>
-              <option value="Yape">Yape</option>
-              <option value="Plin">Plin</option>
-            </FilterSelect>
-            <FilterSelect
-              value={clientFilter}
-              onChange={(e) => setClientFilter(e.target.value)}
-            >
-              <option value="">Todos los clientes</option>
-              {clients.map(client => (
-                <option key={client.id} value={client.id}>
-                  {client.tipoDocumento === 'RUC' 
-                    ? client.razonSocial 
-                    : `${client.nombres} ${client.apellidos}`
-                  }
-                </option>
-              ))}
-            </FilterSelect>
-            <DateInput
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-            {(searchTerm || statusFilter || paymentFilter || voucherFilter || clientFilter || dateFilter) && (
-              <Button onClick={clearFilters}>
-                🗑️ Limpiar Filtros
-              </Button>
-            )}
-          </SearchContainer>
+          <TitleSection>
+            <Title>Lista de Ventas</Title>
+            <PageSubtitle>Historial completo de transacciones, comprobantes y estados de pago</PageSubtitle>
+          </TitleSection>
         </Header>
 
-        <StatsContainer>
-          <StatCard>
-            <StatValue>{stats.totalSales}</StatValue>
+        {/* Stats Cards */}
+        <StatsGrid>
+          <StatCard $color="#3498db">
+            <StatValue $color="#3498db">{stats.totalSales}</StatValue>
             <StatLabel>Total de Ventas</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatValue>{formatCurrency(stats.totalRevenue)}</StatValue>
+          <StatCard $color="#27ae60">
+            <StatValue $color="#27ae60">{formatCurrency(stats.totalRevenue)}</StatValue>
             <StatLabel>Ingresos Totales</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatValue>{stats.completedSales}</StatValue>
+          <StatCard $color="#9b59b6">
+            <StatValue $color="#9b59b6">{stats.completedSales}</StatValue>
             <StatLabel>Ventas Completadas</StatLabel>
           </StatCard>
-          <StatCard>
-            <StatValue>{formatCurrency(stats.averageSale)}</StatValue>
+          <StatCard $color="#e67e22">
+            <StatValue $color="#e67e22">{formatCurrency(stats.averageSale)}</StatValue>
             <StatLabel>Venta Promedio</StatLabel>
           </StatCard>
-        </StatsContainer>
+        </StatsGrid>
+
+        {/* Filtros */}
+        <FiltersContainer>
+          <FiltersGrid>
+            <FormGroup>
+              <SharedLabel htmlFor="search">Buscar</SharedLabel>
+              <SharedInput
+                id="search"
+                type="text"
+                placeholder="Número de venta o cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </FormGroup>
+            <FormGroup>
+              <SharedLabel htmlFor="status">Estado</SharedLabel>
+              <SharedSelect
+                id="status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">Todos los estados</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Completada">Completada</option>
+                <option value="Cancelada">Cancelada</option>
+              </SharedSelect>
+            </FormGroup>
+            <FormGroup>
+              <SharedLabel htmlFor="voucher">Comprobante</SharedLabel>
+              <SharedSelect
+                id="voucher"
+                value={voucherFilter}
+                onChange={(e) => setVoucherFilter(e.target.value)}
+              >
+                <option value="">Todos los comprobantes</option>
+                <option value="Boleta">Boleta</option>
+                <option value="Factura">Factura</option>
+                <option value="NotaVenta">Nota de Venta</option>
+              </SharedSelect>
+            </FormGroup>
+            <FormGroup>
+              <SharedLabel htmlFor="payment">Forma de Pago</SharedLabel>
+              <SharedSelect
+                id="payment"
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+              >
+                <option value="">Todas las formas de pago</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Yape">Yape</option>
+                <option value="Plin">Plin</option>
+              </SharedSelect>
+            </FormGroup>
+            <FormGroup>
+              <SharedLabel htmlFor="client">Cliente</SharedLabel>
+              <SharedSelect
+                id="client"
+                value={clientFilter}
+                onChange={(e) => setClientFilter(e.target.value)}
+              >
+                <option value="">Todos los clientes</option>
+                {clients.map(client => (
+                  <option key={client.id} value={client.id}>
+                    {client.tipoDocumento === 'RUC' 
+                      ? client.razonSocial 
+                      : `${client.nombres} ${client.apellidos}`
+                    }
+                  </option>
+                ))}
+              </SharedSelect>
+            </FormGroup>
+            <FormGroup>
+              <SharedLabel htmlFor="date">Fecha</SharedLabel>
+              <SharedInput
+                id="date"
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              />
+            </FormGroup>
+          </FiltersGrid>
+          <ButtonGroup>
+            <SharedButton $variant="secondary" onClick={clearFilters}>
+              Limpiar
+            </SharedButton>
+            <SharedButton $variant="primary" onClick={() => {}}>
+              Buscar
+            </SharedButton>
+            <SharedButton $variant="primary" style={{ background: '#28a745' }}>
+              Exportar a Excel
+            </SharedButton>
+          </ButtonGroup>
+        </FiltersContainer>
 
         <TableContainer>
           {filteredSales.length === 0 ? (
@@ -811,22 +812,22 @@ const ListaVentas: React.FC = () => {
               </p>
             </EmptyState>
           ) : (
-            <Table>
-              <TableHeader>
-                <tr>
-                  <TableHeaderCell>Código</TableHeaderCell>
-                  <TableHeaderCell>Cliente</TableHeaderCell>
-                  <TableHeaderCell>Comprobante</TableHeaderCell>
-                  <TableHeaderCell>Fecha/Hora</TableHeaderCell>
-                  <TableHeaderCell>Total</TableHeaderCell>
-                  <TableHeaderCell>NC</TableHeaderCell>
-                  <TableHeaderCell>Pago</TableHeaderCell>
-                  <TableHeaderCell>Estado</TableHeaderCell>
-                  <TableHeaderCell>Acciones</TableHeaderCell>
+            <SharedTable>
+              <SharedThead>
+              <tr>
+                  <SharedTh>Código</SharedTh>
+                  <SharedTh>Cliente</SharedTh>
+                  <SharedTh>Comprobante</SharedTh>
+                  <SharedTh>Fecha/Hora</SharedTh>
+                  <SharedTh>Total</SharedTh>
+                  <SharedTh>NC</SharedTh>
+                  <SharedTh>Pago</SharedTh>
+                  <SharedTh>Estado</SharedTh>
+                  <SharedTh>Acciones</SharedTh>
                 </tr>
-              </TableHeader>
-              <tbody>
-                {filteredSales.map((sale) => {
+              </SharedThead>
+              <SharedTbody>
+                {paginatedSales.map((sale) => {
                   const client = sale.cliente;
                   const clientName = client 
                     ? (client.tipoDocumento === 'RUC' 
@@ -835,58 +836,55 @@ const ListaVentas: React.FC = () => {
                     : 'Cliente General';
                   
                   return (
-                    <TableRow key={sale.id}>
-                      <TableCell>
+                    <SharedTr key={sale.id}>
+                      <SharedTd>
                         <strong>{sale.codigoVenta}</strong>
-                        <div style={{ fontSize: '0.75rem', color: '#7f8c8d' }}>
+                        <div style={{ fontSize: '0.75rem', color: COLORS.text.secondary }}>
                           {sale.items.length} item{sale.items.length !== 1 ? 's' : ''}
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         <strong>{clientName}</strong>
                         {client && (
-                          <div style={{ fontSize: '0.75rem', color: '#7f8c8d' }}>
+                          <div style={{ fontSize: '0.75rem', color: COLORS.text.secondary }}>
                             {client.numeroDocumento}
                           </div>
                         )}
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         <VoucherBadge type={sale.tipoComprobante || 'NotaVenta'}>
                           {sale.tipoComprobante === 'NotaVenta' ? 'Nota de Venta' : sale.tipoComprobante}
                         </VoucherBadge>
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         <div>{formatDate(sale.fechaEmision)}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#7f8c8d' }}>
+                        <div style={{ fontSize: '0.75rem', color: COLORS.text.secondary }}>
                           {formatTime(sale.fechaEmision)}
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         <strong style={{ fontSize: '1.05rem', color: '#27ae60' }}>
                           {formatCurrency(sale.total)}
                         </strong>
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         {sale.tieneNotaCredito ? (
                           <div style={{ fontSize: '0.9rem', color: '#e74c3c', fontWeight: '600' }}>
                             -{formatCurrency(sale.montoNotaCredito || 0)}
                           </div>
                         ) : (
-                          <div style={{ fontSize: '0.9rem', color: '#95a5a6' }}>-</div>
+                          <div style={{ fontSize: '0.9rem', color: COLORS.text.secondary }}>-</div>
                         )}
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         {renderPaymentMethods(sale)}
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         <StatusBadge status={sale.estado}>
                           {getStatusText(sale.estado)}
                         </StatusBadge>
-                        {sale.tieneNotaCredito && (
-                          <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>⚠️</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
+                      </SharedTd>
+                      <SharedTd>
                         <ActionsContainer>
                           {sale.estado === 'Completada' ? (
                             <>
@@ -894,25 +892,22 @@ const ListaVentas: React.FC = () => {
                                 $variant="view"
                                 onClick={() => handleViewSale(sale.id)}
                                 disabled={isProcessing}
-                                style={{ background: '#3498db' }}
                               >
-                                � Ver Detalles
+                                Ver Detalles
                               </ActionButton>
                               <ActionButton 
                                 $variant="pdf"
                                 onClick={() => handlePreviewPDF(sale.id)}
                                 disabled={isProcessing}
-                                style={{ background: '#9b59b6' }}
                               >
-                                �️ Imprimir
+                                Imprimir
                               </ActionButton>
                               <ActionButton 
-                                $variant="cancel"
+                                $variant="credit"
                                 onClick={() => handleOpenCreditNoteModal(sale)}
                                 disabled={isProcessing}
-                                style={{ background: '#e74c3c' }}
                               >
-                                📝 Nota Crédito
+                                Nota Crédito
                               </ActionButton>
                             </>
                           ) : sale.estado === 'Pendiente' ? (
@@ -921,43 +916,104 @@ const ListaVentas: React.FC = () => {
                                 $variant="view"
                                 onClick={() => handleViewSale(sale.id)}
                                 disabled={isProcessing}
-                                style={{ background: '#3498db' }}
                               >
-                                📋 Ver Detalles
+                                Ver Detalles
                               </ActionButton>
-                              <ActionButton 
-                                $variant="complete"
+                              <SharedButton 
+                                $variant="primary"
                                 onClick={() => handleOpenPaymentModal(sale)}
                                 disabled={isProcessing}
-                                style={{ background: '#27ae60' }}
+                                style={{ background: '#27ae60', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
                               >
-                                💰 Confirmar Pago
-                              </ActionButton>
-                              <ActionButton 
-                                $variant="cancel"
+                                Confirmar Pago
+                              </SharedButton>
+                              <SharedButton 
+                                $variant="secondary"
                                 onClick={() => handleCancelSale(sale.id)}
                                 disabled={isProcessing}
+                                style={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
                               >
-                                ❌ Cancelar
-                              </ActionButton>
+                                Cancelar
+                              </SharedButton>
                             </>
                           ) : sale.estado === 'Cancelada' ? (
                             <ActionButton 
                               $variant="view"
                               onClick={() => handleViewSale(sale.id)}
                               disabled={isProcessing}
-                              style={{ background: '#3498db' }}
                             >
-                              📋 Ver Detalles
+                              Ver Detalles
                             </ActionButton>
                           ) : null}
                         </ActionsContainer>
-                      </TableCell>
-                    </TableRow>
+                      </SharedTd>
+                    </SharedTr>
                   );
                 })}
-              </tbody>
-            </Table>
+              </SharedTbody>
+            </SharedTable>
+          )}
+
+          {/* Paginación */}
+          {filteredSales.length > 0 && (
+            <SharedPaginationContainer>
+              <SharedPaginationInfo>
+                Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, filteredSales.length)} de {filteredSales.length} ventas
+              </SharedPaginationInfo>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <PageSizeSelect
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={10}>10 por página</option>
+                  <option value={20}>20 por página</option>
+                  <option value={50}>50 por página</option>
+                  <option value={100}>100 por página</option>
+                </PageSizeSelect>
+
+                <SharedPaginationButtons>
+                  <PageButton
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </PageButton>
+
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <PageButton
+                        key={pageNum}
+                        $active={pageNum === currentPage}
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </PageButton>
+                    );
+                  })}
+
+                  <PageButton
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </PageButton>
+                </SharedPaginationButtons>
+              </div>
+            </SharedPaginationContainer>
           )}
         </TableContainer>
 
@@ -966,7 +1022,7 @@ const ListaVentas: React.FC = () => {
           <ModalOverlay onClick={handleClosePaymentModal}>
             <ModalContent onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
               <ModalHeader>
-                <ModalTitle>💰 Confirmar Pago de Venta</ModalTitle>
+                <ModalTitle>Confirmar Pago de Venta</ModalTitle>
                 <CloseButton onClick={handleClosePaymentModal}>×</CloseButton>
               </ModalHeader>
               

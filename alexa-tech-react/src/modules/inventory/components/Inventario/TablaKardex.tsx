@@ -1,13 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
+import { COLORS, COLOR_SCALES, SPACING, BORDER_RADIUS, TYPOGRAPHY, TRANSITIONS } from '../../../../styles/theme';
 import type { MovimientoKardex, PaginationData } from '../../../../types/inventario';
 import { getWarehouseLabel } from '../../../../constants/warehouses';
 import { formatDateToLocal } from '../../../../utils/dateFormatter';
+import { StatusBadge } from '../../../../components/shared';
 
 const TableContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  border: 1px solid ${COLORS.neutral[200]};
   overflow: hidden;
 `;
 
@@ -25,124 +27,104 @@ const TableWrapper = styled.div`
 
 const Th = styled.th`
   text-align: left;
-  background: #f1f3f5;
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: 600;
-  color: #555;
-  font-size: 0.9rem;
-  white-space: nowrap;
+  background: ${COLORS.background};
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[200]};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+  color: ${COLORS.textLight};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  color: #333;
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[100]};
+  color: ${COLORS.text.primary};
   vertical-align: middle;
 `;
 
 const Tr = styled.tr`
+  transition: ${TRANSITIONS.fast};
+  
   &:hover {
-    background: #f8f9fa;
+    background: ${COLORS.neutral[50]};
   }
 `;
 
-const MovementBadge = styled.span<{ $type: 'ENTRADA' | 'SALIDA' | 'AJUSTE' }>`
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  
-  ${props => {
-    switch (props.$type) {
-      case 'ENTRADA':
-        return `
-          background: #d4edda;
-          color: #155724;
-        `;
-      case 'SALIDA':
-        return `
-          background: #f8d7da;
-          color: #721c24;
-        `;
-      case 'AJUSTE':
-        return `
-          background: #d1ecf1;
-          color: #0c5460;
-        `;
-      default:
-        return `
-          background: #e2e3e5;
-          color: #383d41;
-        `;
-    }
-  }}
-`;
+// Helper para obtener variant del StatusBadge según tipo de movimiento
+const getTipoVariant = (tipo: 'ENTRADA' | 'SALIDA' | 'AJUSTE'): 'success' | 'danger' | 'info' => {
+  const variants: Record<string, 'success' | 'danger' | 'info'> = {
+    ENTRADA: 'success',
+    SALIDA: 'danger',
+    AJUSTE: 'info'
+  };
+  return variants[tipo] || 'info';
+};
 
 const QuantityCell = styled.div<{ $type: 'ENTRADA' | 'SALIDA' | 'AJUSTE' }>`
-  font-weight: 500;
+  font-weight: ${TYPOGRAPHY.fontWeight.medium};
   color: ${props => {
     switch (props.$type) {
-      case 'ENTRADA': return '#28a745';
-      case 'SALIDA': return '#dc3545';
-      case 'AJUSTE': return '#17a2b8';
-      default: return '#2c3e50';
+      case 'ENTRADA': return COLOR_SCALES.success[500];
+      case 'SALIDA': return COLOR_SCALES.danger[500];
+      case 'AJUSTE': return COLOR_SCALES.info[500];
+      default: return COLORS.text.primary;
     }
   }};
 `;
 
 const StockCell = styled.div`
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.secondary};
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 3rem;
-  color: #6c757d;
+  padding: ${SPACING['3xl']};
+  color: ${COLORS.text.secondary};
 `;
 
 const EmptyIcon = styled.div`
   font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: ${SPACING.lg};
   opacity: 0.5;
 `;
 
 const EmptyTitle = styled.h3`
-  margin: 0 0 0.5rem 0;
-  color: #495057;
-  font-size: 1.2rem;
-  font-weight: 600;
+  margin: 0 0 ${SPACING.sm} 0;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.xl};
+  font-weight: ${TYPOGRAPHY.fontWeight.semibold};
 `;
 
 const EmptyDescription = styled.p`
-  margin: 0 0 1.5rem 0;
-  color: #6c757d;
-  font-size: 0.95rem;
+  margin: 0 0 ${SPACING.xl} 0;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.base};
   line-height: 1.5;
 `;
 
 const EmptyActions = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: ${SPACING.lg};
   justify-content: center;
   flex-wrap: wrap;
 `;
 
 const SuggestionButton = styled.button`
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  background: ${COLORS.neutral[50]};
+  color: ${COLORS.text.secondary};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  padding: ${SPACING.sm} ${SPACING.lg};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
   cursor: pointer;
-  transition: all 0.2s;
+  transition: ${TRANSITIONS.default};
 
   &:hover {
-    background: #e9ecef;
-    border-color: #adb5bd;
+    background: ${COLORS.neutral[100]};
+    border-color: ${COLORS.neutral[300]};
   }
 `;
 
@@ -153,16 +135,16 @@ const SkeletonRow = styled.tr`
 `;
 
 const SkeletonCell = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: ${SPACING.lg};
+  border-bottom: 1px solid ${COLORS.neutral[100]};
 `;
 
 const SkeletonBar = styled.div<{ width?: string }>`
   height: 1rem;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, ${COLORS.neutral[100]} 25%, ${COLORS.neutral[200]} 50%, ${COLORS.neutral[100]} 75%);
   background-size: 200% 100%;
   animation: loading 1.5s infinite;
-  border-radius: 4px;
+  border-radius: ${BORDER_RADIUS.sm};
   width: ${props => props.width || '100%'};
 
   @keyframes loading {
@@ -176,50 +158,52 @@ const SkeletonBar = styled.div<{ width?: string }>`
 `;
 
 const LoadingContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: ${COLORS.neutral.white};
+  border-radius: ${BORDER_RADIUS.lg};
+  border: 1px solid ${COLORS.neutral[200]};
   overflow: hidden;
 `;
 
 const PaginationContainer = styled.div`
   display: flex;
-  justify-content: between;
+  justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-  gap: 1rem;
+  padding: ${SPACING.lg};
+  border-top: 1px solid ${COLORS.neutral[200]};
+  flex-wrap: wrap;
+  gap: ${SPACING.lg};
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: ${SPACING.sm};
   }
 `;
 
 const PaginationInfo = styled.div`
-  color: #6c757d;
-  font-size: 0.9rem;
+  color: ${COLORS.text.secondary};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
 `;
 
-const PaginationControls = styled.div`
+const PaginationButtons = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
 `;
 
-const PaginationButton = styled.button<{ $active?: boolean }>`
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #dee2e6;
-  background: ${props => props.$active ? '#3498db' : 'white'};
-  color: ${props => props.$active ? 'white' : '#495057'};
-  border-radius: 4px;
+const PageButton = styled.button<{ $active?: boolean }>`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${props => props.$active ? COLOR_SCALES.primary[500] : COLORS.neutral[200]};
+  background: ${props => props.$active ? COLOR_SCALES.primary[500] : COLORS.neutral.white};
+  color: ${props => props.$active ? COLORS.neutral.white : COLORS.text.primary};
+  border-radius: ${BORDER_RADIUS.sm};
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  min-width: 36px;
+  transition: ${TRANSITIONS.default};
 
   &:hover:not(:disabled) {
-    background: ${props => props.$active ? '#2980b9' : '#f8f9fa'};
+    background: ${props => props.$active ? COLOR_SCALES.primary[600] : COLORS.neutral[100]};
+    border-color: ${COLOR_SCALES.primary[500]};
   }
 
   &:disabled {
@@ -228,18 +212,40 @@ const PaginationButton = styled.button<{ $active?: boolean }>`
   }
 `;
 
+const PageSizeSelect = styled.select`
+  padding: ${SPACING.sm} ${SPACING.md};
+  border: 1px solid ${COLORS.neutral[200]};
+  border-radius: ${BORDER_RADIUS.md};
+  font-size: ${TYPOGRAPHY.fontSize.sm};
+  color: ${COLORS.text.primary};
+  background: ${COLORS.neutral.white};
+  cursor: pointer;
+  transition: ${TRANSITIONS.default};
+
+  &:hover {
+    border-color: ${COLOR_SCALES.primary[300]};
+  }
+
+  &:focus {
+    outline: none;
+    border-color: ${COLOR_SCALES.primary[500]};
+  }
+`;
+
 interface TablaKardexProps {
   movimientos: MovimientoKardex[];
   pagination: PaginationData;
   loading?: boolean;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 const TablaKardex: React.FC<TablaKardexProps> = ({
   movimientos,
   pagination,
   loading = false,
-  onPageChange
+  onPageChange,
+  onPageSizeChange
 }) => {
   const getMovementLabel = (type: 'ENTRADA' | 'SALIDA' | 'AJUSTE') => {
     switch (type) {
@@ -261,6 +267,10 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
 
   const renderPagination = () => {
     const { page, pages, total, limit } = pagination;
+    
+    // No mostrar paginación si no hay elementos
+    if (total === 0) return null;
+    
     const startItem = (page - 1) * limit + 1;
     const endItem = Math.min(page * limit, total);
 
@@ -292,47 +302,47 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
           Mostrando {startItem} - {endItem} de {total} movimientos
         </PaginationInfo>
         
-        <PaginationControls>
-          <PaginationButton
-            onClick={() => onPageChange(1)}
-            disabled={page === 1}
-          >
-            ««
-          </PaginationButton>
-          
-          <PaginationButton
-            onClick={() => onPageChange(page - 1)}
-            disabled={page === 1}
-            data-testid="kardex-prev-page"
-          >
-            ‹
-          </PaginationButton>
-
-          {pageNumbers.map(pageNum => (
-            <PaginationButton
-              key={pageNum}
-              $active={pageNum === page}
-              onClick={() => onPageChange(pageNum)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {onPageSizeChange && (
+            <PageSizeSelect
+              value={limit}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
             >
-              {pageNum}
-            </PaginationButton>
-          ))}
+              <option value={10}>10 por página</option>
+              <option value={20}>20 por página</option>
+              <option value={50}>50 por página</option>
+              <option value={100}>100 por página</option>
+            </PageSizeSelect>
+          )}
 
-          <PaginationButton
-            onClick={() => onPageChange(page + 1)}
-            disabled={page === pages}
-            data-testid="kardex-next-page"
-          >
-            ›
-          </PaginationButton>
-          
-          <PaginationButton
-            onClick={() => onPageChange(pages)}
-            disabled={page === pages}
-          >
-            »»
-          </PaginationButton>
-        </PaginationControls>
+          <PaginationButtons>
+            <PageButton
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 1}
+              data-testid="kardex-prev-page"
+            >
+              Anterior
+            </PageButton>
+
+            {pageNumbers.map(pageNum => (
+              <PageButton
+                key={pageNum}
+                $active={pageNum === page}
+                onClick={() => onPageChange(pageNum)}
+              >
+                {pageNum}
+              </PageButton>
+            ))}
+
+            <PageButton
+              onClick={() => onPageChange(page + 1)}
+              disabled={page === pages}
+              data-testid="kardex-next-page"
+            >
+              Siguiente
+            </PageButton>
+          </PaginationButtons>
+        </div>
       </PaginationContainer>
     );
   };
@@ -357,7 +367,8 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
     ));
   };
 
-  if (loading) {
+  // Mostrar skeleton solo en primera carga (cuando no hay datos previos)
+  if (loading && movimientos.length === 0) {
     return (
       <LoadingContainer>
         <TableWrapper>
@@ -384,7 +395,7 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
     );
   }
 
-  if (movimientos.length === 0) {
+  if (!loading && movimientos.length === 0) {
     return (
       <TableContainer>
         <EmptyState>
@@ -442,9 +453,9 @@ const TablaKardex: React.FC<TablaKardexProps> = ({
                 </Td>
                 <Td>{getWarehouseLabel(movimiento.almacen)}</Td>
                 <Td>
-                  <MovementBadge $type={movimiento.tipo} data-testid={`kardex-type-${movimiento.tipo}-${movimiento.id}`}>
+                  <StatusBadge variant={getTipoVariant(movimiento.tipo)} data-testid={`kardex-type-${movimiento.tipo}-${movimiento.id}`}>
                     {getMovementLabel(movimiento.tipo)}
-                  </MovementBadge>
+                  </StatusBadge>
                 </Td>
                 <Td>
                   <QuantityCell $type={movimiento.tipo} data-testid="kardex-quantity">
